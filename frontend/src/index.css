@@ -1,0 +1,314 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --primary: #4C1D95;
+  --primary-glow: rgba(76, 29, 149, 0.3);
+  --secondary: #FF6B35;
+  --accent: #FFD23F;
+  --background: #F4F3FF;
+  --surface: #FFFFFF;
+  --text: #111827;
+  --text-muted: #4B5563;
+  --border: rgba(109, 40, 217, 0.1);
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --glass: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text);
+  overflow-x: hidden;
+  transition: background-color 0.3s ease;
+}
+
+.auth-pattern {
+  background-color: var(--background);
+  background-image: url('/Krediblypattern.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.pattern-dots {
+  background-image: radial-gradient(var(--primary) 0.5px, transparent 0.5px);
+  background-size: 24px 24px;
+  opacity: 0.1;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.glass-card {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+
+.glass-nav {
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  position: sticky;
+  top: 0;
+  z-index: 2000;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), #5B5EFA);
+  color: white !important;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 15px var(--primary-glow);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none !important;
+  white-space: nowrap;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.premium-gradient {
+  background: linear-gradient(135deg, var(--primary), #1E1B4B);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
+  background: white;
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+  border-radius: 100px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 15px var(--primary-glow);
+  margin-bottom: 32px;
+}
+
+/* Landing Page Specific Classes */
+.landing-nav-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.hero-title {
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-weight: 300;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  color: #111827;
+  letter-spacing: -0.04em;
+}
+
+.hero-description {
+  font-size: clamp(1.1rem, 3vw, 1.4rem);
+  color: #4B5563;
+  margin-bottom: 40px;
+  line-height: 1.6;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.section-title {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 800;
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  padding: 0 20px;
+}
+
+@media (min-width: 1024px) {
+  .features-grid {
+    gap: 40px;
+    padding: 0;
+  }
+}
+
+/* Auth Layout Styling & Structure */
+.auth-layout-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+}
+
+.auth-logo-wrapper {
+  cursor: pointer;
+  z-index: 1100;
+  padding: 32px 24px;
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+}
+
+@media (min-width: 1024px) {
+  .auth-logo-wrapper {
+    position: absolute;
+    top: 40px;
+    left: 40px;
+    width: auto;
+    padding: 0;
+  }
+}
+
+.auth-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  width: 100%;
+  min-height: calc(100vh - 100px);
+}
+
+.auth-form-wrapper {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 10;
+}
+
+.auth-form-card {
+  padding: 32px 24px;
+}
+
+@media (min-width: 640px) {
+  .auth-form-card {
+    padding: 48px 40px;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.input-field {
+  width: 100%;
+  padding: 14px;
+  background: var(--surface);
+  border: 1.5px solid #E5E7EB;
+  border-radius: 12px;
+  font-size: 1rem;
+  color: var(--text);
+  outline: none;
+  transition: all 0.2s;
+}
+
+.input-field:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.input-label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+
+.clickable-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  border-color: var(--primary-glow) !important;
+}
+
+/* Marquee Effect */
+.marquee-track {
+  display: flex;
+  gap: 24px;
+  width: max-content;
+  animation: scroll 40s linear infinite;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.marquee-container:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(calc(-50% - 12px));
+  }
+}
+
+/* Responsive Layout Utilities */
+@media (min-width: 1024px) {
+  .desktop-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  .desktop-only-sticky {
+    position: sticky;
+    top: 100px;
+  }
+}
