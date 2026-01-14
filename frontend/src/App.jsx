@@ -1,18 +1,24 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
+import ScrollToTop from "./components/ScrollToTop";
 
-import LandingPage from "./pages/landing-page";
+import LandingPage from "./pages/public/landing-page";
 import AuthLayout from "./components/auth/layout";
 import Login from "./pages/auth/login";
 import Register from "./pages/auth/register";
 import VerifyEmail from "./pages/auth/verify-email";
 import ForgotPassword from "./pages/auth/forgotPassword";
 import ResetPassword from "./pages/auth/resetPassword";
-import Onboarding from "./pages/onboarding";
-import Dashboard from "./pages/dashboard";
-import CreateSale from "./pages/create-sale";
-import InvoicePage from "./pages/invoice-page";
-import SalesList from "./pages/sales-list";
+import Onboarding from "./pages/merchant/onboarding";
+import Dashboard from "./pages/merchant/dashboard";
+import CreateSale from "./pages/merchant/create-sale";
+import InvoicePage from "./pages/merchant/invoice-page";
+import SalesList from "./pages/merchant/sales-list";
+import SettingsPage from "./pages/merchant/settings-page";
+import HelpPage from "./pages/merchant/help-page";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+
+import DashboardLayout from "./components/dashboard/DashboardLayout";
 
 const App = () => {
   const { user, profile, loading } = useAuth();
@@ -25,40 +31,53 @@ const App = () => {
   };
 
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/invoice/:id" element={<InvoicePage />} />
+    <>
+      <ScrollToTop />
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/invoice/:id" element={<InvoicePage />} />
+        <Route path="/i/:id" element={<InvoicePage />} />
 
-      {/* Auth Routes Wrapped in AuthLayout */}
-      <Route element={<AuthLayout />}>
-        <Route path="/auth/login" element={!user ? <Login /> : <Navigate to={getHomeRedirect()} />} />
-        <Route path="/auth/register" element={!user ? <Register /> : <Navigate to={getHomeRedirect()} />} />
-        <Route path="/auth/verify-email" element={<VerifyEmail />} />
-        <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-        <Route path="/auth/reset-password" element={<ResetPassword />} />
-      </Route>
+        {/* Auth Routes Wrapped in AuthLayout */}
+        <Route element={<AuthLayout />}>
+          <Route path="/auth/login" element={!user ? <Login /> : <Navigate to={getHomeRedirect()} />} />
+          <Route path="/auth/register" element={!user ? <Register /> : <Navigate to={getHomeRedirect()} />} />
+          <Route path="/auth/verify-email" element={<VerifyEmail />} />
+          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
+        </Route>
 
-      {/* Protected Routes */}
-      <Route
-        path="/dashboard"
-        element={user ? (profile ? <Dashboard /> : <Navigate to="/onboarding" />) : <Navigate to="/auth/login" />}
-      />
-      <Route
-        path="/onboarding"
-        element={user ? (!profile ? <Onboarding /> : <Navigate to="/dashboard" />) : <Navigate to="/auth/login" />}
-      />
-      <Route
-        path="/sales/new"
-        element={user ? <CreateSale /> : <Navigate to="/auth/login" />}
-      />
-      <Route
-        path="/sales"
-        element={user ? <SalesList /> : <Navigate to="/auth/login" />}
-      />
+        {/* Protected Routes with Sidebar Layout */}
+        <Route
+          element={user && profile ? <DashboardLayout /> : <Navigate to={getHomeRedirect()} />}
+        >
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/sales" element={<SalesList />} />
+          <Route path="/sales/new" element={<CreateSale />} />
+          <Route path="/debtors" element={<SalesList initialFilter="outstanding" />} />
+          <Route path="/reports" element={<div className="glass-card" style={{ padding: '60px', textAlign: 'center' }}><h2 style={{ fontWeight: 800 }}>Reports Engine</h2><p style={{ color: '#64748B' }}>We are crunching the numbers. Visual insights coming soon.</p></div>} />
+          <Route path="/proofs" element={<div className="glass-card" style={{ padding: '60px', textAlign: 'center' }}><h2 style={{ fontWeight: 800 }}>Verifiable Proofs</h2><p style={{ color: '#64748B' }}>Secure portal for customers to verify ledger integrity.</p></div>} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/help" element={<HelpPage />} />
+          <Route path="/dashboard/invoice/:id" element={<InvoicePage />} />
+        </Route>
 
-      {/* Default Catch-all */}
-      <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+        {/* Onboarding - No Sidebar */}
+        <Route
+          path="/onboarding"
+          element={user ? (!profile ? <Onboarding /> : <Navigate to="/dashboard" />) : <Navigate to="/auth/login" />}
+        />
+
+        {/* Admin Route - Restricted to Founders */}
+        <Route
+          path="/admin"
+          element={user && user.role === 'admin' ? <AdminDashboard /> : (profile ? <Navigate to="/dashboard" /> : <Navigate to="/onboarding" />)}
+        />
+
+        {/* Default Catch-all */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </>
   );
 };
 

@@ -5,5 +5,6 @@ const authMiddleware = require("../../utils/authMiddleware");
 
 router.get("/profile", authMiddleware, businessController.getProfile);
 router.post("/profile", authMiddleware, businessController.updateProfile);
+router.get("/activity-logs", authMiddleware, businessController.getActivityLogs);
 
 module.exports = router;

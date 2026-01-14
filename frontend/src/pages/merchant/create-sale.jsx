@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSales } from "../context/SaleContext";
+import { useSales } from "../../context/SaleContext";
 import { toast } from "sonner";
 import { ArrowLeft, User, Phone, FileText, Banknote, Calendar, Check, Loader2 } from "lucide-react";
 
@@ -42,28 +42,11 @@ const CreateSale = () => {
     };
 
     return (
-        <div className="container animate-fade-in" style={{ paddingBottom: '40px', maxWidth: '600px', paddingTop: '20px' }}>
+        <div className="animate-fade-in" style={{ maxWidth: '800px' }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
-                <button
-                    onClick={() => navigate(-1)}
-                    style={{
-                        background: 'white',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text)',
-                        cursor: 'pointer',
-                        padding: '10px',
-                        borderRadius: '12px',
-                        boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
-                        transition: '0.2s'
-                    }}
-                >
-                    <ArrowLeft size={20} />
-                </button>
-                <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.02em', color: '#111827' }}>Record New Sale</h1>
-                    <p style={{ color: '#6B7280', fontSize: '0.9rem' }}>Enter the transaction details below.</p>
-                </div>
+            <div style={{ marginBottom: '32px' }}>
+                <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#1E293B', marginBottom: '4px', letterSpacing: '-0.02em' }}>Record Sale</h1>
+                <p style={{ color: '#64748B', fontWeight: 500 }}>Enter the transaction details to generate a secure record.</p>
             </div>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -126,7 +109,7 @@ const CreateSale = () => {
                             />
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div className="grid-2-col-responsive">
                             <div className="input-group">
                                 <label className="input-label" style={{ fontWeight: 500, fontSize: '0.9rem', marginBottom: '6px', color: '#4B5563' }}>Total Amount <span style={{ color: 'red' }}>*</span></label>
                                 <div style={{ position: 'relative' }}>

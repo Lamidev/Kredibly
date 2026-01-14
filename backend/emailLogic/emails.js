@@ -8,7 +8,6 @@ const { resendClient, sender } = require("./emailConfig.js");
 
 // Common function for handling email sending errors
 const handleEmailError = (error, message) => {
-  console.error(`${message}:`, error.response ? error.response.data : error.message);
   throw new Error(`${message}: ${error.message}`);
 };
 

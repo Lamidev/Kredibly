@@ -20,7 +20,6 @@ exports.uploadImage = async (req, res) => {
             public_id: result.public_id,
         });
     } catch (error) {
-        console.error("Cloudinary upload error:", error);
         res.status(500).json({ success: false, message: "Upload failed" });
     }
 };

@@ -2,7 +2,7 @@ import { createContext, useContext, useState } from "react";
 import axios from "axios";
 
 const SaleContext = createContext();
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:7050/api";
+const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
 export const SaleProvider = ({ children }) => {
     const [sales, setSales] = useState([]);
@@ -34,7 +34,7 @@ export const SaleProvider = ({ children }) => {
         try {
             const res = await axios.post(`${API_URL}/sales`, saleData, { withCredentials: true });
             if (res.data.success) {
-                setSales([res.data.data, ...sales]);
+                setSales(prev => [res.data.data, ...prev]);
                 fetchStats();
                 return res.data;
             }
@@ -47,7 +47,7 @@ export const SaleProvider = ({ children }) => {
         try {
             const res = await axios.post(`${API_URL}/sales/${saleId}/payment`, paymentData, { withCredentials: true });
             if (res.data.success) {
-                setSales(sales.map(s => s._id === saleId ? res.data.data : s));
+                setSales(prev => prev.map(s => s._id === saleId ? res.data.data : s));
                 fetchStats();
                 return res.data;
             }
@@ -60,8 +60,33 @@ export const SaleProvider = ({ children }) => {
         try {
             const res = await axios.put(`${API_URL}/sales/${saleId}`, updateData, { withCredentials: true });
             if (res.data.success) {
-                setSales(sales.map(s => s._id === saleId ? res.data.data : s));
+                setSales(prev => prev.map(s => s._id === saleId ? res.data.data : s));
                 fetchStats();
+                return res.data;
+            }
+        } catch (err) {
+            throw err;
+        }
+    };
+
+    const deleteSale = async (saleId) => {
+        try {
+            const res = await axios.delete(`${API_URL}/sales/${saleId}`, { withCredentials: true });
+            if (res.data.success) {
+                setSales(prev => prev.filter(s => s._id !== saleId));
+                fetchStats();
+                return res.data;
+            }
+        } catch (err) {
+            throw err;
+        }
+    };
+
+    const migrateInvoices = async () => {
+        try {
+            const res = await axios.post(`${API_URL}/sales/migrate-invoices`, {}, { withCredentials: true });
+            if (res.data.success) {
+                await fetchSales();
                 return res.data;
             }
         } catch (err) {
@@ -71,7 +96,7 @@ export const SaleProvider = ({ children }) => {
 
     return (
         <SaleContext.Provider value={{
-            sales, stats, loading, fetchSales, fetchStats, createSale, addPayment, updateSale
+            sales, stats, loading, fetchSales, fetchStats, createSale, addPayment, updateSale, deleteSale, migrateInvoices
         }}>
             {children}
         </SaleContext.Provider>

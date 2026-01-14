@@ -9,6 +9,11 @@ const authRoutes = require("./routes/auth/authRoutes");
 const businessRoutes = require("./routes/business/businessRoutes");
 const saleRoutes = require("./routes/business/saleRoutes");
 const uploadRoutes = require("./routes/common/uploadRoutes");
+const whatsappRoutes = require("./routes/whatsapp/whatsappRoutes");
+const notificationRoutes = require("./routes/business/notificationRoutes");
+const adminRoutes = require("./routes/admin/adminRoutes");
+const supportRoutes = require("./routes/admin/supportRoutes");
+const { startProactiveAssistant } = require("./utils/proactiveAssistant");
 
 const app = express();
 const PORT = process.env.PORT || 7050;
@@ -16,7 +21,7 @@ const PORT = process.env.PORT || 7050;
 // Middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174"],
+    origin: ["http://localhost:5173"],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
@@ -36,14 +41,17 @@ app.use("/api/auth", authRoutes);
 app.use("/api/business", businessRoutes);
 app.use("/api/sales", saleRoutes);
 app.use("/api/common", uploadRoutes);
+app.use("/api/whatsapp", whatsappRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/support", supportRoutes);
 
 // Database Connection
 mongoose
   .connect(process.env.MONGODB_URL)
   .then(() => {
-    console.log("✅ Connected to MongoDB");
     app.listen(PORT, () => {
-      console.log(`🚀 Kredibly Server is live on port ${PORT}`);
     });
+    startProactiveAssistant();
   })
-  .catch((error) => console.error("❌ MongoDB connection failed:", error));
+  .catch((error) => { });

@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 
 const generateTokenAndSetCookie = (res, userId) => {
   const token = jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: "2h",
+    expiresIn: "5h",
   });
 
   const isProduction = process.env.NODE_ENV === "production";
@@ -11,7 +11,7 @@ const generateTokenAndSetCookie = (res, userId) => {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
-    maxAge: 2 * 60 * 60 * 1000, // 2 hours
+    maxAge: 5 * 60 * 60 * 1000, // 5 hours
     path: "/",
   };
 

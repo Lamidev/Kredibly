@@ -6,6 +6,10 @@ const SaleSchema = new mongoose.Schema({
         ref: "BusinessProfile",
         required: true
     },
+    invoiceNumber: {
+        type: String,
+        unique: true
+    },
     customerName: {
         type: String,
         trim: true
@@ -45,10 +49,9 @@ const SaleSchema = new mongoose.Schema({
     confirmedAt: Date,
     dueDate: Date,
     reminderSentAt: Date,
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
+    lastAutoReminderSent: Date
+}, {
+    timestamps: true
 });
 
 // Virtual for balance
@@ -61,7 +64,28 @@ SaleSchema.virtual("balance").get(function () {
 });
 
 // Update status before save
-SaleSchema.pre("save", function (next) {
+SaleSchema.pre("save", async function (next) {
+    // Auto-generate invoice short code if not set
+    if (!this.invoiceNumber) {
+        const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude ambiguous chars like 1, I, 0, O
+        let code = '';
+        const generateCode = () => {
+            let result = 'KR-';
+            for (let i = 0; i < 4; i++) {
+                result += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return result;
+        };
+
+        let isUnique = false;
+        while (!isUnique) {
+            code = generateCode();
+            const existing = await this.constructor.findOne({ invoiceNumber: code });
+            if (!existing) isUnique = true;
+        }
+        this.invoiceNumber = code;
+    }
+
     const paid = this.payments.reduce((sum, p) => sum + p.amount, 0);
     if (paid >= this.totalAmount) {
         this.status = "paid";

@@ -27,6 +27,19 @@ const BusinessProfileSchema = new mongoose.Schema({
         default: ""
     },
     phoneNumber: String,
+    whatsappNumber: {
+        type: String,
+        trim: true
+    },
+    assistantSettings: {
+        enableReminders: { type: Boolean, default: true },
+        reminderFrequency: { type: String, default: "daily" }
+    },
+    bankDetails: {
+        bankName: { type: String, default: "" },
+        accountNumber: { type: String, default: "" },
+        accountName: { type: String, default: "" }
+    },
     address: String,
     createdAt: {
         type: Date,

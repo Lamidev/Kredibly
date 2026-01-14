@@ -43,7 +43,6 @@ const register = async (req, res) => {
     try {
       await sendVerificationEmail(newUser.email, verificationToken);
     } catch (err) {
-      console.error("Email sending failed:", err);
     }
 
     const userData = newUser.toObject();
@@ -125,7 +124,6 @@ const verifyEmail = async (req, res) => {
     try {
       await sendWelcomeEmail(user.email, user.name);
     } catch (err) {
-      console.error("Welcome email failed:", err);
     }
 
     // Generate token and set cookie so user is authenticated immediately
