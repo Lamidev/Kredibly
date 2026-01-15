@@ -15,8 +15,10 @@ import {
     X,
     LogOut,
     User as UserIcon,
-    HelpCircle
+    HelpCircle,
+    RefreshCcw
 } from 'lucide-react';
+import { useSales } from '../../context/SaleContext';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
 import SupportHub from './SupportHub';
@@ -29,7 +31,9 @@ const getInitials = (name) => {
 const DashboardLayout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { profile, logout } = useAuth();
+    const { fetchSales, fetchStats } = useSales();
     const navigate = useNavigate();
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const location = useLocation();
     const [notifications, setNotifications] = useState([]);
     const [showNotifications, setShowNotifications] = useState(false);
@@ -54,12 +58,33 @@ const DashboardLayout = () => {
             console.error("Failed to fetch notifications", err);
         }
     };
+    
+    const globalRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            await Promise.all([fetchSales(), fetchStats(), fetchNotifications()]);
+            toast.success("Dashboard refreshed! 🚀");
+        } catch (err) {
+            toast.error("Failed to refresh data.");
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
 
     const markAllRead = async () => {
         try {
             await axios.delete(`${API_URL}/notifications/clear-all`, { withCredentials: true });
             setNotifications([]);
             setShowNotifications(false);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const clearOne = async (id) => {
+        try {
+            await axios.delete(`${API_URL}/notifications/${id}`, { withCredentials: true });
+            setNotifications(prev => prev.filter(n => n._id !== id));
         } catch (err) {
             console.error(err);
         }
@@ -145,14 +170,19 @@ const DashboardLayout = () => {
                         >
                             <Menu size={24} />
                         </button>
-                        <div className="search-container hidden md:block">
-                            <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
-                            <input type="text" placeholder="Search transactions, customers, or proofs..." className="search-input" />
-                        </div>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ position: 'relative' }}>
+                        <div style={{ position: 'relative', display: 'flex', gap: '8px' }}>
+                            <button
+                                onClick={globalRefresh}
+                                disabled={isRefreshing}
+                                style={{ background: '#F1F5F9', border: 'none', padding: '10px', borderRadius: '12px', color: '#64748B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                title="Refresh Dashboard"
+                            >
+                                <RefreshCcw size={20} className={isRefreshing ? 'spin-animation' : ''} />
+                            </button>
+
                             <button
                                 onClick={() => setShowNotifications(!showNotifications)}
                                 style={{ background: '#F1F5F9', border: 'none', padding: '10px', borderRadius: '12px', color: '#64748B', cursor: 'pointer' }}
@@ -178,9 +208,17 @@ const DashboardLayout = () => {
                                             <div style={{ padding: '24px', textAlign: 'center', color: '#94A3B8', fontSize: '0.85rem' }}>No new notifications</div>
                                         ) : (
                                             notifications.map(n => (
-                                                <div key={n._id} style={{ padding: '12px 16px', borderBottom: '1px solid #F8FAFC', cursor: 'pointer' }}>
-                                                    <p style={{ margin: 0, fontWeight: 800, fontSize: '0.85rem', color: '#1E293B' }}>{n.title}</p>
-                                                    <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#64748B', lineHeight: 1.4 }}>{n.message}</p>
+                                                <div key={n._id} style={{ padding: '12px 16px', borderBottom: '1px solid #F8FAFC', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <div style={{ flex: 1 }}>
+                                                        <p style={{ margin: 0, fontWeight: 800, fontSize: '0.85rem', color: '#1E293B' }}>{n.title}</p>
+                                                        <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#64748B', lineHeight: 1.4 }}>{n.message}</p>
+                                                    </div>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); clearOne(n._id); }}
+                                                        style={{ background: 'none', border: 'none', color: '#CBD5E1', cursor: 'pointer', padding: '4px' }}
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
                                                 </div>
                                             ))
                                         )}

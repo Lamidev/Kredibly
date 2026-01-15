@@ -51,7 +51,10 @@ mongoose
   .connect(process.env.MONGODB_URL)
   .then(() => {
     app.listen(PORT, () => {
+      console.log(`🔥 Server running on port ${PORT}`);
     });
     startProactiveAssistant();
   })
-  .catch((error) => { });
+  .catch((error) => {
+    console.error("❌ MongoDB connection failed:", error);
+  });

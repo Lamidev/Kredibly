@@ -25,7 +25,6 @@ const SettingsPage = () => {
         enableReminders: profile?.assistantSettings?.enableReminders ?? true,
         bankName: profile?.bankDetails?.bankName || "",
         accountNumber: profile?.bankDetails?.accountNumber || "",
-        accountNumber: profile?.bankDetails?.accountNumber || "",
         accountName: profile?.bankDetails?.accountName || "",
         logoUrl: profile?.logoUrl || ""
     });

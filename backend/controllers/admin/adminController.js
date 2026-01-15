@@ -20,10 +20,10 @@ exports.getGlobalStats = async (req, res) => {
             totalOutstanding += Math.max(0, (s.totalAmount || 0) - paid);
         });
 
-        // Get latest 20 activities across the entire platform
+        // Get latest 50 activities across the entire platform
         const globalActivities = await ActivityLog.find({})
             .sort({ createdAt: -1 })
-            .limit(20);
+            .limit(50);
 
         res.status(200).json({
             success: true,

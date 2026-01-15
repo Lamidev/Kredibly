@@ -5,6 +5,7 @@ const WhatsAppSession = require("../../models/WhatsAppSession");
 const SupportTicket = require("../../models/SupportTicket");
 const axios = require("axios");
 const { logActivity } = require("../../utils/activityLogger");
+const { processMessageWithAI } = require("../../utils/aiService");
 
 // Duplicate Shield: Store message IDs to prevent double-processing (cleared every 10 mins)
 const processedMessages = new Set();
@@ -114,6 +115,29 @@ const extractDate = (text) => {
     return null;
 };
 
+const sendReadReceipt = async (messageId) => {
+    try {
+        const phoneId = process.env.WHATSAPP_PHONE_ID || process.env.PHONE_ID;
+        const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN || process.env.ACCESS_TOKEN;
+
+        if (!accessToken || !phoneId || !messageId) return;
+
+        await axios.post(
+            `https://graph.facebook.com/v21.0/${phoneId}/messages`,
+            {
+                messaging_product: "whatsapp",
+                status: "read",
+                message_id: messageId,
+            },
+            {
+                headers: { Authorization: `Bearer ${accessToken}` },
+            }
+        );
+    } catch (error) {
+        // Silent error for read receipts
+    }
+};
+
 const sendReply = async (to, text) => {
     try {
         const phoneId = process.env.WHATSAPP_PHONE_ID || process.env.PHONE_ID;
@@ -143,6 +167,35 @@ const sendReply = async (to, text) => {
     }
 };
 
+const sendTypingIndicator = async (to) => {
+    try {
+        const phoneId = process.env.WHATSAPP_PHONE_ID || process.env.PHONE_ID;
+        const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN || process.env.ACCESS_TOKEN;
+
+        if (!accessToken || !phoneId) return;
+
+        let cleanTo = String(to).replace(/[\s+]/g, '');
+        if (cleanTo.startsWith('0') && cleanTo.length === 11) {
+            cleanTo = '234' + cleanTo.slice(1);
+        }
+
+        await axios.post(
+            `https://graph.facebook.com/v21.0/${phoneId}/messages`,
+            {
+                messaging_product: "whatsapp",
+                recipient_type: "individual",
+                to: cleanTo,
+                sender_action: "typing_on",
+            },
+            {
+                headers: { Authorization: `Bearer ${accessToken}` },
+            }
+        );
+    } catch (error) {
+        // Silent error
+    }
+};
+
 exports.sendWhatsAppMessage = sendReply;
 
 exports.verifyWebhook = (req, res) => {
@@ -163,24 +216,40 @@ exports.handleIncoming = async (req, res) => {
     res.sendStatus(200);
 
     try {
-        console.log("Incoming WhatsApp Payload:", JSON.stringify(req.body, null, 2));
         const entry = req.body.entry?.[0];
         const changes = entry?.changes?.[0];
         const value = changes?.value;
         const message = value?.messages?.[0];
 
-        if (!message) return;
+        if (!message) {
+            // Log status updates briefly if needed, or ignore
+            // const status = value?.statuses?.[0];
+            // if (status) console.log(`👉 Status Update: ${status.status} for ${status.recipient_id}`);
+            return;
+        }
 
         const messageId = message.id;
         const from = message.from;
         const msgType = message.type;
         const text = message.text?.body?.trim() || "";
+        
+        console.log(`📩 Message from ${from}: "${text}"`);
+
+        // Send Read Receipt (The "Blue Ticks")
+        await sendReadReceipt(messageId);
+        // Note: Typing indicator is not supported by WhatsApp Cloud API (v15+)
+        // await sendTypingIndicator(from);
 
         if (processedMessages.has(messageId)) return;
         processedMessages.add(messageId);
 
         const cleanFrom = cleanPhone(from);
         const profile = await BusinessProfile.findOne({ whatsappNumber: cleanFrom });
+
+        if (profile && !profile.isKreddyConnected) {
+            profile.isKreddyConnected = true;
+            await profile.save();
+        }
 
         await logActivity({
             businessId: profile?._id || "SYSTEM",
@@ -244,44 +313,9 @@ exports.handleIncoming = async (req, res) => {
             }
 
             // CONVERSATIONAL FLOW: Collecting missing info
-            if (session.type === 'collect_sale_info') {
-                const data = session.data;
-                if (!data.totalAmount) {
-                    const numMatch = text.replace(/,/g, '').replace(/(\d+)k\b/gi, (m, p) => parseInt(p) * 1000).match(/\d+/);
-                    if (numMatch) {
-                        data.totalAmount = parseFloat(numMatch[0]);
-                        data.paidAmount = data.paidAmount || data.totalAmount; // Default paid to total if just amount given
-                    } else {
-                        return await sendReply(from, "I need an amount, Chief! 😅 How much did they pay or how much is the total?");
-                    }
-                } else if (!data.customerName || data.customerName === "Someone") {
-                    data.customerName = text.trim();
-                }
+            // CONVERSATIONAL FLOW: Collecting missing info
+            // (Legacy 'collect_sale_info' block removed to allow AI to handle conversation)
 
-                // If we have enough now, save it!
-                if (data.totalAmount && data.customerName && data.customerName !== "Someone") {
-                    await WhatsAppSession.deleteOne({ _id: session._id });
-                    const newSale = new Sale({
-                        businessId: profile._id,
-                        customerName: data.customerName,
-                        description: data.description || "WhatsApp Sale",
-                        totalAmount: data.totalAmount,
-                        payments: [{ amount: data.paidAmount || data.totalAmount, method: "WhatsApp" }]
-                    });
-                    await newSale.save();
-                    const bal = newSale.totalAmount - (data.paidAmount || data.totalAmount);
-                    let reply = `✅ *Got it! Record Saved.* \n\n${getRandom(HUMANIZE.success)} \nI've logged *₦${data.totalAmount.toLocaleString()}* for ${data.customerName}.`;
-                    if (bal > 0) reply += `\n⏳ They still owe you *₦${bal.toLocaleString()}*.`;
-                    reply += `\n\n🔗 *Invoice Link:* ${FRONTEND_URL}/i/${newSale.invoiceNumber}`;
-                    return await sendReply(from, reply);
-                } else {
-                    // Still missing something?
-                    await session.save();
-                    if (!data.customerName || data.customerName === "Someone") {
-                        return await sendReply(from, "And who is the customer buying from you? 👤");
-                    }
-                }
-            }
         }
 
         // ROUTER
@@ -393,127 +427,213 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
                 await sale.save();
                 return await sendReply(from, `🛡️ *Record Verified!* \n\nInvoice *${ref}* has been officially confirmed. This boost your Trust Score! 🚀`);
             }
-        } else if (lowerText.includes("complain") || lowerText.includes("issue") || lowerText.includes("report") || lowerText.includes("problem") || lowerText.includes("help") || lowerText.includes("assist")) {
-            // 1. Check if we have a pre-answered question first
-            const matchedFAQ = KREDDY_FAQS.find(faq =>
-                faq.keywords.some(k => lowerText.includes(k))
-            );
-
-            if (matchedFAQ) {
-                return await sendReply(from, `💡 *I might have the answer to that!* \n\n${matchedFAQ.answer} \n\n_If you still need help, tell me exactly what the "problem" is and I'll notify the team!_`);
-            }
-
-            // 2. Handle Direct Complaints via Kreddy (Create Dashboard Ticket)
-            const newTicket = new SupportTicket({
-                userId: profile.ownerId,
-                businessId: profile._id,
-                message: text,
-                status: "open"
-            });
-            await newTicket.save();
-
-            // Create notification for Admin/System
-            await Notification.create({
-                businessId: profile._id,
-                title: "Support Ticket Logged 🛡️",
-                message: `You started a conversation with support via WhatsApp. Ticket #${newTicket._id.toString().slice(-6)} is now open.`,
-                type: "system"
-            });
-
-            await logActivity({
-                businessId: profile._id,
-                action: "SUPPORT_TICKET_CREATED",
-                details: `Complaint received via WhatsApp: "${text.substring(0, 30)}..."`,
-                entityType: "WHATSAPP"
-            });
-
-            await sendReply(from, "🛡️ *Security Protocol Triggered*\n\nI couldn't find a quick answer, so I've logged your concern as an *Official Ticket* (#" + newTicket._id.toString().slice(-6) + "). \n\nIt's already visible in your **Dashboard Support Hub**, and the founder has been notified. We'll get back to you here ASAP! 🚀");
         } else {
-            // Natural Language Processing (Kreddy's Brain)
-            let cleanText = text.replace(/,/g, '').replace(/(\d+)k\b/gi, (m, p) => parseInt(p) * 1000);
-            let totalAmount = 0, paidAmount = 0, customerName = "Customer", description = text;
+            // PERSISTENT SESSION HANDLING (Fetch before AI)
+            const session = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
 
-            // Common transaction words to ignore when looking for names
-            const stopWords = ['sold', 'bought', 'paid', 'received', 'for', 'to', 'from', 'and', 'the', 'a', 'an', 'in', 'at', 'with'];
+            // Fetch some context about debtors to help the AI be "Brainy"
+            const unpaidSales = await Sale.find({ businessId: profile._id, status: { $ne: "paid" } }).limit(10);
+            const debtorContext = unpaidSales.map(s => {
+                const bal = s.totalAmount - s.payments.reduce((sum, p) => sum + p.amount, 0);
+                return `${s.customerName}: ₦${bal.toLocaleString()} (Invoice #${s.invoiceNumber})`;
+            }).join(", ");
 
-            // 1. Extract Amounts
-            const nums = cleanText.match(/\d+/g);
-            if (nums && nums.length >= 1) {
-                // Look for amount specifically after "for" or "at"
-                const priceMatch = cleanText.match(/(?:for|at|recorded|costing)\s*(\d+)/i) || cleanText.match(/(\d+)\s*(?:naira|ngn|n)/i);
-                totalAmount = priceMatch ? parseFloat(priceMatch[priceMatch.length - 1]) : parseFloat(nums[0]);
+            // 🧠 GEMINI AI ("The Brain")
+            const aiResponse = await processMessageWithAI(text, { 
+                merchantName: profile.displayName,
+                entityType: profile.entityType,
+                debtors: debtorContext || "No active debtors yet.",
+                currentSession: session || null
+            });
 
-                // If there's a second number, it's likely the paid amount (e.g., "paid 5k")
-                const paidMatch = cleanText.match(/(?:paid|received|downpayment|giving)\s*(\d+)/i);
-                paidAmount = paidMatch ? parseFloat(paidMatch[1]) : (nums.length >= 2 ? parseFloat(nums[1]) : totalAmount);
-            }
+            if (aiResponse && (aiResponse.intent === "create_sale" || aiResponse.intent === "update_record") && aiResponse.data.customerName && aiResponse.data.customerName.toLowerCase() !== "customer") {
+                const searchName = aiResponse.data.customerName;
+                const matches = await Sale.find({ 
+                    businessId: profile._id, 
+                    customerName: { $regex: new RegExp(searchName, "i") },
+                    status: { $ne: "paid" }
+                });
 
-            // 2. Extract Name (Look after "to", "from", or "for")
-            const namePattern = /(?:to|from|for|by)\s+([a-z]+(?:\s+[a-z]+)*)/i;
-            const nameMatch = text.match(namePattern);
-            if (nameMatch) {
-                const potentialName = nameMatch[1].trim();
-                const words = potentialName.split(/\s+/);
-                // Filter out stop words and keep the first 2 words as the name
-                const filtered = words.filter(w => !stopWords.includes(w.toLowerCase()));
-                if (filtered.length > 0) {
-                    customerName = filtered.slice(0, 2).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+                // DISAMBIGUATION: If multiple records exist for this name, ask which one!
+                if (matches.length > 1) {
+                    const options = matches.map(m => ({ 
+                        id: m._id, 
+                        name: m.customerName, 
+                        amount: m.totalAmount - m.payments.reduce((s, p) => s + p.amount, 0) 
+                    }));
+
+                    await WhatsAppSession.findOneAndUpdate(
+                        { whatsappNumber: cleanFrom },
+                        {
+                            type: aiResponse.data.dueDate ? 'due_date_disambiguation' : 'payment_disambiguation',
+                            data: { options, date: aiResponse.data.dueDate, amount: aiResponse.data.paidAmount },
+                            expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+                        },
+                        { upsert: true }
+                    );
+
+                    let disambigMsg = `🤔 I found *${matches.length}* people named *${searchName}* with unpaid debts. Which one are you talking about?\n\n`;
+                    options.forEach((opt, i) => {
+                        disambigMsg += `${i + 1}. *${opt.name}* (Owes ₦${opt.amount.toLocaleString()})\n`;
+                    });
+                    disambigMsg += `\n_Type the number (1-${options.length}) to pick one!_`;
+                    return await sendReply(from, disambigMsg);
                 }
             }
 
-            if (totalAmount) {
-                const dueDate = extractDate(lowerText);
+            if (aiResponse && aiResponse.intent === "create_sale" && aiResponse.data.totalAmount) {
+                const { customerName, totalAmount, paidAmount, item, dueDate } = aiResponse.data;
+                
                 const newSale = new Sale({
                     businessId: profile._id,
-                    customerName,
-                    description,
-                    totalAmount,
-                    payments: [{ amount: paidAmount, method: "WhatsApp" }],
-                    dueDate
+                    customerName: customerName || (session?.data?.customerName) || "Customer",
+                    description: item || (session?.data?.description) || text,
+                    totalAmount: totalAmount,
+                    payments: [{ amount: paidAmount || 0, method: "WhatsApp" }],
+                    dueDate: dueDate && !isNaN(new Date(dueDate).getTime()) ? new Date(dueDate) : undefined
                 });
+
                 await newSale.save();
+
+                // Persist this customer in session for a few minutes so "She/He" works in next message
+                await WhatsAppSession.findOneAndUpdate(
+                    { whatsappNumber: cleanFrom },
+                    {
+                        type: 'active_context',
+                        data: {
+                            customerName: newSale.customerName,
+                            lastSaleId: newSale._id,
+                            description: newSale.description
+                        },
+                        expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 mins context
+                    },
+                    { upsert: true }
+                );
 
                 await logActivity({
                     businessId: profile._id,
                     action: "WHATSAPP_SALE_CREATED",
                     entityType: "SALE",
                     entityId: newSale._id,
-                    details: `Recorded sale of ₦${totalAmount.toLocaleString()} to ${customerName} via WhatsApp`
+                    details: `Recorded sale of ₦${totalAmount.toLocaleString()} to ${newSale.customerName} via WhatsApp (AI)`
                 });
 
-                const bal = totalAmount - paidAmount;
+                // Create Dashboard Notification
+                await Notification.create({
+                    businessId: profile._id,
+                    title: "New Sale via WhatsApp 🚀",
+                    message: `₦${totalAmount.toLocaleString()} recorded for ${newSale.customerName}.`,
+                    type: "sale",
+                    saleId: newSale._id
+                });
+
+                const bal = totalAmount - (paidAmount || 0);
                 const link = `${FRONTEND_URL}/i/${newSale.invoiceNumber}`;
 
-                // Kreddy Personality: Congratulate on big sales!
-                const celebration = totalAmount >= 50000 ? "🔥 *Woah, that's a big one! Congrats!* 🥂\n\n" : "Great job on the sale! 🚀\n\n";
-
-                let reply = `✅ *Got it! Record Saved.* (#${newSale.invoiceNumber})\n\n${celebration}I've logged *₦${totalAmount.toLocaleString()}* for ${customerName}.\n`;
+                const celebration = totalAmount >= 50000 ? getRandom(HUMANIZE.celebration) + "\n\n" : "Great job! 🚀\n\n";
+                let reply = `✅ *Record Saved!* (#${newSale.invoiceNumber})\n\n${celebration}I've logged *₦${totalAmount.toLocaleString()}* for ${customerName}.\n`;
+                
                 if (bal > 0) {
                     reply += `⏳ They still owe you *₦${bal.toLocaleString()}*`;
-                    if (dueDate) reply += ` which I'll remind you about on *${dueDate.toLocaleDateString()}*.`;
+                    if (newSale.dueDate) reply += ` which is due on *${newSale.dueDate.toLocaleDateString()}*.`;
                     else reply += `.`;
+                } else {
+                    reply += `✅ *Fully Paid!*`;
                 }
-                reply += `\n\n🔗 *Invoice Link:* ${link}`;
 
+                reply += `\n\n🔗 *Invoice Link:* ${link}`;
                 await sendReply(from, reply);
-            } else {
-                // FALLBACK: Start a conversation if we didn't get enough info
-                const potentialName = text.split(" ").slice(-2).join(" ");
-                await WhatsAppSession.create({
-                    whatsappNumber: cleanFrom,
-                    type: 'collect_sale_info',
-                    data: {
-                        description: text,
-                        customerName: "Someone"
-                    },
-                    expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+
+            } else if (aiResponse && aiResponse.intent === "check_debt") {
+                 const msg = aiResponse.data.reply || "To see your debtors, just type 'D' or 'Debtors'! 📉";
+                 await sendReply(from, msg);
+                 
+            } else if (aiResponse && aiResponse.intent === "update_record") {
+                 // Check if we have an active context to update the LAST sale
+                 if (session?.data?.lastSaleId && (aiResponse.data.paidAmount !== undefined || aiResponse.data.dueDate)) {
+                     const sale = await Sale.findById(session.data.lastSaleId);
+                     if (sale) {
+                         if (aiResponse.data.paidAmount !== undefined) {
+                             // Replace the initial payment or add to it? 
+                             // Usually "She paid 20k" means the payment was actually 20k, not 50k.
+                             sale.payments = [{ amount: aiResponse.data.paidAmount, method: "WhatsApp Update" }];
+                         }
+                         if (aiResponse.data.dueDate) sale.dueDate = new Date(aiResponse.data.dueDate);
+                         await sale.save();
+
+                         // Notification for update
+                         await Notification.create({
+                             businessId: profile._id,
+                             title: "Sale Updated 📝",
+                             message: `${sale.customerName}'s record was updated via WhatsApp.`,
+                             type: "sale",
+                             saleId: sale._id
+                         });
+
+                         const bal = sale.totalAmount - (aiResponse.data.paidAmount || 0);
+                         let reply = `✅ *Updated ${sale.customerName}'s record!* \n\nI've changed the payment to *₦${aiResponse.data.paidAmount.toLocaleString()}*. \n⏳ Balance is now *₦${bal.toLocaleString()}*.`;
+                         return await sendReply(from, reply);
+                     }
+                 }
+
+                 const msg = aiResponse.data.reply || "I've noted the update, Chief! I'll adjust the records on your dashboard. 🫡";
+                 await sendReply(from, msg);
+                 
+            } else if (aiResponse && (aiResponse.intent === "support" || (aiResponse.intent === "general_chat" && (text.toLowerCase().includes("problem") || text.toLowerCase().includes("issue"))))) {
+                // Check if we have a pre-answered question first
+                const matchedFAQ = KREDDY_FAQS.find(faq =>
+                    faq.keywords.some(k => text.toLowerCase().includes(k))
+                );
+
+                if (matchedFAQ) {
+                    return await sendReply(from, `💡 *I might have the answer to that!* \n\n${matchedFAQ.answer} \n\n_If you still need help, tell me exactly what the concern is and I'll notify the team!_`);
+                }
+
+                // Trigger ticket logic
+                const newTicket = new SupportTicket({
+                    userId: profile.ownerId,
+                    businessId: profile._id,
+                    message: text,
+                    status: "open"
+                });
+                await newTicket.save();
+                
+                await Notification.create({
+                    businessId: profile._id,
+                    title: "Support Ticket Logged 🛡️",
+                    message: `Concern received: Ticket #${newTicket._id.toString().slice(-6)} is now open.`,
+                    type: "system"
                 });
 
-                await sendReply(from, `I hear you, Chief! I'm trying to record that sale for you. 🚀\n\n*Quick questions:*\n1. Who did you sell to? 👤\n2. How much was the total amount? 💰\n\n_(You can just reply with the name or amount now!)_`);
+                await sendReply(from, "🛡️ *Support Ticket Opened*\n\nI couldn't find a quick answer for that, so I've logged it as Ticket #" + newTicket._id.toString().slice(-6) + ". The team will look into it! 🚀");
+
+            } else if (aiResponse && aiResponse.intent === "general_chat") {
+                await sendReply(from, aiResponse.data.reply || "I'm here, Chief! What's happening? 🚀");
+            } else {
+                // FALLBACK: AI didn't understand enough to create a sale or intent was ambiguous
+                
+                // Store session to capture potential missing info
+                await WhatsAppSession.findOneAndUpdate(
+                    { whatsappNumber: cleanFrom },
+                    {
+                        type: 'collect_sale_info',
+                        data: {
+                            description: aiResponse?.data?.item || text,
+                            customerName: aiResponse?.data?.customerName || "Customer",
+                            totalAmount: aiResponse?.data?.totalAmount || null
+                        },
+                        expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+                    },
+                    { upsert: true, new: true }
+                );
+
+                const fallbackMsg = aiResponse?.data?.reply || "I didn't quite catch the specifics of that. Try telling me like: _'Sold a watch to Kola for 10k'_ 💰";
+                await sendReply(from, fallbackMsg);
             }
         }
     } catch (err) {
         console.error("WhatsApp Assistant Error:", err);
-        await sendReply(from, "Ouch! Something went wrong on my end. 😵‍💫 Give me a moment to recover and try again, or check your dashboard for the record.");
+        await sendReply(from, "Ouch! My brain had a small glitch. 😵‍C Give me a moment to recover and try again! 🛡️");
     }
 };
+

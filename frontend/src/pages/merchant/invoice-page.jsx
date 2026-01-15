@@ -25,7 +25,8 @@ import {
     Info,
     Wallet,
     Calendar,
-    User
+    User,
+    Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
@@ -37,7 +38,7 @@ const InvoicePage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { profile } = useAuth();
-    const { updateSale, addPayment } = useSales();
+    const { updateSale, addPayment, deleteSale } = useSales();
 
     const [sale, setSale] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -138,6 +139,23 @@ const InvoicePage = () => {
             toast.error("Failed to record payment");
         } finally {
             setProcessing(false);
+        }
+    };
+
+    const [deleteModal, setDeleteModal] = useState({ show: false, sale: null });
+
+    const handleDeleteInvoice = async () => {
+        setDeleteModal({ show: true, sale });
+    };
+
+    const confirmDelete = async () => {
+        try {
+            await deleteSale(sale._id);
+            toast.success("Invoice deleted");
+            setDeleteModal({ show: false, sale: null });
+            navigate("/sales");
+        } catch (err) {
+            toast.error("Failed to delete invoice");
         }
     };
 
@@ -368,6 +386,15 @@ const InvoicePage = () => {
                             >
                                 <Edit2 size={14} /> Correct Details
                             </button>
+
+                            <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #F1F5F9' }}>
+                                <button
+                                    onClick={handleDeleteInvoice}
+                                    style={{ width: '100%', padding: '12px', background: '#FEF2F2', border: 'none', color: '#EF4444', fontSize: '0.85rem', fontWeight: 700, borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                >
+                                    <Trash2 size={14} /> Delete Record
+                                </button>
+                            </div>
                         </div>
                     )}
 
@@ -486,6 +513,22 @@ const InvoicePage = () => {
                     </div>
                 )}
             </AnimatePresence>
+
+            {deleteModal.show && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+                    <div className="glass-card animate-fade-in" style={{ padding: '32px', maxWidth: '400px', width: '90%', background: 'white', borderRadius: '32px', textAlign: 'center' }}>
+                        <div style={{ background: '#FEE2E2', color: '#EF4444', width: '60px', height: '60px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                            <Trash2 size={28} />
+                        </div>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '8px' }}>Delete Record?</h3>
+                        <p style={{ color: '#64748B', marginBottom: '24px' }}>This will permanently remove the record for {deleteModal.sale?.customerName}.</p>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setDeleteModal({ show: false, sale: null })}>Cancel</button>
+                            <button className="btn-primary" style={{ flex: 1, background: '#EF4444' }} onClick={confirmDelete}>Delete</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style>{`
                 .invoice-grid-responsive {

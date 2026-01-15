@@ -17,6 +17,8 @@ const Dashboard = () => {
     const [deleteModal, setDeleteModal] = useState({ show: false, sale: null });
     const [activities, setActivities] = useState([]);
     const [loadingActivities, setLoadingActivities] = useState(false);
+    const [visibleSales, setVisibleSales] = useState(5);
+    const [visibleActivities, setVisibleActivities] = useState(5);
 
     useEffect(() => {
         fetchSales();
@@ -99,13 +101,7 @@ const Dashboard = () => {
                     <p style={{ color: '#64748B', fontWeight: 500 }}>Real-time performance tracking.</p>
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
-                    <button
-                        onClick={handleRefresh}
-                        className={`btn-secondary ${isRefreshing ? 'spin-animation' : ''}`}
-                        style={{ padding: '10px 16px' }}
-                    >
-                        <RefreshCcw size={18} /> Refresh
-                    </button>
+                    {/* Redundant refresh removed since it's now in the top header */}
                 </div>
             </div>
 
@@ -150,7 +146,7 @@ const Dashboard = () => {
 
             <div className="desktop-grid">
                 <div>
-                    {(!profile?.whatsappNumber) && (
+                    {(!profile?.whatsappNumber && !stats?.isKreddyConnected) && (
                         <div className="glass-card animate-fade-in" style={{ padding: '24px', background: 'linear-gradient(135deg, var(--primary), #6366F1)', color: 'white', borderRadius: '24px', marginBottom: '32px', boxShadow: '0 15px 30px rgba(79, 70, 229, 0.2)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
                                 <div style={{ background: 'rgba(255,255,255,0.2)', padding: '10px', borderRadius: '12px' }}>
@@ -158,7 +154,7 @@ const Dashboard = () => {
                                 </div>
                                 <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>Step 1: Link your WhatsApp</h3>
                             </div>
-                            <p style={{ fontSize: '0.9rem', marginBottom: '20px', opacity: 0.9 }}>Enter your number below to let Kreddy know who you are. Then follow Step 2.</p>
+                            <p style={{ fontSize: '0.9rem', marginBottom: '20px', opacity: 0.9 }}>Enter your number below to link your WhatsApp and start using Kreddy AI Assistant.</p>
                             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                                 <input
                                     type="tel"
@@ -179,37 +175,23 @@ const Dashboard = () => {
                         </div>
                     )}
 
-                    {profile?.whatsappNumber && (
-                        <div className="glass-card animate-fade-in" style={{ padding: '24px', background: 'white', border: '2px solid #25D366', borderRadius: '24px', marginBottom: '32px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
-                                <div style={{ background: '#DCFCE7', color: '#25D366', padding: '10px', borderRadius: '12px' }}>
-                                    <MessageCircle size={24} />
-                                </div>
-                                <div>
-                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: '#1E293B' }}>Step 2: Start Conversation</h3>
-                                    <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '4px 0 0' }}>Number linked: <b>{profile.whatsappNumber}</b></p>
-                                </div>
-                            </div>
-                            <p style={{ fontSize: '0.9rem', color: '#4B5563', marginBottom: '20px', lineHeight: 1.5 }}>
-                                To activate Kreddy, click the button below and send the word <b>"CONNECT"</b> to her on WhatsApp.
-                            </p>
-                            <a
-                                href={`https://wa.me/2347056501913?text=CONNECT`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="btn-primary"
-                                style={{ background: '#25D366', width: '100%', textDecoration: 'none' }}
-                            >
-                                <MessageCircle size={18} /> Open WhatsApp & Send "CONNECT"
-                            </a>
-                        </div>
-                    )}
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '16px', flexWrap: 'wrap' }}>
                         <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111827', margin: 0 }}>Recent Activity</h3>
-                        <Link to="/sales" style={{ textDecoration: 'none', color: 'var(--primary)', fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center' }}>
-                            View Invoices <ChevronRight size={20} />
-                        </Link>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <select 
+                                value={visibleSales} 
+                                onChange={(e) => setVisibleSales(Number(e.target.value))}
+                                style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '0.85rem', fontWeight: 700, background: 'white' }}
+                            >
+                                <option value={5}>Show 5</option>
+                                <option value={10}>Show 10</option>
+                                <option value={20}>Show 20</option>
+                            </select>
+                            <Link to="/sales" style={{ textDecoration: 'none', color: 'var(--primary)', fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center' }}>
+                                Full List <ChevronRight size={20} />
+                            </Link>
+                        </div>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -218,33 +200,55 @@ const Dashboard = () => {
                                 <h4 style={{ color: '#64748B', fontWeight: 600 }}>No sales recorded yet.</h4>
                             </div>
                         ) : (
-                            [...sales].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)).slice(0, 5).map(sale => (
-                                <div
-                                    key={sale._id}
-                                    className="glass-card record-card"
-                                    style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderRadius: '20px', background: 'white', border: '1px solid #F1F5F9', gap: '12px' }}
-                                    onClick={() => navigate(`/dashboard/invoice/${sale.invoiceNumber}`)}
-                                >
-                                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                        <div style={{
-                                            background: sale.status === 'paid' ? '#F0F9FF' : '#FFF7ED',
-                                            padding: '12px',
-                                            borderRadius: '16px',
-                                            color: sale.status === 'paid' ? '#0EA5E9' : '#F97316',
-                                        }}>
-                                            {sale.status === 'paid' ? <CheckCircle size={24} /> : <Clock size={24} />}
+                            <>
+                                {[...sales]
+                                    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+                                    .slice(0, visibleSales)
+                                    .map(sale => (
+                                    <div
+                                        key={sale._id}
+                                        className="glass-card record-card"
+                                        style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderRadius: '20px', background: 'white', border: '1px solid #F1F5F9', gap: '12px' }}
+                                        onClick={() => navigate(`/dashboard/invoice/${sale.invoiceNumber}`)}
+                                    >
+                                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                            <div style={{
+                                                background: sale.status === 'paid' ? '#F0F9FF' : '#FFF7ED',
+                                                padding: '12px',
+                                                borderRadius: '16px',
+                                                color: sale.status === 'paid' ? '#0EA5E9' : '#F97316',
+                                            }}>
+                                                {sale.status === 'paid' ? <CheckCircle size={24} /> : <Clock size={24} />}
+                                            </div>
+                                            <div>
+                                                <p style={{ fontWeight: 800, color: '#1E293B', margin: '0 0 4px' }}>{sale.customerName || 'Walk-in'}</p>
+                                                <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0 }}>#{sale.invoiceNumber} • {new Date(sale.createdAt).toLocaleDateString()}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p style={{ fontWeight: 800, color: '#1E293B', margin: '0 0 4px' }}>{sale.customerName || 'Walk-in'}</p>
-                                            <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0 }}>#{sale.invoiceNumber} • {new Date(sale.createdAt).toLocaleDateString()}</p>
+                                        <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <p style={{ fontWeight: 800, fontSize: '1.1rem', color: '#1E293B', margin: '0 0 4px' }}>₦{sale.totalAmount.toLocaleString()}</p>
+                                                <p style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: sale.status === 'paid' ? '#10B981' : '#F97316' }}>{sale.status}</p>
+                                            </div>
+                                            <button 
+                                                onClick={(e) => handleDelete(e, sale)}
+                                                style={{ background: '#FEF2F2', color: '#EF4444', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}
+                                                className="delete-hover"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
                                         </div>
                                     </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <p style={{ fontWeight: 800, fontSize: '1.1rem', color: '#1E293B', margin: '0 0 4px' }}>₦{sale.totalAmount.toLocaleString()}</p>
-                                        <p style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: sale.status === 'paid' ? '#10B981' : '#F97316' }}>{sale.status}</p>
-                                    </div>
-                                </div>
-                            ))
+                                ))}
+                                {sales.length > visibleSales && (
+                                    <button 
+                                        onClick={() => setVisibleSales(prev => prev + 10)}
+                                        style={{ background: '#F1F5F9', border: 'none', padding: '12px', borderRadius: '12px', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer', marginTop: '8px', width: '100%' }}
+                                    >
+                                        Load more records
+                                    </button>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
@@ -270,7 +274,7 @@ const Dashboard = () => {
                         </div>
                         <p style={{ fontSize: '0.85rem', color: '#64748B', marginTop: '12px', lineHeight: 1.5 }}>Kreddy is tracking {sales.filter(s => s.status !== 'paid').length} outstanding records for you.</p>
                         <a
-                            href="https://wa.me/2347056501913"
+                            href={`https://wa.me/15556525630?text=CONNECT`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#25D366', fontWeight: 700, fontSize: '0.85rem', marginTop: '16px', textDecoration: 'none' }}
@@ -280,9 +284,20 @@ const Dashboard = () => {
                     </div>
 
                     <div className="glass-card" style={{ padding: '24px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '24px', marginTop: '24px' }}>
-                        <h4 style={{ fontWeight: 800, color: '#1E293B', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <LayoutDashboard size={18} color="var(--primary)" /> Ledger Activity
-                        </h4>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h4 style={{ fontWeight: 800, color: '#1E293B', display: 'flex', alignItems: 'center', gap: '10px', margin: 0 }}>
+                                <LayoutDashboard size={18} color="var(--primary)" /> Ledger Activity
+                            </h4>
+                            <select 
+                                value={visibleActivities} 
+                                onChange={(e) => setVisibleActivities(Number(e.target.value))}
+                                style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #F1F5F9', fontSize: '0.7rem', fontWeight: 700, background: '#F8FAFC' }}
+                            >
+                                <option value={5}>5</option>
+                                <option value={10}>10</option>
+                                <option value={20}>20</option>
+                            </select>
+                        </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {loadingActivities ? (
@@ -290,7 +305,7 @@ const Dashboard = () => {
                             ) : activities.length === 0 ? (
                                 <p style={{ fontSize: '0.85rem', color: '#94A3B8' }}>No recent activity.</p>
                             ) : (
-                                activities.map(log => (
+                                activities.slice(0, visibleActivities).map(log => (
                                     <div key={log._id} style={{ display: 'flex', gap: '12px', borderLeft: '2px solid #F1F5F9', paddingLeft: '16px', position: 'relative' }}>
                                         <div style={{ position: 'absolute', left: '-5px', top: '0', width: '8px', height: '8px', background: '#E2E8F0', borderRadius: '50%' }}></div>
                                         <div>
@@ -299,6 +314,14 @@ const Dashboard = () => {
                                         </div>
                                     </div>
                                 ))
+                            )}
+                            {activities.length > visibleActivities && (
+                                <button 
+                                    onClick={() => setVisibleActivities(prev => prev + 5)}
+                                    style={{ background: 'transparent', border: '1px solid #E2E8F0', padding: '8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700, color: '#64748B', cursor: 'pointer' }}
+                                >
+                                    See more logs
+                                </button>
                             )}
                         </div>
                     </div>

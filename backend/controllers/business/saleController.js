@@ -200,7 +200,8 @@ exports.getDashboardStats = async (req, res) => {
             revenue: 0,
             outstanding: 0,
             recentSales: sales.slice(0, 5),
-            trustScore: 60 // Default base
+            trustScore: 60,
+            isKreddyConnected: business.isKreddyConnected
         };
 
         let confirmedCount = 0;

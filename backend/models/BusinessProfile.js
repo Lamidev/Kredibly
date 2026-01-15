@@ -41,6 +41,10 @@ const BusinessProfileSchema = new mongoose.Schema({
         accountName: { type: String, default: "" }
     },
     address: String,
+    isKreddyConnected: {
+        type: Boolean,
+        default: false
+    },
     createdAt: {
         type: Date,
         default: Date.now

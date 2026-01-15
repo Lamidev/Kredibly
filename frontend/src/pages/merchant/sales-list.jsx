@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSales } from "../../context/SaleContext";
-import { Search, Filter, ChevronRight, CheckCircle, Clock, MoreHorizontal, Plus, Wallet, FileText } from "lucide-react";
+import { Search, Filter, ChevronRight, CheckCircle, Clock, MoreHorizontal, Plus, Wallet, FileText, Trash2, X } from "lucide-react";
 
 // Helper for formatted date
 const formatDate = (dateStr) => {
@@ -13,11 +13,23 @@ const formatDate = (dateStr) => {
 };
 
 const SalesList = ({ initialFilter }) => {
-    const { sales, fetchSales, loading } = useSales();
+    const { sales, fetchSales, loading, deleteSale } = useSales();
     const navigate = useNavigate();
     const location = useLocation();
     const [searchTerm, setSearchTerm] = useState("");
     const [filterStatus, setFilterStatus] = useState(initialFilter || "all");
+    const [deleteModal, setDeleteModal] = useState({ show: false, sale: null });
+
+    const confirmDelete = async () => {
+        try {
+            await deleteSale(deleteModal.sale._id);
+            toast.success("Record deleted successfully");
+            setDeleteModal({ show: false, sale: null });
+        } catch (err) {
+            toast.error("Failed to delete record");
+            setDeleteModal({ show: false, sale: null });
+        }
+    };
 
     // Sync filterStatus with URL changes and props
     useEffect(() => {
@@ -32,11 +44,6 @@ const SalesList = ({ initialFilter }) => {
 
     const filteredSales = useMemo(() => {
         return sales.filter(sale => {
-            const matchesSearch =
-                (sale.customerName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-                (sale.description?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-                sale._id.includes(searchTerm);
-
             let matchesStatus = true;
             if (filterStatus === "all") {
                 matchesStatus = true;
@@ -49,6 +56,15 @@ const SalesList = ({ initialFilter }) => {
             } else {
                 matchesStatus = sale.status === filterStatus;
             }
+
+            const search = searchTerm.toLowerCase().trim();
+            if (!search) return matchesStatus;
+
+            const matchesSearch =
+                (sale.customerName?.toLowerCase() || "").includes(search) ||
+                (sale.description?.toLowerCase() || "").includes(search) ||
+                (sale.invoiceNumber?.toLowerCase() || "").includes(search) ||
+                sale._id.includes(search);
 
             return matchesSearch && matchesStatus;
         });
@@ -88,11 +104,19 @@ const SalesList = ({ initialFilter }) => {
                         <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
                         <input
                             className="input-field"
-                            style={{ paddingLeft: '48px', background: '#F8FAFC' }}
-                            placeholder="Search records..."
+                            style={{ paddingLeft: '48px', paddingRight: '40px', background: '#F8FAFC' }}
+                            placeholder="Search Customer, Invoice #, or description..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
+                        {searchTerm && (
+                            <button 
+                                onClick={() => setSearchTerm('')}
+                                style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#94A3B8', display: 'flex', alignItems: 'center' }}
+                            >
+                                <X size={16} />
+                            </button>
+                        )}
                     </div>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         {['all', 'paid', 'outstanding', 'partial'].map(status => (
@@ -167,14 +191,45 @@ const SalesList = ({ initialFilter }) => {
                                         {sale.status}
                                     </span>
                                 </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    <p style={{ fontWeight: 800, fontSize: '1.05rem', color: '#1E293B' }}>₦{sale.totalAmount.toLocaleString()}</p>
+                                <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'flex-end' }}>
+                                    <div style={{ textAlign: 'right' }} className="hidden md:block">
+                                        <p style={{ fontWeight: 800, fontSize: '1.05rem', color: '#1E293B' }}>₦{sale.totalAmount.toLocaleString()}</p>
+                                    </div>
+                                    <div className="md:hidden" style={{ textAlign: 'right' }}>
+                                        <p style={{ fontWeight: 800, fontSize: '1rem', color: '#1E293B', margin: 0 }}>₦{sale.totalAmount.toLocaleString()}</p>
+                                        <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: sale.status === 'paid' ? '#10B981' : '#F97316' }}>{sale.status}</span>
+                                    </div>
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDeleteModal({ show: true, sale });
+                                        }}
+                                        style={{ background: '#FEF2F2', color: '#EF4444', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
                                 </div>
                             </div>
                         ))}
                     </>
                 )}
             </div>
+
+            {deleteModal.show && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+                    <div className="glass-card animate-fade-in" style={{ padding: '32px', maxWidth: '400px', width: '90%', background: 'white', borderRadius: '32px', textAlign: 'center' }}>
+                        <div style={{ background: '#FEE2E2', color: '#EF4444', width: '60px', height: '60px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                            <Trash2 size={28} />
+                        </div>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '8px' }}>Delete Record?</h3>
+                        <p style={{ color: '#64748B', marginBottom: '24px' }}>This will permanently remove the record for {deleteModal.sale?.customerName}.</p>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setDeleteModal({ show: false, sale: null })}>Cancel</button>
+                            <button className="btn-primary" style={{ flex: 1, background: '#EF4444' }} onClick={confirmDelete}>Delete</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style>{`
                 .record-row:hover {

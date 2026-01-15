@@ -9,7 +9,8 @@ import {
     Building2,
     Calendar,
     ChevronRight,
-    Search
+    Search,
+    X
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -20,6 +21,8 @@ const AdminDashboard = () => {
     const [tickets, setTickets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [visibleActivities, setVisibleActivities] = useState(10);
 
     useEffect(() => {
         fetchAdminData();
@@ -29,8 +32,6 @@ const AdminDashboard = () => {
         setLoading(true);
         try {
             const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
-            // Fetch stats and users in parallel
-            // Fetch stats, users, and tickets in parallel
             const [statsRes, usersRes, ticketsRes] = await Promise.all([
                 axios.get(`${API_URL}/admin/stats`, { withCredentials: true }),
                 axios.get(`${API_URL}/admin/users`, { withCredentials: true }),
@@ -54,14 +55,35 @@ const AdminDashboard = () => {
         }
     };
 
-    if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading God View...</div>;
+    const statsLoading = stats === null;
 
     const statCards = [
-        { label: 'Total Hustlers', value: stats?.totalBusinesses, icon: Users, color: '#3B82F6', bg: '#EFF6FF' },
+        { label: 'Total Registrations', value: stats?.totalUsers || 0, icon: Users, color: '#3B82F6', bg: '#EFF6FF' },
         { label: 'Platform Revenue', value: `₦${stats?.totalRevenue?.toLocaleString()}`, icon: TrendingUp, color: '#10B981', bg: '#ECFDF5' },
         { label: 'Total Outstanding', value: `₦${stats?.totalOutstanding?.toLocaleString()}`, icon: CreditCard, color: '#F59E0B', bg: '#FFFBEB' },
         { label: 'Active Records', value: stats?.totalSalesCount, icon: Activity, color: '#8B5CF6', bg: '#F5F3FF' },
     ];
+
+    const filteredUsers = users.filter(u => {
+        const name = (u.name || "").toLowerCase();
+        const email = (u.email || "").toLowerCase();
+        const bizName = (u.business?.displayName || "").toLowerCase();
+        const search = searchTerm.toLowerCase().trim();
+        
+        if (!search) return true;
+        
+        return name.includes(search) || 
+               email.includes(search) || 
+               bizName.includes(search);
+    });
+
+    const LoadingSkeleton = () => (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '48px' }}>
+            {[1, 2, 3, 4].map(i => (
+                <div key={i} className="skeleton" style={{ height: '140px', borderRadius: '24px' }}></div>
+            ))}
+        </div>
+    );
 
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px' }}>
@@ -119,60 +141,74 @@ const AdminDashboard = () => {
 
             {activeTab === 'overview' ? (
                 <>
-                    {/* Platform Stats Grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '48px' }}>
-                        {statCards.map((stat, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.1 }}
-                                className="glass-card"
-                                style={{ padding: '24px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}
-                            >
-                                <div style={{ background: stat.bg, color: stat.color, width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-                                    <stat.icon size={20} />
-                                </div>
-                                <p style={{ color: '#64748B', fontWeight: 600, fontSize: '0.85rem', marginBottom: '4px' }}>{stat.label}</p>
-                                <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1E293B' }}>{stat.value}</h3>
-                            </motion.div>
-                        ))}
-                    </div>
+                    {loading ? <LoadingSkeleton /> : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '48px' }}>
+                            {statCards.map((stat, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className="glass-card"
+                                    style={{ padding: '24px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}
+                                >
+                                    <div style={{ background: stat.bg, color: stat.color, width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                                        <stat.icon size={20} />
+                                    </div>
+                                    <p style={{ color: '#64748B', fontWeight: 600, fontSize: '0.85rem', marginBottom: '4px' }}>{stat.label}</p>
+                                    <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1E293B' }}>{stat.value}</h3>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '32px' }}>
                         {/* Main Feed */}
                         <div>
                             <div className="glass-card" style={{ padding: '32px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '32px' }}>
-                                <h3 style={{ fontWeight: 800, color: '#1E293B', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <Activity size={20} color="var(--primary)" /> Global Platform Activity
-                                </h3>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                                    <h3 style={{ fontWeight: 800, color: '#1E293B', display: 'flex', alignItems: 'center', gap: '10px', margin: 0 }}>
+                                        <Activity size={20} color="var(--primary)" /> Platform Live Feed
+                                    </h3>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#3B82F6', background: '#EFF6FF', padding: '4px 10px', borderRadius: '20px' }}>REAL-TIME</span>
+                                </div>
 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                    {activities.length === 0 ? (
+                                    {loading ? [1,2,3,4,5].map(i => <div key={i} className="skeleton" style={{ height: '60px', borderRadius: '12px', marginBottom: '10px' }}></div>) : activities.length === 0 ? (
                                         <p style={{ color: '#94A3B8', textAlign: 'center', padding: '40px' }}>No logs yet.</p>
                                     ) : (
-                                        activities.map((log, i) => (
-                                            <div key={log._id} style={{
-                                                padding: '16px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '16px',
-                                                borderBottom: i === activities.length - 1 ? 'none' : '1px solid #F1F5F9',
-                                                transition: 'all 0.2s'
-                                            }}>
-                                                <div style={{
-                                                    width: '8px', height: '8px', borderRadius: '50%',
-                                                    background: log.action.includes('SALE') ? '#10B981' : log.action.includes('USER') ? '#3B82F6' : '#94A3B8'
-                                                }}></div>
-                                                <div style={{ flex: 1 }}>
-                                                    <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>{log.details}</p>
-                                                    <p style={{ fontSize: '0.75rem', color: '#94A3B8', margin: '4px 0 0 0' }}>{log.action.replace(/_/g, ' ')} • {new Date(log.createdAt).toLocaleString()}</p>
+                                        <>
+                                            {activities.slice(0, visibleActivities).map((log, i) => (
+                                                <div key={log._id} style={{
+                                                    padding: '16px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '16px',
+                                                    borderBottom: i === activities.slice(0, visibleActivities).length - 1 ? 'none' : '1px solid #F1F5F9',
+                                                    transition: 'all 0.2s'
+                                                }}>
+                                                    <div style={{
+                                                        width: '8px', height: '8px', borderRadius: '50%',
+                                                        background: log.action.includes('SALE') ? '#10B981' : log.action.includes('USER') ? '#3B82F6' : '#94A3B8'
+                                                    }}></div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>{log.details}</p>
+                                                        <p style={{ fontSize: '0.75rem', color: '#94A3B8', margin: '4px 0 0 0' }}>{log.action.replace(/_/g, ' ')} • {new Date(log.createdAt).toLocaleString()}</p>
+                                                    </div>
+                                                    <div style={{ fontSize: '0.7rem', fontWeight: 700, padding: '4px 8px', borderRadius: '4px', background: '#F8FAFC', color: '#64748B' }}>
+                                                        {log.entityType}
+                                                    </div>
                                                 </div>
-                                                <div style={{ fontSize: '0.7rem', fontWeight: 700, padding: '4px 8px', borderRadius: '4px', background: '#F8FAFC', color: '#64748B' }}>
-                                                    {log.entityType}
-                                                </div>
-                                            </div>
-                                        ))
+                                            ))}
+                                            {activities.length > visibleActivities && (
+                                                <button 
+                                                    onClick={() => setVisibleActivities(prev => prev + 10)}
+                                                    style={{ width: '100%', background: '#F8FAFC', border: 'none', padding: '12px', borderRadius: '12px', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer', marginTop: '12px' }}
+                                                >
+                                                    Load more activities
+                                                </button>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             </div>
@@ -181,26 +217,24 @@ const AdminDashboard = () => {
                         {/* Sidebar Context */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                             <div className="glass-card" style={{ padding: '24px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '24px' }}>
-                                <h4 style={{ fontWeight: 800, color: '#1E293B', marginBottom: '16px' }}>Growth Target</h4>
-                                <div style={{ width: '100%', height: '8px', background: '#F1F5F9', borderRadius: '4px', marginBottom: '12px', overflow: 'hidden' }}>
-                                    <div style={{ width: Math.min(100, (stats?.totalBusinesses / 100) * 100) + '%', height: '100%', background: 'var(--primary)', borderRadius: '4px' }}></div>
+                                <h4 style={{ fontWeight: 800, color: '#1E293B', marginBottom: '16px' }}>Hustler Onboarding</h4>
+                                <div style={{ width: '100%', height: '12px', background: '#F1F5F9', borderRadius: '6px', marginBottom: '16px', overflow: 'hidden' }}>
+                                    <div style={{ width: Math.min(100, (stats?.totalBusinesses / 10) * 100) + '%', height: '100%', background: 'var(--primary)', borderRadius: '6px' }}></div>
                                 </div>
-                                <p style={{ fontSize: '0.8rem', color: '#64748B' }}>
-                                    Currently at {stats?.totalBusinesses} registered businesses.
-                                </p>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 700 }}>
+                                    <span style={{ color: '#64748B' }}>Business Adoption</span>
+                                    <span style={{ color: 'var(--primary)' }}>{stats?.totalBusinesses || 0} / {stats?.totalUsers || 0} Profiles</span>
+                                </div>
                             </div>
 
-                            <div className="glass-card" style={{ padding: '24px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '24px' }}>
-                                <h4 style={{ fontWeight: 800, color: '#1E293B', marginBottom: '16px' }}>Founder Quick Actions</h4>
+                            <div className="glass-card" style={{ padding: '24px', background: '#1E293B', border: '1px solid #334155', borderRadius: '24px', color: 'white' }}>
+                                <h4 style={{ fontWeight: 800, color: 'white', marginBottom: '16px' }}>Terminal Operations</h4>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    <button onClick={() => setActiveTab('users')} className="btn-secondary" style={{ justifyContent: 'space-between', width: '100%', fontSize: '0.85rem' }}>
-                                        View All Users <ChevronRight size={16} />
+                                    <button onClick={() => setActiveTab('users')} style={{ width: '100%', background: 'rgba(255,255,255,0.1)', border: 'none', padding: '12px', borderRadius: '12px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', fontWeight: 700 }}>
+                                        Registered Users <ChevronRight size={16} />
                                     </button>
-                                    <button className="btn-secondary" style={{ justifyContent: 'space-between', width: '100%', fontSize: '0.85rem' }}>
-                                        Broadcast Update <ChevronRight size={16} />
-                                    </button>
-                                    <button className="btn-secondary" style={{ justifyContent: 'space-between', width: '100%', fontSize: '0.85rem' }}>
-                                        Export Audit Logs <ChevronRight size={16} />
+                                    <button style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: 'none', padding: '12px', borderRadius: '12px', color: '#94A3B8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'not-allowed', fontWeight: 700 }}>
+                                        Broadcast Alert <ShieldAlert size={16} />
                                     </button>
                                 </div>
                             </div>
@@ -209,53 +243,69 @@ const AdminDashboard = () => {
                 </>
             ) : activeTab === 'users' ? (
                 <div className="glass-card" style={{ padding: '32px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '32px', overflow: 'hidden' }}>
-                    {/* ... (existing users table code) ... */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                        <h3 style={{ fontWeight: 800, color: '#1E293B', margin: 0 }}>Registered Hustlers ({users?.length || 0})</h3>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', gap: '16px', flexWrap: 'wrap' }}>
+                        <h3 style={{ fontWeight: 800, color: '#1E293B', margin: 0 }}>All Kredibly Members ({filteredUsers.length})</h3>
                         <div style={{ position: 'relative' }}>
                             <Search size={18} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
                             <input
                                 type="text"
-                                placeholder="Search hustlers..."
-                                style={{ padding: '10px 16px 10px 40px', borderRadius: '10px', border: '1px solid #E2E8F0', fontSize: '0.9rem', width: '280px' }}
+                                placeholder="Search Name, Email or Biz..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{ padding: '12px 40px 12px 40px', borderRadius: '14px', border: '1px solid #E2E8F0', fontSize: '0.9rem', width: '320px', background: '#F8FAFC' }}
                             />
+                            {searchTerm && (
+                                <button 
+                                    onClick={() => setSearchTerm('')}
+                                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#94A3B8', display: 'flex', alignItems: 'center' }}
+                                >
+                                    <X size={16} />
+                                </button>
+                            )}
                         </div>
                     </div>
 
                     <div style={{ overflowX: 'auto' }} className="no-scrollbar">
-                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
-                            <thead>
-                                <tr style={{ borderBottom: '2px solid #F1F5F9' }}>
-                                    <th style={{ textAlign: 'left', padding: '16px', fontSize: '0.8rem', color: '#64748B', fontWeight: 800 }}>USER</th>
-                                    <th style={{ textAlign: 'left', padding: '16px', fontSize: '0.8rem', color: '#64748B', fontWeight: 800 }}>BUSINESS NAME</th>
-                                    <th style={{ textAlign: 'left', padding: '16px', fontSize: '0.8rem', color: '#64748B', fontWeight: 800 }}>WHATSAPP</th>
-                                    <th style={{ textAlign: 'left', padding: '16px', fontSize: '0.8rem', color: '#64748B', fontWeight: 800 }}>JOINED</th>
-                                    <th style={{ textAlign: 'left', padding: '16px', fontSize: '0.8rem', color: '#64748B', fontWeight: 800 }}>STATUS</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {users?.map((u, i) => (
-                                    <tr key={i} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                                        <td style={{ padding: '16px' }}>
-                                            <p style={{ fontWeight: 700, margin: 0, fontSize: '0.95rem' }}>{u.name}</p>
-                                            <p style={{ color: '#64748B', fontSize: '0.8rem', margin: 0 }}>{u.email}</p>
-                                        </td>
-                                        <td style={{ padding: '16px', fontWeight: 600 }}>{u.business?.displayName || 'Not onboarded'}</td>
-                                        <td style={{ padding: '16px', color: '#64748B' }}>{u.business?.whatsappNumber || '—'}</td>
-                                        <td style={{ padding: '16px', color: '#64748B', fontSize: '0.85rem' }}>{new Date(u.createdAt).toLocaleDateString()}</td>
-                                        <td style={{ padding: '16px' }}>
-                                            <span style={{
-                                                padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800,
-                                                background: u.isVerified ? '#ECFDF5' : '#FFFBEB',
-                                                color: u.isVerified ? '#10B981' : '#F59E0B'
-                                            }}>
-                                                {u.isVerified ? 'VERIFIED' : 'PENDING'}
-                                            </span>
-                                        </td>
+                        {loading ? [1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: '70px', borderRadius: '12px', marginBottom: '12px' }}></div>) : filteredUsers.length === 0 ? (
+                            <div style={{ padding: '80px', textAlign: 'center', color: '#94A3B8' }}>
+                                <Users size={48} style={{ marginBottom: '16px', opacity: 0.2 }} />
+                                <p style={{ fontWeight: 700 }}>No hustlers found matching your search.</p>
+                            </div>
+                        ) : (
+                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '2px solid #F1F5F9' }}>
+                                        <th style={{ textAlign: 'left', padding: '16px', fontSize: '0.75rem', color: '#64748B', fontWeight: 800 }}>MEMBER / BRAND</th>
+                                        <th style={{ textAlign: 'left', padding: '16px', fontSize: '0.75rem', color: '#64748B', fontWeight: 800 }}>EMAIL</th>
+                                        <th style={{ textAlign: 'left', padding: '16px', fontSize: '0.75rem', color: '#64748B', fontWeight: 800 }}>WHATSAPP HUB</th>
+                                        <th style={{ textAlign: 'left', padding: '16px', fontSize: '0.75rem', color: '#64748B', fontWeight: 800 }}>ONBOARDED</th>
+                                        <th style={{ textAlign: 'left', padding: '16px', fontSize: '0.75rem', color: '#64748B', fontWeight: 800 }}>STATUS</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {filteredUsers.map((u, i) => (
+                                        <tr key={u._id} className="row-hover" style={{ borderBottom: '1px solid #F1F5F9' }}>
+                                            <td style={{ padding: '16px' }}>
+                                                <p style={{ fontWeight: 800, margin: 0, fontSize: '1rem', color: '#1E293B' }}>{u.business?.displayName || u.name}</p>
+                                                <p style={{ color: '#94A3B8', fontSize: '0.8rem', margin: 0 }}>ID: {u.name || u.email}</p>
+                                            </td>
+                                            <td style={{ padding: '16px', color: '#64748B', fontWeight: 600 }}>{u.email}</td>
+                                            <td style={{ padding: '16px', color: '#64748B', fontWeight: 600 }}>{u.business?.whatsappNumber || 'Not Linked'}</td>
+                                            <td style={{ padding: '16px', color: '#94A3B8', fontSize: '0.85rem' }}>{new Date(u.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                                            <td style={{ padding: '16px' }}>
+                                                <span style={{
+                                                    padding: '6px 12px', borderRadius: '10px', fontSize: '0.65rem', fontWeight: 900,
+                                                    background: u.isVerified ? '#DCFCE7' : '#FEE2E2',
+                                                    color: u.isVerified ? '#15803D' : '#B91C1C'
+                                                }}>
+                                                    {u.isVerified ? 'VERIFIED' : 'UNVERIFIED'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
                 </div>
             ) : (
@@ -276,13 +326,13 @@ const AdminDashboard = () => {
                             >
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
                                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                        <div style={{ width: '40px', height: '40px', background: '#F1F5F9', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--primary)' }}>
-                                            {t.userId?.name.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <h4 style={{ margin: 0, fontWeight: 800 }}>{t.userId?.name}</h4>
-                                            <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748B' }}>{t.userId?.email} • {t.businessId?.displayName || 'Personal Hustle'}</p>
-                                        </div>
+                                        <div style={{ width: '40px', height: '40px', background: '#F0F9FF', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--primary)' }}>
+                                            {(t.businessId?.displayName || t.userId?.name || 'K').charAt(0)}
+                                         </div>
+                                         <div>
+                                             <h4 style={{ margin: 0, fontWeight: 800, color: '#1E293B' }}>{t.businessId?.displayName || 'Personal Hustle'}</h4>
+                                             <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748B' }}>{t.userId?.name} • {t.userId?.email}</p>
+                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         {t.status === 'open' && (
@@ -363,13 +413,22 @@ const AdminDashboard = () => {
             <style>{`
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                .skeleton {
+                    background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+                    background-size: 200% 100%;
+                    animation: skeleton-loading 1.5s infinite;
+                }
+                @keyframes skeleton-loading {
+                    0% { background-position: 200% 0; }
+                    100% { background-position: -200% 0; }
+                }
+                .row-hover:hover {
+                    background: #F8FAFC !important;
+                    transition: background 0.2s;
+                }
                 @media (max-width: 768px) {
-                    h2 { font-size: 1.5rem !important; }
+                    h1 { font-size: 1.8rem !important; }
                     .glass-card { padding: 20px !important; }
-                    .stats-grid { 
-                        grid-template-columns: 1fr !important;
-                        gap: 16px !important;
-                    }
                 }
             `}</style>
         </div>
