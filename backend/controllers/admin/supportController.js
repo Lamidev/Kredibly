@@ -4,6 +4,8 @@ const Notification = require("../../models/Notification");
 const { logActivity } = require("../../utils/activityLogger");
 const whatsappController = require("../whatsapp/whatsappController");
 
+const { sendNewTicketEmail } = require("../../emailLogic/emails"); // Assuming you'll add this next
+
 exports.createTicket = async (req, res) => {
     try {
         const { message, businessId } = req.body;
@@ -28,6 +30,17 @@ exports.createTicket = async (req, res) => {
             details: `${nameToShow} submitted a support request.`,
             entityType: "USER"
         });
+
+        // Notify Super Admin Instantly via Email
+        // In production, this would be an env var like process.env.ADMIN_EMAIL
+        // For now, using a placeholder or assuming it goes to the maintainer
+        try {
+            const adminEmail = process.env.ADMIN_EMAIL || "support@kredibly.com"; 
+            await sendNewTicketEmail(adminEmail, nameToShow, message, newTicket._id);
+        } catch (emailErr) {
+            console.error("Failed to send admin alert email:", emailErr);
+            // Don't fail the request if email fails
+        }
 
         res.status(201).json({
             success: true,
@@ -64,7 +77,29 @@ exports.getAllTickets = async (req, res) => {
 exports.resolveTicket = async (req, res) => {
     try {
         const { id } = req.params;
-        await SupportTicket.findByIdAndUpdate(id, { status: "resolved" });
+        const ticket = await SupportTicket.findById(id);
+        if (!ticket) return res.status(404).json({ message: "Ticket not found" });
+
+        ticket.status = "resolved";
+        await ticket.save();
+
+        // Notify User via Dashboard
+        if (ticket.businessId) {
+            await Notification.create({
+                businessId: ticket.businessId,
+                title: "Ticket Resolved ✅",
+                message: "Your support ticket has been marked as resolved by the admin. We hope we solved your issue!",
+                type: "system"
+            });
+
+            // Notify User via WhatsApp (Kreddy)
+            const biz = await BusinessProfile.findById(ticket.businessId);
+            if (biz && biz.whatsappNumber) {
+                const text = `🎉 Hi ${biz.displayName}, your support ticket regarding "${ticket.message.substring(0, 30)}..." has been resolved! \n\nIf you need anything else, just ask Kreddy. Happy selling! 🚀`;
+                await whatsappController.sendWhatsAppMessage(biz.whatsappNumber, text);
+            }
+        }
+
         res.status(200).json({ success: true, message: "Ticket marked as resolved." });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -79,12 +114,18 @@ exports.replyToTicket = async (req, res) => {
         const ticket = await SupportTicket.findById(id);
         if (!ticket) return res.status(404).json({ message: "Ticket not found" });
 
+        // Robust sender detection: 
+        // 1. If user is an admin and NOT the owner of the ticket => 'admin'
+        // 2. Otherwise => 'user'
+        const isOwner = req.user._id.toString() === ticket.userId.toString();
+        const sender = (req.user.role === 'admin' && !isOwner) ? "admin" : "user";
+
         ticket.replies.push({
             message,
-            sender: req.user.role === 'admin' ? "admin" : "user"
+            sender
         });
 
-        if (req.user.role === 'admin') {
+        if (sender === 'admin') {
             ticket.status = "replied";
 
             // Create notification for the user
@@ -119,6 +160,31 @@ exports.replyToTicket = async (req, res) => {
         await ticket.save();
 
         res.status(200).json({ success: true, message: "Reply sent successfully", data: ticket });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.markSeen = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const ticket = await SupportTicket.findById(id);
+        if (!ticket) return res.status(404).json({ message: "Ticket not found" });
+
+        if (ticket.status === 'replied') {
+            ticket.status = 'open';
+            await ticket.save();
+
+            // Clear corresponding notifications
+            if (ticket.businessId) {
+                await Notification.deleteMany({
+                    businessId: ticket.businessId,
+                    title: "Support Update 📩"
+                });
+            }
+        }
+
+        res.status(200).json({ success: true });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

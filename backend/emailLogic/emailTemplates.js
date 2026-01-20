@@ -108,9 +108,36 @@ const WELCOME_EMAIL_TEMPLATE = `
 </html>
 `;
 
+const NEW_TICKET_ALERT_TEMPLATE = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>New Support Ticket</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: ${THEME_COLOR}; padding: 20px; text-align: center;">
+    <h1 style="color: white; margin: 0;">New Support Ticket</h1>
+  </div>
+  <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+    <p><strong>User:</strong> {userName}</p>
+    <p><strong>Message:</strong></p>
+    <blockquote style="background: white; border-left: 4px solid ${THEME_COLOR}; padding: 10px; margin: 10px 0;">
+        {message}
+    </blockquote>
+    <p>Ticket ID: {ticketId}</p>
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="https://kredibly.com/admin" style="background-color: ${THEME_COLOR}; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Dashboard</a>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
 module.exports = {
   VERIFICATION_EMAIL_TEMPLATE,
   PASSWORD_RESET_SUCCESS_TEMPLATE,
   PASSWORD_RESET_REQUEST_TEMPLATE,
   WELCOME_EMAIL_TEMPLATE,
+  NEW_TICKET_ALERT_TEMPLATE
 };

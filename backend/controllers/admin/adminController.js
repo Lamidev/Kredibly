@@ -5,7 +5,7 @@ const ActivityLog = require("../../models/ActivityLog");
 
 exports.getGlobalStats = async (req, res) => {
     try {
-        const totalUsers = await User.countDocuments({ role: 'user' });
+        const totalUsers = await User.countDocuments({ role: 'user', isVerified: true });
         const totalBusinesses = await BusinessProfile.countDocuments();
         const totalSalesCount = await Sale.countDocuments();
 

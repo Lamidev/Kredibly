@@ -6,8 +6,6 @@ import {
     CreditCard,
     Activity,
     ShieldAlert,
-    Building2,
-    Calendar,
     ChevronRight,
     Search,
     X
@@ -23,13 +21,25 @@ const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const [searchTerm, setSearchTerm] = useState('');
     const [visibleActivities, setVisibleActivities] = useState(10);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
         fetchAdminData();
+
+        // 🟢 Real-time polling every 60 seconds (optimized from 10s)
+        const interval = setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                fetchAdminData();
+            }
+        }, 60000);
+
+        return () => clearInterval(interval);
     }, []);
 
-    const fetchAdminData = async () => {
-        setLoading(true);
+    const fetchAdminData = async (manual = false) => {
+        if (!stats && !manual) setLoading(true); // Only show loader on initial page load
+        if (manual) setIsRefreshing(true);
+
         try {
             const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
             const [statsRes, usersRes, ticketsRes] = await Promise.all([
@@ -52,6 +62,7 @@ const AdminDashboard = () => {
             console.error("Failed to fetch admin data", err);
         } finally {
             setLoading(false);
+            setIsRefreshing(false);
         }
     };
 
@@ -97,7 +108,19 @@ const AdminDashboard = () => {
                         God View <span style={{ fontWeight: 400, color: '#94A3B8' }}>/ Analytics</span>
                     </h1>
                 </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <button
+                        onClick={() => fetchAdminData(true)}
+                        disabled={isRefreshing}
+                        style={{
+                            background: '#F1F5F9', border: 'none', padding: '10px', borderRadius: '12px',
+                            color: '#64748B', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+                            fontWeight: 700, fontSize: '0.85rem'
+                        }}
+                    >
+                        <Activity size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                        {isRefreshing ? 'Syncing...' : 'Refresh'}
+                    </button>
                     <div style={{ display: 'flex', background: '#F1F5F9', padding: '4px', borderRadius: '12px' }}>
                         <button
                             onClick={() => setActiveTab('overview')}
@@ -335,7 +358,7 @@ const AdminDashboard = () => {
                                          </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '8px' }}>
-                                        {t.status === 'open' && (
+                                        {t.status !== 'resolved' && (
                                             <button
                                                 onClick={async () => {
                                                     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";

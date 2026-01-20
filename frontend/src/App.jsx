@@ -1,6 +1,6 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
-import ScrollToTop from "./components/ScrollToTop";
+import ScrollToTop from "./components/ui/ScrollToTop";
 
 import LandingPage from "./pages/public/landing-page";
 import AuthLayout from "./components/auth/layout";
@@ -27,6 +27,7 @@ const App = () => {
 
   const getHomeRedirect = () => {
     if (!user) return "/auth/login";
+    if (user.role === 'admin') return "/admin";
     return profile ? "/dashboard" : "/onboarding";
   };
 
@@ -65,7 +66,7 @@ const App = () => {
         {/* Onboarding - No Sidebar */}
         <Route
           path="/onboarding"
-          element={user ? (!profile ? <Onboarding /> : <Navigate to="/dashboard" />) : <Navigate to="/auth/login" />}
+          element={user ? (user.role === 'admin' ? <Navigate to="/admin" /> : (!profile ? <Onboarding /> : <Navigate to="/dashboard" />)) : <Navigate to="/auth/login" />}
         />
 
         {/* Admin Route - Restricted to Founders */}

@@ -28,6 +28,6 @@ const SupportTicketSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model("SupportTicket", SupportTicketSchema);

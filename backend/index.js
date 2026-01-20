@@ -1,4 +1,4 @@
-const express = require("express");
+const express = require("express"); // Server entry point - Restart for Fix
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
@@ -14,6 +14,7 @@ const notificationRoutes = require("./routes/business/notificationRoutes");
 const adminRoutes = require("./routes/admin/adminRoutes");
 const supportRoutes = require("./routes/admin/supportRoutes");
 const { startProactiveAssistant } = require("./utils/proactiveAssistant");
+const { startTicketCleanup } = require("./utils/ticketScheduler");
 
 const app = express();
 const PORT = process.env.PORT || 7050;
@@ -54,6 +55,7 @@ mongoose
       console.log(`🔥 Server running on port ${PORT}`);
     });
     startProactiveAssistant();
+    startTicketCleanup();
   })
   .catch((error) => {
     console.error("❌ MongoDB connection failed:", error);

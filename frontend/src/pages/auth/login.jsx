@@ -18,7 +18,10 @@ const Login = () => {
     try {
       const data = await login(email, password);
       toast.success("Welcome back!");
-      if (!data.profile) {
+      
+      if (data.user.role === 'admin') {
+        navigate("/admin");
+      } else if (!data.profile) {
         navigate("/onboarding");
       } else {
         navigate("/dashboard");

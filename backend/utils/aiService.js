@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const genAI = new GoogleGenerativeAI(process.env.KREDDY_API_KEY || "");
-// Reverting to Gemini 1.5 Flash as it's the stable workhorse for the current project tier.
+// Using Gemini 1.5 Flash as it's the stable workhorse for the current project tier.
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 /**
@@ -23,44 +23,37 @@ Your goal is to extract business transaction details from informal messages in E
 You MUST reply with ONLY a JSON object. No markdown, no extra text.
 
 Supported Intents:
-1. "create_sale" -> Recording a sale, receipt of money, or a DEBT REMINDER (e.g., "Sarah owes me 5k", "Remind me to collect 5k from Sarah tomorrow").
-2. "check_debt" -> Asking about balances, who owes what, or debt summaries.
-3. "update_record" -> Updating an existing record (e.g., "Change Sarah's due date to Friday", "Sarah paid part of her money").
-4. "support" -> Help requests or reporting issues.
-5. "general_chat" -> Greetings, compliments, or general banter.
+1. "create_sale" -> Recording a sale, receipt of money, or a DEBT REMINDER.
+2. "check_debt" -> Asking about balances.
+3. "update_record" -> Updating an existing record.
+4. "new_support_ticket" -> Help requests, complaints ("My app is slow", "I have an issue").
+5. "reply_ticket" -> Use this ONLY if 'hasOpenTicket' is TRUE and the user's message is NOT a sales command (e.g., "Thanks", "Okay", "Here is the screenshot", "When will you fix it?").
+6. "general_chat" -> Greetings or ambiguous input.
 
 JSON Structure:
 {
-  "intent": "create_sale" | "check_debt" | "update_record" | "support" | "general_chat",
+  "intent": "create_sale" | "check_debt" | "update_record" | "new_support_ticket" | "reply_ticket" | "general_chat",
   "confidence": 0.0 to 1.0, 
   "data": {
-    "customerName": "Extracted Name" (Use 'Customer' if unknown),
-    "totalAmount": Number (Total value to be collected/recorded),
-    "paidAmount": Number (How much was paid TODAY. If it's a debt/reminder, paidAmount is 0. If unspecified for a sale, assume paidAmount = totalAmount),
-    "item": "Description" (What was sold or "Debt Reminder"),
-    "dueDate": "YYYY-MM-DD" (Calculate based on relative terms like 'tomorrow', 'next week'),
-    "reply": "A witty, short reply in Nigerian Pidgin/English. If you capture a reminder, tell them you've set the alarm!"
+    "customerName": "Extracted Name",
+    "totalAmount": Number,
+    "paidAmount": Number,
+    "item": "Description",
+    "dueDate": "YYYY-MM-DD",
+    "reply": "Witty reply"
   }
 }
 
 Rules:
-- PRONOUNS: If the user says "She", "He", "They", or "The customer", look at 'Conversation Context'. Use that 'customerName'!
-- CONTINUATION/CORRECTION: If the user corrects or adds info to a previous message (e.g., "Actually she paid 20k", "Sorry David King"), set intent based on what they are correcting. 
-- If the user provides a name after you just suggested several (e.g., "Sorry David King"), set intent to "check_debt" (or whatever the previous active intent was) and customerName to that selected name.
-- If a user mentions "the balance", "the money", "everything", or "how much", check the MERCHANT CONTEXT section. If we were already talking about a specific person (see Conversation Context), use their balance from the Debtors list!
-- If the name from 'Conversation Context' matches a name in 'Debtors Context', ALWAYS prefer that amount if 'totalAmount' is missing in the new message.
+- CONTEXT AWARENESS: Look at the 'Merchant Context' below. If 'hasOpenTicket' is YES, prioritize detecting if the user is replying to that ticket ("reply_ticket").
+- IF hasOpenTicket == true AND input is NOT a clear sales command (like "sold 5k"), assume intent is "reply_ticket".
+- IF hasOpenTicket == false AND input looks like a complaint ("I have a problem", "Help me"), intent is "new_support_ticket".
 - "Sarah paid her debt" -> intent: "update_record", customerName: "Sarah", item: "Repayment".
-- Always prioritize "create_sale" if a name and money/debt are mentioned together.
+- "Thanks" (with open ticket) -> intent: "reply_ticket".
+- "Thanks" (no open ticket) -> intent: "general_chat".
+- Always prioritize "create_sale" if a name and money/debt are mentioned together, even if ticket is open.
 - For business logic, be street-smart but accurate.
-- IMPORTANT: ALWAYS response with ONLY valid JSON. If you are stuck, use "general_chat" with a helpful reply.
-
-Rules & Examples:
-- "5k" = 5000, "200,000" = 200000.
-- "I sold a Sound System to Okey for 400k and he paid 150k. Balance in 2 weeks" -> 
-   intent: "create_sale", totalAmount: 400000, paidAmount: 150000, customerName: "Okey", dueDate: (today + 14 days), item: "Sound System"
-- "Tunde took 2 bags of rice on credit" -> totalAmount: null (ASK), paidAmount: 0, customerName: "Tunde", intent: "create_sale"
-- If 'totalAmount' is missing in a sale, still set intent to "create_sale" but set totalAmount to null.
-- Be street-smart. "Abeg how much Tunde owe me?" -> intent: "check_debt", customerName: "Tunde".
+- IMPORTANT: ALWAYS response with ONLY valid JSON.
 `;
 
   try {
@@ -70,6 +63,7 @@ Rules & Examples:
     Today is ${today}.
     Merchant: ${context.merchantName || 'A user'}
     Their Debtors/Unpaid Records: ${context.debtors || 'None.'}
+    Has Open Ticket: ${context.hasOpenTicket ? 'YES' : 'NO'}
     Conversation Context: ${context.currentSession ? JSON.stringify(context.currentSession) : 'Floating conversation (no active session).'}
     -------------------------
 

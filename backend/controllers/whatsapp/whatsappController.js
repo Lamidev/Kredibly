@@ -270,6 +270,12 @@ exports.handleIncoming = async (req, res) => {
 
         const lowerText = text.toLowerCase();
 
+        // Check for OPEN Support Ticket (Context Awareness)
+        const openTicket = await SupportTicket.findOne({
+            businessId: profile._id,
+            status: { $in: ['open', 'replied'] }
+        }).sort({ updatedAt: -1 });
+
         // PERSISTENT SESSION HANDLING
         const session = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
         if (session) {
@@ -443,8 +449,14 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
                 merchantName: profile.displayName,
                 entityType: profile.entityType,
                 debtors: debtorContext || "No active debtors yet.",
-                currentSession: session || null
+                currentSession: session || null,
+                hasOpenTicket: !!openTicket
             });
+
+            if (!aiResponse) {
+                console.error("AI Assistant Failure: No response from model");
+                return await sendReply(from, "Ouch! My brain is currently taking a short break (Thinking too hard! 🧠). Please try that again in a minute, Chief! 🛡️");
+            }
 
             if (aiResponse && (aiResponse.intent === "create_sale" || aiResponse.intent === "update_record") && aiResponse.data.customerName && aiResponse.data.customerName.toLowerCase() !== "customer") {
                 const searchName = aiResponse.data.customerName;
@@ -579,7 +591,29 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
                  const msg = aiResponse.data.reply || "I've noted the update, Chief! I'll adjust the records on your dashboard. 🫡";
                  await sendReply(from, msg);
                  
-            } else if (aiResponse && (aiResponse.intent === "support" || (aiResponse.intent === "general_chat" && (text.toLowerCase().includes("problem") || text.toLowerCase().includes("issue"))))) {
+            } else if (aiResponse && (aiResponse.intent === "reply_ticket" || aiResponse.intent === "support" || (aiResponse.intent === "general_chat" && (text.toLowerCase().includes("problem") || text.toLowerCase().includes("issue"))))) {
+                
+                // CASE 1: USER IS REPLYING TO AN EXISTING TICKET
+                if (openTicket && aiResponse.intent !== "new_support_ticket") { // Only reply if logic says so OR generic support intent with open ticket
+                     openTicket.replies.push({
+                         message: text,
+                         sender: "user"
+                     });
+                     openTicket.status = "open"; // Re-open for admin attention
+                     await openTicket.save();
+
+                     await logActivity({
+                        businessId: profile._id,
+                        action: "SUPPORT_TICKET_REPLIED",
+                        details: `User replied via WhatsApp to Ticket #${openTicket._id.toString().slice(-6)}`,
+                        entityType: "USER"
+                     });
+
+                     await sendReply(from, "📨 *Reply Sent!* \n\nI've forwarded your message to the support team. They'll see it on your dashboard ticket.");
+                     return;
+                }
+
+                // CASE 2: NEW TICKET
                 // Check if we have a pre-answered question first
                 const matchedFAQ = KREDDY_FAQS.find(faq =>
                     faq.keywords.some(k => text.toLowerCase().includes(k))
@@ -598,6 +632,15 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
                 });
                 await newTicket.save();
                 
+                // NOTIFY ADMIN via EMAIL
+                try {
+                    const { sendNewTicketEmail } = require("../../emailLogic/emails");
+                    const adminEmail = process.env.ADMIN_EMAIL || "support@kredibly.com"; 
+                    await sendNewTicketEmail(adminEmail, profile.displayName, text, newTicket._id);
+                } catch (e) {
+                    console.error("Email fail", e);
+                }
+
                 await Notification.create({
                     businessId: profile._id,
                     title: "Support Ticket Logged 🛡️",

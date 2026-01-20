@@ -2,7 +2,8 @@ const {
   PASSWORD_RESET_REQUEST_TEMPLATE,
   PASSWORD_RESET_SUCCESS_TEMPLATE,
   VERIFICATION_EMAIL_TEMPLATE,
-  WELCOME_EMAIL_TEMPLATE
+  WELCOME_EMAIL_TEMPLATE,
+  NEW_TICKET_ALERT_TEMPLATE
 } = require("./emailTemplates.js");
 const { resendClient, sender } = require("./emailConfig.js");
 
@@ -66,6 +67,24 @@ exports.sendResetSuccessEmail = async (email) => {
 
   } catch (error) {
     handleEmailError(error, "Error sending password reset success email");
+  }
+};
+
+exports.sendNewTicketEmail = async (adminEmail, userName, message, ticketId) => {
+  try {
+    await resendClient.emails.send({
+      from: `${sender.name} <${sender.email}>`,
+      to: adminEmail,
+      subject: `New Support Ticket from ${userName}`,
+      html: NEW_TICKET_ALERT_TEMPLATE
+        .replace("{userName}", userName)
+        .replace("{message}", message)
+        .replace("{ticketId}", ticketId),
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV !== 'production') console.warn("Dev mode: Email simulation for support ticket.");
+    // Do not throw, just log, so we don't block the ticket creation
+    // handleEmailError(error, "Error sending new ticket alert");
   }
 };
 

@@ -24,6 +24,7 @@
     "mongodb": "^6.17.0",
     "mongoose": "^8.16.1",
     "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
     "resend": "^6.7.0"
   },
   "devDependencies": {

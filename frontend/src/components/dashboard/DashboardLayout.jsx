@@ -37,6 +37,7 @@ const DashboardLayout = () => {
     const location = useLocation();
     const [notifications, setNotifications] = useState([]);
     const [showNotifications, setShowNotifications] = useState(false);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
@@ -44,7 +45,14 @@ const DashboardLayout = () => {
         if (profile) {
             fetchNotifications();
             const interval = setInterval(fetchNotifications, 30000); // 30s
-            return () => clearInterval(interval);
+            
+            const handleRefresh = () => fetchNotifications();
+            window.addEventListener('refreshNotifications', handleRefresh);
+            
+            return () => {
+                clearInterval(interval);
+                window.removeEventListener('refreshNotifications', handleRefresh);
+            };
         }
     }, [profile]);
 
@@ -90,7 +98,7 @@ const DashboardLayout = () => {
         }
     };
 
-    const hasUnread = notifications.some(n => !n.isRead);
+    const unreadCount = notifications.filter(n => !n.isRead).length;
 
     const navItems = [
         { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -150,7 +158,7 @@ const DashboardLayout = () => {
                         <Settings size={20} /> Settings
                     </NavLink>
                     <button
-                        onClick={logout}
+                        onClick={() => setShowLogoutConfirm(true)}
                         className="nav-item"
                         style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', marginTop: '8px', textAlign: 'left', color: '#EF4444' }}
                     >
@@ -185,11 +193,20 @@ const DashboardLayout = () => {
 
                             <button
                                 onClick={() => setShowNotifications(!showNotifications)}
-                                style={{ background: '#F1F5F9', border: 'none', padding: '10px', borderRadius: '12px', color: '#64748B', cursor: 'pointer' }}
+                                style={{ background: '#F1F5F9', border: 'none', padding: '10px', borderRadius: '12px', color: '#64748B', cursor: 'pointer', position: 'relative' }}
                             >
                                 <Bell size={20} />
-                                {hasUnread && (
-                                    <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', background: '#EF4444', borderRadius: '50%', border: '2px solid white' }}></span>
+                                {unreadCount > 0 && (
+                                    <span style={{ 
+                                        position: 'absolute', top: '-5px', right: '-5px', 
+                                        minWidth: '20px', height: '20px', 
+                                        background: '#EF4444', color: 'white',
+                                        borderRadius: '50%', border: '2px solid white',
+                                        fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontWeight: 800, padding: '0 4px'
+                                    }}>
+                                        {unreadCount}
+                                    </span>
                                 )}
                             </button>
 
@@ -208,7 +225,16 @@ const DashboardLayout = () => {
                                             <div style={{ padding: '24px', textAlign: 'center', color: '#94A3B8', fontSize: '0.85rem' }}>No new notifications</div>
                                         ) : (
                                             notifications.map(n => (
-                                                <div key={n._id} style={{ padding: '12px 16px', borderBottom: '1px solid #F8FAFC', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div 
+                                                    key={n._id} 
+                                                    onClick={() => {
+                                                        if (n.title.includes('Support')) {
+                                                            window.dispatchEvent(new CustomEvent('openSupportHub'));
+                                                        }
+                                                        clearOne(n._id);
+                                                    }}
+                                                    style={{ padding: '12px 16px', borderBottom: '1px solid #F8FAFC', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                                >
                                                     <div style={{ flex: 1 }}>
                                                         <p style={{ margin: 0, fontWeight: 800, fontSize: '0.85rem', color: '#1E293B' }}>{n.title}</p>
                                                         <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#64748B', lineHeight: 1.4 }}>{n.message}</p>
@@ -249,6 +275,34 @@ const DashboardLayout = () => {
             </main>
             {/* Support Hub Floating Chat */}
             <SupportHub />
+
+            {/* Logout Confirmation Modal */}
+            {showLogoutConfirm && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }} className="animate-fade-in">
+                    <div className="glass-card" style={{ padding: '32px', maxWidth: '400px', width: '100%', background: 'white', borderRadius: '28px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+                        <div style={{ background: '#FEF2F2', color: '#EF4444', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                            <LogOut size={28} />
+                        </div>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1E293B', marginBottom: '12px', letterSpacing: '-0.02em' }}>Ready to Leave?</h3>
+                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 500 }}>You are about to sign out of your dashboard. Any unsaved changes might be lost.</p>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button 
+                                className="btn-secondary" 
+                                style={{ flex: 1, padding: '14px', borderRadius: '16px', fontWeight: 700, fontSize: '0.95rem' }} 
+                                onClick={() => setShowLogoutConfirm(false)}
+                            >
+                                Stay Here
+                            </button>
+                            <button 
+                                style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '14px', borderRadius: '16px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} 
+                                onClick={logout}
+                            >
+                                Log Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

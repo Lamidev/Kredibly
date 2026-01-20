@@ -492,12 +492,20 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* Footer */}
-            <footer style={{ padding: '40px 20px', textAlign: 'center', color: '#6B7280', background: 'white', borderTop: '1px solid #E5E7EB' }}>
-                <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '32px', marginBottom: '16px' }} />
-                <p style={{ fontWeight: 600, maxWidth: '600px', margin: '0 auto', lineHeight: 1.5, fontSize: '0.9rem' }}>
-                    © 2026 Kredibly. Empowering African Commerce.
-                </p>
+{/* Footer */}
+            <footer style={{ padding: '80px 20px', textAlign: 'center', color: '#6B7280', background: 'white', borderTop: '1px solid #E5E7EB' }}>
+                <div style={{ maxWidth: '700px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px' }}>
+                    
+                    <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '36px', objectFit: 'contain' }} />
+                    
+                    <p style={{ fontSize: '1rem', lineHeight: 1.6, color: '#4B5563', fontWeight: 500 }}>
+                        We are building the operating system for African commerce. By merging casual chat with professional record-keeping, Kredibly turns everyday hustle into verifiable financial power.
+                    </p>
+
+                    <p style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: '16px', color: '#9CA3AF' }}>
+                        © 2026 Kredibly. Empowering African Commerce.
+                    </p>
+                </div>
             </footer>
 
             <style>{`
