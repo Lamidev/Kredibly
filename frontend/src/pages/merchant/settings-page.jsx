@@ -26,8 +26,10 @@ const SettingsPage = () => {
         bankName: profile?.bankDetails?.bankName || "",
         accountNumber: profile?.bankDetails?.accountNumber || "",
         accountName: profile?.bankDetails?.accountName || "",
-        logoUrl: profile?.logoUrl || ""
+        logoUrl: profile?.logoUrl || "",
+        staffNumbers: profile?.staffNumbers || []
     });
+    const [newStaffPhone, setNewStaffPhone] = useState("");
     const [uploading, setUploading] = useState(false);
     const fileInputRef = React.useRef(null);
 
@@ -76,7 +78,8 @@ const SettingsPage = () => {
                     accountNumber: form.accountNumber,
                     accountName: form.accountName
                 },
-                logoUrl: form.logoUrl
+                logoUrl: form.logoUrl,
+                staffNumbers: form.staffNumbers
             });
             toast.success("Settings updated successfully!");
         } catch (err) {
@@ -84,6 +87,19 @@ const SettingsPage = () => {
         } finally {
             setSaving(false);
         }
+    };
+
+    const addStaff = () => {
+        if (!newStaffPhone) return;
+        if (form.staffNumbers.includes(newStaffPhone)) {
+            return toast.error("Number already added");
+        }
+        setForm({ ...form, staffNumbers: [...form.staffNumbers, newStaffPhone] });
+        setNewStaffPhone("");
+    };
+
+    const removeStaff = (phone) => {
+        setForm({ ...form, staffNumbers: form.staffNumbers.filter(p => p !== phone) });
     };
 
     return (
@@ -185,6 +201,59 @@ const SettingsPage = () => {
                                 }}></span>
                             </label>
                         </div>
+                    </div>
+                </section>
+
+                {/* Staff Management Section */}
+                <section className="glass-card" style={{ padding: '32px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0', marginBottom: '32px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+                        <div style={{ background: '#FFF7ED', color: '#F97316', padding: '10px', borderRadius: '12px' }}>
+                            <Shield size={24} />
+                        </div>
+                        <div>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Staff Management</h2>
+                            <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>Enables the "Oga Monitor" security feature.</p>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                        <input 
+                            className="input-field" 
+                            placeholder="Staff WhatsApp (e.g. 080123...)" 
+                            value={newStaffPhone}
+                            onChange={(e) => setNewStaffPhone(e.target.value)}
+                        />
+                        <button 
+                            className="btn-primary" 
+                            style={{ width: 'auto', padding: '0 24px' }}
+                            type="button"
+                            onClick={addStaff}
+                        >
+                            Add Staff
+                        </button>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {form.staffNumbers.length === 0 && (
+                            <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: '0.85rem', padding: '20px', border: '2px dashed #F1F5F9', borderRadius: '16px' }}>
+                                No staff members added yet. Add them to allow them to record sales while you receive alerts!
+                            </p>
+                        )}
+                        {form.staffNumbers.map((phone, idx) => (
+                            <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: '#F8FAFC', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <Smartphone size={18} color="#64748B" />
+                                    <span style={{ fontWeight: 700, color: '#1E293B' }}>{phone}</span>
+                                </div>
+                                <button 
+                                    onClick={() => removeStaff(phone)}
+                                    type="button"
+                                    style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '8px' }}
+                                >
+                                    <Upload size={18} style={{ transform: 'rotate(180deg)' }} /> 
+                                </button>
+                            </div>
+                        ))}
                     </div>
                 </section>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
     Zap,
@@ -11,14 +11,18 @@ import {
     ChevronDown,
     Building2,
     Briefcase,
+    Users,
     User,
     Globe,
     CreditCard,
     Smartphone,
     Menu,
-    X
+    X,
+    Shield
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import PublicNavbar from "../../components/public/PublicNavbar";
+import PublicFooter from "../../components/public/PublicFooter";
 
 const LandingPage = () => {
     const navigate = useNavigate();
@@ -60,137 +64,11 @@ const LandingPage = () => {
                 pointerEvents: 'none'
             }}></div>
 
-            {/* Navigation */}
-            <nav className="glass-nav" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000 }}>
-                <div className="landing-nav-container" style={{ height: '80px' }}>
-                    <div className="nav-group">
-                        <Link
-                            to="/"
-                            onClick={(e) => {
-                                // If already on home, scroll to top and clear hash
-                                if (window.location.pathname === '/') {
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                    window.history.pushState("", document.title, window.location.pathname);
-                                }
-                            }}
-                            style={{ display: 'flex', alignItems: 'center' }}
-                        >
-                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '36px', objectFit: 'contain' }} />
-                        </Link>
-
-                        {/* Desktop Nav Links */}
-                        <div className="hidden md:flex" style={{ gap: '32px' }}>
-                            {/* Products Dropdown */}
-                            <div className="dropdown-parent">
-                                <div className="nav-link">Product <ChevronDown size={14} /></div>
-                                <div className="dropdown-menu">
-                                    <div className="dropdown-item">
-                                        <div className="dropdown-icon" style={{ background: 'var(--primary-glow)', color: 'var(--primary)' }}><Smartphone size={20} /></div>
-                                        <div className="dropdown-text">
-                                            <h4>Kreddy (WhatsApp Assistant)</h4>
-                                            <p>Record sales instantly via chat.</p>
-                                        </div>
-                                    </div>
-                                    <div className="dropdown-item">
-                                        <div className="dropdown-icon" style={{ background: 'rgba(79, 70, 229, 0.1)', color: '#4F46E5' }}><LayoutDashboard size={20} /></div>
-                                        <div className="dropdown-text">
-                                            <h4>Merchant Dashboard</h4>
-                                            <p>Deep analytics and inventory.</p>
-                                        </div>
-                                    </div>
-                                    <div className="dropdown-item">
-                                        <div className="dropdown-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10B981' }}><ShieldCheck size={20} /></div>
-                                        <div className="dropdown-text">
-                                            <h4>Verifiable Ledger</h4>
-                                            <p>Proof of payment you can trust.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Solutions Dropdown */}
-                            <div className="dropdown-parent">
-                                <div className="nav-link">Solutions <ChevronDown size={14} /></div>
-                                <div className="dropdown-menu">
-                                    <div className="dropdown-item">
-                                        <div className="dropdown-icon" style={{ background: '#F8FAFC', color: '#64748B' }}><User size={20} /></div>
-                                        <div className="dropdown-text">
-                                            <h4>For Freelancers</h4>
-                                            <p>Manage projects and quick receipts.</p>
-                                        </div>
-                                    </div>
-                                    <div className="dropdown-item">
-                                        <div className="dropdown-icon" style={{ background: '#F8FAFC', color: '#64748B' }}><Building2 size={20} /></div>
-                                        <div className="dropdown-text">
-                                            <h4>For Retail Shops</h4>
-                                            <p>Track daily physical inventory.</p>
-                                        </div>
-                                    </div>
-                                    <div className="dropdown-item">
-                                        <div className="dropdown-icon" style={{ background: '#F8FAFC', color: '#64748B' }}><Globe size={20} /></div>
-                                        <div className="dropdown-text">
-                                            <h4>Digital Agencies</h4>
-                                            <p>Client billing and trust scores.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button onClick={() => scrollToSection('how-it-works')} className="nav-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>How it Works</button>
-                            <button onClick={() => scrollToSection('pricing')} className="nav-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>Pricing</button>
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        <div className="hidden md:flex" style={{ gap: '12px', alignItems: 'center' }}>
-                            <Link to="/auth/login" style={{ textDecoration: 'none', color: 'var(--text)', fontWeight: 600, fontSize: '0.85rem', padding: '8px 12px' }}>Login</Link>
-                            <Link to="/auth/register" className="btn-primary" style={{ padding: '10px 24px', fontSize: '0.85rem', borderRadius: '12px' }}>
-                                Start Selling Free
-                            </Link>
-                        </div>
-
-                        {/* Mobile Toggle */}
-                        <button
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', padding: '8px' }}
-                            className="md:hidden"
-                        >
-                            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                        </button>
-                    </div>
-                </div>
-
-                {/* Mobile Menu Drawer */}
-                <AnimatePresence>
-                    {isMobileMenuOpen && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            style={{ background: 'white', borderBottom: '1px solid #F1F5F9', overflow: 'hidden' }}
-                            className="md:hidden"
-                        >
-                            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                <div style={{ color: '#94A3B8', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Menu</div>
-                                <button onClick={() => scrollToSection('features')} style={{ background: 'none', border: 'none', textDecoration: 'none', color: 'var(--text)', fontWeight: 700, fontSize: '1.1rem', textAlign: 'left', cursor: 'pointer' }}>Features</button>
-                                <button onClick={() => scrollToSection('how-it-works')} style={{ background: 'none', border: 'none', textDecoration: 'none', color: 'var(--text)', fontWeight: 700, fontSize: '1.1rem', textAlign: 'left', cursor: 'pointer' }}>How it Works</button>
-                                <button onClick={() => scrollToSection('pricing')} style={{ background: 'none', border: 'none', textDecoration: 'none', color: 'var(--text)', fontWeight: 700, fontSize: '1.1rem', textAlign: 'left', cursor: 'pointer' }}>Pricing</button>
-
-                                <div style={{ height: '1px', background: '#F1F5F9', margin: '4px 0' }} />
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <Link to="/auth/login" className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Login</Link>
-                                    <Link to="/auth/register" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Start Selling Free</Link>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </nav>
+            <PublicNavbar />
 
             {/* Hero Section */}
             <header style={{
-                padding: '120px 16px 40px',
+                padding: '140px 16px 60px',
                 textAlign: 'center',
                 position: 'relative',
                 zIndex: 1,
@@ -203,104 +81,139 @@ const LandingPage = () => {
                     transition={{ duration: 0.6 }}
                 >
                     <div className="hero-badge" style={{ padding: '8px 20px', fontSize: '0.8rem', marginBottom: '32px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                        <Sparkles size={16} style={{ color: 'var(--primary)' }} /> The Smart Money Manager for Everyone
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ background: 'var(--primary)', color: 'white', padding: '2px 8px', borderRadius: '100px', fontSize: '0.65rem' }}>NEW</span>
+                            <Sparkles size={14} style={{ color: 'var(--primary)' }} /> 
+                            <span>AI-Powered Financial OS for Africa</span>
+                        </div>
                     </div>
 
-                    <h1 className="hero-title" style={{ fontWeight: 800 }}>
-                        Sell with <span className="premium-gradient">Kredibly.</span><br />
-                        Scale with <span style={{ fontWeight: 900 }}>Confidence.</span>
+                    <h1 className="hero-title" style={{ fontWeight: 900, marginBottom: '28px' }}>
+                        Professionalize Your Hustle.<br />
+                        <span className="premium-gradient">Scale Your Business.</span>
                     </h1>
 
-                    <p className="hero-description" style={{ fontWeight: 500 }}>
-                        Professional record keeping for freelancers, sellers, and business owners. Record sales on WhatsApp,
-                        manage from your Dashboard, and grow with verified digital records.
+                    <p className="hero-description" style={{ fontWeight: 500, maxWidth: '800px' }}>
+                        The smart bridge between casual chat and professional commerce. Use <b>Kreddy AI</b> on WhatsApp to record sales instantly, send <b>premium invoices</b>, and build verifiable financial credibility.
                     </p>
 
-                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '16px 36px', fontSize: '1.1rem' }}>
-                            Start Selling Free <ArrowRight size={20} />
+                    <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '40px' }}>
+                        <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '16px 40px', fontSize: '1.1rem', borderRadius: '16px' }}>
+                            Create Free Account <ArrowRight size={20} />
                         </button>
+                        <button onClick={() => scrollToSection('how-it-works')} className="btn-secondary" style={{ padding: '16px 40px', fontSize: '1.1rem', borderRadius: '16px' }}>
+                            Watch Demo
+                        </button>
+                    </div>
+
+                    <div style={{ marginTop: '60px', display: 'flex', justifyContent: 'center', gap: '40px', opacity: 0.6, flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><CheckCheck size={18} /> No Card Required</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><CheckCheck size={18} /> Set up in 1 Minute</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><CheckCheck size={18} /> Free Forever Plan</div>
                     </div>
                 </motion.div>
             </header>
 
-            {/* Power Grid Section */}
-            <section id="features" style={{ padding: '60px 0', position: 'relative', zIndex: 1 }}>
+            {/* Feature Highlights */}
+            <section id="features" style={{ padding: '40px 0', position: 'relative', zIndex: 1 }}>
                 <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
                     <div className="features-grid">
                         {[
-                            { icon: MessageCircle, color: 'var(--primary)', title: 'Kreddy (AI Partner)', desc: 'Text our assistant to log sales & expenses. No apps needed when you\'re on the move.' },
-                            { icon: LayoutDashboard, color: '#4F46E5', title: 'Power Dashboard', desc: 'A deep cockpit to manage inventory, analyze revenue, and track business health.' },
-                            { icon: ShieldCheck, color: '#10B981', title: 'Verified Receipts', desc: 'Build instant trust with professional links sent to every customer via text or chat.' }
+                            { 
+                                icon: Sparkles, 
+                                color: 'var(--primary)', 
+                                title: 'Kreddy AI Assistant', 
+                                desc: 'Kreddy uses advanced AI to understand natural chat. Just text "I sold a bag to Sarah for 20k" and consider it logged.' 
+                            },
+                            { 
+                                icon: MessageCircle, 
+                                color: '#10B981', 
+                                title: 'Smart Debt Recovery', 
+                                desc: 'Send automated reminders to debtors with one click. They get a professional message with a direct payment link.' 
+                            },
+                            { 
+                                icon: CreditCard, 
+                                color: '#F59E0B', 
+                                title: 'Premium Digital Invoices', 
+                                desc: 'Impress clients with world-class invoice designs that build trust and encourage faster payments via secure links.' 
+                            }
                         ].map((feature, i) => (
-                            <motion.div key={i} whileHover={{ y: -5 }} className="glass-card" style={{ padding: '32px', background: 'white' }}>
-                                <div style={{ background: i === 0 ? 'var(--primary-glow)' : i === 1 ? 'rgba(79, 70, 229, 0.1)' : 'rgba(16, 185, 129, 0.1)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
-                                    <feature.icon color={feature.color} size={24} />
+                            <motion.div key={i} whileHover={{ y: -5 }} className="glass-card" style={{ padding: '32px', background: 'white', border: '1px solid rgba(0,0,0,0.05)' }}>
+                                <div style={{ background: i === 0 ? 'var(--primary-glow)' : i === 1 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(79, 70, 229, 0.1)', width: '56px', height: '56px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+                                    <feature.icon color={feature.color} size={28} />
                                 </div>
-                                <h3 style={{ marginBottom: '12px', fontWeight: 800, fontSize: '1.25rem' }}>{feature.title}</h3>
-                                <p style={{ color: '#4B5563', lineHeight: 1.6, fontSize: '0.95rem', fontWeight: 500 }}>{feature.desc}</p>
+                                <h3 style={{ marginBottom: '12px', fontWeight: 800, fontSize: '1.3rem', color: 'var(--text)' }}>{feature.title}</h3>
+                                <p style={{ color: '#64748B', lineHeight: 1.6, fontSize: '0.95rem', fontWeight: 500 }}>{feature.desc}</p>
                             </motion.div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* Detailed Dual Management Section */}
-            <section id="how-it-works" style={{ padding: '80px 20px', position: 'relative', zIndex: 1, background: '#F8FAFC' }}>
-                <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '64px' }}>
-                        <h2 className="section-title">One Business. Two Ways to Manage.</h2>
-                        <p style={{ color: '#6B7280', fontSize: '1.1rem', fontWeight: 500 }}>Seamlessly switch between our Dashboard and WhatsApp Assistant.</p>
+            {/* AI-First Workflow Section */}
+            <section id="how-it-works" style={{ padding: '60px 20px', position: 'relative', zIndex: 1, background: '#F8FAFC' }}>
+                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+                        <h2 className="section-title">Record Faster. Manage Better.</h2>
+                        <p style={{ color: '#6B7280', fontSize: '1.2rem', fontWeight: 500 }}>The perfect harmony between WhatsApp simplicity and Dashboard power.</p>
                     </div>
 
-                    <div style={{
+                    <div className="dual-grid" style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                        gap: '40px'
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+                        gap: '40px',
+                        alignItems: 'stretch' // Ensure both columns are equal height
                     }}>
                         {/* WhatsApp Detailed Card */}
                         <motion.div
                             initial={{ opacity: 0, x: -30 }}
                             whileInView={{ opacity: 1, x: 0 }}
                             viewport={{ once: true }}
-                            style={{ background: 'white', padding: '40px', borderRadius: '32px', border: '1px solid #E5E7EB', boxShadow: '0 20px 40px rgba(0,0,0,0.03)' }}
+                            style={{ background: 'white', padding: '48px', borderRadius: '40px', border: '1px solid #E5E7EB', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-                                <div style={{ padding: '10px', borderRadius: '12px', background: 'rgba(37, 211, 102, 0.1)' }}>
-                                    <MessageCircle color="#25D366" size={28} />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '40px' }}>
+                                <div style={{ padding: '12px', borderRadius: '16px', background: 'rgba(37, 211, 102, 0.1)' }}>
+                                    <MessageCircle color="#25D366" size={32} />
                                 </div>
-                                <h3 style={{ fontWeight: 800, fontSize: '1.5rem' }}>On the Go?</h3>
+                                <div>
+                                    <h3 style={{ fontWeight: 900, fontSize: '1.6rem', marginBottom: '4px' }}>AI Sales Logging</h3>
+                                    <p style={{ color: '#6B7280', fontSize: '0.9rem', fontWeight: 600 }}>NO APPS NEEDED</p>
+                                </div>
                             </div>
 
                             <div style={{
-                                background: '#ECE5DD', // WhatsApp Background
-                                borderRadius: '20px',
-                                padding: '16px',
-                                height: '320px',
+                                flex: 1, // Fill available space
+                                background: '#E5DDD5', 
+                                borderRadius: '24px',
+                                padding: '20px',
+                                minHeight: '400px', // Increased height
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '10px',
-                                marginBottom: '24px',
+                                gap: '16px',
+                                marginBottom: '32px',
                                 overflow: 'hidden',
-                                border: '4px solid #333'
+                                border: '6px solid #1A1A1A',
+                                boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
                             }}>
-                                <div style={{ alignSelf: 'flex-end', maxWidth: '90%', background: '#DCF8C6', padding: '10px', borderRadius: '10px 0 10px 10px', fontSize: '0.8rem', boxShadow: '0 1px 1px rgba(0,0,0,0.1)' }}>
-                                    <p style={{ color: '#111' }}>
-                                        I just sold a Professional Camera to David Adeleke for 300,000 and he paid 100,000 by transfer. He promised to pay the rest next week Friday.
+                                <div style={{ alignSelf: 'flex-end', maxWidth: '85%', background: '#DCF8C6', padding: '12px', borderRadius: '12px 0 12px 12px', fontSize: '0.85rem', boxShadow: '0 1px 1px rgba(0,0,0,0.1)' }}>
+                                    <p style={{ color: '#111', lineHeight: '1.4' }}>
+                                        Hi Kreddy, I just sold a <b>Custom Sofa</b> to <b>Mrs. Smith</b> for <b>₦450,000</b>. She paid <b>₦200k</b> by transfer.
                                     </p>
-                                    <p style={{ textAlign: 'right', fontSize: '0.6rem', color: '#666', marginTop: '4px' }}>14:08 <CheckCheck size={10} color="#34B7F1" /></p>
+                                    <p style={{ textAlign: 'right', fontSize: '0.65rem', color: '#666', marginTop: '6px' }}>10:42 <CheckCheck size={12} color="#34B7F1" /></p>
                                 </div>
-                                <div style={{ alignSelf: 'flex-start', maxWidth: '90%', background: 'white', padding: '10px', borderRadius: '0 10px 10px 10px', fontSize: '0.8rem', boxShadow: '0 1px 1px rgba(0,0,0,0.1)' }}>
-                                    <p style={{ fontWeight: 800, color: 'var(--primary)', marginBottom: '4px', fontSize: '0.75rem' }}>Kreddy</p>
-                                    <p style={{ color: '#111' }}>
-                                        ✅ *Logged!* Record for David Adeleke is saved.<br /><br />
-                                        💰 *Balance:* ₦200,000<br />
-                                        🗓️ *Reminder:* Set for next week Friday.
+                                <div style={{ alignSelf: 'flex-start', maxWidth: '85%', background: 'white', padding: '12px', borderRadius: '0 12px 12px 12px', fontSize: '0.85rem', boxShadow: '0 1px 1px rgba(0,0,0,0.1)' }}>
+                                    <p style={{ fontWeight: 800, color: 'var(--primary)', marginBottom: '6px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}> <Sparkles size={12}/> Kreddy AI</p>
+                                    <p style={{ color: '#111', lineHeight: '1.4' }}>
+                                        Got it! Mrs. Smith's record is updated. ✅<br /><br />
+                                        💰 <b>Total:</b> ₦450,000<br />
+                                        📥 <b>Received:</b> ₦200,000<br />
+                                        ⏳ <b>Balance:</b> ₦250,000<br /><br />
+                                        I've sent her a <b>Premium Invoice</b> link too! 🚀
                                     </p>
                                 </div>
                             </div>
-                            <p style={{ fontSize: '1rem', color: '#4B5563', lineHeight: 1.6, fontWeight: 500 }}>
-                                Professional logging using Natural Language Processing. Just talk, Kredibly records.
+                            <p style={{ fontSize: '1.05rem', color: '#4B5563', lineHeight: 1.6, fontWeight: 500 }}>
+                                Chat with Kreddy naturally. No forms, no friction. Just business at the speed of thought.
                             </p>
                         </motion.div>
 
@@ -309,98 +222,137 @@ const LandingPage = () => {
                             initial={{ opacity: 0, x: 30 }}
                             whileInView={{ opacity: 1, x: 0 }}
                             viewport={{ once: true }}
-                            style={{ background: 'white', padding: '40px', borderRadius: '32px', border: '1px solid #E5E7EB', boxShadow: '0 20px 40px rgba(0,0,0,0.03)' }}
+                            style={{ display: 'flex', flexDirection: 'column', gap: '24px', height: '100%' }}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-                                <div style={{ padding: '10px', borderRadius: '12px', background: 'var(--primary-glow)' }}>
-                                    <LayoutDashboard color="var(--primary)" size={28} />
+                            {/* Main Dashboard Card */}
+                            <div className="glass-card" style={{ padding: '40px', background: 'white', border: '1px solid #E5E7EB', flex: 2, display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+                                    <div style={{ padding: '12px', borderRadius: '16px', background: 'var(--primary-glow)' }}>
+                                        <LayoutDashboard color="var(--primary)" size={32} />
+                                    </div>
+                                    <h3 style={{ fontWeight: 900, fontSize: '1.6rem' }}>Power Dashboard</h3>
                                 </div>
-                                <h3 style={{ fontWeight: 800, fontSize: '1.5rem' }}>In the Office?</h3>
+                                <p style={{ color: '#4B5563', fontSize: '1.1rem', lineHeight: 1.6, marginBottom: '24px', fontWeight: 500 }}>
+                                    Analytics, Inventory, and Debt Tracking—synced in real-time.
+                                </p>
+                                <div style={{
+                                    width: '100%',
+                                    borderRadius: '20px',
+                                    overflow: 'hidden',
+                                    border: '1px solid #E2E8F0',
+                                    boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+                                    marginTop: 'auto' // Push to bottom
+                                }}>
+                                    <img
+                                        src="/dashboard_naira.png"
+                                        alt="Kredibly Dashboard"
+                                        style={{ width: '100%', height: 'auto', display: 'block' }}
+                                    />
+                                </div>
                             </div>
 
-                            <div style={{
-                                width: '100%',
-                                height: '320px',
-                                borderRadius: '20px',
-                                overflow: 'hidden',
-                                border: '1px solid #E2E8F0',
-                                marginBottom: '24px',
-                                boxShadow: '0 10px 30px rgba(0,0,0,0.05)'
-                            }}>
-                                <img
-                                    src="/dashboard_naira.png"
-                                    alt="Kredibly Dashboard"
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                />
+                            {/* Two Smaller Cards Side-by-Side to balance visual weight if needed, or keeping stacked but styling to match */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', flex: 1 }}>
+                                <div className="glass-card" style={{ padding: '24px', background: 'linear-gradient(135deg, #1E1B4B, #4C1D95)', color: 'white', borderRadius: '24px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                                        <ShieldCheck size={20} color="#10B981" />
+                                        <h4 style={{ fontWeight: 800, fontSize: '1.1rem' }}>Financial Identity</h4>
+                                    </div>
+                                    <p style={{ opacity: 0.9, fontSize: '0.9rem', lineHeight: 1.5, fontWeight: 500 }}>
+                                        Generate verifiable trust reports for loans.
+                                    </p>
+                                </div>
+
+                                <div className="glass-card" style={{ padding: '24px', background: 'white', border: '1px solid #E5E7EB', borderRadius: '24px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                                        <Users size={20} color="var(--primary)" />
+                                        <h4 style={{ fontWeight: 800, fontSize: '1.1rem' }}>Team Mode</h4>
+                                    </div>
+                                    <p style={{ color: '#64748B', fontSize: '0.9rem', lineHeight: 1.5, fontWeight: 500 }}>
+                                        Monitor employee sales in real-time.
+                                    </p>
+                                </div>
                             </div>
-                            <p style={{ fontSize: '1rem', color: '#4B5563', lineHeight: 1.6, fontWeight: 500 }}>
-                                Deep insights, inventory management, and financial reporting at your fingertips.
-                            </p>
                         </motion.div>
                     </div>
                 </div>
             </section>
 
             {/* Pricing Section */}
-            <section id="pricing" style={{ padding: '100px 20px', background: 'white', position: 'relative', zIndex: 1 }}>
+            <section id="pricing" style={{ padding: '80px 20px', background: 'white', position: 'relative', zIndex: 1 }}>
                 <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '64px' }}>
-                        <h2 className="section-title">Transparent Pricing</h2>
-                        <p style={{ color: '#6B7280', fontSize: '1.1rem', fontWeight: 500 }}>Start for free and scale as you grow.</p>
+                    <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+                        <h2 className="section-title">Scale Without Limits</h2>
+                        <p style={{ color: '#6B7280', fontSize: '1.2rem', fontWeight: 500 }}>Start building your financial reputation today for free.</p>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px', maxWidth: '900px', margin: '0 auto' }}>
+                    <div className="pricing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '40px', maxWidth: '1000px', margin: '0 auto' }}>
                         {/* Free Plan */}
-                        <div className="glass-card" style={{ padding: '40px', border: '1.5px solid #E5E7EB', borderRadius: '32px', position: 'relative' }}>
-                            <div style={{ marginBottom: '24px' }}>
-                                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '8px' }}>Free Forever</h3>
-                                <p style={{ color: '#6B7280', fontSize: '0.9rem' }}>Perfect for individuals and solo sellers.</p>
-                            </div>
+                        <div className="glass-card" style={{ padding: '48px', border: '1.5px solid #F1F5F9', borderRadius: '32px', position: 'relative', background: '#FFFFFF' }}>
                             <div style={{ marginBottom: '32px' }}>
-                                <span style={{ fontSize: '3rem', fontWeight: 900 }}>₦0</span>
-                                <span style={{ color: '#6B7280' }}>/mo</span>
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '12px' }}>Free Forever</h3>
+                                <p style={{ color: '#6B7280', fontSize: '0.95rem', lineHeight: 1.5 }}>For solopreneurs and vendors starting their journey.</p>
                             </div>
-                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ marginBottom: '40px' }}>
+                                <span style={{ fontSize: '4rem', fontWeight: 950, letterSpacing: '-2px' }}>₦0</span>
+                                <span style={{ color: '#94A3B8', fontSize: '1.1rem', fontWeight: 600 }}> /month</span>
+                            </div>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 40px 0', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                 {[
-                                    "Unlimited Sales Records",
-                                    "Kreddy (WhatsApp Assistant)",
-                                    "Professional Digital Invoices",
-                                    "Verifiable Trust Score",
-                                    "Basic Dashboard Access"
+                                    "Unlimited AI Sales Records",
+                                    "Premium Digital Invoices",
+                                    "Real-time Dashboard",
+                                    "Financial Trust Score",
+                                    "WhatsApp Support"
                                 ].map((feature, i) => (
-                                    <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.95rem', fontWeight: 500, color: '#374151' }}>
-                                        <CheckCheck size={18} color="#10B981" /> {feature}
+                                    <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1rem', fontWeight: 500, color: '#334155' }}>
+                                        <div style={{ minWidth: '20px', height: '20px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <CheckCheck size={14} color="#10B981" />
+                                        </div>
+                                        {feature}
                                     </li>
                                 ))}
                             </ul>
-                            <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', padding: '14px', borderRadius: '14px' }}>Get Started</button>
+                            <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', padding: '18px', borderRadius: '16px', fontSize: '1.1rem' }}>Create Free Account</button>
                         </div>
 
                         {/* Pro Plan - Coming Soon */}
-                        <div className="glass-card" style={{ padding: '40px', border: '2px solid var(--primary)', borderRadius: '32px', position: 'relative', background: 'linear-gradient(to bottom, #FAFBFF, white)' }}>
-                            <div style={{ position: 'absolute', top: '20px', right: '20px', background: 'var(--primary)', color: 'white', padding: '4px 12px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 800 }}>COMING SOON</div>
-                            <div style={{ marginBottom: '24px' }}>
-                                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '8px' }}>Kredibly Growth</h3>
-                                <p style={{ color: '#6B7280', fontSize: '0.9rem' }}>For growing teams and registered shops.</p>
+                        <div className="glass-card" style={{ 
+                            padding: '48px', 
+                            border: '2px solid var(--primary)', 
+                            borderRadius: '32px', 
+                            position: 'relative', 
+                            background: 'linear-gradient(180deg, #F8FAFF 0%, #FFFFFF 100%)',
+                            boxShadow: '0 30px 60px -12px rgba(76, 29, 149, 0.15)'
+                        }}>
+                            <div style={{ position: 'absolute', top: '24px', right: '24px' }}>
+                                <span style={{ background: 'var(--primary)', color: 'white', padding: '6px 14px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.05em' }}>WAITLISTING</span>
                             </div>
                             <div style={{ marginBottom: '32px' }}>
-                                <span style={{ fontSize: '3rem', fontWeight: 900 }}>₦--</span>
-                                <span style={{ color: '#6B7280' }}>/mo</span>
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '12px', color: 'var(--primary)' }}>Kredibly Business</h3>
+                                <p style={{ color: '#6B7280', fontSize: '0.95rem', lineHeight: 1.5 }}>For growing teams and registered retails.</p>
                             </div>
-                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ marginBottom: '40px' }}>
+                                <span style={{ fontSize: '4rem', fontWeight: 950, letterSpacing: '-2px', color: 'var(--text)' }}>₦--</span>
+                                <span style={{ color: '#94A3B8', fontSize: '1.1rem', fontWeight: 600 }}> /month</span>
+                            </div>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 40px 0', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                 {[
-                                    "Everything in Free",
-                                    "Inventory Management",
-                                    "Multi-user Staff Access",
-                                    "Advanced Business Insights",
-                                    "Priority WhatsApp Support"
+                                    "Custom Branding & Logos",
+                                    "Multi-user Staff Accounts",
+                                    "Inventory Low-stock Alerts",
+                                    "Direct POS Integration",
+                                    "Dedicated Account Manager"
                                 ].map((feature, i) => (
-                                    <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.95rem', fontWeight: 500, color: '#374151' }}>
-                                        <CheckCheck size={18} color="var(--primary)" /> {feature}
+                                    <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1rem', fontWeight: 500, color: '#334155' }}>
+                                        <div style={{ minWidth: '20px', height: '20px', borderRadius: '50%', background: 'var(--primary-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <CheckCheck size={14} color="var(--primary)" />
+                                        </div>
+                                        {feature}
                                     </li>
                                 ))}
                             </ul>
-                            <button disabled className="btn-primary" style={{ width: '100%', padding: '14px', borderRadius: '14px', opacity: 0.6, cursor: 'not-allowed' }}>Waitlist Joining...</button>
+                            <button disabled className="btn-primary" style={{ width: '100%', padding: '18px', borderRadius: '16px', fontSize: '1.1rem', opacity: 0.7, cursor: 'not-allowed' }}>Join the Waitlist</button>
                         </div>
                     </div>
                 </div>
@@ -408,111 +360,179 @@ const LandingPage = () => {
 
             {/* FAQ Section */}
             <section id="faq" style={{ padding: '80px 20px', background: '#F8FAFC', position: 'relative', zIndex: 1 }}>
-                <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+                <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '64px' }}>
                         <h2 className="section-title">Common Questions</h2>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '20px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
                         {[
-                            { q: "Is Kredibly really free?", a: "Yes! Our core features—WhatsApp recording, our basic dashboard, and digital receipts—are completely free for individual sellers and freelancers." },
-                            { q: "Do my customers need to sign up?", a: "No. Your customers simply receive a secure web link via WhatsApp or SMS. They can view, download, and confirm receipts without creating an account." },
-                            { q: "Does Kredibly support voice notes?", a: "Voice recording is coming soon! 🎙️ In this current phase, you can record sales by texting Kreddy. Voice notes are a high-priority feature for our next update." },
-                            { q: "What is a Verifiable Trust Score?", a: "It's a digital reputation based on your actual transaction history. As customers confirm your services/products, your score grows, making it easier to secure loans or partnerships." },
-                            { q: "Is my data secure?", a: "Extremely. We use industry-standard encryption to protect your records. Your business data is private and only accessible to you." },
-                            { q: "Can I use it for multiple businesses?", a: "Yes! You can manage multiple business identities and bank details under your single Kredibly account." }
+                            { 
+                                q: "How does Kreddy AI actually work?", 
+                                a: "Kreddy is an AI assistant powered by Google's Gemini. It's integrated into WhatsApp and your dashboard. You can talk to it like a real person to record sales, check your balance, or get support." 
+                            },
+                            { 
+                                q: "Are the invoices professional enough for big clients?", 
+                                a: "Absolutely. We've redesigned our invoices to match first-grade startup standards. They include professional layout, your branding, and verifiable payment verification." 
+                            },
+                            { 
+                                q: "What is the 'Verifiable Trust Score'?", 
+                                a: "Every successful, confirmed transaction on Kredibly builds your score. This score acts as a digital reputation that you can eventually use to access credit or prove business health." 
+                            },
+                            { 
+                                q: "Is Kredibly really free?", 
+                                a: "Yes. The core tools—WhatsApp recording, professional invoices, and basic dashboard features—are free forever. We will introduce 'Pro' features for larger teams later." 
+                            }
                         ].map((faq, idx) => (
-                            <div key={idx} className="glass-card" style={{ padding: '24px', background: 'white', borderRadius: '20px', border: '1px solid #F1F5F9' }}>
-                                <h4 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text)' }}>
-                                    <div style={{ minWidth: '8px', height: '8px', background: 'var(--primary)', borderRadius: '50%' }}></div>
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.1 }}
+                                key={idx} 
+                                className="glass-card" 
+                                style={{ padding: '24px 32px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0', cursor: 'pointer' }}
+                                whileHover={{ scale: 1.01 }}
+                            >
+                                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '8px', color: 'var(--text)' }}>
                                     {faq.q}
                                 </h4>
-                                <p style={{ color: '#64748B', lineHeight: 1.5, fontSize: '0.9rem', fontWeight: 500 }}>{faq.a}</p>
-                            </div>
+                                <p style={{ color: '#64748B', lineHeight: 1.6, fontSize: '0.95rem', fontWeight: 500 }}>{faq.a}</p>
+                            </motion.div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* Marquee Reviews Section */}
-            <section id="reviews" style={{ padding: '40px 0', borderTop: '1px solid #E5E7EB', borderBottom: '1px solid #E5E7EB', background: '#F8FAFC', overflow: 'hidden' }}>
-                <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Trusted by Modern Hustlers</h3>
+            {/* Trusted By Section */}
+            <section style={{ padding: '60px 20px', background: 'white', borderTop: '1px solid #F1F5F9' }}>
+                <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
+                    <p style={{ textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.85rem', fontWeight: 800, color: '#94A3B8', marginBottom: '32px' }}>
+                        Empowering the next generation of African Businesses
+                    </p>
+                    <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                        <motion.div 
+                            animate={{ x: [0, -1000] }}
+                            transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
+                            style={{ display: 'inline-flex', gap: '80px', opacity: 1 }}
+                        >
+                            {[...Array(3)].map((_, i) => (
+                                <React.Fragment key={i}>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#64748B' }}>BOLT</div>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#64748B' }}>CHOWDECK</div>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#64748B' }}>PIGGYVEST</div>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#64748B' }}>PAYSTACK</div>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#64748B' }}>MONIEPOINT</div>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#64748B' }}>OPAY</div>
+                                </React.Fragment>
+                            ))}
+                        </motion.div>
+                    </div>
                 </div>
+            </section>
 
-                <div className="marquee-container" style={{ display: 'flex', overflow: 'hidden', width: '100%', position: 'relative' }}>
-                    <div className="marquee-track" style={{ display: 'flex', gap: '24px' }}>
-                        {[...Array(2)].map((_, i) => (
-                            <div key={i} style={{ display: 'flex', gap: '24px' }}>
-                                {[
-                                    { name: "Sola Gadgets", text: "Kredibly makes my business look so professional. Clients trust me more." },
-                                    { name: "Sarah G.", text: "I use this to track my freelance design gigs. The WhatsApp logging is a lifesaver." },
-                                    { name: "Mama Tee Food", text: "I can track who owes me money instantly. Best tool for vendors." },
-                                    { name: "David (Architect)", text: "Creating invoices used to take 10 mins. Now I just text the bot." },
-                                    { name: "Glamour Hair", text: "My customers love receiving the digital receipt on WhatsApp." }
-                                ].map((review, idx) => (
-                                    <div key={idx} className="glass-card" style={{ minWidth: '280px', padding: '24px', background: 'white', borderRadius: '20px' }}>
-                                        <div style={{ display: 'flex', gap: '4px', marginBottom: '12px' }}>
-                                            {[...Array(5)].map((_, star) => (
-                                                <div key={star} style={{ color: '#F59E0B' }}>★</div>
-                                            ))}
-                                        </div>
-                                        <p style={{ fontSize: '0.9rem', color: '#4B5563', lineHeight: 1.5, marginBottom: '16px', fontStyle: 'italic', fontWeight: 500 }}>
-                                            "{review.text}"
-                                        </p>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <div style={{ width: '32px', height: '32px', background: 'var(--primary)', borderRadius: '50%', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem' }}>
-                                                {review.name.charAt(0)}
-                                            </div>
-                                            <p style={{ fontWeight: 800, fontSize: '0.9rem' }}>{review.name}</p>
-                                        </div>
+            <section style={{ padding: '100px 20px', background: 'white', overflow: 'hidden' }}>
+                <div style={{ maxWidth: '100%', margin: '0 auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+                        <h2 className="section-title">Trusted by Hustlers</h2>
+                        <p style={{ color: '#6B7280', fontSize: '1.2rem', fontWeight: 500 }}>Don't just take our word for it.</p>
+                    </div>
+                    
+                    <div className="marquee-container" style={{ overflow: 'hidden', width: '100%', position: 'relative', maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}>
+                        <div className="marquee-track" style={{ display: 'flex', gap: '32px', width: 'max-content' }}>
+                            {[
+                                ...[
+                                    { name: "Chinedu Okafor", role: "Auto Parts Dealer", text: "Before Kredibly, my boys would sell parts and money would miss. Now I get a WhatsApp alert for every screw they sell." },
+                                    { name: "Aisha Bello", role: "Fashion Designer", text: "Sending reminders to clients for money was so awkward. Now I just click 'Remind' and Kreddy sends a professional message." },
+                                    { name: "Tunde Bakare", role: "Gadget Vendor", text: "The invoices look so professional. My corporate clients stopped asking 'is this a real business?' trust score is practically a CV." },
+                                    { name: "Ibrahim Musa", role: "Electronics", text: "I can finally take a vacation knowing my shop is running. The Oga Mode alerts keep me in the loop 24/7." },
+                                    { name: "Sarah K.", role: "Online Vendor", text: "The 'No App' thing is a lifesaver. I just chat with Kreddy and my inventory is updated. Magic." }
+                                ],
+                                ...[
+                                    { name: "Chinedu Okafor", role: "Auto Parts Dealer", text: "Before Kredibly, my boys would sell parts and money would miss. Now I get a WhatsApp alert for every screw they sell." },
+                                    { name: "Aisha Bello", role: "Fashion Designer", text: "Sending reminders to clients for money was so awkward. Now I just click 'Remind' and Kreddy sends a professional message." },
+                                    { name: "Tunde Bakare", role: "Gadget Vendor", text: "The invoices look so professional. My corporate clients stopped asking 'is this a real business?' trust score is practically a CV." },
+                                    { name: "Ibrahim Musa", role: "Electronics", text: "I can finally take a vacation knowing my shop is running. The Oga Mode alerts keep me in the loop 24/7." },
+                                    { name: "Sarah K.", role: "Online Vendor", text: "The 'No App' thing is a lifesaver. I just chat with Kreddy and my inventory is updated. Magic." }
+                                ]
+                            ].map((review, i) => (
+                                <div key={i} className="glass-card review-card" style={{ 
+                                    padding: '32px', 
+                                    background: '#F8FAFC', 
+                                    border: '1px solid #E2E8F0', 
+                                    borderRadius: '24px',
+                                    minWidth: '350px',
+                                    maxWidth: '350px',
+                                    transition: 'all 0.3s ease'
+                                }}>
+                                    <div style={{ display: 'flex', gap: '4px', marginBottom: '16px' }}>
+                                        {[...Array(5)].map((_, j) => <div key={j} style={{ color: '#F59E0B' }}>★</div>)}
                                     </div>
-                                ))}
-                            </div>
-                        ))}
+                                    <p style={{ fontSize: '1rem', lineHeight: 1.6, color: '#334155', marginBottom: '24px', fontStyle: 'italic' }}>"{review.text}"</p>
+                                    <div>
+                                        <h4 style={{ fontWeight: 800, color: 'var(--text)' }}>{review.name}</h4>
+                                        <p style={{ fontSize: '0.85rem', color: '#64748B', fontWeight: 600 }}>{review.role}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </section>
 
             {/* CTA Section */}
-            <section style={{ padding: '100px 20px', position: 'relative', zIndex: 1 }}>
+            <section style={{ padding: '60px 20px 100px', position: 'relative', zIndex: 1 }}>
                 <div style={{
-                    maxWidth: '1000px', margin: '0 auto', background: 'linear-gradient(135deg, var(--primary), #1E1B4B)',
-                    padding: '80px 40px', borderRadius: '40px', color: 'white', textAlign: 'center',
-                    boxShadow: '0 20px 40px rgba(76, 29, 149, 0.2)', position: 'relative', overflow: 'hidden'
+                    maxWidth: '1100px', margin: '0 auto', background: 'linear-gradient(135deg, #1E1B4B 0%, #4C1D95 100%)',
+                    padding: '100px 40px', borderRadius: '48px', color: 'white', textAlign: 'center',
+                    boxShadow: '0 40px 100px -20px rgba(76, 29, 149, 0.4)', position: 'relative', overflow: 'hidden'
                 }}>
-                    <div style={{ marginBottom: '48px' }}>
-                        <h2 style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 900, marginBottom: '24px' }}>Professionalize Your Hustle</h2>
-                        <p style={{ fontSize: '1.2rem', opacity: 0.9, maxWidth: '600px', margin: '0 auto' }}>Join the next generation of Africans using Kredibly to build lasting financial credibility.</p>
+                    {/* Decorative Elements */}
+                    <div style={{ position: 'absolute', top: '-10%', right: '-5%', width: '300px', height: '300px', background: 'rgba(255,107,53,0.1)', filter: 'blur(80px)', borderRadius: '50%' }}></div>
+                    <div style={{ position: 'absolute', bottom: '-10%', left: '-5%', width: '300px', height: '300px', background: 'rgba(76,29,149,0.3)', filter: 'blur(80px)', borderRadius: '50%' }}></div>
+
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                        <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 950, marginBottom: '28px', letterSpacing: '-2px', lineHeight: 1 }}>Ready to level up your business?</h2>
+                        <p style={{ fontSize: '1.3rem', opacity: 0.9, maxWidth: '700px', margin: '0 auto 56px', fontWeight: 500, lineHeight: 1.6 }}>
+                            Join thousands of African entrepreneurs turning their daily hustle into a structured, credible empire. 
+                        </p>
+                        <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ padding: '22px 56px', borderRadius: '20px', fontSize: '1.3rem', background: 'white', color: 'var(--primary)', border: 'none' }}>
+                                Build Your Empire Now
+                            </button>
+                        </div>
+                        <p style={{ marginTop: '32px', fontSize: '1rem', opacity: 0.7, fontWeight: 500 }}>
+                            No credit card required. Cancel anytime.
+                        </p>
                     </div>
-                    {/* Using btn-secondary for white background and dark text */}
-                    <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ padding: '20px 50px', borderRadius: '16px', fontSize: '1.2rem' }}>
-                        Start Your Free Trial
-                    </button>
                 </div>
             </section>
 
-{/* Footer */}
-            <footer style={{ padding: '80px 20px', textAlign: 'center', color: '#6B7280', background: 'white', borderTop: '1px solid #E5E7EB' }}>
-                <div style={{ maxWidth: '700px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px' }}>
-                    
-                    <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '36px', objectFit: 'contain' }} />
-                    
-                    <p style={{ fontSize: '1rem', lineHeight: 1.6, color: '#4B5563', fontWeight: 500 }}>
-                        We are building the operating system for African commerce. By merging casual chat with professional record-keeping, Kredibly turns everyday hustle into verifiable financial power.
-                    </p>
-
-                    <p style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: '16px', color: '#9CA3AF' }}>
-                        © 2026 Kredibly. Empowering African Commerce.
-                    </p>
-                </div>
-            </footer>
+            <PublicFooter />
 
             <style>{`
+                @keyframes scroll {
+                    0% { transform: translateX(0); }
+                    100% { transform: translateX(-50%); }
+                }
+                .marquee-track {
+                    animation: scroll 60s linear infinite;
+                }
+                .marquee-track:hover {
+                    animation-play-state: paused;
+                }
+                .review-card:hover {
+                    transform: scale(1.05); /* Pop up effect */
+                    background: white !important;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.1) !important;
+                    z-index: 10;
+                }
                 @media (max-width: 768px) {
-                    .hero-title { font-size: 2.8rem !important; }
-                    .features-grid { grid-template-columns: 1fr !important; }
-                    .features-grid .glass-card { padding: 24px !important; }
+                    .hero-title { font-size: 2.2rem !important; }
+                    .features-grid, .dual-grid, .pricing-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+                    .features-grid .glass-card, .dual-grid .glass-card, .pricing-grid .glass-card { padding: 24px !important; }
+                    /* Make review cards smaller on mobile */
+                    .review-card { min-width: 280px !important; max-width: 280px !important; padding: 20px !important; }
+                    .section-title { font-size: 2rem !important; }
                 }
             `}</style>
         </div>

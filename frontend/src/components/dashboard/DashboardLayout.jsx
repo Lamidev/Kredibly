@@ -15,7 +15,7 @@ import {
     X,
     LogOut,
     User as UserIcon,
-    HelpCircle,
+    MessagesSquare,
     RefreshCcw
 } from 'lucide-react';
 import { useSales } from '../../context/SaleContext';
@@ -106,7 +106,7 @@ const DashboardLayout = () => {
         { label: 'Debtors', path: '/debtors', icon: Users },
         { label: 'Reports', path: '/reports', icon: BarChart3 },
         { label: 'Verifiable Proofs', path: '/proofs', icon: ShieldCheck },
-        { label: 'Help & Support', path: '/help', icon: HelpCircle },
+        { label: 'Help & Support', path: '/help', icon: MessagesSquare },
     ];
 
     return (

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSales } from "../../context/SaleContext";
 import { useAuth } from "../../context/AuthContext";
-import { Plus, Wallet, Clock, CheckCircle, ChevronRight, LayoutDashboard, Settings, LogOut, X, TrendingUp, Users, MessageCircle, Trash2, RefreshCcw, Bell, Shield } from "lucide-react";
+import { Plus, Wallet, Clock, CheckCircle, ChevronRight, LayoutDashboard, Settings, LogOut, X, TrendingUp, Users, MessagesSquare, Trash2, RefreshCcw, Bell, Shield } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
 
@@ -150,7 +150,7 @@ const Dashboard = () => {
                         <div className="glass-card animate-fade-in" style={{ padding: '24px', background: 'linear-gradient(135deg, var(--primary), #6366F1)', color: 'white', borderRadius: '24px', marginBottom: '32px', boxShadow: '0 15px 30px rgba(79, 70, 229, 0.2)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
                                 <div style={{ background: 'rgba(255,255,255,0.2)', padding: '10px', borderRadius: '12px' }}>
-                                    <MessageCircle size={24} />
+                                    <MessagesSquare size={24} />
                                 </div>
                                 <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>Step 1: Link your WhatsApp</h3>
                             </div>
@@ -279,7 +279,7 @@ const Dashboard = () => {
                             rel="noopener noreferrer"
                             style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#25D366', fontWeight: 700, fontSize: '0.85rem', marginTop: '16px', textDecoration: 'none' }}
                         >
-                            <MessageCircle size={16} /> Open Kreddy in WhatsApp
+                            <MessagesSquare size={16} /> Open Kreddy in WhatsApp
                         </a>
                     </div>
 

@@ -31,6 +31,10 @@ const BusinessProfileSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    staffNumbers: [{
+        type: String,
+        trim: true
+    }],
     assistantSettings: {
         enableReminders: { type: Boolean, default: true },
         reminderFrequency: { type: String, default: "daily" }
@@ -44,6 +48,14 @@ const BusinessProfileSchema = new mongoose.Schema({
     isKreddyConnected: {
         type: Boolean,
         default: false
+    },
+    paystackSubaccountCode: {
+        type: String,
+        default: ""
+    },
+    onboardingStep: {
+        type: Number,
+        default: 0
     },
     createdAt: {
         type: Date,

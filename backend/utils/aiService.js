@@ -1,8 +1,18 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const genAI = new GoogleGenerativeAI(process.env.KREDDY_API_KEY || "");
-// Using Gemini 1.5 Flash as it's the stable workhorse for the current project tier.
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+// We use gemini-1.5-flash as the primary workhorse. 
+let modelName = "gemini-1.5-flash";
+let model = genAI.getGenerativeModel({ model: modelName });
+
+/**
+ * Update the model if the standard one fails.
+ */
+const refreshModel = (newModelName = "gemini-1.5-flash") => {
+    modelName = newModelName;
+    model = genAI.getGenerativeModel({ model: modelName });
+};
 
 /**
  * Processes incoming WhatsApp messages using Gemini AI to extract business intents and data.
@@ -23,11 +33,11 @@ Your goal is to extract business transaction details from informal messages in E
 You MUST reply with ONLY a JSON object. No markdown, no extra text.
 
 Supported Intents:
-1. "create_sale" -> Recording a sale, receipt of money, or a DEBT REMINDER.
-2. "check_debt" -> Asking about balances.
-3. "update_record" -> Updating an existing record.
+1. "create_sale" -> Recording a new sale, or recording a debt for someone new.
+2. "check_debt" -> Asking about balances ("Who is owing me?", "How much does Kola owe?").
+3. "update_record" -> Updating an existing record (e.g., adding a payment, changing due date, setting a reminder).
 4. "new_support_ticket" -> Help requests, complaints ("My app is slow", "I have an issue").
-5. "reply_ticket" -> Use this ONLY if 'hasOpenTicket' is TRUE and the user's message is NOT a sales command (e.g., "Thanks", "Okay", "Here is the screenshot", "When will you fix it?").
+5. "reply_ticket" -> Use this ONLY if 'hasOpenTicket' is TRUE and the user's message is NOT a sales command.
 6. "general_chat" -> Greetings or ambiguous input.
 
 JSON Structure:
@@ -36,31 +46,32 @@ JSON Structure:
   "confidence": 0.0 to 1.0, 
   "data": {
     "customerName": "Extracted Name",
-    "totalAmount": Number,
-    "paidAmount": Number,
+    "totalAmount": Number, // Total value of the sale/debt
+    "paidAmount": Number,  // Amount actually paid RIGHT NOW
     "item": "Description",
-    "dueDate": "YYYY-MM-DD",
+    "dueDate": "YYYY-MM-DD" or "YYYY-MM-DDTHH:mm:ss", // Use ISO with time if user says "in 5 mins" or specific time
     "reply": "Witty reply"
   }
 }
 
-Rules:
-- CONTEXT AWARENESS: Look at the 'Merchant Context' below. If 'hasOpenTicket' is YES, prioritize detecting if the user is replying to that ticket ("reply_ticket").
-- IF hasOpenTicket == true AND input is NOT a clear sales command (like "sold 5k"), assume intent is "reply_ticket".
-- IF hasOpenTicket == false AND input looks like a complaint ("I have a problem", "Help me"), intent is "new_support_ticket".
-- "Sarah paid her debt" -> intent: "update_record", customerName: "Sarah", item: "Repayment".
-- "Thanks" (with open ticket) -> intent: "reply_ticket".
-- "Thanks" (no open ticket) -> intent: "general_chat".
-- Always prioritize "create_sale" if a name and money/debt are mentioned together, even if ticket is open.
-- For business logic, be street-smart but accurate.
+Rules & Logic:
+- "PAID" vs "OWING": 
+    - "Kola paid 5k" -> paidAmount: 5000.
+    - "Kola is to pay 5k", "Remind me about Kola's 5k", "Kola owes 5k" -> totalAmount: 5000, paidAmount: 0.
+    - ALWAYS assume "to pay" or "remind me" means the money has NOT been received yet.
+- GRANULAR REMINDERS: If the user says "in 5 mins", "at 4pm", calculate the exact ISO timestamp for dueDate based on 'Today's Date/Time'.
+- CONTEXT AWARENESS: Look at the 'Merchant Context'. If 'hasOpenTicket' is YES, prioritize "reply_ticket".
+- "Sarah paid her debt" -> intent: "update_record", customerName: "Sarah", item: "Repayment", paidAmount: [Amount].
+- Always prioritize "create_sale" if a name and money/debt are mentioned together for a NEW record.
+- Use "update_record" if the customer is already in the 'Debtors' list provided in context.
 - IMPORTANT: ALWAYS response with ONLY valid JSON.
 `;
 
   try {
-    const today = new Date().toISOString().split("T")[0];
+    const now = new Date().toISOString();
     const prompt = `
     --- MERCHANT CONTEXT ---
-    Today is ${today}.
+    Current Time: ${now} (Use this for relative reminders like "in 5 mins")
     Merchant: ${context.merchantName || 'A user'}
     Their Debtors/Unpaid Records: ${context.debtors || 'None.'}
     Has Open Ticket: ${context.hasOpenTicket ? 'YES' : 'NO'}
@@ -104,6 +115,16 @@ Rules:
     return parsed;
   } catch (error) {
     console.error("Gemini AI Error:", error);
+    
+    // Check for different error structures in Gemini SDK
+    const statusCode = error.status || error.response?.status || error.response?.data?.error?.code;
+    const isModelNotFound = statusCode === 404 || error.message?.includes("404") || error.message?.includes("not found");
+    
+    if (isModelNotFound) {
+        console.warn("Model fallback triggered due to 404/Not Found. Attempting stable model...");
+        refreshModel("gemini-1.5-flash"); // Use the working name
+    }
+    
     return null; 
   }
 };

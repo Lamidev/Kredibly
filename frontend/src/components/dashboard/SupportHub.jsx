@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     MessageSquare,
+    MessagesSquare,
     X,
     Send,
     Heart,
@@ -205,7 +206,7 @@ const SupportHub = () => {
                                             justifyContent: 'center',
                                             boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
                                         }}>
-                                            <Bot color="var(--primary)" size={28} />
+                                            <MessagesSquare color="var(--primary)" size={26} />
                                         </div>
                                         <div style={{ position: 'absolute', bottom: '2px', right: '2px', width: '12px', height: '12px', background: '#86EFAC', border: '2.5px solid white', borderRadius: '50%', boxShadow: '0 0 8px #86EFAC' }}></div>
                                     </div>
@@ -485,7 +486,7 @@ const SupportHub = () => {
                     position: 'relative'
                 }}
             >
-                {isOpen ? <X size={26} /> : <div style={{ position: 'relative' }}><Bot size={28} /></div>}
+                {isOpen ? <X size={26} /> : <div style={{ position: 'relative' }}><MessagesSquare size={26} /></div>}
                 {!isOpen && unreadReplyCount > 0 && (
                     <span style={{
                         position: 'absolute', top: '0', right: '0', width: '22px', height: '22px',

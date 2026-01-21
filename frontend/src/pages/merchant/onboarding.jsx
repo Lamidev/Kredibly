@@ -30,6 +30,8 @@ const Onboarding = () => {
     const [bankName, setBankName] = useState("");
     const [accountNumber, setAccountNumber] = useState("");
     const [accountName, setAccountName] = useState("");
+    const [staffNumbers, setStaffNumbers] = useState([]);
+    const [newStaffPhone, setNewStaffPhone] = useState("");
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
 
@@ -77,7 +79,8 @@ const Onboarding = () => {
                 sellMode,
                 logoUrl,
                 whatsappNumber,
-                bankDetails: { bankName, accountNumber, accountName }
+                bankDetails: { bankName, accountNumber, accountName },
+                staffNumbers
             });
             toast.success("Hustle verified. Welcome!");
             navigate("/dashboard");
@@ -88,14 +91,25 @@ const Onboarding = () => {
         }
     };
 
+    const addStaff = () => {
+        if (!newStaffPhone) return;
+        if (staffNumbers.includes(newStaffPhone)) return toast.error("Already added");
+        setStaffNumbers([...staffNumbers, newStaffPhone]);
+        setNewStaffPhone("");
+    };
+
+    const removeStaff = (phone) => {
+        setStaffNumbers(staffNumbers.filter(p => p !== phone));
+    };
+
     const ProgressHeader = () => (
         <div style={{ padding: '24px', background: 'white', borderRadius: '24px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid #F1F5F9' }}>
             <div>
                 <h3 style={{ margin: 0, fontWeight: 900, fontSize: '1.1rem' }}>Setup Wizard</h3>
-                <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748B', fontWeight: 700 }}>Step {step} of 3</p>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748B', fontWeight: 700 }}>Step {step} of 4</p>
             </div>
             <div style={{ width: '120px', height: '6px', background: '#F1F5F9', borderRadius: '10px', overflow: 'hidden' }}>
-                <motion.div animate={{ width: `${(step / 3) * 100}%` }} style={{ height: '100%', background: 'var(--primary)', borderRadius: '10px' }} />
+                <motion.div animate={{ width: `${(step / 4) * 100}%` }} style={{ height: '100%', background: 'var(--primary)', borderRadius: '10px' }} />
             </div>
         </div>
     );
@@ -222,13 +236,41 @@ const Onboarding = () => {
                                     </div>
                                 </div>
 
-                                <button onClick={handleSubmit} disabled={loading} className="btn-primary" style={{ width: '100%', padding: '16px', borderRadius: '16px' }}>
-                                    {loading ? 'Crunching numbers...' : 'Launch Mission Control 🚀'}
-                                </button>
+                                <div style={{ display: 'flex', gap: '12px' }}>
+                                    <button onClick={() => setStep(2)} className="btn-secondary" style={{ flex: 1 }}>Back</button>
+                                    <button onClick={nextStep} className="btn-primary" style={{ flex: 2 }}>Next Step</button>
+                                </div>
+                            </motion.div>
+                        )}
 
-                                <button onClick={handleSubmit} style={{ width: '100%', background: 'none', border: 'none', color: '#94A3B8', marginTop: '16px', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>
-                                    Skip & Start Dashboard
-                                </button>
+                        {step === 4 && (
+                            <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} key="step4">
+                                <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>The Oga Monitor 🛡️</h2>
+                                <p style={{ color: '#64748B', fontSize: '0.9rem', marginBottom: '32px' }}>Optional: Add staff who can record sales while you stay in control.</p>
+
+                                <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+                                    <input type="tel" className="input-field" placeholder="Staff Phone" value={newStaffPhone} onChange={e => setNewStaffPhone(e.target.value)} />
+                                    <button className="btn-secondary" style={{ width: 'auto', padding: '0 16px' }} onClick={addStaff}>Add</button>
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px', maxHeight: '150px', overflowY: 'auto' }}>
+                                    {staffNumbers.map((phone, idx) => (
+                                        <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #F1F5F9' }}>
+                                            <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{phone}</span>
+                                            <button onClick={() => removeStaff(phone)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer' }}>Remove</button>
+                                        </div>
+                                    ))}
+                                    {staffNumbers.length === 0 && (
+                                        <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: '0.75rem', padding: '16px' }}>No staff added. You can do this later in settings.</p>
+                                    )}
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '12px' }}>
+                                    <button onClick={() => setStep(3)} className="btn-secondary" style={{ flex: 1 }}>Back</button>
+                                    <button onClick={handleSubmit} disabled={loading} className="btn-primary" style={{ flex: 2 }}>
+                                        {loading ? 'Finalizing...' : 'Launch Dashboard 🚀'}
+                                    </button>
+                                </div>
                             </motion.div>
                         )}
                     </AnimatePresence>

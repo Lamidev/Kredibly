@@ -13,7 +13,7 @@ const cleanPhone = (num) => {
 
 exports.updateProfile = async (req, res) => {
     try {
-        const { displayName, entityType, sellMode, logoUrl, phoneNumber, whatsappNumber, address, assistantSettings, bankDetails } = req.body;
+        const { displayName, entityType, sellMode, logoUrl, phoneNumber, whatsappNumber, address, assistantSettings, bankDetails, staffNumbers } = req.body;
 
         let profile = await BusinessProfile.findOne({ ownerId: req.user._id });
 
@@ -27,6 +27,9 @@ exports.updateProfile = async (req, res) => {
             profile.address = address || profile.address;
             if (assistantSettings) profile.assistantSettings = assistantSettings;
             if (bankDetails) profile.bankDetails = bankDetails;
+            if (staffNumbers) {
+                profile.staffNumbers = staffNumbers.map(n => cleanPhone(n)).filter(n => n);
+            }
             await profile.save();
         } else {
             profile = new BusinessProfile({
@@ -39,7 +42,8 @@ exports.updateProfile = async (req, res) => {
                 whatsappNumber: cleanPhone(whatsappNumber),
                 address,
                 assistantSettings,
-                bankDetails
+                bankDetails,
+                staffNumbers: staffNumbers ? staffNumbers.map(n => cleanPhone(n)).filter(n => n) : []
             });
             await profile.save();
         }

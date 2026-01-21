@@ -13,6 +13,7 @@ const whatsappRoutes = require("./routes/whatsapp/whatsappRoutes");
 const notificationRoutes = require("./routes/business/notificationRoutes");
 const adminRoutes = require("./routes/admin/adminRoutes");
 const supportRoutes = require("./routes/admin/supportRoutes");
+const paymentRoutes = require("./routes/common/paymentRoutes");
 const { startProactiveAssistant } = require("./utils/proactiveAssistant");
 const { startTicketCleanup } = require("./utils/ticketScheduler");
 
@@ -22,7 +23,23 @@ const PORT = process.env.PORT || 7050;
 // Middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = [
+        "http://localhost:5173",
+        "http://localhost:3000"
+      ];
+      
+      const isAllowed = allowedOrigins.includes(origin) || origin.includes("ngrok-free.dev");
+      
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
@@ -34,7 +51,11 @@ app.use(
   })
 );
 
-app.use(express.json());
+app.use(express.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    }
+}));
 app.use(cookieParser());
 
 // Routes
@@ -46,6 +67,7 @@ app.use("/api/whatsapp", whatsappRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/support", supportRoutes);
+app.use("/api/payments", paymentRoutes);
 
 // Database Connection
 mongoose

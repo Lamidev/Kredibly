@@ -34,7 +34,8 @@ const SaleSchema = new mongoose.Schema({
         {
             amount: { type: Number, required: true },
             date: { type: Date, default: Date.now },
-            method: { type: String, default: "Cash" }
+            method: { type: String, default: "Cash" },
+            reference: String
         }
     ],
     status: {
@@ -49,7 +50,8 @@ const SaleSchema = new mongoose.Schema({
     confirmedAt: Date,
     dueDate: Date,
     reminderSentAt: Date,
-    lastAutoReminderSent: Date
+    lastAutoReminderSent: Date,
+    recordedBy: String
 }, {
     timestamps: true
 });
