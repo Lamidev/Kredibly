@@ -75,7 +75,7 @@ const PublicInvoicePage = () => {
 
         const handler = window.PaystackPop.setup({
             key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_placeholder', 
-            email: sale.customerEmail || 'customer@kredibly.com',
+            email: sale.customerEmail || 'customer@usekredibly.com',
             amount: Math.round(balance * 100), // in kobo
             currency: 'NGN',
             ref: `KRED_${sale.invoiceNumber}_${Date.now()}`,

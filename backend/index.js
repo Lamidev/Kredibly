@@ -1,4 +1,4 @@
-const express = require("express"); // Server entry point - Restart for Fix
+const express = require("express"); 
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
@@ -29,10 +29,11 @@ app.use(
       
       const allowedOrigins = [
         "http://localhost:5173",
-        "http://localhost:3000"
+        "https://usekredibly.com",
+        "https://www.usekredibly.com"
       ];
       
-      const isAllowed = allowedOrigins.includes(origin) || origin.includes("ngrok-free.dev");
+      const isAllowed = allowedOrigins.includes(origin) || (origin && origin.includes("ngrok-free.dev"));
       
       if (isAllowed) {
         callback(null, true);

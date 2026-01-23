@@ -9,7 +9,7 @@ if (!RESEND_API_KEY) {
 const resendClient = new Resend(RESEND_API_KEY);
 
 const sender = {
-    email: "onboarding@resend.dev", // Default for testing
+    email: process.env.SENDER_EMAIL || "onboarding@resend.dev",
     name: "Kredibly"
 };
 

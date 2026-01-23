@@ -35,7 +35,7 @@ exports.createTicket = async (req, res) => {
         // In production, this would be an env var like process.env.ADMIN_EMAIL
         // For now, using a placeholder or assuming it goes to the maintainer
         try {
-            const adminEmail = process.env.ADMIN_EMAIL || "support@kredibly.com"; 
+            const adminEmail = process.env.ADMIN_EMAIL || "support@usekredibly.com"; 
             await sendNewTicketEmail(adminEmail, nameToShow, message, newTicket._id);
         } catch (emailErr) {
             console.error("Failed to send admin alert email:", emailErr);

@@ -1009,7 +1009,7 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
                 // NOTIFY ADMIN via EMAIL
                 try {
                     const { sendNewTicketEmail } = require("../../emailLogic/emails");
-                    const adminEmail = process.env.ADMIN_EMAIL || "support@kredibly.com"; 
+                    const adminEmail = process.env.ADMIN_EMAIL || "support@usekredibly.com"; 
                     await sendNewTicketEmail(adminEmail, profile.displayName, text, newTicket._id);
                 } catch (e) {
                     console.error("Email fail", e);

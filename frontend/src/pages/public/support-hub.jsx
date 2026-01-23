@@ -25,13 +25,13 @@ const SupportHub = () => {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
-                    <div className="glass-card" style={{ padding: '32px', display: 'flex', alignItems: 'center', gap: '24px', background: 'white', borderRadius: '24px', cursor: 'pointer' }} onClick={() => window.location.href = 'mailto:support@kredibly.com'}>
+                    <div className="glass-card" style={{ padding: '32px', display: 'flex', alignItems: 'center', gap: '24px', background: 'white', borderRadius: '24px', cursor: 'pointer' }} onClick={() => window.location.href = 'mailto:support@usekredibly.com'}>
                         <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'var(--primary-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <Mail size={24} color="var(--primary)" />
                         </div>
                         <div>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '4px' }}>Email Support</h3>
-                            <p style={{ color: '#64748B' }}>support@kredibly.com</p>
+                            <p style={{ color: '#64748B' }}>support@usekredibly.com</p>
                         </div>
                     </div>
 
