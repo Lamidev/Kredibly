@@ -5,33 +5,84 @@ function AuthLayout() {
   const navigate = useNavigate();
 
   return (
-    <div className="auth-pattern auth-layout-container">
-      <div className="pattern-dots"></div>
+    <div className="auth-pattern" style={{ 
+      minHeight: '100vh', 
+      width: '100%', 
+      display: 'flex', 
+      flexDirection: 'column',
+      position: 'relative',
+      overflowX: 'hidden'
+    }}>
+      {/* Dynamic Background Overlays */}
+      <div className="pattern-dots" style={{ opacity: 0.05 }}></div>
+      <div style={{ 
+        position: 'absolute', 
+        inset: 0, 
+        background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0) 0%, rgba(248, 250, 252, 0.4) 100%)',
+        pointerEvents: 'none'
+      }}></div>
 
-      {/* Persistent Logo */}
+      {/* Persistent Logo Header */}
       <div
         onClick={() => navigate('/')}
-        className="auth-logo-wrapper"
+        className="animate-fade-in"
+        style={{ 
+          padding: '40px',
+          cursor: 'pointer',
+          zIndex: 100,
+          display: 'flex',
+          alignItems: 'center',
+          width: 'fit-content'
+        }}
       >
-        <img
-          src="/krediblyrevamped.png"
-          alt="Kredibly"
-          style={{ height: '40px', width: 'auto', objectFit: 'contain' }}
+        <img 
+          src="/krediblyrevamped.png" 
+          alt="Kredibly" 
+          style={{ height: '35px', width: 'auto' }} 
         />
       </div>
 
-      {/* Robust Centering Container using Vanilla CSS */}
-      <div className="auth-main-content">
-        <div className="auth-form-wrapper">
+      {/* Main Form Container */}
+      <main style={{ 
+        flex: 1, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        padding: '24px',
+        position: 'relative',
+        zIndex: 10
+      }}>
+        <div style={{ width: '100%', maxWidth: '480px' }}>
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.5 }}
           >
             <Outlet />
           </motion.div>
+          
+          <div style={{ 
+            marginTop: '40px', 
+            textAlign: 'center', 
+            color: '#000000', 
+            fontSize: '0.85rem', 
+            fontWeight: 700,
+            opacity: 1 
+          }}>
+            <p>© {new Date().getFullYear()} Kredibly. All records are safe and secure.</p>
+          </div>
         </div>
-      </div>
+      </main>
+
+      <style>{`
+        .auth-pattern {
+          background-image: url('/Krediblypattern.png');
+          background-size: cover;
+          background-position: center;
+          background-attachment: fixed;
+          background-color: var(--background);
+        }
+      `}</style>
     </div>
   );
 }

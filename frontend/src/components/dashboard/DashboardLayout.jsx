@@ -101,12 +101,11 @@ const DashboardLayout = () => {
     const unreadCount = notifications.filter(n => !n.isRead).length;
 
     const navItems = [
-        { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-        { label: 'Invoices', path: '/sales', icon: FileText },
-        { label: 'Debtors', path: '/debtors', icon: Users },
+        { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, end: true },
+        { label: 'Invoices', path: '/sales', icon: FileText, activeIfMatch: ['/sales'] },
+        { label: 'Debtors', path: '/debtors', icon: Users, activeIfMatch: ['/debtors'] },
         { label: 'Reports', path: '/reports', icon: BarChart3 },
         { label: 'Verifiable Proofs', path: '/proofs', icon: ShieldCheck },
-        { label: 'Help & Support', path: '/help', icon: MessagesSquare },
     ];
 
     return (
@@ -120,49 +119,94 @@ const DashboardLayout = () => {
             )}
 
             {/* Sidebar */}
-            <aside className={`sidebar ${isSidebarOpen ? 'mobile-open' : ''}`}>
-                <div className="sidebar-header">
-                    <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '32px', cursor: 'pointer' }} onClick={() => navigate('/')} />
+            <aside className={`sidebar sidebar-premium ${isSidebarOpen ? 'mobile-open' : ''}`} style={{ background: 'white', borderRight: '1px solid var(--border)' }}>
+                <div className="sidebar-header" style={{ padding: '32px 24px', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <img 
+                            src="/krediblyrevamped.png" 
+                            alt="Kredibly" 
+                            style={{ height: '35px', width: 'auto' }} 
+                        />
+                    </div>
                 </div>
 
-                <div style={{ padding: '0 16px 24px' }}>
+                <div style={{ padding: '0 16px 32px' }}>
                     <button
                         className="btn-primary"
-                        style={{ width: '100%', padding: '14px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                        style={{ 
+                            width: '100%', 
+                            padding: '16px', 
+                            borderRadius: '16px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            gap: '10px',
+                            fontWeight: 800,
+                            letterSpacing: '-0.01em',
+                            boxShadow: '0 10px 20px -5px var(--primary-glow)'
+                        }}
                         onClick={() => navigate('/sales/new')}
                     >
-                        <Plus size={20} /> Create New Invoice
+                        <Plus size={20} strokeWidth={3} /> Create Sale
                     </button>
                 </div>
 
-                <nav className="sidebar-nav">
+                <nav className="sidebar-nav" style={{ flex: 1 }}>
                     {navItems.map((item) => (
                         <NavLink
                             key={item.path}
                             to={item.path}
-                            className={({ isActive }) => `nav-item ${isActive || (item.path === '/sales' && location.pathname.startsWith('/sales')) ? 'active' : ''}`}
+                            end={item.end}
+                            className={({ isActive }) => {
+                                let isMatched = item.activeIfMatch 
+                                    ? item.activeIfMatch.some(p => location.pathname.startsWith(p))
+                                    : isActive;
+
+                                // Special case for individual invoice view
+                                if (location.pathname.startsWith('/dashboard/invoice')) {
+                                    const from = location.state?.from || '/sales';
+                                    if (item.path === from) {
+                                        isMatched = true;
+                                    } else {
+                                        isMatched = false;
+                                    }
+                                }
+
+                                return `nav-item-premium ${isMatched ? 'active' : ''}`;
+                            }}
                             onClick={() => setIsSidebarOpen(false)}
+                            style={{ margin: '4px 16px' }}
                         >
-                            <item.icon size={20} />
-                            {item.label}
+                            {({ isActive }) => {
+                                const isMatched = item.activeIfMatch 
+                                    ? item.activeIfMatch.some(p => location.pathname.startsWith(p))
+                                    : isActive;
+                                return (
+                                    <>
+                                        <item.icon size={20} strokeWidth={isMatched ? 2.5 : 2} />
+                                        <span style={{ fontWeight: 700 }}>{item.label}</span>
+                                    </>
+                                );
+                            }}
                         </NavLink>
                     ))}
                 </nav>
 
-                <div className="sidebar-footer">
+                <div className="sidebar-footer" style={{ borderTop: '1px solid #F1F5F9', padding: '20px 0' }}>
                     <NavLink
                         to="/settings"
-                        className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                        className={({ isActive }) => `nav-item-premium ${isActive ? 'active' : ''}`}
                         onClick={() => setIsSidebarOpen(false)}
+                        style={{ margin: '4px 16px' }}
                     >
-                        <Settings size={20} /> Settings
+                        <Settings size={20} /> <span style={{ fontWeight: 700 }}>Settings</span>
                     </NavLink>
                     <button
                         onClick={() => setShowLogoutConfirm(true)}
-                        className="nav-item"
-                        style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', marginTop: '8px', textAlign: 'left', color: '#EF4444' }}
+                        className="nav-item-premium"
+                        style={{ width: 'calc(100% - 32px)', background: 'none', border: 'none', cursor: 'pointer', margin: '8px 16px', color: '#EF4444' }}
                     >
-                        <LogOut size={20} /> Logout
+                        <LogOut size={20} /> <span style={{ fontWeight: 700 }}>Logout</span>
                     </button>
                 </div>
             </aside>

@@ -19,7 +19,6 @@ import CreateSale from "./pages/merchant/create-sale";
 import InvoicePage from "./pages/merchant/invoice-page";
 import SalesList from "./pages/merchant/sales-list";
 import SettingsPage from "./pages/merchant/settings-page";
-import HelpPage from "./pages/merchant/help-page";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 
 import DashboardLayout from "./components/dashboard/DashboardLayout";
@@ -66,7 +65,6 @@ const App = () => {
           <Route path="/reports" element={<div className="glass-card" style={{ padding: '60px', textAlign: 'center' }}><h2 style={{ fontWeight: 800 }}>Reports Engine</h2><p style={{ color: '#64748B' }}>We are crunching the numbers. Visual insights coming soon.</p></div>} />
           <Route path="/proofs" element={<div className="glass-card" style={{ padding: '60px', textAlign: 'center' }}><h2 style={{ fontWeight: 800 }}>Verifiable Proofs</h2><p style={{ color: '#64748B' }}>Secure portal for customers to verify ledger integrity.</p></div>} />
           <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/help" element={<HelpPage />} />
           <Route path="/dashboard/invoice/:id" element={<InvoicePage />} />
         </Route>
 

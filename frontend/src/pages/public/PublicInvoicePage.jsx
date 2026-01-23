@@ -369,7 +369,7 @@ const PublicInvoicePage = () => {
                             </div>
                             <div className="space-y-4">
                                 <img src="/krediblyrevamped.png" alt="Kredibly" className="h-5 opacity-40 mx-auto" />
-                                <p className="text-[10px] font-bold text-slate-400 leading-relaxed max-w-sm">
+                                <p className="text-[10px] font-bold text-slate-900 leading-relaxed max-w-sm">
                                     Kredibly is a decentralized financial trust ledger. Every record is cryptographically secured to ensure merchant and customer transparency. 
                                     <br />
                                     © 2026 Kredibly Infrastructure. All rights reserved.

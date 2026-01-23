@@ -53,7 +53,9 @@ const SaleSchema = new mongoose.Schema({
     lastAutoReminderSent: Date,
     recordedBy: String
 }, {
-    timestamps: true
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
 
 // Virtual for balance
