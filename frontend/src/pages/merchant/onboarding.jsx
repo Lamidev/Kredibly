@@ -125,7 +125,7 @@ const Onboarding = () => {
 
             <div style={{ maxWidth: '520px', width: '100%', position: 'relative', zIndex: 10 }}>
                 <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                    <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '35px' }} />
+                    <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '40px' }} />
                 </div>
 
                 <ProgressHeader />
