@@ -51,7 +51,12 @@ const Typewriter = ({ phrases }) => {
         return () => clearTimeout(timer);
     }, [displayText, isDeleting, index, phrases, typingSpeed]);
 
-    return <span>{displayText}</span>;
+    return (
+        <span>
+            {displayText}
+            <span className="typewriter-cursor">|</span>
+        </span>
+    );
 };
 
 const LandingPage = () => {
@@ -95,6 +100,7 @@ const LandingPage = () => {
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    style={{ position: 'relative' }}
                 >
                     <div style={{ 
                         display: 'inline-flex',
@@ -117,22 +123,30 @@ const LandingPage = () => {
                     </div>
 
                     <h1 style={{ 
-                        fontSize: 'clamp(2.8rem, 8vw, 5.5rem)', 
-                        fontWeight: 900, 
+                        fontSize: 'clamp(2.5rem, 8vw, 5.5rem)', 
+                        fontWeight: 950, 
                         lineHeight: 1.1, 
                         letterSpacing: '-0.05em',
-                        marginBottom: '32px',
-                        minHeight: '2.4em' /* Balanced for all phrases */
+                        marginBottom: '40px',
+                        textAlign: 'center'
                     }}>
-                        Stop guessing.<br />
-                        <span style={{ color: 'var(--primary)', position: 'relative' }}>
+                        <span style={{ display: 'block' }}>Stop guessing.</span>
+                        <div style={{ 
+                            color: 'var(--primary)', 
+                            position: 'relative', 
+                            height: '1.2em', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            width: '100%' 
+                        }}>
                             <Typewriter phrases={[
                                 "Start growing.",
                                 "Recover your debts.",
                                 "Track your cashflow.",
-                                "Master your business."
+                                "Be in control."
                             ]} />
-                        </span>
+                        </div>
                     </h1>
 
                     <p style={{ 
@@ -396,46 +410,48 @@ const LandingPage = () => {
             </section>
 
             {/* Social Proof - Executive Marquee */}
-            <section style={{ padding: '120px 0', background: '#F8FAFC', borderTop: '1px solid #E2E8F0', overflow: 'hidden' }}>
-                <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-                    <h2 style={{ fontSize: '2.5rem', fontWeight: 950, letterSpacing: '-0.03em' }}>Trusted by the Continent's Rising Elite</h2>
+            <section style={{ padding: '80px 0', background: '#F8FAFC', borderTop: '1px solid #E2E8F0', overflow: 'hidden' }}>
+                <div style={{ textAlign: 'center', marginBottom: '60px', padding: '0 20px' }}>
+                    <h2 style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', fontWeight: 950, letterSpacing: '-0.03em' }}>From side hustles to serious businesses, Kredibly grows with you.
+</h2>
                 </div>
                 
                 <div className="marquee-container" style={{ 
                     position: 'relative',
-                    width: '100vw',
-                    left: '50%',
-                    right: '50%',
-                    marginLeft: '-50vw',
-                    marginRight: '-50vw',
-                    maskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)',
-                    WebkitMaskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)'
+                    width: '100%',
+                    overflow: 'hidden',
+                    maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)',
+                    WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)'
                 }}>
-                    <div className="marquee-track" style={{ display: 'flex', gap: '32px', width: 'max-content' }}>
+                    <div className="marquee-track" style={{ display: 'flex', gap: '24px', width: 'max-content' }}>
                         {[...Array(2)].map((_, i) => (
-                            <div key={i} style={{ display: 'flex', gap: '32px' }}>
+                            <div key={i} style={{ display: 'flex', gap: '24px' }}>
                                 {[
-                                    { name: "John Adenuga", role: "Luxe Fashion Vendor", text: "Kredibly isn't just an app; it's my silent partner. It brings a level of structure my business was missing for years." },
-                                    { name: "Sarah Chinedu", role: "Culinary Entrepreneur", text: "The professional invoices changed how my corporate clients see me. I'm now winning 5x bigger contracts." },
-                                    { name: "Mike Okoro", role: "Auto Parts Distributor", text: "I can monitor my inventory from transit across borders. Oga Mode is a game changer for multi-location scale." },
-                                    { name: "Adeola Williams", role: "Signature Tech Store", text: "Debt recovery used to be my biggest headache. Kreddy handles the follow-ups while I focus on strategy." }
+                                    { name: "John Adenuga", role: "Luxe Fashion Vendor", text: "Kredibly isn't just an app; it's my silent partner. It brings a level of structure my business was missing." },
+                                    { name: "Sarah Chinedu", role: "Culinary Entrepreneur", text: "The professional invoices changed how my clients see me. I'm now winning 5x bigger contracts." },
+                                    { name: "Mike Okoro", role: "Auto Parts Distributor", text: "I monitor inventory from transit across borders. Oga Mode is a game changer for scale." },
+                                    { name: "Adeola Williams", role: "Signature Tech Store", text: "Debt recovery used to be my biggest headache. Kreddy handles follow-ups while I focus on strategy." }
                                 ].map((review, j) => (
-                                    <div key={j} style={{ 
-                                        padding: '40px', 
-                                        minWidth: '400px', 
+                                    <div key={j} className="testimonial-card" style={{ 
+                                        padding: '32px', 
+                                        minWidth: '320px',
+                                        maxWidth: '350px',
                                         background: 'white',
-                                        borderRadius: '32px',
+                                        borderRadius: '28px',
                                         border: '1px solid rgba(0,0,0,0.04)',
-                                        boxShadow: '0 20px 40px -15px rgba(0,0,0,0.05)'
+                                        boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'space-between'
                                     }}>
-                                        <p style={{ fontWeight: 500, fontSize: '1.1rem', lineHeight: 1.6, marginBottom: '32px', color: 'var(--text-muted)', fontStyle: 'italic' }}>"{review.text}"</p>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--primary-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'var(--primary)' }}>
+                                        <p style={{ fontWeight: 500, fontSize: '1rem', lineHeight: 1.6, marginBottom: '24px', color: 'var(--text-muted)', fontStyle: 'italic' }}>"{review.text}"</p>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'var(--primary)', fontSize: '0.9rem' }}>
                                                 {review.name.charAt(0)}
                                             </div>
                                             <div>
-                                                <p style={{ fontWeight: 900, fontSize: '1.1rem' }}>{review.name}</p>
-                                                <p style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{review.role}</p>
+                                                <p style={{ fontWeight: 900, fontSize: '0.95rem', margin: 0 }}>{review.name}</p>
+                                                <p style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{review.role}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -513,9 +529,20 @@ const LandingPage = () => {
                     0% { transform: translateX(0); }
                     100% { transform: translateX(calc(-50% - 16px)); }
                 }
+                .typewriter-cursor {
+                    animation: blink 0.7s infinite;
+                    margin-left: 2px;
+                    color: var(--primary);
+                }
+                @keyframes blink {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0; }
+                }
                 @media (max-width: 768px) {
                     header { padding-top: 140px !important; }
                     .bento-grid { grid-template-columns: 1fr !important; }
+                    .marquee-track { animation-duration: 40s !important; }
+                    .testimonial-card { min-width: 280px !important; padding: 24px !important; }
                 }
             `}</style>
         </div>

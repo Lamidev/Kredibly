@@ -25,7 +25,7 @@ function AuthLayout() {
       {/* Persistent Logo Header */}
       <div
         onClick={() => navigate('/')}
-        className="animate-fade-in"
+        className="auth-logo-header animate-fade-in"
         style={{ 
           padding: '40px',
           cursor: 'pointer',
@@ -38,24 +38,24 @@ function AuthLayout() {
         <img 
           src="/krediblyrevamped.png" 
           alt="Kredibly" 
-          style={{ height: '35px', width: 'auto' }} 
+          style={{ height: '40px', width: 'auto' }} 
         />
       </div>
 
       {/* Main Form Container */}
-      <main style={{ 
+      <main className="auth-main-container" style={{ 
         flex: 1, 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center', 
-        padding: '24px',
+        padding: '40px 24px',
         position: 'relative',
         zIndex: 10
       }}>
         <div style={{ width: '100%', maxWidth: '480px' }}>
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
           >
             <Outlet />
@@ -81,6 +81,18 @@ function AuthLayout() {
           background-position: center;
           background-attachment: fixed;
           background-color: var(--background);
+        }
+        @media (max-width: 640px) {
+          .auth-main-container {
+            padding: 20px 12px !important;
+          }
+          .dashboard-glass {
+            padding: 30px 20px !important;
+            border-radius: 24px !important;
+          }
+          .auth-logo-header {
+            padding: 20px 16px !important;
+          }
         }
       `}</style>
     </div>

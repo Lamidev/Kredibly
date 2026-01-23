@@ -37,7 +37,7 @@ const PublicNavbar = () => {
                     }}
                     style={{ display: 'flex', alignItems: 'center' }}
                 >
-                    <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '32px', objectFit: 'contain' }} />
+                    <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '40px', objectFit: 'contain' }} />
                 </Link>
 
                 {/* Center: Desktop Nav Links (Hidden on Mobile) */}

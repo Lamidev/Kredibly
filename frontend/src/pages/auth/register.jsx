@@ -51,14 +51,14 @@ const Register = () => {
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 700 }}>Business or Full Name</label>
+          <label className="input-label" style={{ fontWeight: 700 }}>Full Name</label>
           <div style={{ position: 'relative' }}>
              <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
              <input
                type="text"
                className="input-field"
                style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', background: 'var(--background)', fontWeight: 500 }}
-               placeholder="e.g. John Doe or Acme Stores"
+               placeholder="e.g. John Doe"
                value={formData.name}
                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                required
