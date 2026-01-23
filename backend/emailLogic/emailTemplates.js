@@ -127,7 +127,7 @@ const NEW_TICKET_ALERT_TEMPLATE = `
     </blockquote>
     <p>Ticket ID: {ticketId}</p>
     <div style="text-align: center; margin: 30px 0;">
-      <a href="https://kredibly.com/admin" style="background-color: ${THEME_COLOR}; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Dashboard</a>
+      <a href="https://usekredibly.com/admin" style="background-color: ${THEME_COLOR}; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Dashboard</a>
     </div>
   </div>
 </body>
