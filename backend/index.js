@@ -59,6 +59,10 @@ app.use(express.json({
 }));
 app.use(cookieParser());
 
+app.get("/api/health-check", (req, res) => {
+  res.status(200).json({ status: "alive", timestamp: new Date() });
+});
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/business", businessRoutes);
