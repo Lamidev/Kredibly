@@ -30,7 +30,10 @@ const Register = () => {
       toast.success("Account created! Please check your email for verification.");
       navigate("/auth/verify-email");
     } catch (err) {
-      toast.error(err.message || "Registration failed. Please try again.");
+      console.error("Registration Error details:", err); // Log for debugging
+      // Show specific error from backend if available
+      const errorMessage = err.response?.data?.message || err.message || "Registration failed. Please try again.";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

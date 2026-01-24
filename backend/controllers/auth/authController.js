@@ -39,11 +39,9 @@ const register = async (req, res) => {
 
     await newUser.save();
 
-    // Send verification email
-    try {
-      await sendVerificationEmail(newUser.email, verificationToken);
-    } catch (err) {
-    }
+    // Send verification email in background for speed
+    sendVerificationEmail(newUser.email, verificationToken)
+      .catch(err => console.error("Background Email Error (Verification):", err.message));
 
     const userData = newUser.toObject();
     delete userData.password;
@@ -121,10 +119,8 @@ const verifyEmail = async (req, res) => {
     user.verificationTokenExpiresAt = undefined;
     await user.save();
 
-    try {
-      await sendWelcomeEmail(user.email, user.name);
-    } catch (err) {
-    }
+    sendWelcomeEmail(user.email, user.name)
+      .catch(err => console.error("Background Email Error (Welcome):", err.message));
 
     // Generate token and set cookie so user is authenticated immediately
     const token = generateTokenAndSetCookie(res, user._id);
@@ -182,7 +178,8 @@ const forgotPassword = async (req, res) => {
 
     await user.save();
 
-    await sendPasswordResetEmail(user.email, `${process.env.FRONTEND_URL}/auth/reset-password/${resetToken}`);
+    sendPasswordResetEmail(user.email, `${process.env.FRONTEND_URL}/auth/reset-password/${resetToken}`)
+      .catch(err => console.error("Background Email Error (Forgot Password):", err.message));
 
     res.status(200).json({ success: true, message: "Password reset link sent to your email" });
   } catch (error) {
@@ -210,7 +207,8 @@ const resetPassword = async (req, res) => {
     user.resetPasswordExpiresAt = undefined;
     await user.save();
 
-    await sendResetSuccessEmail(user.email);
+    sendResetSuccessEmail(user.email)
+      .catch(err => console.error("Background Email Error (Reset Success):", err.message));
 
     res.status(200).json({ success: true, message: "Password reset successful" });
   } catch (error) {

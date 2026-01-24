@@ -89,7 +89,7 @@ const LandingPage = () => {
 
             {/* Hero Section - Executive Redesign */}
             <header style={{
-                padding: '180px 20px 120px',
+                padding: 'clamp(120px, 15vh, 180px) 20px 80px', // Reduced padding for mobile
                 maxWidth: '1200px',
                 margin: '0 auto',
                 textAlign: 'center',
@@ -103,14 +103,10 @@ const LandingPage = () => {
                     style={{ position: 'relative' }}
                 >
                     <div style={{ 
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        marginBottom: '40px',
-                        background: 'rgba(76, 29, 149, 0.05)',
-                        padding: '10px 24px',
                         borderRadius: '100px',
-                        border: '1px solid rgba(76, 29, 149, 0.1)'
+                        border: '1px solid rgba(76, 29, 149, 0.1)',
+                        display: 'inline-flex',
+                        whiteSpace: 'nowrap'
                     }}>
                         <Sparkles size={16} color="var(--primary)" />
                         <span style={{ 
@@ -123,19 +119,21 @@ const LandingPage = () => {
                     </div>
 
                     <h1 style={{ 
-                        fontSize: 'clamp(2.5rem, 8vw, 5.5rem)', 
+                        fontSize: 'clamp(2rem, 6vw, 5rem)', // Reduced min size for mobile
                         fontWeight: 950, 
                         lineHeight: 1.1, 
                         letterSpacing: '-0.05em',
                         marginBottom: '40px',
-                        textAlign: 'center'
+                        textAlign: 'center',
+                        marginTop: '20px'
                     }}>
-                        <span style={{ display: 'block' }}>Stop guessing.</span>
+                        <span style={{ display: 'block', marginBottom: '10px' }}>Stop guessing.</span>
                         <div style={{ 
                             color: 'var(--primary)', 
                             position: 'relative', 
-                            height: '1.2em', 
+                            minHeight: '1.2em', // Use minHeight instead of fixed height
                             display: 'flex', 
+                            flexDirection: 'column', // Stack if needed
                             alignItems: 'center', 
                             justifyContent: 'center',
                             width: '100%' 
@@ -153,7 +151,7 @@ const LandingPage = () => {
                         fontSize: 'clamp(1.2rem, 2vw, 1.5rem)', 
                         color: 'var(--text-muted)', 
                         maxWidth: '850px', 
-                        margin: '0 auto 56px',
+                        margin: '0 auto clamp(32px, 5vw, 56px)', // Reduced margin-bottom
                         lineHeight: 1.45,
                         fontWeight: 500,
                         opacity: 0.9
@@ -187,7 +185,7 @@ const LandingPage = () => {
             </header>
 
             {/* Bento Grid - Redefined Features */}
-            <section id="features" style={{ padding: '40px 0 120px' }}>
+            <section id="features" style={{ padding: '40px 0 80px' }}> {/* Reduced bottom padding */}
                 <div className="bento-grid">
                     <motion.div 
                         className="bento-item bento-1"
@@ -268,7 +266,7 @@ const LandingPage = () => {
             </section>
 
             {/* Simulated WhatsApp Flow - Clean Minimalist Redesign */}
-            <section id="how-it-works" style={{ padding: '120px 20px', background: 'white' }}>
+            <section id="how-it-works" style={{ padding: '80px 20px', background: 'white' }}> {/* Reduced padding */}
                 <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '100px' }}>
                         <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 950, letterSpacing: '-0.04em', marginBottom: '24px' }}>Business at the speed of thought.</h2>
@@ -463,7 +461,7 @@ const LandingPage = () => {
             </section>
 
             {/* Premium Pricing Section */}
-            <section id="pricing" style={{ padding: '80px 20px 120px' }}>
+            <section id="pricing" style={{ padding: '60px 20px 100px' }}> {/* Reduced padding */}
                 <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '80px' }}>
                         <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem' }}>TRANSPARENT PRICING</div>

@@ -26,8 +26,12 @@ const Login = () => {
       } else {
         navigate("/dashboard");
       }
+
     } catch (err) {
-      toast.error(err.response?.data?.message || "Login failed. Please check your details.");
+      console.error("Login Error:", err);
+      // Show specific error from backend if available
+      const errorMessage = err.response?.data?.message || err.message || "Login failed. Please check your details.";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

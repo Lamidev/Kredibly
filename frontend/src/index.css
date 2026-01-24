@@ -57,7 +57,10 @@ body {
 
 .auth-pattern {
   background-color: var(--background);
-  background-image: url('/Krediblypattern.png');
+  /* Premium Fallback Gradient while image loads */
+  background-image: 
+    linear-gradient(to bottom right, rgba(76, 29, 149, 0.05), rgba(76, 29, 149, 0.02)),
+    url('/Krediblypattern.png');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;

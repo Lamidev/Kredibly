@@ -18,7 +18,9 @@ const VerifyEmail = () => {
             toast.success("Email verified successfully!");
             navigate("/onboarding");
         } catch (err) {
-            toast.error(err.response?.data?.message || "Verification failed");
+            console.error("Verification Error:", err);
+            const errorMessage = err.response?.data?.message || err.message || "Verification failed";
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
