@@ -103,13 +103,27 @@ const Onboarding = () => {
     };
 
     const ProgressHeader = () => (
-        <div style={{ padding: '24px', background: 'white', borderRadius: '24px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid #F1F5F9' }}>
-            <div>
-                <h3 style={{ margin: 0, fontWeight: 900, fontSize: '1.1rem' }}>Setup Wizard</h3>
-                <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748B', fontWeight: 700 }}>Step {step} of 4</p>
+        <div style={{ marginBottom: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div>
+                    <h3 style={{ margin: 0, fontWeight: 900, fontSize: '1.5rem', letterSpacing: '-0.02em' }}>Setup Wizard</h3>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: '#64748B', fontWeight: 500 }}>Let's get your business ready.</p>
+                </div>
+                <div style={{ background: '#F1F5F9', padding: '8px 16px', borderRadius: '100px', fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary)' }}>
+                    Step {step} / 4
+                </div>
             </div>
-            <div style={{ width: '120px', height: '6px', background: '#F1F5F9', borderRadius: '10px', overflow: 'hidden' }}>
-                <motion.div animate={{ width: `${(step / 4) * 100}%` }} style={{ height: '100%', background: 'var(--primary)', borderRadius: '10px' }} />
+            {/* Premium Segmented Progress Bar */}
+            <div style={{ display: 'flex', gap: '8px', height: '6px' }}>
+                {[1, 2, 3, 4].map((s) => (
+                    <div key={s} style={{ 
+                        flex: 1, 
+                        borderRadius: '4px', 
+                        background: s <= step ? 'var(--primary)' : '#E2E8F0',
+                        transition: 'all 0.4s ease',
+                        boxShadow: s <= step ? '0 0 10px rgba(76, 29, 149, 0.3)' : 'none'
+                    }} />
+                ))}
             </div>
         </div>
     );
@@ -120,173 +134,252 @@ const Onboarding = () => {
     };
 
     return (
-        <div className="auth-pattern" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px' }}>
-            <div className="pattern-dots"></div>
+        <div className="auth-pattern" style={{ 
+            minHeight: '100vh', 
+            width: '100%', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            position: 'relative',
+            overflowX: 'hidden'
+        }}>
+            <div className="pattern-dots" style={{ opacity: 0.05 }}></div>
+            
+            {/* Top Left Logo */}
+            <div 
+                onClick={() => navigate('/')}
+                className="onboarding-logo-header"
+                style={{ 
+                    padding: '40px', 
+                    cursor: 'pointer', 
+                    position: 'relative', 
+                    zIndex: 20, 
+                    width: 'fit-content' 
+                }}
+            >
+                <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '40px' }} />
+            </div>
 
-            <div style={{ maxWidth: '520px', width: '100%', position: 'relative', zIndex: 10 }}>
-                <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                    <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '40px' }} />
-                </div>
-
-                <ProgressHeader />
-
-                <div className="glass-card" style={{ background: 'white', padding: '40px', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }}>
-                    <AnimatePresence mode="wait">
-                        {step === 1 && (
-                            <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} key="step1">
-                                <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>Your Brand Identity</h2>
-                                <p style={{ color: '#64748B', fontSize: '0.9rem', marginBottom: '32px' }}>This info appears on your professional receipts.</p>
-
-                                <div className="input-group" style={{ marginBottom: '24px' }}>
-                                    <label className="input-label">Business or Shop Name</label>
-                                    <input type="text" className="input-field" placeholder="e.g. Kola's Studio" value={displayName} onChange={e => setDisplayName(e.target.value)} autoFocus />
-                                </div>
-
-                                <p className="input-label" style={{ marginBottom: '12px' }}>Choose your style</p>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '32px' }}>
-                                    <button onClick={() => setEntityType('individual')} style={{
-                                        padding: '20px', borderRadius: '16px', border: '2px solid' + (entityType === 'individual' ? ' var(--primary)' : ' #F1F5F9'),
-                                        background: entityType === 'individual' ? '#F5F3FF' : 'white', cursor: 'pointer', textAlign: 'center'
-                                    }}>
-                                        <User size={24} color={entityType === 'individual' ? 'var(--primary)' : '#94A3B8'} />
-                                        <p style={{ margin: '8px 0 0', fontWeight: 800, fontSize: '0.85rem' }}>Personal</p>
-                                    </button>
-                                    <button onClick={() => setEntityType('business')} style={{
-                                        padding: '20px', borderRadius: '16px', border: '2px solid' + (entityType === 'business' ? ' var(--primary)' : ' #F1F5F9'),
-                                        background: entityType === 'business' ? '#F5F3FF' : 'white', cursor: 'pointer', textAlign: 'center'
-                                    }}>
-                                        <Building2 size={24} color={entityType === 'business' ? 'var(--primary)' : '#94A3B8'} />
-                                        <p style={{ margin: '8px 0 0', fontWeight: 800, fontSize: '0.85rem' }}>Registered</p>
-                                    </button>
-                                </div>
-
-                                <button onClick={nextStep} className="btn-primary" style={{ width: '100%', padding: '16px' }}>Continue</button>
-                            </motion.div>
-                        )}
-
-                        {step === 2 && (
-                            <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} key="step2">
-                                <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>Essential Setup</h2>
-                                <p style={{ color: '#64748B', fontSize: '0.9rem', marginBottom: '32px' }}>Almost there! How should Kreddy help you?</p>
-
-                                <div className="input-group" style={{ marginBottom: '24px' }}>
-                                    <label className="input-label">WhatsApp Number (International)</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <MessageCircle size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
-                                        <input type="tel" className="input-field" style={{ paddingLeft: '48px' }} placeholder="e.g. 234801234..." value={whatsappNumber} onChange={e => setWhatsappNumber(e.target.value)} />
+            <div className="onboarding-container" style={{ 
+                flex: 1, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                padding: '20px 24px 60px', 
+                position: 'relative', 
+                zIndex: 10 
+            }}>
+                <div style={{ maxWidth: '640px', width: '100%' }}>
+                    
+                    <div className="glass-card" style={{ 
+                        background: 'white', 
+                        padding: '48px', 
+                        borderRadius: '32px',
+                        boxShadow: 'var(--shadow-premium)',
+                        border: '1px solid var(--border)' 
+                    }}>
+                        <ProgressHeader />
+                        
+                        <AnimatePresence mode="wait">
+                            {/* Step 1 */}
+                            {step === 1 && (
+                                <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} key="step1">
+                                    <div className="input-group" style={{ marginBottom: '24px' }}>
+                                        <label className="input-label" style={{ fontSize: '1rem' }}>Business or Shop Name</label>
+                                        <input 
+                                            type="text" 
+                                            className="input-field" 
+                                            style={{ height: '60px', fontSize: '1.1rem', fontWeight: 600 }}
+                                            placeholder="e.g. Kola's Studio" 
+                                            value={displayName} 
+                                            onChange={e => setDisplayName(e.target.value)} 
+                                            autoFocus 
+                                        />
                                     </div>
-                                    <p style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '8px', fontWeight: 500 }}>
-                                        Kreddy will use this to send you performance updates and debtor nudges.
-                                    </p>
-                                </div>
 
-                                <p className="input-label" style={{ marginBottom: '12px' }}>How do you sell?</p>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '32px' }}>
-                                    {[{ id: 'offline', icon: Store, l: 'Store' }, { id: 'online', icon: ShoppingBag, l: 'Online' }, { id: 'service', icon: Briefcase, l: 'Service' }].map(m => (
-                                        <button key={m.id} onClick={() => setSellMode(m.id)} style={{
-                                            padding: '12px', borderRadius: '12px', border: '2px solid' + (sellMode === m.id ? ' var(--primary)' : ' #F1F5F9'),
-                                            background: sellMode === m.id ? '#F5F3FF' : 'white', cursor: 'pointer'
+                                    <p className="input-label" style={{ marginBottom: '16px', fontSize: '1rem' }}>Choose your style</p>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '40px' }}>
+                                        <button onClick={() => setEntityType('individual')} className="clickable-card" style={{
+                                            padding: '24px', borderRadius: '20px', border: '2px solid' + (entityType === 'individual' ? ' var(--primary)' : ' #E2E8F0'),
+                                            background: entityType === 'individual' ? '#F5F3FF' : 'white', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s'
                                         }}>
-                                            <m.icon size={20} color={sellMode === m.id ? 'var(--primary)' : '#94A3B8'} style={{ margin: '0 auto 4px' }} />
-                                            <p style={{ margin: 0, fontWeight: 800, fontSize: '0.7rem' }}>{m.l}</p>
+                                            <div style={{ background: entityType === 'individual' ? 'white' : '#F1F5F9', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                                                <User size={24} color={entityType === 'individual' ? 'var(--primary)' : '#64748B'} />
+                                            </div>
+                                            <p style={{ margin: 0, fontWeight: 800, fontSize: '1rem', color: 'var(--text)' }}>Personal</p>
                                         </button>
-                                    ))}
-                                </div>
+                                        <button onClick={() => setEntityType('business')} className="clickable-card" style={{
+                                            padding: '24px', borderRadius: '20px', border: '2px solid' + (entityType === 'business' ? ' var(--primary)' : ' #E2E8F0'),
+                                            background: entityType === 'business' ? '#F5F3FF' : 'white', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s'
+                                        }}>
+                                            <div style={{ background: entityType === 'business' ? 'white' : '#F1F5F9', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                                                <Building2 size={24} color={entityType === 'business' ? 'var(--primary)' : '#64748B'} />
+                                            </div>
+                                            <p style={{ margin: 0, fontWeight: 800, fontSize: '1rem', color: 'var(--text)' }}>Registered</p>
+                                        </button>
+                                    </div>
 
-                                <div style={{ display: 'flex', gap: '12px' }}>
-                                    <button onClick={() => setStep(1)} className="btn-secondary" style={{ flex: 1 }}>Back</button>
-                                    <button onClick={nextStep} className="btn-primary" style={{ flex: 2 }}>Next</button>
-                                </div>
-                            </motion.div>
-                        )}
+                                    <button onClick={nextStep} className="btn-primary" style={{ width: '100%', height: '60px', fontSize: '1.1rem' }}>Continue <ArrowRight size={20} /></button>
+                                </motion.div>
+                            )}
 
-                        {step === 3 && (
-                            <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} key="step3">
-                                <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>One Last Piece</h2>
-                                <p style={{ color: '#64748B', fontSize: '0.9rem', marginBottom: '32px' }}>Optional: Where should customers pay you?</p>
+                            {/* Step 2 */}
+                            {step === 2 && (
+                                <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} key="step2">
+                                    <div className="input-group" style={{ marginBottom: '32px' }}>
+                                        <label className="input-label" style={{ fontSize: '1rem' }}>WhatsApp Number</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <MessageCircle size={20} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+                                            <input 
+                                                type="tel" 
+                                                className="input-field" 
+                                                style={{ paddingLeft: '56px', height: '60px', fontSize: '1.1rem', fontWeight: 600 }} 
+                                                placeholder="e.g. 234801234..." 
+                                                value={whatsappNumber} 
+                                                onChange={e => setWhatsappNumber(e.target.value)} 
+                                            />
+                                        </div>
+                                    </div>
 
-                                {/* Logo (Quick Add) */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: '#F8FAFC', padding: '16px', borderRadius: '20px', marginBottom: '24px' }}>
-                                    <div
-                                        onClick={() => fileInputRef.current.click()}
-                                        style={{ width: '60px', height: '60px', borderRadius: '16px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #CBD5E1', cursor: 'pointer', overflow: 'hidden', fontWeight: 800, fontSize: '1.2rem', color: 'var(--primary)' }}
-                                    >
-                                        {logoUrl ? (
-                                            <img src={logoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        ) : (
-                                            getInitials(displayName)
+                                    <p className="input-label" style={{ marginBottom: '16px', fontSize: '1rem' }}>How do you sell?</p>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '40px' }}>
+                                        {[{ id: 'offline', icon: Store, l: 'Store' }, { id: 'online', icon: ShoppingBag, l: 'Online' }, { id: 'service', icon: Briefcase, l: 'Service' }].map(m => (
+                                            <button key={m.id} onClick={() => setSellMode(m.id)} className="clickable-card" style={{
+                                                padding: '20px 12px', borderRadius: '16px', border: '2px solid' + (sellMode === m.id ? ' var(--primary)' : ' #E2E8F0'),
+                                                background: sellMode === m.id ? '#F5F3FF' : 'white', cursor: 'pointer'
+                                            }}>
+                                                <m.icon size={28} color={sellMode === m.id ? 'var(--primary)' : '#94A3B8'} style={{ margin: '0 auto 8px' }} />
+                                                <p style={{ margin: 0, fontWeight: 800, fontSize: '0.9rem', color: 'var(--text)' }}>{m.l}</p>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: '16px' }}>
+                                        <button onClick={() => setStep(1)} className="btn-secondary" style={{ flex: 1, height: '60px' }}>Back</button>
+                                        <button onClick={nextStep} className="btn-primary" style={{ flex: 2, height: '60px', fontSize: '1.1rem' }}>Next Step <ArrowRight size={20} /></button>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* Step 3 */}
+                            {step === 3 && (
+                                <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} key="step3">
+                                    {/* Logo Upload */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', background: '#F8FAFC', padding: '20px', borderRadius: '24px', marginBottom: '32px', border: '1px solid #E2E8F0' }}>
+                                        <div
+                                            onClick={() => fileInputRef.current.click()}
+                                            style={{ width: '72px', height: '72px', borderRadius: '20px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #CBD5E1', cursor: 'pointer', overflow: 'hidden', fontWeight: 800, fontSize: '1.5rem', color: 'var(--primary)' }}
+                                        >
+                                            {logoUrl ? (
+                                                <img src={logoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                getInitials(displayName)
+                                            )}
+                                        </div>
+                                        <input ref={fileInputRef} type="file" hidden onChange={handleLogoUpload} />
+                                        <div>
+                                            <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '1rem' }}>Upload Brand Logo</p>
+                                            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748B' }}>Tap the box to browse</p>
+                                        </div>
+                                        <div onClick={() => fileInputRef.current.click()} style={{ marginLeft: 'auto', background: 'white', padding: '10px', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+                                            <Upload size={20} color="var(--text)" />
+                                        </div>
+                                    </div>
+
+                                    <div className="input-group" style={{ marginBottom: '20px' }}>
+                                        <label className="input-label">Bank Name</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <Landmark size={20} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+                                            <input type="text" className="input-field" style={{ paddingLeft: '56px', height: '56px' }} placeholder="e.g. GTBank" value={bankName} onChange={e => setBankName(e.target.value)} />
+                                        </div>
+                                    </div>
+                                    <div className="input-group" style={{ marginBottom: '40px' }}>
+                                        <label className="input-label">Account Details</label>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
+                                            <input type="text" className="input-field" style={{ height: '56px' }} placeholder="Account Name" value={accountName} onChange={e => setAccountName(e.target.value)} />
+                                            <input type="text" className="input-field" style={{ height: '56px' }} placeholder="Number" value={accountNumber} onChange={e => setAccountNumber(e.target.value)} />
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: '16px' }}>
+                                        <button onClick={() => setStep(2)} className="btn-secondary" style={{ flex: 1, height: '60px' }}>Back</button>
+                                        <button onClick={nextStep} className="btn-primary" style={{ flex: 2, height: '60px', fontSize: '1.1rem' }}>Next Step <ArrowRight size={20} /></button>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* Step 4 */}
+                            {step === 4 && (
+                                <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} key="step4">
+                                    <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                                        <div style={{ width: '80px', height: '80px', background: '#F0FDF4', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                            <CheckCircle2 size={40} color="#16A34A" />
+                                        </div>
+                                        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>You're all set!</h3>
+                                        <p style={{ color: '#64748B' }}>Add staff now or do it later.</p>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                                        <input type="tel" className="input-field" style={{ height: '56px' }} placeholder="Staff Phone Number" value={newStaffPhone} onChange={e => setNewStaffPhone(e.target.value)} />
+                                        <button className="btn-secondary" style={{ width: 'auto', padding: '0 24px', height: '56px' }} onClick={addStaff}>Add</button>
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '40px', maxHeight: '150px', overflowY: 'auto' }}>
+                                        {staffNumbers.map((phone, idx) => (
+                                            <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #F1F5F9' }}>
+                                                <span style={{ fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <User size={16} /> {phone}
+                                                </span>
+                                                <button onClick={() => removeStaff(phone)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>Remove</button>
+                                            </div>
+                                        ))}
+                                        {staffNumbers.length === 0 && (
+                                            <div style={{ padding: '20px', background: '#F8FAFC', borderRadius: '16px', textAlign: 'center', border: '1px dashed #E2E8F0' }}>
+                                                <p style={{ margin: 0, fontSize: '0.85rem', color: '#94A3B8' }}>No staff added yet.</p>
+                                            </div>
                                         )}
                                     </div>
-                                    <input ref={fileInputRef} type="file" hidden onChange={handleLogoUpload} />
-                                    <div>
-                                        <p style={{ margin: 0, fontWeight: 800, fontSize: '0.85rem' }}>Upload Logo</p>
-                                        <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748B' }}>Add a touch of class</p>
+
+                                    <div style={{ display: 'flex', gap: '16px' }}>
+                                        <button onClick={() => setStep(3)} className="btn-secondary" style={{ flex: 1, height: '60px' }}>Back</button>
+                                        <button onClick={handleSubmit} disabled={loading} className="btn-primary" style={{ flex: 2, height: '60px', fontSize: '1.1rem' }}>
+                                            {loading ? 'Finalizing...' : 'Launch Dashboard 🚀'}
+                                        </button>
                                     </div>
-                                </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
 
-                                <div className="input-group" style={{ marginBottom: '16px' }}>
-                                    <label className="input-label">Bank Name</label>
-                                    <input type="text" className="input-field" placeholder="e.g. GTBank" value={bankName} onChange={e => setBankName(e.target.value)} />
-                                </div>
-                                <div className="input-group" style={{ marginBottom: '32px' }}>
-                                    <label className="input-label">Account Name & Number</label>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <input type="text" className="input-field" style={{ flex: 2 }} placeholder="Name" value={accountName} onChange={e => setAccountName(e.target.value)} />
-                                        <input type="text" className="input-field" style={{ flex: 1 }} placeholder="000..." value={accountNumber} onChange={e => setAccountNumber(e.target.value)} />
-                                    </div>
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '12px' }}>
-                                    <button onClick={() => setStep(2)} className="btn-secondary" style={{ flex: 1 }}>Back</button>
-                                    <button onClick={nextStep} className="btn-primary" style={{ flex: 2 }}>Next Step</button>
-                                </div>
-                            </motion.div>
-                        )}
-
-                        {step === 4 && (
-                            <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} key="step4">
-                                <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>The Oga Monitor 🛡️</h2>
-                                <p style={{ color: '#64748B', fontSize: '0.9rem', marginBottom: '32px' }}>Optional: Add staff who can record sales while you stay in control.</p>
-
-                                <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-                                    <input type="tel" className="input-field" placeholder="Staff Phone" value={newStaffPhone} onChange={e => setNewStaffPhone(e.target.value)} />
-                                    <button className="btn-secondary" style={{ width: 'auto', padding: '0 16px' }} onClick={addStaff}>Add</button>
-                                </div>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px', maxHeight: '150px', overflowY: 'auto' }}>
-                                    {staffNumbers.map((phone, idx) => (
-                                        <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #F1F5F9' }}>
-                                            <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{phone}</span>
-                                            <button onClick={() => removeStaff(phone)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer' }}>Remove</button>
-                                        </div>
-                                    ))}
-                                    {staffNumbers.length === 0 && (
-                                        <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: '0.75rem', padding: '16px' }}>No staff added. You can do this later in settings.</p>
-                                    )}
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '12px' }}>
-                                    <button onClick={() => setStep(3)} className="btn-secondary" style={{ flex: 1 }}>Back</button>
-                                    <button onClick={handleSubmit} disabled={loading} className="btn-primary" style={{ flex: 2 }}>
-                                        {loading ? 'Finalizing...' : 'Launch Dashboard 🚀'}
-                                    </button>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-
-                <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'center', gap: '16px' }}>
-                    <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.1em' }}>✓ BANK-GRADE SECURITY</p>
-                    <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.1em' }}>✓ 24/7 SUPPORT</p>
+                    {/* Footer Text */}
+                    <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'center', gap: '24px', opacity: 0.8 }}>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 800, color: 'black', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <ShieldCheck size={14} /> BANK-GRADE SECURITY
+                        </p>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 800, color: 'black', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <MessageCircle size={14} /> 24/7 SUPPORT
+                        </p>
+                    </div>
                 </div>
             </div>
+
             <style>{`
                 @media (max-width: 640px) {
-                    .glass-card { padding: 24px 20px !important; }
-                    .onboarding-wizard-container { padding: 20px 0 !important; }
-                    h2 { font-size: 1.25rem !important; }
-                    .option-card p { font-size: 0.75rem !important; }
+                    .onboarding-logo-header {
+                        padding: 24px 20px 10px !important;
+                    }
+                    .onboarding-container {
+                        padding: 0 12px 40px !important;
+                        align-items: flex-start !important;
+                    }
+                    .glass-card { 
+                        padding: 32px 24px !important; 
+                        border-radius: 24px !important;
+                        margin-top: 10px;
+                    }
+                    .btn-primary, .btn-secondary, .input-field {
+                        height: 56px !important;
+                        font-size: 1rem !important;
+                    }
                 }
             `}</style>
         </div>
