@@ -71,7 +71,7 @@ const Dashboard = () => {
             
             // Auto-redirect to WhatsApp to start the conversation
             setTimeout(() => {
-                window.open(KREDDY_CONFIG.getLink("Hi Kreddy! 👋 I want to activate my account."), '_blank');
+                window.open(KREDDY_CONFIG.getLink(), '_blank');
             }, 1000);
             
         } catch (err) {
@@ -100,7 +100,7 @@ const Dashboard = () => {
         <div className="animate-fade-in" style={{ paddingBottom: '40px', position: 'relative' }}>
             {/* Floating WhatsApp Button */}
             <a 
-                href={KREDDY_CONFIG.getLink("Hi Kreddy! 👋 I want to activate my account.")}
+                href={KREDDY_CONFIG.getLink()}
                 target="_blank" 
                 rel="noreferrer"
                 style={{
@@ -213,63 +213,6 @@ const Dashboard = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '40px' }} className="dashboard-main-grid">
                 {/* Left Column: Recent Activity */}
                 <div>
-                    {!profile?.whatsappNumber ? (
-                        <div className="dashboard-glass" style={{ padding: '32px', borderRadius: '32px', marginBottom: '40px', background: 'white', border: '1px solid var(--primary)' }}>
-                            <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
-                                <div style={{ background: 'var(--primary)', color: 'white', padding: '16px', borderRadius: '20px' }}>
-                                    <MessagesSquare size={32} />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <h3 style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '8px' }}>Activate Kreddy AI</h3>
-                                    <p style={{ color: 'var(--text-muted)', fontWeight: 600, marginBottom: '24px', lineHeight: 1.5 }}>
-                                        Link your WhatsApp to start recording sales and tracking debts through chat.
-                                    </p>
-                                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                        <input
-                                            type="tel"
-                                            placeholder="23480..."
-                                            value={whatsappInput}
-                                            onChange={(e) => setWhatsappInput(e.target.value)}
-                                            style={{ flex: 1, padding: '16px 24px', borderRadius: '16px', border: '1px solid var(--border)', fontSize: '1rem', fontWeight: 600 }}
-                                        />
-                                        <button
-                                            onClick={handleUpdateWhatsapp}
-                                            disabled={updatingWhatsapp}
-                                            className="btn-primary"
-                                            style={{ padding: '0 32px', borderRadius: '16px' }}
-                                        >
-                                            {updatingWhatsapp ? "Syncing..." : "Connect Now"}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="dashboard-glass" style={{ padding: '32px', borderRadius: '32px', marginBottom: '40px', background: 'linear-gradient(135deg, #0F172A, #1E1B4B)', color: 'white', boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.3)' }}>
-                            <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-                                <div style={{ background: 'rgba(255,255,255,0.1)', padding: '16px', borderRadius: '20px' }}>
-                                    <Sparkles size={32} color="#4ade80" />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                        <h3 style={{ fontSize: '1.4rem', fontWeight: 900 }}>Kreddy is Online</h3>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 800, background: '#4ade80', color: '#064e3b', padding: '4px 12px', borderRadius: '100px', textTransform: 'uppercase' }}>Active</span>
-                                    </div>
-                                    <p style={{ opacity: 0.8, fontWeight: 500, marginBottom: '24px' }}>
-                                        Ready to record your next sale? Just say "Hi" to start.
-                                    </p>
-                                    <button
-                                        onClick={() => window.open(KREDDY_CONFIG.getLink("Hi Kreddy! 👋 I want to activate my account."), '_blank')}
-                                        className="btn-primary"
-                                        style={{ background: '#25D366', border: 'none', width: '100%', justifyContent: 'center', gap: '8px' }}
-                                    >
-                                        <MessagesSquare size={20} /> Chat with Kreddy
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                         <h3 style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--text)' }}>Recent Business Activity</h3>
                         <Link to="/sales" style={{ padding: '10px 20px', background: 'var(--background)', color: 'var(--primary)', textDecoration: 'none', borderRadius: '100px', fontWeight: 800, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--border)' }}>
@@ -335,6 +278,64 @@ const Dashboard = () => {
 
                 {/* Right Column: Sidebar Widgets */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    {/* Kreddy AI Status Card */}
+                    {!profile?.whatsappNumber ? (
+                        <div className="dashboard-glass" style={{ padding: '32px', borderRadius: '32px', background: 'white', border: '1px solid var(--primary)' }}>
+                            <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+                                <div style={{ background: 'var(--primary)', color: 'white', padding: '16px', borderRadius: '20px' }}>
+                                    <MessagesSquare size={32} />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <h3 style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '8px' }}>Activate Kreddy AI</h3>
+                                    <p style={{ color: 'var(--text-muted)', fontWeight: 600, marginBottom: '24px', lineHeight: 1.5 }}>
+                                        Link your WhatsApp to start recording sales.
+                                    </p>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        <input
+                                            type="tel"
+                                            placeholder="23480..."
+                                            value={whatsappInput}
+                                            onChange={(e) => setWhatsappInput(e.target.value)}
+                                            style={{ padding: '16px 24px', borderRadius: '16px', border: '1px solid var(--border)', fontSize: '1rem', fontWeight: 600 }}
+                                        />
+                                        <button
+                                            onClick={handleUpdateWhatsapp}
+                                            disabled={updatingWhatsapp}
+                                            className="btn-primary"
+                                            style={{ padding: '16px', borderRadius: '16px', width: '100%', justifyContent: 'center' }}
+                                        >
+                                            {updatingWhatsapp ? "Syncing..." : "Connect Now"}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="dashboard-glass" style={{ padding: '32px', borderRadius: '32px', background: 'linear-gradient(135deg, #0F172A, #1E1B4B)', color: 'white', boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.3)' }}>
+                            <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+                                <div style={{ background: 'rgba(255,255,255,0.1)', padding: '16px', borderRadius: '20px' }}>
+                                    <Sparkles size={32} color="#4ade80" />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                        <h3 style={{ fontSize: '1.4rem', fontWeight: 900 }}>Kreddy is Online</h3>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 800, background: '#4ade80', color: '#064e3b', padding: '4px 12px', borderRadius: '100px', textTransform: 'uppercase' }}>Active</span>
+                                    </div>
+                                    <p style={{ opacity: 0.8, fontWeight: 500, marginBottom: '24px' }}>
+                                        Ready to record? Just say "Hi".
+                                    </p>
+                                    <button
+                                        onClick={() => window.open(KREDDY_CONFIG.getLink(), '_blank')}
+                                        className="btn-primary"
+                                        style={{ background: '#25D366', border: 'none', width: '100%', justifyContent: 'center', gap: '8px' }}
+                                    >
+                                        <MessagesSquare size={20} /> Chat
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="dashboard-glass" style={{ padding: '32px', borderRadius: '32px', border: '1px solid var(--border)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                             <h4 style={{ fontWeight: 900, margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>

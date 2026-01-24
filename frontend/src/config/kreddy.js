@@ -3,5 +3,5 @@ export const KREDDY_CONFIG = {
     PHONE_NUMBER: "2347071238658", 
     
     // The link format for deep linking
-    getLink: (text = "Hi") => `https://wa.me/${KREDDY_CONFIG.PHONE_NUMBER}?text=${encodeURIComponent(text)}`
+    getLink: (text = "Hi Kreddy") => `https://wa.me/${KREDDY_CONFIG.PHONE_NUMBER}?text=${encodeURIComponent(text)}`
 };
