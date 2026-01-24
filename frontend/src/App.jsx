@@ -6,6 +6,9 @@ import LandingPage from "./pages/public/landing-page";
 import AboutUs from "./pages/public/about-us";
 import SupportHub from "./pages/public/support-hub";
 import PrivacyPolicy from "./pages/public/privacy-policy";
+import ProductPage from "./pages/public/ProductPage";
+import SolutionPage from "./pages/public/SolutionPage";
+import PricingPage from "./pages/public/PricingPage";
 import PublicInvoicePage from "./pages/public/PublicInvoicePage";
 import AuthLayout from "./components/auth/layout";
 import Login from "./pages/auth/login";
@@ -42,6 +45,9 @@ const App = () => {
         <Route path="/about" element={<AboutUs />} />
         <Route path="/contact" element={<SupportHub />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/product/:id" element={<ProductPage />} />
+        <Route path="/solution/:id" element={<SolutionPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
         <Route path="/invoice/:id" element={<PublicInvoicePage />} />
         <Route path="/i/:id" element={<PublicInvoicePage />} />
 

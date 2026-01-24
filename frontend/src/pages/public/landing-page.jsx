@@ -158,9 +158,9 @@ const LandingPage = () => {
                         fontWeight: 500,
                         opacity: 0.9
                     }}>
-                        You’re working too hard to not know exactly where your money is going. 
-                        Record sales, track debtors, and send professional invoices—all inside 
-                        the WhatsApp you already use. No stress, just business.
+                        From side-hustle to empire. Kredibly is the smart ledger that helps you 
+                        record sales, track debtors, and monitor staff, all inside the 
+                        WhatsApp you already use.
                     </p>
 
                     <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -458,6 +458,86 @@ const LandingPage = () => {
                                 ))}
                             </div>
                         ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Premium Pricing Section */}
+            <section id="pricing" style={{ padding: '80px 20px 120px' }}>
+                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+                        <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem' }}>TRANSPARENT PRICING</div>
+                        <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 3.5rem)', fontWeight: 950, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Start free. Scale endlessly.</h2>
+                        <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginTop: '20px', maxWidth: '600px', margin: '20px auto 0' }}>No hidden setup fees. No credit card required to start.</p>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px', alignItems: 'center' }}>
+                        {/* Free Tier */}
+                        <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', border: '1px solid #E2E8F0' }}>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>Hustler</h3>
+                            <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: 500 }}>For the "One-Man Army" vendor.</p>
+                            <div style={{ fontSize: '3rem', fontWeight: 950, marginBottom: '16px', letterSpacing: '-0.05em' }}>Free</div>
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '40px' }}>Forever free for up to 50 transactions/mo.</p>
+                            <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Start Hustling</button>
+                            <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                {[
+                                    "Kreddy AI Assistant",
+                                    "Ditch the Notebook",
+                                    "Track Debtors Automatically",
+                                    "Basic Invoices"
+                                ].map((feat, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500, color: '#334155' }}>
+                                        <CheckCheck size={18} color="var(--primary)" /> {feat}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Pro Tier - highlighted */}
+                        <div style={{ padding: '48px', borderRadius: '32px', background: 'var(--text)', color: 'white', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', transform: 'scale(1.05)' }}>
+                            <div style={{ position: 'absolute', top: '32px', right: '32px', background: 'var(--primary)', padding: '6px 16px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 800 }}>POPULAR</div>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>Oga Mode</h3>
+                            <p style={{ opacity: 0.7, marginBottom: '32px', fontWeight: 500 }}>For shop owners who want sleep.</p>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '16px' }}>
+                                <span style={{ fontSize: '3rem', fontWeight: 950, letterSpacing: '-0.05em' }}>₦4,500</span>
+                                <span style={{ opacity: 0.7 }}>/mo</span>
+                            </div>
+                            <p style={{ fontSize: '0.9rem', opacity: 0.7, marginBottom: '40px' }}>Billed annually. ₦5,000 billed monthly.</p>
+                            <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ width: '100%', justifyContent: 'center', background: 'white !important', color: 'black !important' }}>Take Control</button>
+                            <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                {[
+                                    "Unlimited Sales Recording",
+                                    "Monitor 5 Staff (Anti-Theft)",
+                                    "Premium Branded Invoices",
+                                    "Inventory Tracking"
+                                ].map((feat, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500 }}>
+                                        <CheckCheck size={18} color="#4ade80" /> {feat}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Enterprise Tier */}
+                        <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', border: '1px solid #E2E8F0' }}>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>Empire</h3>
+                            <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: 500 }}>For distributors & supermarkets.</p>
+                            <div style={{ fontSize: '3rem', fontWeight: 950, marginBottom: '16px', letterSpacing: '-0.05em' }}>Custom</div>
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '40px' }}>Tailored infrastructure for high volume.</p>
+                            <button onClick={() => navigate('/contact')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Contact Sales</button>
+                            <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                {[
+                                    "Unlimited Locations",
+                                    "Head Office Dashboard",
+                                    "White-label Reports",
+                                    "SLA Guarantee"
+                                ].map((feat, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500, color: '#334155' }}>
+                                        <CheckCheck size={18} color="var(--primary)" /> {feat}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
