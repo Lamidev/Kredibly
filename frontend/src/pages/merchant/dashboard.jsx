@@ -66,8 +66,14 @@ const Dashboard = () => {
         setUpdatingWhatsapp(true);
         try {
             await updateProfile({ ...profile, whatsappNumber: whatsappInput });
-            toast.success("WhatsApp number linked successfully!");
+            toast.success("WhatsApp number linked! Opening chat...");
             setWhatsappInput("");
+            
+            // Auto-redirect to WhatsApp to start the conversation
+            setTimeout(() => {
+                window.open(KREDDY_CONFIG.getLink("Hi Kreddy! 👋 I want to activate my account."), '_blank');
+            }, 1000);
+            
         } catch (err) {
             toast.error("Failed to update WhatsApp number");
         } finally {
@@ -94,7 +100,7 @@ const Dashboard = () => {
         <div className="animate-fade-in" style={{ paddingBottom: '40px', position: 'relative' }}>
             {/* Floating WhatsApp Button */}
             <a 
-                href={KREDDY_CONFIG.getLink("Hi Kreddy, I need help.")}
+                href={KREDDY_CONFIG.getLink("Hi Kreddy! 👋 I want to activate my account.")}
                 target="_blank" 
                 rel="noreferrer"
                 style={{
@@ -253,7 +259,7 @@ const Dashboard = () => {
                                         Ready to record your next sale? Just say "Hi" to start.
                                     </p>
                                     <button
-                                        onClick={() => window.open(KREDDY_CONFIG.getLink("Hi"), '_blank')}
+                                        onClick={() => window.open(KREDDY_CONFIG.getLink("Hi Kreddy! 👋 I want to activate my account."), '_blank')}
                                         className="btn-primary"
                                         style={{ background: '#25D366', border: 'none', width: '100%', justifyContent: 'center', gap: '8px' }}
                                     >
