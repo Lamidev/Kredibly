@@ -34,9 +34,9 @@ const extractInfoRobust = (text, context = {}) => {
     };
 
     // 1. Intent Detection
-    if (lower.includes("who owe") || lower.includes("who is owing") || lower.includes("list my debtor") || lower.includes("total debt")) {
+    if (lower.includes("who owe") || lower.includes("who is owing") || lower.includes("list my debtor") || lower.includes("total debt") || lower.includes("show me who owe")) {
         result.intent = "check_debt";
-        result.data.reply = "Omo, debtors plenty for street! 😅 Give me one second make I check the ledger for you...";
+        // result.data.reply will be handled by the main controller to fetch actual debts
         return result;
     }
 
@@ -103,18 +103,15 @@ const extractInfoRobust = (text, context = {}) => {
         }
     }
 
-    // 3. Precise Customer Name Extraction
-    const stoppers = "\\b(who|paid|pay|which|is|was|will|with|that|gave|sent|he|she|they|it|today|tomorrow)\\b";
-    // We match the trigger word but ensure the capture group starts AFTER it
-    const customerRegex = new RegExp(`(?:to|for|from|of|reminder|remind)\\s+(?:for|to|from)?\\s*([a-z\\s’'&-]+?)(?:\\s+${stoppers}|$)`, "i");
+    // 3. Precise Customer Name Extraction (Improved to handle punctuation)
+    const stoppers = "\\b(who|paid|pay|which|is|was|will|with|that|gave|sent|he|she|they|it|today|tomorrow|at|for|to)\\b";
+    const customerRegex = new RegExp(`(?:to|for|from|of|reminder|remind)\\s+(?:for|to|from)?\\s*([a-z0-9\\s’'&-]+)(?=[\\s.,!]|${stoppers}|$)`, "i");
     const customerMatch = text.match(customerRegex);
     
     if (customerMatch) {
         let name = customerMatch[1].replace(/\s+/g, ' ').trim();
-        // Deep clean: Strip leading For/To/From if they slipped in
-        name = name.replace(/^(for|to|from|of)\s+/i, '');
         // Capitalize nicely
-        result.data.customerName = name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        result.data.customerName = name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
     } else if (context.currentSession?.data?.customerName && (lower.includes("he ") || lower.includes("she ") || lower.includes("they "))) {
         result.data.customerName = context.currentSession.data.customerName;
     }
@@ -144,7 +141,13 @@ const extractInfoRobust = (text, context = {}) => {
         result.data.reply = lines.join("\n");
     } else {
         result.intent = "general_chat";
-        result.data.reply = "I'm with you, Chief! 🫡 But I need small more info. Tell me like: _'Sold a watch for 20k to Kola'_ or _'Who is owing me?'_";
+        // Context-aware fallback: if we have a recent customer in context, maybe they are talking about them?
+        if (context.currentSession?.data?.customerName) {
+            result.data.customerName = context.currentSession.data.customerName;
+            result.data.reply = `I'm with you, Chief! 🫡 Are we still talking about *${result.data.customerName}*? Tell me more, like: _'He just brought 5k'_ or _'Remind him tomorrow'_`;
+        } else {
+            result.data.reply = "I'm with you, Chief! 🫡 But I need small more info. Tell me like: _'Sold a watch for 20k to Kola'_ or _'Who is owing me?'_";
+        }
     }
 
     return result;
@@ -161,14 +164,14 @@ const cleanPhone = (num) => {
 
 const HUMANIZE = {
     greetings: [
-        "Chief {name}! 🫡 How can I help your hustle today?",
+        "Boss {name}! 🫡 How can I help your hustle today?",
         "Good to see you, {name}! 🚀 What's the latest update?",
         "Hey {name}! Kreddy is online. Ready to record some wins?",
         "Welcome back, {name}! 🛡️ Need to track a payment or record a sale?"
     ],
     success: [
         "Nice one! 🎈 I've logged that for you.",
-        "Got it, Chief! ✅ Record is safe and sound.",
+        "Got it, Boss! ✅ Record is safe and sound.",
         "Record saved! 🚀 Keep that momentum going.",
         "Done! 🛡️ I've updated your ledger."
     ],
@@ -570,8 +573,53 @@ exports.handleIncoming = async (req, res) => {
 
             const personalizedGreeting = getRandom(HUMANIZE.greetings, { name: profile.displayName });
             await sendReply(from, `${personalizedGreeting} \n\nI'm *Kreddy*, your Kredibly partner. I'm here to make sure you never lose track of a single Naira. 🚀\n\n*What's the plan for today?*\n📊 *S*: See Performance\n⏳ *D*: See Debtors\n💡 *HELP*: Learn how to use Kreddy`);
+        } else if (
+            lowerText.includes("mistake") || 
+            lowerText.includes("correct name") || 
+            lowerText.includes("change name") || 
+            lowerText.includes("buyer is") ||
+            lowerText.startsWith("actually") || 
+            lowerText.startsWith("his name is") || 
+            lowerText.startsWith("her name is")
+        ) {
+            console.log("🛠️ Name Correction Triggered:", lowerText);
+            // Extract the name from the end of the sentence
+            const nameParts = text.split(/is|for|to|it's|its|be/i);
+            const newName = nameParts.pop().trim().replace(/[.!?]$/, "");
+            const session = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
+            
+            let saleToUpdate = null;
+
+            // Priority 1: Use the last sale ID from session memory
+            if (session?.data?.lastSaleId) {
+                saleToUpdate = await Sale.findById(session.data.lastSaleId);
+            }
+
+            // Priority 2: If no session, find the MOST RECENT sale named "Customer" for this business
+            if (!saleToUpdate) {
+                saleToUpdate = await Sale.findOne({ 
+                    businessId: profile._id, 
+                    customerName: { $regex: /^Customer$/i } 
+                }).sort({ createdAt: -1 });
+            }
+
+            if (saleToUpdate) {
+                const oldName = saleToUpdate.customerName;
+                saleToUpdate.customerName = newName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                await saleToUpdate.save();
+
+                await logActivity({
+                    businessId: profile._id,
+                    action: "WHATSAPP_NAME_UPDATED",
+                    details: `Changed name from ${oldName} to ${newName} via WhatsApp Correction`
+                });
+
+                return await sendReply(from, `✅ *Name Corrected!* \n\nI've updated the record. The name is now *${saleToUpdate.customerName}* instead of *${oldName}*. 🫡`);
+            }
+            
+            await sendReply(from, `I hear you, Boss! I want to change the name to *${newName}*, but I couldn't find a recent record to update. Which record did you mean? (Type "D" to see debtors)`);
         } else if (["thanks", "thank you", "merci", "jazakallah", "gracias"].includes(lowerText)) {
-            await sendReply(from, "You're very welcome, Chief! 🫡 Always happy to help your business grow. Let me know if you need anything else!");
+            await sendReply(from, "You're very welcome, Boss! 🫡 Always happy to help your business grow. Let me know if you need anything else!");
         } else if (["help", "?"].includes(lowerText)) {
             await sendReply(from, `💡 *Kreddy Quick Help Hub*
 
@@ -819,8 +867,21 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
                 }
 
             } else if (aiResponse && aiResponse.intent === "check_debt") {
-                const msg = aiResponse.data.reply || "To see your debtors, just type 'D' or 'Debtors'! 📉";
-                await sendReply(from, msg);
+                // Trigger the actual debt listing logic
+                const sales = await Sale.find({ businessId: profile._id });
+                let msg = `Omo, debtors plenty for street! 😅 Give me one second... \n\n⏳ *Outstanding Balances:*\n\n`;
+                let count = 0;
+                sales.forEach(s => {
+                    const bal = s.totalAmount - s.payments.reduce((sum, p) => sum + p.amount, 0);
+                    if (bal > 0) {
+                        msg += `• *${s.customerName}*: ₦${bal.toLocaleString()} (#${s.invoiceNumber})\n`;
+                        count++;
+                    }
+                });
+                if (count === 0) msg = "🎉 Amazing! Nobody owes you any money right now.";
+                else msg += `\n_To get a payment link, type "D [Customer Name]"_`;
+                
+                return await sendReply(from, msg);
             } else if (aiResponse && aiResponse.intent === "draft_reminder") {
                 const searchName = (aiResponse.data.customerName || "").replace(/\s+/g, ' ').trim();
                 const matches = await Sale.find({
@@ -939,32 +1000,6 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
                         }
                      }
                  }
-            } else if (lowerText.includes("right name is") || lowerText.includes("correct name is") || lowerText.includes("change name to")) {
-                const newName = text.split(/is|to/i).pop().trim();
-                const session = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
-                
-                if (session?.data?.lastSaleId || session?.data?.options?.[0]?.id) {
-                    const saleId = session.data.lastSaleId || session.data.options[0].id;
-                    const sale = await Sale.findById(saleId);
-                    if (sale) {
-                        const oldName = sale.customerName;
-                        sale.customerName = newName;
-                        await sale.save();
-                        
-                        // Update session too
-                        session.data.customerName = newName;
-                        await session.save();
-
-                        await logActivity({
-                            businessId: profile._id,
-                            action: "WHATSAPP_NAME_UPDATED",
-                            details: `Changed name from ${oldName} to ${newName} via WhatsApp`
-                        });
-
-                        return await sendReply(from, `✅ *Name Corrected!* \n\nI've updated the record. The name is now *${newName}* instead of *${oldName}*. 🫡`);
-                    }
-                }
-                await sendReply(from, `I hear you, Chief! Which record should I change to *${newName}*? (You can type 'D' to see your recent debtors)`);
             } else if (aiResponse && (aiResponse.intent === "reply_ticket" || aiResponse.intent === "support" || (aiResponse.intent === "general_chat" && (text.toLowerCase().includes("problem") || text.toLowerCase().includes("issue"))))) {
                 
                 // CASE 1: USER IS REPLYING TO AN EXISTING TICKET
@@ -1027,24 +1062,31 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
             } else if (aiResponse && aiResponse.intent === "general_chat") {
                 await sendReply(from, aiResponse.data.reply || "I'm here, Chief! What's happening? 🚀");
             } else {
-                // FALLBACK: AI didn't understand enough to create a sale or intent was ambiguous
-                
-                // Store session to capture potential missing info
+                // IMPROVED FALLBACK: Guess based on context
+                const sessionData = {
+                    description: aiResponse?.data?.item || text,
+                    customerName: aiResponse?.data?.customerName || session?.data?.customerName || "Customer",
+                    totalAmount: aiResponse?.data?.totalAmount || session?.data?.totalAmount || null
+                };
+
                 await WhatsAppSession.findOneAndUpdate(
                     { whatsappNumber: cleanFrom },
                     {
                         type: 'collect_sale_info',
-                        data: {
-                            description: aiResponse?.data?.item || text,
-                            customerName: aiResponse?.data?.customerName || "Customer",
-                            totalAmount: aiResponse?.data?.totalAmount || null
-                        },
-                        expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+                        data: sessionData,
+                        expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 mins
                     },
                     { upsert: true, new: true }
                 );
 
-                const fallbackMsg = aiResponse?.data?.reply || "I didn't quite catch the specifics of that. Try telling me like: _'Sold a watch to Kola for 10k'_ 💰";
+                let fallbackMsg = aiResponse?.data?.reply || "I'm listening, Chief! 🫡 ";
+                
+                if (session?.data?.customerName && !text.includes(session.data.customerName)) {
+                    fallbackMsg += `Are we still talking about *${session.data.customerName}*? \n\nYou can say: _'Yes, he paid 5k'_ or just tell me a new record! 💎`;
+                } else {
+                    fallbackMsg += "I didn't quite catch the specifics. Try like: _'Sold a bag to Funke for 10k'_ 💰";
+                }
+                
                 await sendReply(from, fallbackMsg);
             }
         }
