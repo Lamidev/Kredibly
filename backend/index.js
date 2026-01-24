@@ -59,8 +59,14 @@ app.use(express.json({
 }));
 app.use(cookieParser());
 
+// Health Check
 app.get("/api/health-check", (req, res) => {
-  res.status(200).json({ status: "alive", timestamp: new Date() });
+  const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+  res.status(200).json({ 
+    status: "alive", 
+    database: dbStatus,
+    timestamp: new Date() 
+  });
 });
 
 // Routes
@@ -73,6 +79,15 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/support", supportRoutes);
 app.use("/api/payments", paymentRoutes);
+
+// Global Error Handler Middleware
+app.use((err, req, res, next) => {
+  console.error("🚨 Global Error Catch:", err.stack);
+  res.status(err.status || 500).json({
+    status: "error",
+    message: err.message || "Something went wrong inside Kreddy's brain!",
+  });
+});
 
 // Database Connection
 mongoose
@@ -87,3 +102,12 @@ mongoose
   .catch((error) => {
     console.error("❌ MongoDB connection failed:", error);
   });
+
+// Process Protection: Prevent crash on unexpected errors
+process.on("uncaughtException", (err) => {
+  console.error("❌ UNCAUGHT EXCEPTION! Kreddy is trying to stay alive...", err);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("❌ UNHANDLED REJECTION! Keeping the lights on...", reason);
+});
