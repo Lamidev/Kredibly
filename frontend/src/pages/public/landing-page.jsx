@@ -27,20 +27,25 @@ const Typewriter = ({ phrases }) => {
     const [typingSpeed, setTypingSpeed] = useState(150);
 
     useEffect(() => {
+        const currentPhrase = phrases[index % phrases.length];
+
         const handleType = () => {
-            const currentPhrase = phrases[index % phrases.length];
-            
+            // Determine the next text state
             if (isDeleting) {
-                setDisplayText(currentPhrase.substring(0, displayText.length - 1));
+                setDisplayText(prev => currentPhrase.substring(0, prev.length - 1));
                 setTypingSpeed(50);
             } else {
-                setDisplayText(currentPhrase.substring(0, displayText.length + 1));
+                setDisplayText(prev => currentPhrase.substring(0, prev.length + 1));
                 setTypingSpeed(150);
             }
 
+            // Check if we need to switch states
             if (!isDeleting && displayText === currentPhrase) {
-                setTimeout(() => setIsDeleting(true), 2500);
+                // Finished typing -> Start pause then delete
+                setIsDeleting(true);
+                setTypingSpeed(2500); 
             } else if (isDeleting && displayText === "") {
+                // Finished deleting -> Move to next word
                 setIsDeleting(false);
                 setIndex((prev) => prev + 1);
                 setTypingSpeed(500);
@@ -103,9 +108,14 @@ const LandingPage = () => {
                     style={{ position: 'relative' }}
                 >
                     <div style={{ 
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        marginBottom: '40px',
+                        background: 'rgba(76, 29, 149, 0.05)',
+                        padding: '10px 24px',
                         borderRadius: '100px',
                         border: '1px solid rgba(76, 29, 149, 0.1)',
-                        display: 'inline-flex',
                         whiteSpace: 'nowrap'
                     }}>
                         <Sparkles size={16} color="var(--primary)" />
