@@ -3,6 +3,7 @@ import { useAuth } from "./context/AuthContext";
 import ScrollToTop from "./components/ui/ScrollToTop";
 
 import LandingPage from "./pages/public/landing-page";
+import Waitlist from "./pages/public/Waitlist";
 import AboutUs from "./pages/public/about-us";
 import SupportHub from "./pages/public/support-hub";
 import PrivacyPolicy from "./pages/public/privacy-policy";
@@ -41,7 +42,8 @@ const App = () => {
     <>
       <ScrollToTop />
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={user ? <Navigate to={getHomeRedirect()} /> : <Waitlist />} />
+        <Route path="/home" element={<LandingPage />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/contact" element={<SupportHub />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />

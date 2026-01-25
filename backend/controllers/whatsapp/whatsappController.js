@@ -11,7 +11,8 @@ const { processMessageWithAI } = require("../../utils/aiService");
 const processedMessages = new Set();
 setInterval(() => processedMessages.clear(), 10 * 60 * 1000); // 10 minutes
 
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
+const BACKEND_URL = process.env.BACKEND_URL || "https://api.usekredibly.com";
 
 /**
  * SMART LOGIC: Rule-based parser for when AI is offline.
@@ -296,7 +297,10 @@ const sendReply = async (to, text) => {
                 messaging_product: "whatsapp",
                 to: cleanTo,
                 type: "text",
-                text: { body: text },
+                text: { 
+                    body: text,
+                    preview_url: true
+                },
             },
             {
                 headers: { Authorization: `Bearer ${accessToken}` },
@@ -468,7 +472,7 @@ exports.handleIncoming = async (req, res) => {
                     const sale = await Sale.findById(selected.id);
                     if (sale) {
                         const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-                        const link = `${FRONTEND_URL}/i/${sale.invoiceNumber}`;
+                        const link = `${BACKEND_URL}/api/payments/share/${sale.invoiceNumber}`;
                         const draft = `Hi ${sale.customerName}, this is a friendly reminder for your balance of ₦${bal.toLocaleString()} with ${profile.displayName}. You can view and pay here: ${link}`;
                         await WhatsAppSession.deleteOne({ _id: session._id });
                         return await sendReply(from, `📝 *Draft for ${sale.customerName}:* \n\n_"${draft}"_\n\n(You can copy and forward this to them! 🚀)`);
@@ -509,7 +513,7 @@ exports.handleIncoming = async (req, res) => {
                     }
 
                     const bal = totalAmount - (paidAmount || 0);
-                    return await sendReply(from, `✅ *Record Confirmed!* \n\nI've logged Invoice *#${newSale.invoiceNumber}* for *${customerName}*.\n💰 Paid: ₦${paidAmount.toLocaleString()}\n⏳ Balance: ₦${bal.toLocaleString()}\n\n🔗 Invoice: ${FRONTEND_URL}/i/${newSale.invoiceNumber}`);
+                    return await sendReply(from, `✅ *Record Confirmed!* \n\nI've logged Invoice *#${newSale.invoiceNumber}* for *${customerName}*.\n💰 Paid: ₦${paidAmount.toLocaleString()}\n⏳ Balance: ₦${bal.toLocaleString()}\n\n🔗 View & Share Preview: ${BACKEND_URL}/api/payments/share/${newSale.invoiceNumber}`);
                 } else if (intent === 'update_record') {
                     // 🧠 ROBUST SEARCH: Find the best match for the customer
                     let cleanName = customerName.replace(/^(for|to|from|of)\s+/i, '').trim();
@@ -676,7 +680,7 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
 
                 const sale = matches[0];
                 const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-                const link = `${FRONTEND_URL}/i/${sale.invoiceNumber}`;
+                const link = `${BACKEND_URL}/api/payments/share/${sale.invoiceNumber}`;
                 const bankInfo = profile.bankDetails?.accountNumber ? `\n\nBank: ${profile.bankDetails.bankName}\nAcc: ${profile.bankDetails.accountNumber}` : '';
 
                 let msg = `🤝 *Payment Link for ${sale.customerName}*\n💰 Balance: *₦${bal.toLocaleString()}*\n\n*Copy & Forward this to them:* \n------------------\n"Hi ${sale.customerName}, here is the secure update and payment link for your balance with ${profile.displayName}: ${link}${bankInfo ? '\n' + bankInfo : ''}"\n------------------`;

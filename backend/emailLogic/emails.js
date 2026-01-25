@@ -3,9 +3,29 @@ const {
   PASSWORD_RESET_SUCCESS_TEMPLATE,
   VERIFICATION_EMAIL_TEMPLATE,
   WELCOME_EMAIL_TEMPLATE,
-  NEW_TICKET_ALERT_TEMPLATE
+  NEW_TICKET_ALERT_TEMPLATE,
+  WAITLIST_NOTIFICATION_TEMPLATE
 } = require("./emailTemplates.js");
 const { resendClient, sender } = require("./emailConfig.js");
+
+// ... (existing functions)
+
+exports.sendWaitlistEmail = async (adminEmail, userData) => {
+  try {
+    await resendClient.emails.send({
+      from: `${sender.name} <${sender.email}>`,
+      to: adminEmail,
+      subject: `🚀 New Waitlist Signup: ${userData.name}`,
+      html: WAITLIST_NOTIFICATION_TEMPLATE
+        .replace("{name}", userData.name)
+        .replace("{email}", userData.email)
+        .replace("{whatsappNumber}", userData.whatsappNumber)
+        .replace("{industry}", userData.industry || "Not specified"),
+    });
+  } catch (error) {
+    console.error("Error sending waitlist notification email:", error);
+  }
+};
 
 // Common function for handling email sending errors
 const handleEmailError = (error, message) => {

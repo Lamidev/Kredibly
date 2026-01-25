@@ -83,6 +83,56 @@ exports.handlePaystackWebhook = async (req, res) => {
 };
 
 /**
+ * Generates dynamic Open Graph metadata for WhatsApp/Social previews
+ * then redirects the user to the actual frontend invoice.
+ */
+exports.shareInvoice = async (req, res) => {
+    try {
+        const { invoiceNumber } = req.params;
+        const sale = await Sale.findOne({ invoiceNumber })
+            .populate("businessId", "displayName logoUrl");
+        
+        if (!sale) return res.redirect(`${process.env.FRONTEND_URL || "http://localhost:5173"}/`);
+
+        const balance = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
+        const title = `Invoice from ${sale.businessId?.displayName || "Kredibly"}`;
+        const description = `Amount: ₦${balance.toLocaleString()} | Item: ${sale.description} | Securely view and pay on Kredibly.`;
+        
+        // Use business logo if available, or our premium placeholder
+        const imageUrl = sale.businessId?.logoUrl || "https://usekredibly.com/og-receipt-preview.png"; 
+
+        const html = `
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <title>${title}</title>
+                    <meta property="og:title" content="${title}" />
+                    <meta property="og:description" content="${description}" />
+                    <meta property="og:image" content="${imageUrl}" />
+                    <meta property="og:type" content="website" />
+                    <meta property="og:url" content="${process.env.FRONTEND_URL}/i/${invoiceNumber}" />
+                    
+                    <meta name="twitter:card" content="summary_large_image" />
+                    <meta name="twitter:title" content="${title}" />
+                    <meta name="twitter:description" content="${description}" />
+                    <meta name="twitter:image" content="${imageUrl}" />
+
+                    <meta http-equiv="refresh" content="0; url=${process.env.FRONTEND_URL || "http://localhost:5173"}/i/${invoiceNumber}" />
+                </head>
+                <body>
+                    <p>Redirecting to your secure invoice...</p>
+                    <script>window.location.href = "${process.env.FRONTEND_URL || "http://localhost:5173"}/i/${invoiceNumber}";</script>
+                </body>
+            </html>
+        `;
+
+        res.send(html);
+    } catch (error) {
+        res.redirect(`${process.env.FRONTEND_URL || "http://localhost:5173"}/`);
+    }
+};
+
+/**
  * Fetches public sale info for the invoice page.
  */
 exports.getPublicInvoice = async (req, res) => {

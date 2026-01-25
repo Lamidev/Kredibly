@@ -170,10 +170,38 @@ const NEW_TICKET_ALERT_TEMPLATE = `
 </html>
 `;
 
+const WAITLIST_NOTIFICATION_TEMPLATE = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>New Waitlist Signup</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: ${THEME_COLOR}; padding: 20px; text-align: center;">
+    <h1 style="color: white; margin: 0;">New Waitlist Signup 🚀</h1>
+  </div>
+  <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+    <p style="font-size: 18px; font-weight: bold; color: ${THEME_COLOR};">A new founder has joined the movement!</p>
+    <div style="background: white; border-left: 4px solid ${THEME_COLOR}; padding: 20px; margin: 20px 0;">
+        <p style="margin: 8px 0;"><strong>Name:</strong> {name}</p>
+        <p style="margin: 8px 0;"><strong>Email:</strong> {email}</p>
+        <p style="margin: 8px 0;"><strong>WhatsApp:</strong> {whatsappNumber}</p>
+        <p style="margin: 8px 0;"><strong>Industry:</strong> {industry}</p>
+    </div>
+    <div style="text-align: center; margin: 30px 0;">
+      <p style="color: #6B7280; font-size: 14px;">Documentation and Follow-up required.</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
 module.exports = {
   VERIFICATION_EMAIL_TEMPLATE,
   PASSWORD_RESET_SUCCESS_TEMPLATE,
   PASSWORD_RESET_REQUEST_TEMPLATE,
   WELCOME_EMAIL_TEMPLATE,
-  NEW_TICKET_ALERT_TEMPLATE
+  NEW_TICKET_ALERT_TEMPLATE,
+  WAITLIST_NOTIFICATION_TEMPLATE
 };

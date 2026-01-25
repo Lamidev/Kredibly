@@ -65,6 +65,9 @@ Rules & Logic:
 - Always prioritize "create_sale" if a name and money/debt are mentioned together for a NEW record.
 - Use "update_record" if the customer is already in the 'Debtors' list provided in context.
 - IMPORTANT: ALWAYS response with ONLY valid JSON.
+- NIGERIAN CURRENCY LOGIC: 
+    - 'k' or 'K' means thousand (e.g., 50k = 5,000, 1.5k = 1,500).
+    - TYPO PROTECTION: If a user writes a large number and still adds 'k' (e.g., '700000k'), and the resulting value (700M) seems unrealistic for the item (like a bag or shoes), assume 'k' was a habit or typo and treat the base number as the total (e.g., 700,000). Use common sense for business values.
 `;
 
   try {

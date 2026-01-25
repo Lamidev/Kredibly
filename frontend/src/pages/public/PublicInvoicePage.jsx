@@ -106,29 +106,29 @@ const PublicInvoicePage = () => {
     };
 
     if (loading) return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-[#FDFCFE]">
-            <div className="relative w-24 h-24 mb-6">
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#FDFCFE' }}>
+            <div style={{ position: 'relative', width: '96px', height: '96px', marginBottom: '24px' }}>
                 <motion.div 
                     animate={{ rotate: 360 }}
                     transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                    className="absolute inset-0 border-4 border-purple-100 rounded-full border-t-purple-600"
+                    style={{ position: 'absolute', inset: 0, border: '4px solid #F3E8FF', borderRadius: '50%', borderTopColor: '#7C3AED' }}
                 />
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <img src="/krediblyrevamped.png" alt="" className="h-6 opacity-30" />
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img src="/krediblyrevamped.png" alt="" style={{ height: '24px', opacity: 0.3 }} />
                 </div>
             </div>
-            <p className="text-sm font-bold text-purple-900/40 uppercase tracking-[0.2em]">Secure Connection</p>
+            <p style={{ fontSize: '12px', fontWeight: 800, color: 'rgba(76, 29, 149, 0.4)', textTransform: 'uppercase', letterSpacing: '0.2em' }}>Secure Connection</p>
         </div>
     );
 
     if (!sale) return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-[#FDFCFE]">
-            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6">
-                <AlertCircle size={32} className="text-red-500" />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '24px', textAlign: 'center', background: '#FDFCFE' }}>
+            <div style={{ width: '80px', height: '80px', background: '#FEF2F2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+                <AlertCircle size={32} color="#EF4444" />
             </div>
-            <h1 className="text-2xl font-black text-slate-900 mb-2">Invoice Unavailable</h1>
-            <p className="text-slate-500 max-w-xs mx-auto leading-relaxed">This invoice might have been settled, archived, or the link is simply incorrect.</p>
-            <Link to="/" className="mt-8 px-8 py-3 bg-slate-900 text-white rounded-full font-bold text-sm transition-transform active:scale-95 shadow-lg">Return Home</Link>
+            <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#0F172A', marginBottom: '8px' }}>Invoice Unavailable</h1>
+            <p style={{ color: '#64748B', maxWidth: '320px', margin: '0 auto', lineHeight: 1.6 }}>This invoice might have been settled, archived, or the link is simply incorrect.</p>
+            <Link to="/" style={{ marginTop: '32px', padding: '12px 32px', background: '#0F172A', color: 'white', borderRadius: '100px', fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>Return Home</Link>
         </div>
     );
 
@@ -137,53 +137,54 @@ const PublicInvoicePage = () => {
     const isOverdue = !isPaid && sale.dueDate && new Date(sale.dueDate) < new Date();
     const isDebtRecovery = !isPaid && (sale.status === 'partial' || isOverdue);
 
+    // STYLE OBJECTS FOR PURE CSS
+    const containerStyle = { minHeight: '100vh', background: '#FAFAFC', color: '#1A1A1A', paddingBottom: '80px', overflowX: 'hidden', position: 'relative' };
+    const maxW2xl = { maxWidth: '672px', margin: '0 auto' };
+    const flexBtw = { display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
+    
     return (
-        <div className="min-h-screen bg-[#FAFAFC] text-[#1A1A1A] font-sans selection:bg-purple-100 pb-20 overflow-x-hidden">
-            {/* Ambient Background Elements */}
-            <div className="fixed top-0 left-0 w-full h-[500px] bg-gradient-to-b from-purple-50/50 to-transparent pointer-events-none" />
-            <div className="fixed -top-20 -right-20 w-80 h-80 bg-purple-200/20 blur-[100px] rounded-full pointer-events-none" />
-            <div className="fixed -bottom-20 -left-20 w-80 h-80 bg-blue-100/20 blur-[100px] rounded-full pointer-events-none" />
+        <div style={containerStyle}>
+            {/* Background elements */}
+            <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '500px', background: 'linear-gradient(to bottom, rgba(245, 243, 255, 0.5), transparent)', pointerEvents: 'none' }} />
 
             {/* Navbar */}
-            <nav className="relative z-10 p-6 flex justify-between items-center max-w-2xl mx-auto">
-                <img src="/krediblyrevamped.png" alt="Kredibly" className="h-6" />
+            <nav style={{ ...maxW2xl, position: 'relative', zIndex: 10, padding: '24px', ...flexBtw }}>
+                <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '24px' }} />
                 <button 
                     onClick={handleShare}
-                    className="p-3 bg-white/80 backdrop-blur-md rounded-full border border-slate-200 shadow-sm transition-all hover:bg-white active:scale-90"
+                    style={{ padding: '12px', background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(8px)', borderRadius: '50%', border: '1px solid #E2E8F0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', cursor: 'pointer' }}
                 >
-                    <Share2 size={18} className="text-slate-600" />
+                    <Share2 size={18} color="#475569" />
                 </button>
             </nav>
 
-            <main className="relative z-10 px-4 max-w-2xl mx-auto">
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                >
+            <main style={{ ...maxW2xl, position: 'relative', zIndex: 10, padding: '0 16px' }}>
+                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+                    
                     {/* Status Pill */}
-                    <div className="flex justify-center mb-6">
-                        <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em] flex items-center gap-2 shadow-sm border ${
-                            isPaid 
-                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                            : 'bg-white text-purple-600 border-purple-100'
-                        }`}>
-                            <div className={`w-2 h-2 rounded-full animate-pulse ${isPaid ? 'bg-emerald-500' : isOverdue ? 'bg-red-500' : 'bg-purple-500'}`} />
-                            {isPaid ? 'Settled on Ledger' : isOverdue ? 'Overdue Payment' : 'Payment Awaiting'}
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+                        <div style={{ 
+                            padding: '6px 16px', borderRadius: '100px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', border: '1px solid',
+                            backgroundColor: isPaid ? '#ECFDF5' : 'white',
+                            color: isPaid ? '#059669' : '#7C3AED',
+                            borderColor: isPaid ? '#D1FAE5' : '#F3E8FF'
+                        }}>
+                             <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: isPaid ? '#10B981' : isOverdue ? '#EF4444' : '#8B5CF6' }} />
+                             {isPaid ? 'Settled on Ledger' : isOverdue ? 'Overdue Payment' : 'Payment Awaiting'}
                         </div>
                     </div>
 
                     {/* HERO SECTION */}
-                    <header className="text-center mb-10">
-                        <h1 className="text-[52px] leading-tight font-black tracking-tight mb-4 flex flex-col items-center">
-                            <span className="text-slate-400 text-xl font-bold mb-1">
+                    <header style={{ textAlign: 'center', marginBottom: '40px' }}>
+                        <h1 style={{ fontSize: '52px', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <span style={{ color: '#94A3B8', fontSize: '20px', fontWeight: 700, marginBottom: '4px' }}>
                                 {isPaid ? 'Total Amount' : isDebtRecovery ? 'Outstanding Balance' : 'Amount Due'}
                             </span>
-                            <span className={`bg-gradient-to-tr bg-clip-text text-transparent ${isOverdue ? 'from-red-600 via-red-800' : 'from-slate-900 via-slate-800'} to-purple-900`}>
+                            <span style={{ background: isOverdue ? 'linear-gradient(to right, #DC2626, #991B1B)' : 'linear-gradient(to right, #0F172A, #4C1D95)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                                 ₦{isPaid ? sale.totalAmount.toLocaleString() : balance.toLocaleString()}
                             </span>
                         </h1>
-                        <p className="text-slate-400 font-medium max-w-xs mx-auto text-sm leading-relaxed">
+                        <p style={{ color: '#94A3B8', fontWeight: 500, maxWidth: '320px', margin: '0 auto', fontSize: '14px', lineHeight: 1.6 }}>
                             {isPaid 
                                 ? `Invoice #${sale.invoiceNumber} has been fully settled. Thank you for your business!` 
                                 : `This payment for #${sale.invoiceNumber} is requested by ${sale.business?.displayName}.`
@@ -192,189 +193,112 @@ const PublicInvoicePage = () => {
                     </header>
 
                     {/* MAIN CONTENT CARD */}
-                    <div className="bg-white rounded-[32px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-slate-100 overflow-hidden">
+                    <div style={{ background: 'white', borderRadius: '32px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.04), 0 10px 10px -5px rgba(0,0,0,0.02)', border: '1px solid #F1F5F9', overflow: 'hidden' }}>
                         
-                        {/* Merchant Profile Banner */}
-                        <div className="p-8 border-b border-slate-50 relative overflow-hidden group">
-                           <div className="absolute inset-0 bg-gradient-to-r from-purple-50/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                           <div className="flex items-center gap-5 relative z-10">
-                                <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl flex items-center justify-center text-white shadow-lg overflow-hidden border-2 border-white">
-                                    {sale.business?.logoUrl ? (
-                                        <img src={sale.business.logoUrl} alt="" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <Building2 size={32} />
-                                    )}
+                        {/* Merchant Banner */}
+                        <div style={{ padding: '32px', borderBottom: '1px solid #F8FAFC', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                             <div style={{ width: '64px', height: '64px', background: 'linear-gradient(to bottom right, #7C3AED, #4338CA)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', border: '2px solid white', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+                                {sale.business?.logoUrl ? <img src={sale.business.logoUrl} style={{ width: '100%', height: '100%', objectCover: 'cover' }} /> : <Building2 size={32} />}
+                             </div>
+                             <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                                    <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A' }}>{sale.business?.displayName}</h3>
+                                    <CheckCircle size={10} color="#3B82F6" style={{ fill: '#3B82F6' }} />
                                 </div>
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-0.5">
-                                        <h3 className="text-lg font-black text-slate-900">{sale.business?.displayName}</h3>
-                                        <div className="bg-blue-50 p-0.5 rounded-full border border-blue-100">
-                                            <CheckCircle size={10} className="text-blue-500 fill-blue-500" />
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="px-2 py-0.5 bg-slate-100 text-[9px] font-black text-slate-500 rounded uppercase tracking-wider uppercase">Verified Merchant</span>
-                                        <span className="w-1 h-1 bg-slate-200 rounded-full" />
-                                        <span className="text-[11px] font-bold text-slate-400 capitalize">{sale.business?.entityType || 'Business'}</span>
-                                    </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ fontSize: '9px', fontWeight: 900, background: '#F1F5F9', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', color: '#64748B' }}>Verified Merchant</span>
+                                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8' }}>• {sale.business?.entityType || 'Business'}</span>
                                 </div>
-                           </div>
+                             </div>
                         </div>
 
-                        {/* Invoice Breakdown */}
-                        <div className="p-8 space-y-8">
-                            
-                            {/* Details Grid */}
-                            <div className="grid grid-cols-2 gap-8">
+                        {/* Breakdown */}
+                        <div style={{ padding: '32px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '32px' }}>
                                 <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Customer</label>
-                                    <p className="text-sm font-bold text-slate-700">{sale.customerName}</p>
+                                    <label style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Customer</label>
+                                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#334155' }}>{sale.customerName}</p>
                                 </div>
-                                <div className="text-right">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Reference Code</label>
-                                    <p className="text-sm font-bold text-slate-700">#{sale.invoiceNumber}</p>
+                                <div style={{ textAlign: 'right' }}>
+                                    <label style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Ref Number</label>
+                                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#334155' }}>#{sale.invoiceNumber}</p>
                                 </div>
                             </div>
 
-                            {/* Line Items / Description */}
-                            <div className="bg-slate-50/50 rounded-2xl p-6 border border-slate-100">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <FileText size={14} className="text-slate-400" />
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Service Description</span>
+                            <div style={{ background: '#F8FAFC', borderRadius: '16px', padding: '24px', border: '1px solid #F1F5F9', marginBottom: '32px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                    <FileText size={14} color="#94A3B8" />
+                                    <span style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>Description</span>
                                 </div>
-                                <p className="text-[15px] font-semibold text-slate-600 leading-relaxed italic">
-                                    "{sale.description}"
-                                </p>
+                                <p style={{ fontSize: '15px', fontWeight: 600, color: '#475569', lineHeight: 1.6, fontStyle: 'italic' }}>"{sale.description}"</p>
                             </div>
 
-                            {/* Timeline Info */}
-                            <div className="flex items-center justify-between py-4 border-y border-slate-50">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-purple-50 rounded-lg">
-                                        <Calendar size={14} className="text-purple-600" />
-                                    </div>
+                            <div style={{ ...flexBtw, padding: '16px 0', borderTop: '1px solid #F8FAFC', borderBottom: '1px solid #F8FAFC', marginBottom: '32px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{ padding: '8px', background: '#F5F3FF', borderRadius: '8px' }}><Calendar size={14} color="#7C3AED" /></div>
                                     <div>
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Date Issued</p>
-                                        <p className="text-[11px] font-bold text-slate-700">{new Date(sale.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                                        <p style={{ fontSize: '9px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>Issued</p>
+                                        <p style={{ fontSize: '11px', fontWeight: 700 }}>{new Date(sale.createdAt).toLocaleDateString()}</p>
                                     </div>
                                 </div>
                                 {sale.dueDate && (
-                                    <div className="flex items-center gap-3 text-right">
-                                        <div className="text-right">
-                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Due Date</p>
-                                            <p className="text-[11px] font-bold text-slate-700">{new Date(sale.dueDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'right' }}>
+                                        <div>
+                                            <p style={{ fontSize: '9px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>Due Date</p>
+                                            <p style={{ fontSize: '11px', fontWeight: 700 }}>{new Date(sale.dueDate).toLocaleDateString()}</p>
                                         </div>
-                                        <div className="p-2 bg-red-50 rounded-lg">
-                                            <Clock size={14} className="text-red-600" />
-                                        </div>
+                                        <div style={{ padding: '8px', background: '#FEF2F2', borderRadius: '8px' }}><Clock size={14} color="#EF4444" /></div>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Payment Actions */}
                             {!isPaid ? (
-                                <div className="space-y-6 pt-2">
-                                    <motion.button 
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
+                                <div>
+                                    <button 
                                         onClick={handlePaystackPayment}
                                         disabled={verifying}
-                                        className="w-full relative group"
+                                        style={{ width: '100%', padding: '20px', background: '#1e144d', color: 'white', borderRadius: '16px', border: 'none', fontWeight: 900, fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: '0 10px 15px -3px rgba(30, 20, 77, 0.2)' }}
                                     >
-                                        <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-[20px] blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
-                                        <div className="relative w-full bg-[#1e144d] hover:bg-[#150e35] text-white font-black py-5 rounded-[20px] transition-all flex items-center justify-center gap-4 text-lg shadow-xl shadow-purple-900/10">
-                                            {verifying ? (
-                                                <div className="flex items-center gap-3">
-                                                    <Loader2 className="animate-spin" size={20} />
-                                                    <span className="text-sm uppercase tracking-widest">Verifying Transaction...</span>
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    <Wallet size={22} className="text-purple-300" />
-                                                    <span>Secure Checkout</span>
-                                                </>
-                                            )}
-                                        </div>
-                                    </motion.button>
-                                    
-                                    <div className="flex flex-col items-center gap-3">
-                                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                            <ShieldCheck size={14} className="text-emerald-500" />
-                                            SSL Encrypted Payment System
-                                        </div>
-                                        <div className="flex items-center gap-4 opacity-30 grayscale hover:grayscale-0 transition-all">
-                                            <p className="text-[8px] font-bold text-slate-500">SECURELY POWERED BY</p>
-                                            <img src="https://paystack.com/assets/img/login/paystack-logo.png" alt="Paystack" className="h-2.5" />
-                                        </div>
+                                        {verifying ? <Loader2 size={20} className="spin-animation" /> : <><Wallet size={20} /> <span>Secure Checkout</span></>}
+                                    </button>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginTop: '24px' }}>
+                                        <p style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <ShieldCheck size={14} color="#10B981" /> SSL Encrypted Payment
+                                        </p>
+                                        <img src="https://paystack.com/assets/img/login/paystack-logo.png" style={{ height: '12px', opacity: 0.3 }} />
                                     </div>
                                 </div>
                             ) : (
-                                <motion.div 
-                                    initial={{ scale: 0.95, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    className="bg-emerald-500 rounded-[24px] p-8 text-center text-white relative overflow-hidden"
-                                >
-                                    <div className="absolute top-0 right-0 p-4 opacity-20">
-                                        <CheckCircle2 size={120} />
-                                    </div>
-                                    <div className="relative z-10">
-                                        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/30 backdrop-blur-sm">
-                                            <CheckCircle2 size={32} />
-                                        </div>
-                                        <h3 className="text-2xl font-black mb-1">Payment Successful!</h3>
-                                        <p className="text-emerald-50/70 font-bold text-sm uppercase tracking-widest">Ledger Updated Automatically</p>
-                                    </div>
-                                </motion.div>
+                                <div style={{ background: '#10B981', padding: '32px', borderRadius: '24px', textAlign: 'center', color: 'white' }}>
+                                    <CheckCircle2 size={40} color="white" style={{ margin: '0 auto 16px' }} />
+                                    <h3 style={{ fontSize: '20px', fontWeight: 900 }}>Payment Successful!</h3>
+                                    <p style={{ fontSize: '12px', fontWeight: 700, opacity: 0.8, textTransform: 'uppercase', marginTop: '4px' }}>Ledger Updated Automatically</p>
+                                </div>
                             )}
                         </div>
                     </div>
 
                     {/* Footer Reassurance */}
-                    <div className="mt-12 space-y-10">
-                        <div className="grid grid-cols-3 gap-4">
+                    <div style={{ marginTop: '48px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '40px' }}>
                             {[
-                                { icon: ShieldCheck, label: "Trust Score", val: "+12 pts" },
-                                { icon: CheckCircle, label: "Verified", val: "On Chain" },
-                                { icon: Building2, label: "Settlement", val: "Direct" }
-                            ].map((item, i) => (
-                                <div key={i} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm text-center">
-                                    <item.icon size={16} className="mx-auto mb-2 text-purple-600" />
-                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">{item.label}</p>
-                                    <p className="text-[10px] font-black text-slate-900">{item.val}</p>
+                                { i: ShieldCheck, l: "Trust Score", v: "+12 pts" },
+                                { i: CheckCircle, l: "Verified", v: "On Chain" },
+                                { i: Building2, l: "Settlement", v: "Direct" }
+                            ].map((item, idx) => (
+                                <div key={idx} style={{ background: 'white', padding: '16px', borderRadius: '16px', border: '1px solid #F1F5F9', textAlign: 'center' }}>
+                                    <item.i size={16} color="#7C3AED" style={{ margin: '0 auto 8px' }} />
+                                    <p style={{ fontSize: '8px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>{item.l}</p>
+                                    <p style={{ fontSize: '10px', fontWeight: 900 }}>{item.v}</p>
                                 </div>
                             ))}
                         </div>
 
-                        {/* Customer Support Block */}
-                        <div className="text-center space-y-4">
-                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">Need help with this invoice?</p>
-                            <div className="flex justify-center gap-4">
-                                <button className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-full border border-slate-200 text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 transition-all">
-                                    <HelpCircle size={14} />
-                                    Support Center
-                                </button>
-                                <button className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-full border border-slate-200 text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 transition-all">
-                                    <ExternalLink size={14} />
-                                    Verify Merchant
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Legal & Branding */}
-                        <footer className="pt-20 border-t border-slate-100 flex flex-col items-center gap-8 text-center pb-20">
-                            <div className="flex items-center gap-6">
-                                <Instagram size={18} className="text-slate-300 hover:text-purple-600 cursor-pointer transition-colors" />
-                                <Twitter size={18} className="text-slate-300 hover:text-purple-600 cursor-pointer transition-colors" />
-                                <Facebook size={18} className="text-slate-300 hover:text-purple-600 cursor-pointer transition-colors" />
-                            </div>
-                            <div className="space-y-4">
-                                <img src="/krediblyrevamped.png" alt="Kredibly" className="h-5 opacity-40 mx-auto" />
-                                <p className="text-[10px] font-bold text-slate-900 leading-relaxed max-w-sm">
-                                    Kredibly is a decentralized financial trust ledger. Every record is cryptographically secured to ensure merchant and customer transparency. 
-                                    <br />
-                                    © 2026 Kredibly Infrastructure. All rights reserved.
-                                </p>
-                            </div>
+                        <footer style={{ textAlign: 'center', padding: '40px 0', borderTop: '1px solid #F1F5F9' }}>
+                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '20px', opacity: 0.3, margin: '0 auto 24px' }} />
+                            <p style={{ fontSize: '10px', fontWeight: 700, color: '#64748B', lineHeight: 1.8, maxWidth: '400px', margin: '0 auto' }}>
+                                Kredibly is a decentralized financial trust ledger. Every record is secured to ensure merchant and customer transparency. © 2026.
+                            </p>
                         </footer>
                     </div>
                 </motion.div>
@@ -384,4 +308,3 @@ const PublicInvoicePage = () => {
 };
 
 export default PublicInvoicePage;
-
