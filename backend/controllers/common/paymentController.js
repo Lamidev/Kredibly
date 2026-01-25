@@ -106,6 +106,8 @@ exports.shareInvoice = async (req, res) => {
             <html>
                 <head>
                     <title>${title}</title>
+                    <meta charset="UTF-8" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                     <meta property="og:title" content="${title}" />
                     <meta property="og:description" content="${description}" />
                     <meta property="og:image" content="${imageUrl}" />
@@ -117,11 +119,32 @@ exports.shareInvoice = async (req, res) => {
                     <meta name="twitter:description" content="${description}" />
                     <meta name="twitter:image" content="${imageUrl}" />
 
-                    <meta http-equiv="refresh" content="0; url=${process.env.FRONTEND_URL || "http://localhost:5173"}/i/${invoiceNumber}" />
+                    <link rel="preconnect" href="https://fonts.googleapis.com">
+                    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+
+                    <style>
+                        body { background: #F8FAFC; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; color: #0F172A; text-align: center; }
+                        .card { background: white; padding: 40px; border-radius: 32px; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.05); border: 1px solid #F1F5F9; max-width: 400px; width: 90%; }
+                        .loader { width: 48px; height: 48px; border: 4px solid #F3E8FF; border-top: 4px solid #7C3AED; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 24px; }
+                        h1 { font-size: 20px; font-weight: 900; margin: 0 0 8px; }
+                        p { font-size: 14px; color: #64748B; margin: 0; font-weight: 500; }
+                        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                    </style>
+
+                    <meta http-equiv="refresh" content="1; url=${process.env.FRONTEND_URL || "http://localhost:5173"}/i/${invoiceNumber}" />
                 </head>
                 <body>
-                    <p>Redirecting to your secure invoice...</p>
-                    <script>window.location.href = "${process.env.FRONTEND_URL || "http://localhost:5173"}/i/${invoiceNumber}";</script>
+                    <div class="card">
+                        <div class="loader"></div>
+                        <h1>Securing Connection...</h1>
+                        <p>Loading your verified Kredibly invoice.</p>
+                    </div>
+                    <script>
+                        setTimeout(() => {
+                            window.location.href = "${process.env.FRONTEND_URL || "http://localhost:5173"}/i/${invoiceNumber}";
+                        }, 800);
+                    </script>
                 </body>
             </html>
         `;
