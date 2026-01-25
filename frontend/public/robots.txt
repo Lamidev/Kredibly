@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Allow: /home
+Allow: /about
+Allow: /contact
+Allow: /pricing
+Disallow: /auth/
+Disallow: /dashboard/
+Disallow: /sales/
+Disallow: /admin/
+Disallow: /settings/
+
+Sitemap: https://usekredibly.com/sitemap.xml

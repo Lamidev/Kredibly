@@ -2,7 +2,14 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-require("dotenv").config();
+const dns = require("dns");
+require("dotenv").config({ override: true });
+
+console.log("📍 Attempting to connect to:", process.env.MONGODB_URL ? "URL is set" : "URL IS MISSING!");
+
+// Fix for DNS issues on some Windows environments
+dns.setServers(['8.8.8.8', '1.1.1.1']); // Force Node.js to use Google/Cloudflare DNS
+dns.setDefaultResultOrder("ipv4first");
 
 // Import routes
 const authRoutes = require("./routes/auth/authRoutes");
@@ -93,17 +100,22 @@ app.use((err, req, res, next) => {
 
 // Database Connection
 mongoose
-  .connect(process.env.MONGODB_URL)
+  .connect(process.env.MONGODB_URL, {
+    serverSelectionTimeoutMS: 15000, // Wait 15s before giving up
+  })
   .then(() => {
-    app.listen(PORT, () => {
-      console.log(`🔥 Server running on port ${PORT}`);
-    });
+    console.log("✅ MongoDB Connected Successfully");
     startProactiveAssistant();
     startTicketCleanup();
   })
   .catch((error) => {
-    console.error("❌ MongoDB connection failed:", error);
+    console.error("❌ MongoDB connection failed:", error.message);
   });
+
+// Start Server
+app.listen(PORT, () => {
+  console.log(`🔥 Server running on port ${PORT}`);
+});
 
 // Process Protection: Prevent crash on unexpected errors
 process.on("uncaughtException", (err) => {

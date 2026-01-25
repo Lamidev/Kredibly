@@ -10,7 +10,7 @@ const VERIFICATION_EMAIL_TEMPLATE = `
 </head>
 <body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
   <div style="margin-bottom: 32px;">
-    <h1 style="color: ${THEME_COLOR}; margin: 0; font-size: 24px; font-weight: 800;">Kredibly.</h1>
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
   </div>
   <div style="background-color: #ffffff; padding: 0;">
     <p style="font-size: 16px;">Hello,</p>
@@ -45,7 +45,7 @@ const PASSWORD_RESET_SUCCESS_TEMPLATE = `
 </head>
 <body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
   <div style="margin-bottom: 32px;">
-    <h1 style="color: ${THEME_COLOR}; margin: 0; font-size: 24px; font-weight: 800;">Kredibly.</h1>
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
   </div>
   <div style="background-color: #ffffff; padding: 0;">
     <p style="font-size: 16px;">Hello,</p>
@@ -81,7 +81,7 @@ const PASSWORD_RESET_REQUEST_TEMPLATE = `
 </head>
 <body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
   <div style="margin-bottom: 32px;">
-    <h1 style="color: ${THEME_COLOR}; margin: 0; font-size: 24px; font-weight: 800;">Kredibly.</h1>
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
   </div>
   <div style="background-color: #ffffff; padding: 0;">
     <p style="font-size: 16px;">Hello,</p>
@@ -115,7 +115,7 @@ const WELCOME_EMAIL_TEMPLATE = `
 <body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
   
   <div style="margin-bottom: 32px;">
-    <h1 style="color: ${THEME_COLOR}; margin: 0; font-size: 24px; font-weight: 800;">Kredibly.</h1>
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
   </div>
 
   <div style="background-color: #ffffff; padding: 0;">
@@ -152,8 +152,9 @@ const NEW_TICKET_ALERT_TEMPLATE = `
   <title>New Support Ticket</title>
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: ${THEME_COLOR}; padding: 20px; text-align: center;">
-    <h1 style="color: white; margin: 0;">New Support Ticket</h1>
+  <div style="background: ${THEME_COLOR}; padding: 30px 20px; text-align: center;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 160px; height: auto; margin: 0 auto 15px; display: block; filter: brightness(0) invert(1);">
+    <h1 style="color: white; margin: 0; font-size: 20px;">New Support Ticket</h1>
   </div>
   <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
     <p><strong>User:</strong> {userName}</p>
@@ -178,8 +179,9 @@ const WAITLIST_NOTIFICATION_TEMPLATE = `
   <title>New Waitlist Signup</title>
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: ${THEME_COLOR}; padding: 20px; text-align: center;">
-    <h1 style="color: white; margin: 0;">New Waitlist Signup 🚀</h1>
+  <div style="background: ${THEME_COLOR}; padding: 30px 20px; text-align: center;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 160px; height: auto; margin: 0 auto 15px; display: block; filter: brightness(0) invert(1);">
+    <h1 style="color: white; margin: 0; font-size: 20px;">New Waitlist Signup 🚀</h1>
   </div>
   <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
     <p style="font-size: 18px; font-weight: bold; color: ${THEME_COLOR};">A new founder has joined the movement!</p>
