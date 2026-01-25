@@ -257,9 +257,9 @@ const PublicInvoicePage = () => {
                                     <button 
                                         onClick={handlePaystackPayment}
                                         disabled={verifying}
-                                        style={{ width: '100%', padding: '20px', background: '#1e144d', color: 'white', borderRadius: '16px', border: 'none', fontWeight: 900, fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: '0 10px 15px -3px rgba(30, 20, 77, 0.2)' }}
+                                        style={{ width: '100%', padding: '20px', background: isOverdue ? '#DC2626' : '#1e144d', color: 'white', borderRadius: '16px', border: 'none', fontWeight: 900, fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: '0 10px 15px -3px rgba(30, 20, 77, 0.2)' }}
                                     >
-                                        {verifying ? <Loader2 size={20} className="spin-animation" /> : <><Wallet size={20} /> <span>Secure Checkout</span></>}
+                                        {verifying ? <Loader2 size={20} className="spin-animation" /> : <><Wallet size={20} /> <span>{isOverdue ? 'Clear Outstanding Now' : 'Secure Checkout'}</span></>}
                                     </button>
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginTop: '24px' }}>
                                         <p style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -275,6 +275,14 @@ const PublicInvoicePage = () => {
                                     <p style={{ fontSize: '12px', fontWeight: 700, opacity: 0.8, textTransform: 'uppercase', marginTop: '4px' }}>Ledger Updated Automatically</p>
                                 </div>
                             )}
+
+                            {/* Powered by Kredibly Badge */}
+                            <div style={{ marginTop: '32px', textAlign: 'center', borderTop: '1px solid #F8FAFC', paddingTop: '24px' }}>
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: '#F8FAFC', borderRadius: '100px', border: '1px solid #F1F5F9' }}>
+                                    <img src="/krediblyrevamped.png" style={{ height: '14px', opacity: 0.8 }} alt="Kredibly" />
+                                    <span style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Powered by Kredibly</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
