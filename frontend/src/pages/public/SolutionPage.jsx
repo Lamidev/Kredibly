@@ -10,7 +10,7 @@ const solutions = {
     'solopreneurs': {
         title: "For Solopreneurs",
         subtitle: "The Army of One",
-        description: "You do everything yourself—marketing, sales, delivery. Kredibly acts as your finance manager so you can focus on the hustle.",
+        description: "You do everything yourself—marketing, sales, delivery. Kredibly acts as your finance manager so you can focus on your vision.",
         icon: User,
         color: "#2563EB",
         bg: "rgba(37, 99, 235, 0.05)",

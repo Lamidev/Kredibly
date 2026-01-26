@@ -14,7 +14,9 @@ import {
     Globe,
     BarChart3,
     TrendingUp,
-    Clock
+    Clock,
+    FileText,
+    Lock
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import PublicNavbar from "../../components/public/PublicNavbar";
@@ -27,28 +29,30 @@ const Typewriter = ({ phrases }) => {
     const [typingSpeed, setTypingSpeed] = useState(150);
 
     useEffect(() => {
-        const currentPhrase = phrases[index % phrases.length];
-
         const handleType = () => {
-            // Determine the next text state
-            if (isDeleting) {
-                setDisplayText(prev => currentPhrase.substring(0, prev.length - 1));
-                setTypingSpeed(50);
+            const currentPhrase = phrases[index % phrases.length];
+            
+            if (!isDeleting) {
+                // Typing logic
+                if (displayText.length < currentPhrase.length) {
+                    setDisplayText(currentPhrase.substring(0, displayText.length + 1));
+                    setTypingSpeed(150); // Slower, more readable typing
+                } else {
+                    // Longer pause to let people read
+                    setIsDeleting(true);
+                    setTypingSpeed(2000); 
+                }
             } else {
-                setDisplayText(prev => currentPhrase.substring(0, prev.length + 1));
-                setTypingSpeed(150);
-            }
-
-            // Check if we need to switch states
-            if (!isDeleting && displayText === currentPhrase) {
-                // Finished typing -> Start pause then delete
-                setIsDeleting(true);
-                setTypingSpeed(2500); 
-            } else if (isDeleting && displayText === "") {
-                // Finished deleting -> Move to next word
-                setIsDeleting(false);
-                setIndex((prev) => prev + 1);
-                setTypingSpeed(500);
+                // Deleting logic
+                if (displayText.length > 0) {
+                    setDisplayText(currentPhrase.substring(0, displayText.length - 1));
+                    setTypingSpeed(50); // Faster deleting
+                } else {
+                    // Switch to next word
+                    setIsDeleting(false);
+                    setIndex((prev) => prev + 1);
+                    setTypingSpeed(400); // Short pause before typing next
+                }
             }
         };
 
@@ -57,9 +61,14 @@ const Typewriter = ({ phrases }) => {
     }, [displayText, isDeleting, index, phrases, typingSpeed]);
 
     return (
-        <span>
+        <span style={{ display: 'inline-block', minWidth: '1px', whiteSpace: 'nowrap' }}>
             {displayText}
-            <span className="typewriter-cursor">|</span>
+            <span style={{ 
+                color: 'var(--primary)', 
+                marginLeft: '2px',
+                animation: 'blink 1s infinite',
+                fontWeight: 600
+            }}>|</span>
         </span>
     );
 };
@@ -100,7 +109,7 @@ const LandingPage = () => {
                 textAlign: 'center',
                 position: 'relative',
                 zIndex: 2
-            }}>
+			}}>
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -125,7 +134,7 @@ const LandingPage = () => {
                             color: 'var(--primary)',
                             letterSpacing: '0.05em',
                             textTransform: 'uppercase'
-                        }}>Built for the Modern Hustle</span>
+                        }}>Built for the Modern Enterprise</span>
                     </div>
 
                     <h1 style={{ 
@@ -148,11 +157,11 @@ const LandingPage = () => {
                             justifyContent: 'center',
                             width: '100%' 
                         }}>
-                            <Typewriter phrases={[
-                                "Start growing.",
-                                "Recover your debts.",
-                                "Track your cashflow.",
-                                "Be in control."
+                             <Typewriter phrases={[
+                                "Track money outside.",
+                                "Get paid 3x faster.",
+                                "Record sales smarter.",
+                                "Stay in control."
                             ]} />
                         </div>
                     </h1>
@@ -166,8 +175,8 @@ const LandingPage = () => {
                         fontWeight: 500,
                         opacity: 0.9
                     }}>
-                        From side-hustle to empire. Kredibly is the smart ledger that helps you 
-                        record sales, track debtors, and monitor staff, all inside the 
+                        From local commerce to global scale. Kredibly is the intelligent ledger that helps you 
+                        automate sales, track what you're owed, and monitor operations, all inside the 
                         WhatsApp you already use.
                     </p>
 
@@ -175,18 +184,18 @@ const LandingPage = () => {
                         <motion.button 
                             whileHover={{ scale: 1.02, translateY: -2 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => navigate('/auth/register')} 
+                            onClick={() => scrollToSection('how-it-works')} 
                             className="btn-primary" 
-                            style={{ padding: '24px 56px', fontSize: '1.25rem', borderRadius: '24px', boxShadow: '0 20px 40px -10px rgba(76, 29, 149, 0.3)' }}
+                            style={{ padding: '24px 56px', fontSize: '1.25rem', borderRadius: '24px' }}
                         >
-                            Get Started Free <ArrowRight size={22} />
+                            Get started <ArrowRight size={22} />
                         </motion.button>
                         <motion.button 
                             whileHover={{ scale: 1.02, translateY: -2 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => scrollToSection('how-it-works')} 
                             className="btn-secondary" 
-                            style={{ padding: '24px 56px', fontSize: '1.25rem', borderRadius: '24px' }}
+                            style={{ padding: '24px 56px', fontSize: '1.25rem', borderRadius: '24px', background: 'white', color: 'black' }}
                         >
                             Explore Platform
                         </motion.button>
@@ -207,9 +216,9 @@ const LandingPage = () => {
                             <div style={{ background: '#F8FAFC', width: '64px', height: '64px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '32px', border: '1px solid #E2E8F0' }}>
                                 <LayoutDashboard color="var(--primary)" size={32} />
                             </div>
-                            <h3 style={{ fontSize: '2.2rem', fontWeight: 950, marginBottom: '16px', letterSpacing: '-0.03em' }}>Command Center</h3>
+                            <h3 style={{ fontSize: '2.2rem', fontWeight: 950, marginBottom: '16px', letterSpacing: '-0.03em' }}>Business Overview</h3>
                             <p style={{ color: 'var(--text-muted)', fontSize: '1.15rem', lineHeight: 1.6, fontWeight: 500 }}>
-                                A powerful, bird's-eye view of your business. Real-time analytics, debt monitoring, and verifiable financial history—built for executive decision-making.
+                                A powerful, bird's-eye view of your business. Real-time analytics, tracking money outside, and verifiable financial history—built for executive decision-making.
                             </p>
                             <div style={{ marginTop: 'auto', paddingTop: '40px', display: 'flex', gap: '12px' }}>
                                 <span style={{ padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary)' }}>Executive Dashboard</span>
@@ -226,7 +235,7 @@ const LandingPage = () => {
                         style={{ background: 'linear-gradient(135deg, #0F172A, #1E1B4B)', color: 'white' }}
                     >
                         <div style={{ position: 'relative', zIndex: 2 }}>
-                            <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '12px' }}>Verifiable Trust Score</h4>
+                            <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '12px' }}>Digital Reputation</h4>
                             <p style={{ opacity: 0.8, fontSize: '1.1rem', lineHeight: 1.5, fontWeight: 500 }}>Build a digital business reputation that unlocks credit and global opportunities.</p>
                         </div>
                         <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.15 }}>
@@ -342,7 +351,7 @@ const LandingPage = () => {
                                             transition={{ delay: 0.5 }}
                                             style={{ alignSelf: 'flex-end', background: '#DCF8C6', padding: '12px 16px', borderRadius: '16px 0 16px 16px', fontSize: '0.85rem', maxWidth: '85%', boxShadow: '0 1px 2px rgba(0,0,0,0.1)', fontWeight: 500 }}
                                         >
-                                            Hi Kreddy, sold 3 designer bags to Sarah for ₦120,000. She's paid ₦50k.
+                                            Hi Kreddy, sold 3 designer bags to Sarah for ₦120,000. She paid ₦50k to balance up in two weeks.
                                         </motion.div>
 
                                         <motion.div 
@@ -358,6 +367,7 @@ const LandingPage = () => {
                                                 💰 Total: ₦120,000<br />
                                                 📥 Received: ₦50,000<br />
                                                 ⏳ Balance: ₦70,000<br /><br />
+                                                🔔 <b>Reminder set: 14 days</b><br /><br />
                                                 Premium invoice sent to Sarah. 🚀
                                             </p>
                                         </motion.div>
@@ -379,19 +389,18 @@ const LandingPage = () => {
                                     { 
                                         icon: MessageCircle, 
                                         title: "One Chat, One Record.", 
-                                        desc: "Talk to Kreddy like you would a human partner. It understands inventory, debt, and payments without forcing you into complex apps." 
+                                        desc: "Talk to Kreddy like you would a human partner. It understands inventory, owed money, and payments without forcing you into complex apps." 
                                     },
                                     { 
                                         icon: Zap, 
                                         title: "World-Class Impressions", 
                                         desc: "Every transaction generates a professional digital portal for your clients, building trust and accelerating your growth." 
                                     },
-                                    { 
-                                        icon: BarChart3, 
-                                        title: "The Kredibly Score", 
-                                        desc: "Every chat contributes to your financial identity. Turn your daily hustle into a bank-ready financial report." 
-                                    }
-                                ].map((item, i) => (
+                            { icon: Users, t: "Staff Monitoring", d: "Track what your staff are doing from anywhere. Protect your money." },
+                            { icon: FileText, t: "Professional Invoices", d: "Send beautiful receipts to customers via WhatsApp. Look like a big brand." },
+                            { icon: Lock, t: "Collect Money Faster", d: "Friendly automatic reminders that help you get paid without any stress." },
+                            { icon: TrendingUp, t: "Sales Reports", d: "See how your business is growing daily with simple, clear reports." }
+                        ].map((item, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '28px' }}>
                                         <div style={{ 
                                             minWidth: '64px', 
@@ -406,8 +415,8 @@ const LandingPage = () => {
                                             <item.icon color="var(--primary)" size={28} />
                                         </div>
                                         <div>
-                                            <h4 style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '10px' }}>{item.title}</h4>
-                                            <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 500, fontSize: '1.05rem' }}>{item.desc}</p>
+                                            <h4 style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '10px' }}>{item.title || item.t}</h4>
+                                            <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 500, fontSize: '1.05rem' }}>{item.desc || item.d}</p>
                                         </div>
                                     </div>
                                 ))}
@@ -420,7 +429,7 @@ const LandingPage = () => {
             {/* Social Proof - Executive Marquee */}
             <section style={{ padding: '80px 0', background: '#F8FAFC', borderTop: '1px solid #E2E8F0', overflow: 'hidden' }}>
                 <div style={{ textAlign: 'center', marginBottom: '60px', padding: '0 20px' }}>
-                    <h2 style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', fontWeight: 950, letterSpacing: '-0.03em' }}>From side hustles to serious businesses, Kredibly grows with you.
+                    <h2 style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', fontWeight: 950, letterSpacing: '-0.03em' }}>From emerging vendors to established enterprises, Kredibly scales with you.
 </h2>
                 </div>
                 
@@ -438,7 +447,7 @@ const LandingPage = () => {
                                     { name: "John Adenuga", role: "Luxe Fashion Vendor", text: "Kredibly isn't just an app; it's my silent partner. It brings a level of structure my business was missing." },
                                     { name: "Sarah Chinedu", role: "Culinary Entrepreneur", text: "The professional invoices changed how my clients see me. I'm now winning 5x bigger contracts." },
                                     { name: "Mike Okoro", role: "Auto Parts Distributor", text: "I monitor inventory from transit across borders. Oga Mode is a game changer for scale." },
-                                    { name: "Adeola Williams", role: "Signature Tech Store", text: "Debt recovery used to be my biggest headache. Kreddy handles follow-ups while I focus on strategy." }
+                                    { name: "Adeola Williams", role: "Signature Tech Store", text: "Collecting payments used to be my biggest headache. Kreddy handles follow-ups while I focus on strategy." }
                                 ].map((review, j) => (
                                     <div key={j} className="testimonial-card" style={{ 
                                         padding: '32px', 
@@ -491,7 +500,7 @@ const LandingPage = () => {
                                 {[
                                     "Kreddy AI Assistant",
                                     "Ditch the Notebook",
-                                    "Track Debtors Automatically",
+                                    "Track Money Outside",
                                     "Basic Invoices"
                                 ].map((feat, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500, color: '#334155' }}>
@@ -535,13 +544,11 @@ const LandingPage = () => {
                             <button onClick={() => navigate('/contact')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Contact Sales</button>
                             <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 {[
-                                    "Unlimited Locations",
-                                    "Head Office Dashboard",
-                                    "White-label Reports",
-                                    "SLA Guarantee"
-                                ].map((feat, i) => (
+                                { t: "No more paper notebooks", d: "Record your sales in 2 seconds. Kreddy handles the math for you." },
+                                { t: "Easy for everyone", d: "If you can send a message on WhatsApp, you can use Kredibly. It's that simple." }
+                            ].map((item, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500, color: '#334155' }}>
-                                        <CheckCheck size={18} color="var(--primary)" /> {feat}
+                                        <CheckCheck size={18} color="var(--primary)" /> {item.t}
                                     </div>
                                 ))}
                             </div>
@@ -570,32 +577,17 @@ const LandingPage = () => {
                     }}
                 >
                     <div style={{ position: 'relative', zIndex: 2 }}>
-                        <h2 style={{ fontSize: 'clamp(3rem, 7vw, 5rem)', fontWeight: 950, letterSpacing: '-0.05em', lineHeight: 0.9, marginBottom: '40px' }}>
-                            Scale your business.<br />
-                            Expand your vision.
+                        <h2 style={{ fontSize: 'clamp(3rem, 7vw, 5rem)', fontWeight: 950, letterSpacing: '-0.05em', lineHeight: 0.9, marginBottom: '40px', color: 'white' }}>
+                            The smart assistant<br />
+                            for your business.
                         </h2>
-                        <p style={{ fontSize: '1.35rem', opacity: 0.8, maxWidth: '650px', margin: '0 auto 64px', fontWeight: 500, lineHeight: 1.5 }}>
-                            The infrastructure for the next generation of African merchants is live. Start building your legacy today.
+                        <p style={{ fontSize: '1.35rem', opacity: 0.8, maxWidth: '650px', margin: '0 auto 64px', fontWeight: 500, lineHeight: 1.5, color: 'white' }}>
+                            No more notebooks. No more confusing math. We help you track sales and collect your money inside the WhatsApp you already use.
                         </p>
-                        <motion.button 
-                            whileHover={{ scale: 1.05, translateY: -2 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => navigate('/auth/register')}
-                            className="btn-secondary" 
-                            style={{ 
-                                background: 'white', 
-                                color: '#1E1B4B', 
-                                border: 'none', 
-                                padding: '28px 80px', 
-                                borderRadius: '24px', 
-                                fontSize: '1.5rem',
-                                fontWeight: 900,
-                                boxShadow: '0 20px 40px rgba(255,255,255,0.1)'
-                            }}
-                        >
-                            Create Your Free Account
-                        </motion.button>
-                        <p style={{ marginTop: '40px', fontSize: '1rem', opacity: 0.6, fontWeight: 500 }}>Global infrastructure. Zero setup fees.</p>
+                            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '20px 40px', borderRadius: '20px', display: 'inline-block', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>Product Launching Soon</p>
+                            </div>
+                            <p style={{ marginTop: '40px', fontSize: '1rem', opacity: 0.6, fontWeight: 500 }}>Global infrastructure. Zero setup fees.</p>
                     </div>
                 </motion.div>
             </section>

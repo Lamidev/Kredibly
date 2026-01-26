@@ -26,8 +26,9 @@ const AdminDashboard = () => {
     const [activities, setActivities] = useState([]);
     const [users, setUsers] = useState([]);
     const [tickets, setTickets] = useState([]);
+    const [waitlist, setWaitlist] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'users', 'tickets'
+    const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'users', 'tickets', 'waitlist'
     const [searchTerm, setSearchTerm] = useState('');
     const [visibleActivities, setVisibleActivities] = useState(10);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -49,10 +50,11 @@ const AdminDashboard = () => {
         if (manual) setIsRefreshing(true);
 
         try {
-            const [statsRes, usersRes, ticketsRes] = await Promise.all([
+            const [statsRes, usersRes, ticketsRes, waitlistRes] = await Promise.all([
                 axios.get(`${API_URL}/admin/stats`, { withCredentials: true }),
                 axios.get(`${API_URL}/admin/users`, { withCredentials: true }),
-                axios.get(`${API_URL}/support/tickets/all`, { withCredentials: true })
+                axios.get(`${API_URL}/support/tickets/all`, { withCredentials: true }),
+                axios.get(`${API_URL}/admin/waitlist`, { withCredentials: true })
             ]);
 
             if (statsRes.data.success) {
@@ -64,6 +66,9 @@ const AdminDashboard = () => {
             }
             if (ticketsRes.data.success) {
                 setTickets(ticketsRes.data.data.map(t => ({ ...t, replyText: '' })));
+            }
+            if (waitlistRes.data.success) {
+                setWaitlist(waitlistRes.data.data);
             }
             if (manual) toast.success("System Data Synced");
         } catch (err) {
@@ -108,7 +113,7 @@ const AdminDashboard = () => {
     const statCards = [
         { label: 'Total Members', value: stats?.totalUsers || 0, icon: Users, color: '#6366F1', trend: '+12%' },
         { label: 'Platform Volume', value: `₦${stats?.totalRevenue?.toLocaleString()}`, icon: TrendingUp, color: '#10B981', trend: '+8%' },
-        { label: 'Market Credit', value: `₦${stats?.totalOutstanding?.toLocaleString()}`, icon: CreditCard, color: '#F59E0B', trend: '+24%' },
+        { label: 'Money Outside', value: `₦${stats?.totalOutstanding?.toLocaleString()}`, icon: CreditCard, color: '#F59E0B', trend: '+24%' },
         { label: 'Ledger Records', value: stats?.totalSalesCount || 0, icon: Activity, color: '#8B5CF6', trend: '+15%' },
     ];
 
@@ -144,28 +149,37 @@ const AdminDashboard = () => {
                         {[
                             { id: 'overview', label: 'Overview', icon: LayoutDashboard },
                             { id: 'users', label: 'Members', icon: Users },
+                            { id: 'waitlist', label: 'Waitlist', icon: Zap }, // Using Zap for Waitlist
                             { id: 'tickets', label: 'Support', icon: MessageSquare }
-                        ].map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                style={{
-                                    padding: '10px 16px', borderRadius: '14px', fontSize: '0.8rem', fontWeight: 800, border: 'none',
-                                    background: activeTab === tab.id ? 'var(--primary)' : 'transparent',
-                                    color: activeTab === tab.id ? 'white' : 'var(--text-muted)',
-                                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
-                                    transition: 'all 0.3s ease'
-                                }}
-                            >
-                                <tab.icon size={16} />
-                                <span className="hidden md:block">{tab.label}</span>
-                                {tab.id === 'tickets' && tickets.filter(t => t.status === 'open').length > 0 && (
-                                    <span style={{ background: '#EF4444', color: 'white', padding: '2px 6px', borderRadius: '8px', fontSize: '0.65rem' }}>
-                                        {tickets.filter(t => t.status === 'open').length}
-                                    </span>
-                                )}
-                            </button>
-                        ))}
+                        ].map(tab => {
+                            const Icon = tab.icon;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    style={{
+                                        padding: '10px 16px', borderRadius: '14px', fontSize: '0.8rem', fontWeight: 800, border: 'none',
+                                        background: activeTab === tab.id ? 'var(--primary)' : 'transparent',
+                                        color: activeTab === tab.id ? 'white' : 'var(--text-muted)',
+                                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                >
+                                    <Icon size={16} />
+                                    <span className="hidden md:block">{tab.label}</span>
+                                    {tab.id === 'tickets' && tickets.filter(t => t.status === 'open').length > 0 && (
+                                        <span style={{ background: '#EF4444', color: 'white', padding: '2px 6px', borderRadius: '8px', fontSize: '0.65rem' }}>
+                                            {tickets.filter(t => t.status === 'open').length}
+                                        </span>
+                                    )}
+                                    {tab.id === 'waitlist' && waitlist.length > 0 && (
+                                        <span style={{ background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '8px', fontSize: '0.65rem', opacity: 0.8 }}>
+                                            {waitlist.length}
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
@@ -363,6 +377,62 @@ const AdminDashboard = () => {
                     </motion.div>
                 )}
 
+                {activeTab === 'waitlist' && (
+                    <motion.div key="waitlist" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+                        <div className="glass-card" style={{ padding: '32px 20px', background: 'white', border: '1px solid var(--border)', borderRadius: '32px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                                <h3 style={{ fontWeight: 900, fontSize: '1.4rem', color: 'var(--text)', margin: 0 }}>Founding 100: Waitlist</h3>
+                                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--primary)', background: 'rgba(76, 29, 149, 0.05)', padding: '8px 16px', borderRadius: '100px' }}>
+                                    {waitlist.length} Signups Captured
+                                </div>
+                            </div>
+
+                            <div style={{ overflowX: 'auto' }} className="no-scrollbar">
+                                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
+                                    <thead>
+                                        <tr>
+                                            <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Prospect</th>
+                                            <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Industry</th>
+                                            <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Contact</th>
+                                            <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Date</th>
+                                            <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Referrals</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {waitlist.filter(w => !searchTerm || w.name.toLowerCase().includes(searchTerm.toLowerCase()) || w.email.toLowerCase().includes(searchTerm.toLowerCase())).map((w) => (
+                                            <tr key={w._id} className="row-hover" style={{ background: 'white' }}>
+                                                <td style={{ padding: '16px 20px', borderRadius: '16px 0 0 16px', border: '1px solid #F1F5F9', borderRight: 'none' }}>
+                                                    <div>
+                                                        <p style={{ fontWeight: 800, margin: 0, fontSize: '0.95rem', color: 'var(--text)' }}>{w.name}</p>
+                                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0, fontWeight: 600 }}>{w.email}</p>
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '16px 20px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
+                                                    <span style={{ padding: '4px 10px', background: '#F8FAFC', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, color: '#64748B' }}>{w.industry}</span>
+                                                </td>
+                                                <td style={{ padding: '16px 20px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
+                                                    <p style={{ margin: 0, fontWeight: 800, fontSize: '0.9rem', color: 'var(--text)' }}>{w.whatsappNumber}</p>
+                                                </td>
+                                                <td style={{ padding: '16px 20px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
+                                                    <p style={{ margin: 0, fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-muted)' }}>{new Date(w.createdAt).toLocaleDateString()}</p>
+                                                </td>
+                                                <td style={{ padding: '16px 20px', borderRadius: '0 16px 16px 0', border: '1px solid #F1F5F9', borderLeft: 'none' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: w.referralCount > 0 ? 'var(--primary-glow)' : '#F1F5F9', color: w.referralCount > 0 ? 'var(--primary)' : '#94A3B8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900 }}>
+                                                            {w.referralCount}
+                                                        </div>
+                                                        {w.referralCount >= 3 && <span style={{ fontSize: '10px', fontWeight: 900, color: '#10B981', textTransform: 'uppercase' }}>Top Tier</span>}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
                 {activeTab === 'tickets' && (
                     <motion.div key="tickets" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -400,10 +470,12 @@ const AdminDashboard = () => {
                                                 <input
                                                     type="text"
                                                     placeholder="Founder response..."
+                                                    id={`reply-${t._id}`}
                                                     value={t.replyText || ''}
                                                     onChange={(e) => {
                                                         const newTickets = [...tickets];
-                                                        newTickets[tickets.indexOf(t)].replyText = e.target.value;
+                                                        const idx = tickets.findIndex(item => item._id === t._id);
+                                                        newTickets[idx].replyText = e.target.value;
                                                         setTickets(newTickets);
                                                     }}
                                                     style={{ flex: 1, padding: '14px 20px', borderRadius: '16px', border: '1px solid #E2E8F0', outline: 'none', fontWeight: 600 }}
