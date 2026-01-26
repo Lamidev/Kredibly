@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
+import { isValidNigerianPhone, formatPhoneForDB } from "../../utils/validation";
 
 const Onboarding = () => {
     const [step, setStep] = useState(1);
@@ -67,7 +68,10 @@ const Onboarding = () => {
 
     const nextStep = () => {
         if (step === 1 && !displayName.trim()) return toast.error("Please enter a name");
-        if (step === 2 && !whatsappNumber.trim()) return toast.error("WhatsApp is required for Kreddy");
+        if (step === 2) {
+            if (!whatsappNumber.trim()) return toast.error("WhatsApp is required for Kreddy");
+            if (!isValidNigerianPhone(whatsappNumber)) return toast.error("Invalid WhatsApp number format");
+        }
         setStep(prev => prev + 1);
     };
 
@@ -79,7 +83,7 @@ const Onboarding = () => {
                 entityType,
                 sellMode,
                 logoUrl,
-                whatsappNumber,
+                whatsappNumber: formatPhoneForDB(whatsappNumber),
                 bankDetails: { bankName, accountNumber, accountName },
                 staffNumbers
             });
@@ -94,8 +98,10 @@ const Onboarding = () => {
 
     const addStaff = () => {
         if (!newStaffPhone) return;
-        if (staffNumbers.includes(newStaffPhone)) return toast.error("Already added");
-        setStaffNumbers([...staffNumbers, newStaffPhone]);
+        if (!isValidNigerianPhone(newStaffPhone)) return toast.error("Invalid staff phone number");
+        const formatted = formatPhoneForDB(newStaffPhone);
+        if (staffNumbers.includes(formatted)) return toast.error("Already added");
+        setStaffNumbers([...staffNumbers, formatted]);
         setNewStaffPhone("");
     };
 

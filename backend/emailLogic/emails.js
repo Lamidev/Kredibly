@@ -4,9 +4,12 @@ const {
   VERIFICATION_EMAIL_TEMPLATE,
   WELCOME_EMAIL_TEMPLATE,
   NEW_TICKET_ALERT_TEMPLATE,
-  WAITLIST_NOTIFICATION_TEMPLATE
+  WAITLIST_NOTIFICATION_TEMPLATE,
+  WAITLIST_CONFIRMATION_TEMPLATE
 } = require("./emailTemplates.js");
 const { resendClient, sender } = require("./emailConfig.js");
+
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
 
 // ... (existing functions)
 
@@ -15,7 +18,8 @@ exports.sendWaitlistEmail = async (adminEmail, userData) => {
     await resendClient.emails.send({
       from: `${sender.name} <${sender.email}>`,
       to: adminEmail,
-      subject: `🚀 New Waitlist Signup: ${userData.name}`,
+      reply_to: userData.email,
+      subject: `Waitlist Signup: ${userData.name}`,
       html: WAITLIST_NOTIFICATION_TEMPLATE
         .replace("{name}", userData.name)
         .replace("{email}", userData.email)
@@ -24,6 +28,22 @@ exports.sendWaitlistEmail = async (adminEmail, userData) => {
     });
   } catch (error) {
     console.error("Error sending waitlist notification email:", error);
+  }
+};
+
+exports.sendWaitlistConfirmationEmail = async (userEmail, userData) => {
+  try {
+    const referralLink = `${FRONTEND_URL}/?ref=${userData.referralCode}`;
+    await resendClient.emails.send({
+      from: `${sender.name} <${sender.email}>`,
+      to: userEmail,
+      subject: "You're in! Welcome to Kredibly 🚀",
+      html: WAITLIST_CONFIRMATION_TEMPLATE
+        .replace("{name}", userData.name.split(' ')[0])
+        .replace(/{referralLink}/g, referralLink),
+    });
+  } catch (error) {
+    console.error("Error sending waitlist confirmation email:", error);
   }
 };
 

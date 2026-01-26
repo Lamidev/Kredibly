@@ -10,6 +10,8 @@ router.use(adminMiddleware);
 
 router.get("/stats", adminController.getGlobalStats);
 router.get("/users", adminController.getAllUsers);
+router.delete("/users/:id", adminController.deleteUser);
 router.get("/waitlist", adminController.getWaitlistEntries);
+router.delete("/waitlist/:id", adminController.deleteWaitlistEntry);
 
 module.exports = router;

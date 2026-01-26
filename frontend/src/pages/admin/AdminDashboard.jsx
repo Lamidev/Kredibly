@@ -16,9 +16,12 @@ import {
     ArrowUpRight,
     Zap,
     ShieldCheck,
-    Globe
+    Globe,
+    LogOut,
+    Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
 
 const AdminDashboard = () => {
@@ -32,6 +35,11 @@ const AdminDashboard = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [visibleActivities, setVisibleActivities] = useState(10);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
+    const [deleteType, setDeleteType] = useState('waitlist'); // 'waitlist' or 'user'
+    const { logout } = useAuth();
 
     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
@@ -103,6 +111,36 @@ const AdminDashboard = () => {
         }
     };
 
+    const confirmDelete = async () => {
+        if (!itemToDelete) return;
+        const endpoint = deleteType === 'waitlist' ? `/admin/waitlist/${itemToDelete}` : `/admin/users/${itemToDelete}`;
+        try {
+            await axios.delete(`${API_URL}${endpoint}`, { withCredentials: true });
+            toast.success(deleteType === 'waitlist' ? "Entry deleted" : "User and data purged");
+            
+            if (deleteType === 'waitlist') {
+                setWaitlist(waitlist.filter(w => w._id !== itemToDelete));
+            } else {
+                setUsers(users.filter(u => u._id !== itemToDelete));
+            }
+            
+            setShowDeleteConfirm(false);
+            setItemToDelete(null);
+        } catch (err) {
+            toast.error("Failed to delete entry");
+        }
+    };
+
+    const handleDeleteClick = (id, type = 'waitlist') => {
+        setItemToDelete(id);
+        setDeleteType(type);
+        setShowDeleteConfirm(true);
+    };
+
+    const handleLogout = () => {
+        setShowLogoutConfirm(true);
+    };
+
     const filteredUsers = users.filter(u => {
         const name = (u.business?.displayName || u.name || "").toLowerCase();
         const email = (u.email || "").toLowerCase();
@@ -143,6 +181,18 @@ const AdminDashboard = () => {
                     >
                         <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
                         <span className="hidden sm:block">{isRefreshing ? 'Syncing...' : 'Sync Data'}</span>
+                    </button>
+
+                    <button
+                        onClick={handleLogout}
+                        style={{
+                            background: '#FEF2F2', border: '1px solid #FEE2E2', padding: '12px 20px', borderRadius: '16px',
+                            color: '#DC2626', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px',
+                            fontWeight: 700, fontSize: '0.85rem'
+                        }}
+                    >
+                        <LogOut size={18} />
+                        <span className="hidden md:block">Logout</span>
                     </button>
                     
                     <div style={{ display: 'flex', background: 'white', padding: '6px', borderRadius: '20px', border: '1px solid var(--border)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
@@ -314,6 +364,7 @@ const AdminDashboard = () => {
                                             <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Hub</th>
                                             <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Date</th>
                                             <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Security</th>
+                                            <th style={{ textAlign: 'right', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -334,9 +385,6 @@ const AdminDashboard = () => {
                                                     <p style={{ margin: 0, fontWeight: 800, fontSize: '0.9rem', color: 'var(--text)' }}>{u.business?.whatsappNumber || 'N/A'}</p>
                                                 </td>
                                                 <td style={{ padding: '16px 20px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
-                                                    <p style={{ margin: 0, fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-muted)' }}>{new Date(u.createdAt).toLocaleDateString()}</p>
-                                                </td>
-                                                <td style={{ padding: '16px 20px', borderRadius: '0 16px 16px 0', border: '1px solid #F1F5F9', borderLeft: 'none' }}>
                                                     <span style={{
                                                         padding: '6px 12px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 900,
                                                         background: u.isVerified ? '#ECFDF5' : '#FEF2F2',
@@ -344,6 +392,14 @@ const AdminDashboard = () => {
                                                     }}>
                                                         {u.isVerified ? 'VERIFIED' : 'PENDING'}
                                                     </span>
+                                                </td>
+                                                <td style={{ padding: '16px 20px', borderRadius: '0 16px 16px 0', border: '1px solid #F1F5F9', borderLeft: 'none', textAlign: 'right' }}>
+                                                    <button 
+                                                        onClick={() => handleDeleteClick(u._id, 'user')}
+                                                        style={{ background: '#FDF2F2', border: '1px solid #FEE2E2', width: '36px', height: '36px', borderRadius: '10px', color: '#EF4444', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))}
@@ -396,6 +452,7 @@ const AdminDashboard = () => {
                                             <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Contact</th>
                                             <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Date</th>
                                             <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Referrals</th>
+                                            <th style={{ textAlign: 'right', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -423,6 +480,15 @@ const AdminDashboard = () => {
                                                         </div>
                                                         {w.referralCount >= 3 && <span style={{ fontSize: '10px', fontWeight: 900, color: '#10B981', textTransform: 'uppercase' }}>Top Tier</span>}
                                                     </div>
+                                                </td>
+                                                <td style={{ padding: '16px 20px', borderRadius: '0 16px 16px 0', border: '1px solid #F1F5F9', borderLeft: 'none', textAlign: 'right' }}>
+                                                    <button 
+                                                        onClick={() => handleDeleteClick(w._id, 'waitlist')}
+                                                        className="delete-btn-hover"
+                                                        style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', width: '36px', height: '36px', borderRadius: '10px', color: '#EF4444', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))}
@@ -490,6 +556,69 @@ const AdminDashboard = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Logout Confirmation Modal */}
+            {showLogoutConfirm && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.15)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }} className="animate-fade-in">
+                    <div className="glass-card" style={{ padding: '32px', maxWidth: '400px', width: '100%', background: 'white', borderRadius: '28px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+                        <div style={{ background: '#FEF2F2', color: '#EF4444', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                            <LogOut size={28} />
+                        </div>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1E293B', marginBottom: '12px', letterSpacing: '-0.02em' }}>Ready to Leave?</h3>
+                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 500 }}>You are about to sign out of the founder's dashboard. Ensure all sensitive data is synced.</p>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button 
+                                className="btn-secondary" 
+                                style={{ flex: 1, padding: '14px', borderRadius: '16px', fontWeight: 700, fontSize: '0.95rem', background: '#F8FAFC', border: '1px solid #E2E8F0', cursor: 'pointer' }} 
+                                onClick={() => setShowLogoutConfirm(false)}
+                            >
+                                Stay Here
+                            </button>
+                            <button 
+                                style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '14px', borderRadius: '16px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} 
+                                onClick={logout}
+                            >
+                                Log Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.15)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }} className="animate-fade-in">
+                    <div className="glass-card" style={{ padding: '32px', maxWidth: '400px', width: '100%', background: 'white', borderRadius: '28px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+                        <div style={{ background: '#FEF2F2', color: '#EF4444', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                            <Trash2 size={28} />
+                        </div>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1E293B', marginBottom: '12px', letterSpacing: '-0.02em' }}>Confirm Deletion?</h3>
+                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 500 }}>
+                            {deleteType === 'waitlist' 
+                                ? 'You are about to remove this entry from the waitlist. This action is irreversible.' 
+                                : 'CRITICAL: You are about to purge this user and ALL their business data (invoices, sales, logs). This cannot be undone.'}
+                        </p>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button 
+                                className="btn-secondary" 
+                                style={{ flex: 1, padding: '14px', borderRadius: '16px', fontWeight: 700, fontSize: '0.95rem', background: '#F8FAFC', border: '1px solid #E2E8F0', cursor: 'pointer' }} 
+                                onClick={() => {
+                                    setShowDeleteConfirm(false);
+                                    setItemToDelete(null);
+                                }}
+                            >
+                                Cancel
+                            </button>
+                             <button 
+                                style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '14px', borderRadius: '16px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} 
+                                onClick={confirmDelete}
+                             >
+                                {deleteType === 'user' ? 'Purge User' : 'Delete Forever'}
+                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style>{`
                 .skeleton {
