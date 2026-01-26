@@ -178,22 +178,65 @@ const WAITLIST_NOTIFICATION_TEMPLATE = `
   <meta charset="UTF-8">
   <title>New Waitlist Signup</title>
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: ${THEME_COLOR}; padding: 30px 20px; text-align: center;">
-    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 160px; height: auto; margin: 0 auto 15px; display: block; filter: brightness(0) invert(1);">
-    <h1 style="color: white; margin: 0; font-size: 20px;">New Waitlist Signup 🚀</h1>
+<body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
+  <div style="margin-bottom: 32px;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
   </div>
-  <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-    <p style="font-size: 18px; font-weight: bold; color: ${THEME_COLOR};">A new founder has joined the movement!</p>
-    <div style="background: white; border-left: 4px solid ${THEME_COLOR}; padding: 20px; margin: 20px 0;">
-        <p style="margin: 8px 0;"><strong>Name:</strong> {name}</p>
-        <p style="margin: 8px 0;"><strong>Email:</strong> {email}</p>
-        <p style="margin: 8px 0;"><strong>WhatsApp:</strong> {whatsappNumber}</p>
-        <p style="margin: 8px 0;"><strong>Industry:</strong> {industry}</p>
+  <div style="background-color: #ffffff; padding: 0;">
+    <h2 style="font-size: 20px; font-weight: 900; color: ${THEME_COLOR}; margin-top: 0;">New Founder Alert!</h2>
+    <p style="font-size: 16px;">A new merchant has just joined the Kredibly waitlist. Here are the details:</p>
+    
+    <div style="background: #F8FAFC; border-radius: 16px; padding: 24px; margin: 24px 0; border: 1px solid #E2E8F0;">
+        <p style="margin: 8px 0; font-size: 14px;"><strong>Name:</strong> {name}</p>
+        <p style="margin: 8px 0; font-size: 14px;"><strong>Email:</strong> {email}</p>
+        <p style="margin: 8px 0; font-size: 14px;"><strong>WhatsApp:</strong> {whatsappNumber}</p>
+        <p style="margin: 8px 0; font-size: 14px;"><strong>Industry:</strong> {industry}</p>
     </div>
-    <div style="text-align: center; margin: 30px 0;">
-      <p style="color: #6B7280; font-size: 14px;">Documentation and Follow-up required.</p>
+    
+    <p style="font-size: 14px; color: #6B7280;">High-priority lead captured. Manual documentation may be required.</p>
+  </div>
+  <div style="margin-top: 40px; border-top: 1px solid #E5E7EB; padding-top: 20px; font-size: 12px; color: #9CA3AF;">
+    <p>© ${new Date().getFullYear()} Kredibly Inc. Internal Notification.</p>
+  </div>
+</body>
+</html>
+`;
+
+const WAITLIST_CONFIRMATION_TEMPLATE = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>I've reserved your spot</title>
+</head>
+<body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
+  <div style="margin-bottom: 32px;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
+  </div>
+  <div style="background-color: #ffffff; padding: 0;">
+    <p style="font-size: 18px; font-weight: 800; color: ${THEME_COLOR}; margin-top: 0;">You're in, {name}.</p>
+    
+    <p style="font-size: 16px;">I’m Oluwatosin, founder of Kredibly.</p>
+
+    <p style="font-size: 16px;">I’m personally writing to let you know that we’ve officially reserved your spot in our "Founding 100" group. We are currently polishing Kreddy AI to make sure that the moment you link your WhatsApp, your bookkeeping and inventory becomes effortless.</p>
+    
+    <p style="font-size: 16px; font-weight: 700;">Waitlists are boring, so I’ve made yours useful.</p>
+    
+    <div style="background: #F8FAFC; border-radius: 20px; padding: 28px; margin: 32px 0; border: 1px solid #E2E8F0; text-align: center;">
+        <p style="margin: 0 0 12px; font-size: 13px; font-weight: 800; color: ${THEME_COLOR}; text-transform: uppercase; letter-spacing: 0.05em;">Priority Access</p>
+        <p style="margin: 0 0 24px; font-size: 16px; color: #475569; font-weight: 500;">If you refer 3 fellow business owners, I’ll move you to the top of the queue immediately. Use your link below:</p>
+        <a href="{referralLink}" style="background-color: ${THEME_COLOR}; color: white; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 14px; display: inline-block; box-shadow: 0 4px 12px rgba(0,0,80,0.15);">Copy Invite Link</a>
     </div>
+
+    <p style="font-size: 16px;">We’ll be reaching out via WhatsApp and email soon with your onboarding details. Welcome to the movement.</p>
+    
+    <div style="margin-top: 40px;">
+      <p style="font-weight: 800; margin: 0; font-size: 16px;">Oluwatosin</p>
+      <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder, Kredibly</p>
+    </div>
+  </div>
+  <div style="margin-top: 40px; border-top: 1px solid #E5E7EB; padding-top: 20px; font-size: 12px; color: #9CA3AF;">
+    <p>© ${new Date().getFullYear()} Kredibly Inc. All rights reserved.</p>
   </div>
 </body>
 </html>
@@ -205,5 +248,6 @@ module.exports = {
   PASSWORD_RESET_REQUEST_TEMPLATE,
   WELCOME_EMAIL_TEMPLATE,
   NEW_TICKET_ALERT_TEMPLATE,
-  WAITLIST_NOTIFICATION_TEMPLATE
+  WAITLIST_NOTIFICATION_TEMPLATE,
+  WAITLIST_CONFIRMATION_TEMPLATE
 };

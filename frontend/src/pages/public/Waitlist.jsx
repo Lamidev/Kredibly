@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
+import { isValidNigerianPhone, formatPhoneForDB } from "../../utils/validation";
 
 const Waitlist = () => {
     const [searchParams] = useSearchParams();
@@ -56,10 +57,20 @@ const Waitlist = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (!isValidNigerianPhone(formData.whatsappNumber)) {
+            return toast.error("Please enter a valid Nigerian WhatsApp number (e.g. 080...)");
+        }
+
+        const formattedData = {
+            ...formData,
+            whatsappNumber: formatPhoneForDB(formData.whatsappNumber)
+        };
+
         setLoading(true);
         try {
             const res = await axios.post(`${API_URL}/waitlist/join`, {
-                ...formData,
+                ...formattedData,
                 referredBy
             });
 
@@ -68,7 +79,6 @@ const Waitlist = () => {
                 setReferralData(res.data.data);
                 toast.success("Welcome to the inner circle! 🚀");
                 fetchStats();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         } catch (err) {
             toast.error(err.response?.data?.message || "Something went wrong.");
@@ -107,7 +117,7 @@ const Waitlist = () => {
             <div style={{ position: 'absolute', top: '0', right: '0', width: '60%', height: '60%', background: 'radial-gradient(circle, rgba(76, 29, 149, 0.03) 0%, transparent 70%)', filter: 'blur(100px)', zIndex: 0 }} />
             
             {/* Nav */}
-            <nav style={{ 
+            <nav className="waitlist-nav" style={{ 
                 padding: '32px 40px', 
                 position: 'relative', 
                 zIndex: 10, 
@@ -117,7 +127,7 @@ const Waitlist = () => {
                 justifyContent: 'space-between', 
                 alignItems: 'center' 
             }}>
-                <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '40px' }} />
+                <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '40px', filter: 'contrast(1.15) brightness(1.02)' }} className="nav-logo" />
                 <div>
                      {/* Links removed for public as per strategy */}
                 </div>
@@ -164,11 +174,11 @@ const Waitlist = () => {
             <section style={{ padding: '120px 24px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0', borderBottom: '1px solid #E2E8F0' }}>
                 <div className="container" style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '80px', alignItems: 'center' }}>
                     <div style={{ textAlign: 'left' }}>
-                        <div style={{ background: 'rgba(34, 197, 94, 0.1)', width: '64px', height: '64px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '32px' }}>
-                            <Smartphone color="#22C55E" size={32} />
+                        <div style={{ background: 'rgba(76, 29, 149, 0.1)', width: '64px', height: '64px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '32px' }}>
+                            <Smartphone color="var(--primary)" size={32} />
                         </div>
                         <h2 style={{ fontSize: '3rem', fontWeight: 950, marginBottom: '24px', letterSpacing: '-0.03em', color: '#0F172A' }}>
-                            <span style={{ color: '#22C55E' }}>Kreddy talks to you.</span>
+                            <span style={{ color: 'var(--primary)' }}>Kreddy talks to you.</span>
                         </h2>
                         <p style={{ fontSize: '1.2rem', color: '#64748B', lineHeight: 1.6, marginBottom: '40px', fontWeight: 500 }}>
                             Talk to Kreddy AI on WhatsApp like you're talking to a partner. Record transactions, check inventory, and let him handle your bookkeeping while you sleep.
@@ -180,7 +190,7 @@ const Waitlist = () => {
                             ].map((item, i) => (
                                 <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                                     <div style={{ background: 'white', borderRadius: '50%', padding: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', marginTop: '4px' }}>
-                                        <CheckCircle size={18} color="#22C55E" />
+                                        <CheckCircle size={18} color="var(--primary)" />
                                     </div>
                                     <div>
                                         <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#1E293B', display: 'block', marginBottom: '4px' }}>{item.t}</span>
@@ -467,6 +477,8 @@ const Waitlist = () => {
                     .hero-title { margin-bottom: 24px !important; }
                     .hero-subtext { margin-bottom: 32px !important; }
                     .hero-button-group { margin-bottom: 40px !important; }
+                    .waitlist-nav { padding: 24px 20px !important; }
+                    .nav-logo { height: 32px !important; }
                 }
             `}</style>
         </div>

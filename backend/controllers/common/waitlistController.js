@@ -26,9 +26,14 @@ const joinWaitlist = async (req, res) => {
 
         await newEntry.save();
 
-        // Send notification to admin (You)
+        // 1. Send notification to admin (You)
         const adminEmail = process.env.ADMIN_EMAIL || "usekredibly@gmail.com";
-        sendWaitlistEmail(adminEmail, newEntry).catch(err => console.error("Email error:", err));
+        const { sendWaitlistEmail, sendWaitlistConfirmationEmail } = require("../../emailLogic/emails");
+        
+        sendWaitlistEmail(adminEmail, newEntry).catch(err => console.error("Admin Email error:", err));
+
+        // 2. Send confirmation to the User (New)
+        sendWaitlistConfirmationEmail(newEntry.email, newEntry).catch(err => console.error("User Confirmation Email error:", err));
 
         // If referred by someone, increment their count
         if (referredBy) {

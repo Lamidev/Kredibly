@@ -28,7 +28,7 @@ const PublicFooter = () => {
                     textAlign: 'left'
                 }}>
                     <div style={{ gridColumn: 'span 2' }}>
-                        <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '40px', objectFit: 'contain', marginBottom: '24px' }} />
+                        <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '40px', objectFit: 'contain', marginBottom: '24px', filter: 'contrast(1.15) brightness(1.02)' }} />
                         <p style={{ fontSize: '1.05rem', lineHeight: 1.6, color: '#64748B', fontWeight: 500, maxWidth: '400px' }}>
                             The Financial Operating System for African Commerce. We're bridging the gap between chat and credit-worthiness.
                         </p>

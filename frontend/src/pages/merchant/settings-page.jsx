@@ -15,6 +15,7 @@ import {
     Upload
 } from 'lucide-react';
 import axios from 'axios';
+import { isValidNigerianPhone, formatPhoneForDB } from '../../utils/validation';
 
 const SettingsPage = () => {
     const { profile, updateProfile } = useAuth();
@@ -66,10 +67,15 @@ const SettingsPage = () => {
     const handleSave = async (e) => {
         if (e) e.preventDefault();
         setSaving(true);
+        if (!isValidNigerianPhone(form.whatsappNumber)) {
+            setSaving(false);
+            return toast.error("Invalid WhatsApp number format");
+        }
+
         try {
             await updateProfile({
                 displayName: form.displayName,
-                whatsappNumber: form.whatsappNumber,
+                whatsappNumber: formatPhoneForDB(form.whatsappNumber),
                 assistantSettings: {
                     enableReminders: form.enableReminders
                 },
@@ -91,10 +97,14 @@ const SettingsPage = () => {
 
     const addStaff = () => {
         if (!newStaffPhone) return;
-        if (form.staffNumbers.includes(newStaffPhone)) {
+        if (!isValidNigerianPhone(newStaffPhone)) {
+            return toast.error("Invalid staff phone number");
+        }
+        const formatted = formatPhoneForDB(newStaffPhone);
+        if (form.staffNumbers.includes(formatted)) {
             return toast.error("Number already added");
         }
-        setForm({ ...form, staffNumbers: [...form.staffNumbers, newStaffPhone] });
+        setForm({ ...form, staffNumbers: [...form.staffNumbers, formatted] });
         setNewStaffPhone("");
     };
 

@@ -125,7 +125,7 @@ const DashboardLayout = () => {
                         <img 
                             src="/krediblyrevamped.png" 
                             alt="Kredibly" 
-                            style={{ height: '35px', width: 'auto' }} 
+                            style={{ height: '35px', width: 'auto', filter: 'contrast(1.15) brightness(1.02)' }} 
                         />
                     </div>
                 </div>
@@ -322,7 +322,7 @@ const DashboardLayout = () => {
 
             {/* Logout Confirmation Modal */}
             {showLogoutConfirm && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }} className="animate-fade-in">
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.15)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }} className="animate-fade-in">
                     <div className="glass-card" style={{ padding: '32px', maxWidth: '400px', width: '100%', background: 'white', borderRadius: '28px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
                         <div style={{ background: '#FEF2F2', color: '#EF4444', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
                             <LogOut size={28} />

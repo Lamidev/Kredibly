@@ -35,6 +35,30 @@ const PublicInvoicePage = () => {
         fetchInvoice();
     }, [id]);
 
+    useEffect(() => {
+        if (sale) {
+            // Strategic SEO & Browser Tab updates
+            const pageTitle = `Invoice Issued: ₦${sale.totalAmount.toLocaleString()} from ${sale.business?.displayName}`;
+            document.title = pageTitle;
+
+            // Attempt to update meta tags for smarter crawlers
+            const updateMeta = (property, content) => {
+                let meta = document.querySelector(`meta[property="${property}"]`) || 
+                           document.querySelector(`meta[name="${property}"]`);
+                if (meta) meta.setAttribute('content', content);
+            };
+
+            const invoiceDesc = `An official invoice has been issued to you by ${sale.business?.displayName} for ${sale.description}. Total: ₦${sale.totalAmount.toLocaleString()}.`;
+            
+            updateMeta('og:title', pageTitle);
+            updateMeta('og:description', invoiceDesc);
+            updateMeta('og:image', 'https://usekredibly.com/og-receipt-preview.png');
+            updateMeta('twitter:title', pageTitle);
+            updateMeta('twitter:description', invoiceDesc);
+            updateMeta('twitter:image', 'https://usekredibly.com/og-receipt-preview.png');
+        }
+    }, [sale]);
+
     const fetchInvoice = async () => {
         try {
             const res = await axios.get(`${API_BASE}/payments/invoice/${id}`);
@@ -49,17 +73,19 @@ const PublicInvoicePage = () => {
     const handleShare = async () => {
         if (navigator.share) {
             try {
+                const shareUrl = `${API_BASE}/payments/share/${sale.invoiceNumber}`;
                 await navigator.share({
-                    title: `Invoice from ${sale?.business?.displayName}`,
-                    text: `Payment of ₦${sale?.totalAmount.toLocaleString()} is due for ${sale?.description}`,
-                    url: window.location.href,
+                    title: `Official Invoice from ${sale?.business?.displayName}`,
+                    text: `This is a verified payment request of ₦${sale?.totalAmount.toLocaleString()} from ${sale?.business?.displayName}. Click to safely view details and pay:`,
+                    url: shareUrl,
                 });
             } catch (err) {
                 // User cancelled or share failed
             }
         } else {
-            navigator.clipboard.writeText(window.location.href);
-            toast.success("Link copied to clipboard!");
+            const shareUrl = `${API_BASE}/payments/share/${sale?.invoiceNumber}`;
+            navigator.clipboard.writeText(shareUrl);
+            toast.success("Secure link copied to clipboard!");
         }
     };
 
@@ -279,7 +305,7 @@ const PublicInvoicePage = () => {
                             {/* Powered by Kredibly Badge */}
                             <div style={{ marginTop: '32px', textAlign: 'center', borderTop: '1px solid #F8FAFC', paddingTop: '24px' }}>
                                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: '#F8FAFC', borderRadius: '100px', border: '1px solid #F1F5F9' }}>
-                                    <img src="/krediblyrevamped.png" style={{ height: '14px', opacity: 0.8 }} alt="Kredibly" />
+                                    <img src="/krediblyrevamped.png" style={{ height: '14px', filter: 'brightness(1.1) contrast(1.1)' }} alt="Kredibly" />
                                     <span style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Powered by Kredibly</span>
                                 </div>
                             </div>
@@ -303,7 +329,7 @@ const PublicInvoicePage = () => {
                         </div>
 
                         <footer style={{ textAlign: 'center', padding: '40px 0', borderTop: '1px solid #F1F5F9' }}>
-                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '20px', opacity: 0.3, margin: '0 auto 24px' }} />
+                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '22px', filter: 'grayscale(0.5) contrast(1.2)', margin: '0 auto 24px' }} />
                             <p style={{ fontSize: '10px', fontWeight: 700, color: '#64748B', lineHeight: 1.8, maxWidth: '400px', margin: '0 auto' }}>
                                 Kredibly is a decentralized financial trust ledger. Every record is secured to ensure merchant and customer transparency. © 2026.
                             </p>

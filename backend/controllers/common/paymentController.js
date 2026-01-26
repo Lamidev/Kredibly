@@ -95,11 +95,11 @@ exports.shareInvoice = async (req, res) => {
         if (!sale) return res.redirect(`${process.env.FRONTEND_URL || "http://localhost:5173"}/`);
 
         const balance = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-        const title = `Invoice from ${sale.businessId?.displayName || "Kredibly"}`;
-        const description = `Amount: ₦${balance.toLocaleString()} | Item: ${sale.description} | Securely view and pay on Kredibly.`;
+        const title = `Official Invoice: ₦${balance.toLocaleString()} from ${sale.businessId?.displayName || "Kredibly"}`;
+        const description = `This is a verified payment request from ${sale.businessId?.displayName || "a verified merchant"}. Click to safely view invoice details for "${sale.description}" and make payment.`;
         
-        // Use business logo if available, or our premium placeholder
-        const imageUrl = sale.businessId?.logoUrl || "https://usekredibly.com/og-receipt-preview.png"; 
+        // Use business logo if available, or our official brand logo
+        const imageUrl = sale.businessId?.logoUrl || "https://usekredibly.com/Krediblylogo.jpeg"; 
 
         const html = `
             <!DOCTYPE html>

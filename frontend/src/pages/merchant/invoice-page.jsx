@@ -97,7 +97,8 @@ const InvoicePage = () => {
             await axios.post(`${API_URL}/sales/${id}/remind`, {}, { withCredentials: true });
             toast.success("Reminder Protocol Initiated 🚀");
             if (sale.customerPhone) {
-                const text = `Hi ${sale.customerName || 'there'}, friendly reminder about your balance of ₦${(sale.totalAmount - sale.payments.reduce((sum, p) => sum + p.amount, 0)).toLocaleString()} for ${sale.businessId.displayName}. View details here: ${window.location.origin}/i/${sale.invoiceNumber}`;
+                const shareUrl = `${API_URL}/payments/share/${sale.invoiceNumber}`;
+                const text = `Hi ${sale.customerName || 'there'}, this is an official payment request for ₦${(sale.totalAmount - sale.payments.reduce((sum, p) => sum + p.amount, 0)).toLocaleString()} from ${sale.businessId.displayName}. View details and pay securely here: ${shareUrl}`;
                 window.open(`https://wa.me/${sale.customerPhone}?text=${encodeURIComponent(text)}`, '_blank');
             }
         } catch (err) {
@@ -160,9 +161,9 @@ const InvoicePage = () => {
     };
 
     const copyLink = () => {
-        const url = `${window.location.origin}/i/${sale.invoiceNumber}`;
+        const url = `${API_URL}/payments/share/${sale.invoiceNumber}`;
         navigator.clipboard.writeText(url);
-        toast.success("Payment Link Copied");
+        toast.success("Secure Payment Link Copied");
     };
 
     if (loading) return (
@@ -446,7 +447,7 @@ const InvoicePage = () => {
                         initial={{ opacity: 0 }} 
                         animate={{ opacity: 1 }} 
                         exit={{ opacity: 0 }} 
-                        style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.4)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)' }}
+                        style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.15)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)', padding: '20px' }}
                     >
                         <motion.div 
                             initial={{ scale: 0.9, opacity: 0 }} 
