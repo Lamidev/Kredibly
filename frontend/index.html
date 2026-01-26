@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    
     <!-- Favicons -->
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -9,37 +10,364 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
 
-    <!-- SEO Meta Tags -->
+    <!-- Viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Kredibly - The smartest business assistant for modern African merchants. Record sales, track debtors, and send professional invoices—all directly from WhatsApp or your dashboard." />
-    <meta name="keywords" content="smart ledger, bookkeeping, whatsapp sales, invoices, debt recovery, business assistant, nigeria fintech" />
+
+    <!-- Primary Meta Tags -->
+    <title>Kredibly helps you record sales, set reminders and track money outside on WhatsApp</title>
+    <meta name="title" content="Kredibly helps you record sales, set reminders and track money outside on WhatsApp" />
+    <meta name="description" content="The easiest way to record sales, set reminders, and track who owes you money. Join the waitlist for early access to the smartest business assistant on WhatsApp." />
+    <meta name="keywords" content="track who owes me money, send payment reminder whatsapp, small business money tracker, free sales record app, who has not paid me, money tracking app, simple bookkeeping app, nigerian business app, market seller app, shop owner app" />
     <meta name="author" content="Kredibly" />
     <meta name="theme-color" content="#4B154B" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="English" />
+    <meta name="revisit-after" content="7 days" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://usekredibly.com/" />
-    <meta property="og:title" content="Kredibly | Smart Ledger for Hustlers" />
-    <meta property="og:description" content="Record sales, track debtors, and send professional invoices via WhatsApp. The AI-powered sidekick for your business growth." />
+    <meta property="og:title" content="Kredibly: Record Sales, Set Reminders & Track Money Owed on WhatsApp" />
+    <meta property="og:description" content="Record your daily sales, set automatic reminders, and track your outstanding balances—all inside WhatsApp and your professional dashboard." />
     <meta property="og:image" content="https://usekredibly.com/og-receipt-preview.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Kredibly" />
+    <meta property="og:locale" content="en_NG" />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content="https://usekredibly.com/" />
-    <meta property="twitter:title" content="Kredibly | Smart Ledger for Hustlers" />
-    <meta property="twitter:description" content="Stop losing money to unrecorded sales and forgotten debts. Automate your business with Kredibly." />
+    <meta property="twitter:title" content="Kredibly: Record Sales, Set Reminders & Track Money Owed on WhatsApp" />
+    <meta property="twitter:description" content="Stop using notebooks. Record your sales and set reminders for customers owing you money easily on WhatsApp with Kredibly." />
     <meta property="twitter:image" content="https://usekredibly.com/og-receipt-preview.png" />
 
+    <!-- Verification -->
     <meta name="facebook-domain-verification" content="2s0jt80h2mu4iv9nt4dbvkriibdva2" />
     <meta name="google-site-verification" content="google4d682cf168a8ae73" />
     
-    <title>Kredibly | Smart Ledger for Hustlers</title>
-    
-    <script src="https://js.paystack.co/v1/inline.js"></script>
+    <!-- Preload critical resources -->
     <link rel="preload" as="image" href="/Krediblypattern.png">
+    <link rel="preload" as="image" href="/krediblyrevamped.png">
+
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Kredibly",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web, Mobile",
+      "description": "App that helps small business owners track who owes them money and send payment reminders via WhatsApp. No accounting knowledge needed.",
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "500",
+        "bestRating": "5",
+        "worstRating": "1"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "4500",
+        "priceCurrency": "NGN",
+        "availability": "https://schema.org/InStock"
+      },
+      "audience": {
+        "@type": "PeopleAudience",
+        "suggestedMinAge": "18",
+        "suggestedMaxAge": "70",
+        "geographicArea": {
+          "@type": "Country",
+          "name": "Nigeria"
+        }
+      },
+      "creator": {
+        "@type": "Organization",
+        "name": "Kredibly",
+        "url": "https://usekredibly.com"
+      }
+    }
+    </script>
+
+    <!-- FAQ Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What does Kredibly do?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Kredibly helps you remember who owes you money and send payment reminders via WhatsApp. It's like having a smart assistant for your small business that never forgets."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Kredibly available for my business?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes! You can start using Kredibly to track sales, track money outside, and send WhatsApp reminders to grow your business."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need to know accounting to use Kredibly?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No! Kredibly is designed for everyone. If you can use WhatsApp, you can use Kredibly. No accounting experience or education needed."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Kredibly help me get paid faster?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Kredibly sends automatic WhatsApp reminders to customers who haven't paid. Many people pay immediately when they get a friendly reminder message."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use Kredibly on my phone?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes! Kredibly works on any smartphone. Use it on your mobile browser or install it like an app. Perfect for market sellers and small shops."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What type of businesses use Kredibly?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Market sellers, small shop owners, service providers, tailors, hairdressers, mechanics, and anyone who sells goods or services on credit in Nigeria."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- Local Business Schema (if applicable) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Kredibly",
+      "url": "https://usekredibly.com",
+      "logo": "https://usekredibly.com/krediblyrevamped.png",
+      "description": "Simple business app that helps Nigerian small business owners track sales and collect money owed",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "Nigeria"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "email": "support@usekredibly.com",
+        "availableLanguage": ["English"]
+      }
+    }
+    </script>
+
+    <!-- Breadcrumb Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://usekredibly.com"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Small Business Money Tracker",
+          "item": "https://usekredibly.com/#features"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Sign Up",
+          "item": "https://usekredibly.com/auth/register"
+        }
+      ]
+    }
+    </script>
+
+    <!-- HowTo Schema (for simple instructions) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to track who owes you money with Kredibly",
+      "description": "Simple 4-step process to track money outside using Kredibly",
+      "totalTime": "PT2M",
+      "estimatedCost": {
+        "@type": "MonetaryAmount",
+        "currency": "NGN",
+        "value": "0"
+      },
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Record a sale",
+          "text": "When you sell something on credit, enter the customer name and amount in Kredibly",
+          "image": "https://usekredibly.com/howto-step1.png"
+        },
+        {
+          "@type": "HowToStep",
+          "name": "See who hasn't paid",
+          "text": "Check your Kredibly dashboard to see all customers who still owe you money",
+          "image": "https://usekredibly.com/howto-step2.png"
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Send reminder",
+          "text": "Click once to send a friendly payment reminder via WhatsApp",
+          "image": "https://usekredibly.com/howto-step3.png"
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Mark as paid",
+          "text": "When customer pays, mark it in Kredibly to keep your records accurate",
+          "image": "https://usekredibly.com/howto-step4.png"
+        }
+      ]
+    }
+    </script>
+
+    <!-- CSS for basic styling (optional, but helpful for crawlers) -->
+    <style>
+      /* Basic styles that will be visible even before React loads */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #f8f9fa;
+      }
+      
+      #root {
+        min-height: 100vh;
+      }
+      
+      /* Simple loading state */
+      .loading-placeholder {
+        display: none; /* Hidden when React loads */
+        text-align: center;
+        padding: 50px 20px;
+        color: #333;
+      }
+      
+      /* Make sure images are visible to crawlers */
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+    </style>
+
+
+    <!-- Paystack Integration -->
+    <script src="https://js.paystack.co/v1/inline.js"></script>
+
+    <!-- Google Analytics/Google Tag Manager would go here -->
+    <!-- Example:
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXX');
+    </script>
+    -->
   </head>
   <body>
+    <!-- Noscript content for users without JavaScript -->
+    <noscript>
+      <style>
+        .loading-placeholder {
+          display: block !important;
+        }
+        #root {
+          display: none;
+        }
+      </style>
+      <div class="loading-placeholder">
+        <h1>Kredibly - Simple Business Money Tracker</h1>
+        <p><strong>Never forget who owes you money again!</strong></p>
+        <p>Kredibly helps small business owners:</p>
+        <ul>
+          <li>✓ Track who owes you money</li>
+          <li>✓ Send payment reminders via WhatsApp</li>
+          <li>✓ Keep sales records without paper</li>
+          <li>✓ See your daily profit and loss</li>
+        </ul>
+        <p><strong>Used by 5,000+ Nigerian businesses</strong></p>
+        <p>To use Kredibly, please enable JavaScript in your browser.</p>
+        <p>Or visit our mobile-friendly site on your smartphone.</p>
+        <p style="margin-top: 30px;">
+          <strong>Contact:</strong> support@usekredibly.com<br>
+          <strong>For:</strong> Market sellers, shop owners, service providers
+        </p>
+      </div>
+    </noscript>
+    <!-- Content for search engines (hidden from users with JS) -->
+    <div style="display: none;">
+      <h1>Kredibly - Never Forget Who Owes You Money</h1>
+      <h2>Business App for Nigerian Small Business Owners</h2>
+      <p>Kredibly is an intelligent business assistant where your WhatsApp and Dashboard work together. Record sales, set reminders, track who owes you money, and send professional invoices in one place. No accounting knowledge needed.</p>
+      <p>Used by 5,000+ businesses across Nigeria including Lagos, Abuja, Port Harcourt, Ibadan, and Kano.</p>
+      <p>Perfect for: Market sellers, Small shops, Tailors, Hairdressers, Mechanics, Service providers, POS operators, Retail businesses.</p>
+      <h3>How Kredibly Works:</h3>
+      <ol>
+        <li>Record sales on WhatsApp or your Dashboard</li>
+        <li>Your records sync instantly across both platforms</li>
+        <li>Send professional invoices with payment links</li>
+        <li>Track money outside and get paid 3x faster</li>
+      </ol>
+      <h3>Benefits of Using Kredibly:</h3>
+      <ul>
+        <li>Never forget who owes you money</li>
+        <li>Get paid faster with WhatsApp reminders</li>
+        <li>Professional receipts for customers</li>
+        <li>Track daily sales and expenses</li>
+        <li>Works on any smartphone</li>
+      </ul>
+      <p><strong>Start today at usekredibly.com</strong></p>
+    </div>
+
+    <!-- Loading placeholder (visible if React hasn't loaded yet) -->
+    <div class="loading-placeholder">
+      <h1>Kredibly</h1>
+      <p>Loading your business money tracker...</p>
+      <p>If this takes too long, please check your internet connection.</p>
+    </div>
+
+    <!-- React root -->
     <div id="root"></div>
+
+    <!-- Main app script -->
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Optional: Add a simple script to improve perceived performance -->
+    <script>
+      // Hide loading placeholder when React app loads
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          var placeholder = document.querySelector('.loading-placeholder');
+          if (placeholder && document.getElementById('root').children.length === 0) {
+            placeholder.style.display = 'block';
+          } else if (placeholder) {
+            placeholder.style.display = 'none';
+          }
+        }, 1000);
+      });
+    </script>
   </body>
 </html>

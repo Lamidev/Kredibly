@@ -10,5 +10,6 @@ router.use(adminMiddleware);
 
 router.get("/stats", adminController.getGlobalStats);
 router.get("/users", adminController.getAllUsers);
+router.get("/waitlist", adminController.getWaitlistEntries);
 
 module.exports = router;

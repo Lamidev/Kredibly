@@ -124,22 +124,22 @@ const Waitlist = () => {
             </nav>
 
             {/* 1. Hero Section */}
-            <section style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto', padding: '80px 24px 120px', textAlign: 'center' }}>
+            <section className="hero-section" style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto', padding: '80px 24px 120px', textAlign: 'center' }}>
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', border: '1px solid rgba(76, 29, 149, 0.1)', borderRadius: '100px', color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 800, marginBottom: '40px' }}>
+                    <div className="hero-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', border: '1px solid rgba(76, 29, 149, 0.1)', borderRadius: '100px', color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 800, marginBottom: '40px' }}>
                         <Sparkles size={14} /> JOIN THE FUTURE OF AFRICAN COMMERCE
                     </div>
 
-                    <h1 style={{ fontSize: 'clamp(2.5rem, 7vw, 5.5rem)', fontWeight: 950, lineHeight: 0.95, letterSpacing: '-0.05em', marginBottom: '32px', color: '#0F172A' }}>
-                        The Last Ledger <br />
-                        <span className="premium-gradient">You'll Ever Need.</span>
+                    <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 7vw, 5.5rem)', fontWeight: 950, lineHeight: 0.95, letterSpacing: '-0.05em', marginBottom: '32px', color: '#0F172A' }}>
+                        The smart assistant <br />
+                        <span className="premium-gradient">for your business.</span>
                     </h1>
 
-                    <p style={{ fontSize: 'clamp(1.2rem, 2vw, 1.45rem)', color: '#64748B', lineHeight: 1.5, marginBottom: '56px', maxWidth: '850px', margin: '0 auto 56px', fontWeight: 500 }}>
-                        "You don't need to learn a new app. If you can chat on WhatsApp, you already know how to use Kredibly."
+                    <p className="hero-subtext" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.45rem)', color: '#64748B', lineHeight: 1.5, marginBottom: '56px', maxWidth: '850px', margin: '0 auto 56px', fontWeight: 500 }}>
+                        No more notebooks. No more confusing math. We help you track sales and collect your money inside the WhatsApp you already use.
                     </p>
 
-                    <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '80px' }}>
+                    <div className="hero-button-group" style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '80px' }}>
                         <button onClick={scrollToJoin} className="btn-primary" style={{ padding: '24px 56px', fontSize: '1.25rem', borderRadius: '24px', background: 'var(--primary)', color: 'white', boxShadow: '0 20px 40px -10px rgba(76, 29, 149, 0.3)' }}>
                             Join the Waitlist <ArrowRight size={22} />
                         </button>
@@ -175,8 +175,8 @@ const Waitlist = () => {
                         </p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             {[
-                                { t: "The End of Paper", d: "Manual bookkeeping stops today. Chat with Kreddy to record sales in 2 seconds." },
-                                { t: "Zero Learning Curve", d: "No new apps. If you can chat on WhatsApp, you're a pro." }
+                                { t: "No more paper notebooks", d: "Record your sales in 2 seconds. Kreddy handles the math so you don't have to." },
+                                { t: "Simple for everyone", d: "If you can send a message on WhatsApp, you can use Kredibly. It's built for you." }
                             ].map((item, i) => (
                                 <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                                     <div style={{ background: 'white', borderRadius: '50%', padding: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', marginTop: '4px' }}>
@@ -211,7 +211,7 @@ const Waitlist = () => {
                                 <div style={{ alignSelf: 'flex-start', background: 'white', padding: '16px', borderRadius: '0 16px 16px 16px', fontSize: '0.85rem', color: '#111', maxWidth: '85%', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
                                     <p style={{ margin: 0, fontWeight: 900, color: '#075E54', fontSize: '0.7rem', marginBottom: '6px' }}>Kreddy AI</p>
                                     <p style={{ fontWeight: 600, margin: 0 }}>Done! ✅ I've recorded the 50k sale.</p>
-                                    <p style={{ fontWeight: 600, margin: '8px 0' }}>💰 Balance: 30k</p>
+                                    <p style={{ fontWeight: 600, margin: '8px 0' }}>💰 Owed: 30k</p>
                                     <p style={{ fontWeight: 600, margin: 0 }}>I've sent Sarah her branded invoice link. 🚀</p>
                                 </div>
                             </div>
@@ -239,10 +239,10 @@ const Waitlist = () => {
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '32px' }}>
                         {[
-                            { icon: Users, t: "Oga Mode", d: "Executive Control: Monitor 5+ staff members in real-time. No more 'I didn't see the money' stories." },
-                            { icon: FileText, t: "Premium Invoicing", d: "Every sale generates a digital link. Your business will look like a Tier-1 brand from Day 1." },
-                            { icon: Lock, t: "The Debt Killer", d: "Automated reminders that get you paid 3x faster without the awkward phone calls." },
-                            { icon: TrendingUp, t: "Growth Reports", d: "Professional statements generated instantly for bank loans or investor growth talks." }
+                            { icon: Users, t: "Staff Monitoring", d: "See exactly what your staff are selling from anywhere. Keep your money safe." },
+                            { icon: FileText, t: "Beautiful Receipts", d: "Send professional receipts to customers on WhatsApp. Build trust instantly." },
+                            { icon: Lock, t: "Get Paid Faster", d: "Friendly automatic reminders that help you collect your money without stress." },
+                            { icon: TrendingUp, t: "Daily Reports", d: "See how much you made today with simple, clear numbers. No accounting needed." }
                         ].map((item, i) => (
                             <div key={i} style={{ padding: '48px 40px', borderRadius: '32px', background: '#FFFFFF', border: '1px solid #F1F5F9', textAlign: 'left', transition: 'all 0.4s cubic-bezier(0.23, 1, 0.32, 1)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }} className="hover-card-light">
                                 <div style={{ color: 'var(--primary)', marginBottom: '24px', background: 'rgba(76, 29, 149, 0.05)', width: '56px', height: '56px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><item.icon size={28} /></div>
@@ -258,7 +258,7 @@ const Waitlist = () => {
             <section style={{ padding: '80px 24px', background: '#F8FAFC' }}>
                 <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center', padding: '64px 48px', borderRadius: '40px', border: '1.5px dashed #E2E8F0', background: 'white' }}>
                     <div style={{ color: '#10B981', marginBottom: '24px', display: 'flex', justifyContent: 'center' }}><Lock size={36} /></div>
-                    <h3 style={{ fontSize: '1.75rem', fontWeight: 950, marginBottom: '16px', color: '#0F172A' }}>Bank-Grade Security for Every Hustle.</h3>
+                    <h3 style={{ fontSize: '1.75rem', fontWeight: 950, marginBottom: '16px', color: '#0F172A' }}>Bank-Grade Security for Every Business.</h3>
                     <p style={{ color: '#64748B', lineHeight: 1.6, fontWeight: 500, fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
                         Your data is encrypted and private. We use industry-standard security to ensure your financial records stay yours.
                     </p>
@@ -280,12 +280,13 @@ const Waitlist = () => {
                         {!joined ? (
                             <motion.div 
                                 key="form"
+                                className="form-card"
                                 initial={{ opacity: 0, scale: 0.98 }}
                                 whileInView={{ opacity: 1, scale: 1 }}
                                 viewport={{ once: true }}
                                 style={{ 
                                     padding: '64px 48px', 
-                                    borderRadius: '48px', 
+                                    borderRadius: '48px',
                                     background: '#FFFFFF', 
                                     border: '1px solid #E2E8F0',
                                     boxShadow: '0 40px 100px -20px rgba(0,0,0,0.1)',
@@ -297,7 +298,7 @@ const Waitlist = () => {
                                 </div>
                                 <h3 style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '12px', letterSpacing: '-0.03em', color: '#0F172A' }}>The "Founding 100"</h3>
                                 <p style={{ color: '#64748B', marginBottom: '48px', fontWeight: 500, fontSize: '1.2rem', lineHeight: 1.5 }}>
-                                    The first 100 Founders on the waitlist get <span style={{ color: '#0F172A', fontWeight: 800 }}>The Platinum Badge</span> + <span style={{ color: '#0F172A', fontWeight: 800 }}>50% off Oga Mode</span> for the first 12 months.
+                                    The first 100 Founders on the waitlist get <span style={{ color: '#0F172A', fontWeight: 800 }}>The Platinum Badge</span> + <span style={{ color: '#0F172A', fontWeight: 800 }}>25% off Oga Mode</span> for the first 6 months.
                                 </p>
 
                                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -333,7 +334,7 @@ const Waitlist = () => {
                                             required
                                         >
                                             <option value="" disabled>Select Your Industry</option>
-                                            {["Fashion & Lifestyle", "Food & Groceries", "Electronics & Gadgets", "Beauty & Wellness", "Professional Services", "Mobile Money Agent", "Other Unique Hustle"].map(opt => (
+                                            {["Fashion & Lifestyle", "Food & Groceries", "Electronics & Gadgets", "Beauty & Wellness", "Professional Services", "Mobile Money Agent", "Commercial Enterprise"].map(opt => (
                                                 <option key={opt} value={opt}>{opt}</option>
                                             ))}
                                         </select>
@@ -360,11 +361,12 @@ const Waitlist = () => {
                         ) : (
                             <motion.div 
                                 key="success"
+                                className="form-card"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 style={{ 
                                     padding: '80px 48px', 
-                                    borderRadius: '48px', 
+                                    borderRadius: '48px',
                                     background: 'white', 
                                     border: '1.5px solid #22C55E',
                                     textAlign: 'center',
@@ -455,9 +457,16 @@ const Waitlist = () => {
                     60% {transform: translateY(-4px);}
                 }
                 @media (max-width: 640px) {
-                    .waitlist-page { padding-top: 10px; }
+                    .waitlist-page { padding-top: 5px; }
                     .waitlist-input-light { height: 60px !important; }
                     .btn-primary { height: 64px !important; }
+                    #join-form { padding: 60px 16px !important; }
+                    .form-card { padding: 40px 24px !important; borderRadius: 32px !important; }
+                    .hero-section { padding-top: 40px !important; padding-bottom: 60px !important; }
+                    .hero-badge { margin-bottom: 24px !important; }
+                    .hero-title { margin-bottom: 24px !important; }
+                    .hero-subtext { margin-bottom: 32px !important; }
+                    .hero-button-group { margin-bottom: 40px !important; }
                 }
             `}</style>
         </div>

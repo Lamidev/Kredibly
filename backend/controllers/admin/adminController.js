@@ -2,6 +2,7 @@ const User = require("../../models/User");
 const BusinessProfile = require("../../models/BusinessProfile");
 const Sale = require("../../models/Sale");
 const ActivityLog = require("../../models/ActivityLog");
+const Waitlist = require("../../models/Waitlist");
 
 exports.getGlobalStats = async (req, res) => {
     try {
@@ -56,6 +57,15 @@ exports.getAllUsers = async (req, res) => {
         });
 
         res.status(200).json({ success: true, data: userList });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.getWaitlistEntries = async (req, res) => {
+    try {
+        const entries = await Waitlist.find({}).sort({ createdAt: -1 });
+        res.status(200).json({ success: true, data: entries });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

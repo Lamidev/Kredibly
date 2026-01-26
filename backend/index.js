@@ -1,15 +1,17 @@
-const express = require("express"); 
+const express = require("express");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-const dns = require("dns");
 require("dotenv").config({ override: true });
 
-console.log("📍 Attempting to connect to:", process.env.MONGODB_URL ? "URL is set" : "URL IS MISSING!");
+// 1. Process Protection: Register these FIRST to catch early setup errors
+process.on("uncaughtException", (err) => {
+  console.error("❌ UNCAUGHT EXCEPTION! Kreddy is staying alive...", err);
+});
 
-// Fix for DNS issues on some Windows environments
-dns.setServers(['8.8.8.8', '1.1.1.1']); // Force Node.js to use Google/Cloudflare DNS
-dns.setDefaultResultOrder("ipv4first");
+process.on("unhandledRejection", (reason) => {
+  console.error("❌ UNHANDLED REJECTION! Keeping the lights on...", reason);
+});
 
 // Import routes
 const authRoutes = require("./routes/auth/authRoutes");
@@ -28,56 +30,54 @@ const { startTicketCleanup } = require("./utils/ticketScheduler");
 const app = express();
 const PORT = process.env.PORT || 7050;
 
-// Middleware
+// 2. Middleware
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
-      
+
       const allowedOrigins = [
         "http://localhost:5173",
         "https://usekredibly.com",
-        "https://www.usekredibly.com"
+        "https://www.usekredibly.com",
       ];
-      
-      const isAllowed = allowedOrigins.includes(origin) || (origin && origin.includes("ngrok-free.dev"));
-      
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
+
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        (origin && origin.includes("ngrok-free.dev"));
+
+      if (isAllowed) callback(null, true);
+      else callback(new Error("Not allowed by CORS"));
     },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "X-Requested-With",
-      "Accept"
-    ],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
     credentials: true,
   })
 );
 
-app.use(express.json({
+app.use(
+  express.json({
     verify: (req, res, buf) => {
-        req.rawBody = buf;
-    }
-}));
+      req.rawBody = buf;
+    },
+  })
+);
+
 app.use(cookieParser());
 
-// Health Check
+// 3. Health Check
 app.get("/api/health-check", (req, res) => {
-  const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
-  res.status(200).json({ 
-    status: "alive", 
+  const dbStatus =
+    mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+
+  res.status(200).json({
+    status: "alive",
     database: dbStatus,
-    timestamp: new Date() 
+    timestamp: new Date(),
   });
 });
 
-// Routes
+// 4. Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/business", businessRoutes);
 app.use("/api/sales", saleRoutes);
@@ -89,7 +89,7 @@ app.use("/api/support", supportRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/waitlist", waitlistRoutes);
 
-// Global Error Handler Middleware
+// 5. Global Error Handler
 app.use((err, req, res, next) => {
   console.error("🚨 Global Error Catch:", err.stack);
   res.status(err.status || 500).json({
@@ -98,10 +98,16 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Database Connection
+// 6. Database Connection
+if (!process.env.MONGODB_URL) {
+  console.error("❌ MONGODB_URL is missing in .env");
+  process.exit(1);
+}
+
 mongoose
   .connect(process.env.MONGODB_URL, {
-    serverSelectionTimeoutMS: 15000, // Wait 15s before giving up
+    serverSelectionTimeoutMS: 30000,
+    family: 4,
   })
   .then(() => {
     console.log("✅ MongoDB Connected Successfully");
@@ -109,19 +115,12 @@ mongoose
     startTicketCleanup();
   })
   .catch((error) => {
-    console.error("❌ MongoDB connection failed:", error.message);
+    console.error("❌ MongoDB connection failed:", error);
+    process.exit(1);
   });
 
-// Start Server
+// 7. Start Server
 app.listen(PORT, () => {
   console.log(`🔥 Server running on port ${PORT}`);
 });
 
-// Process Protection: Prevent crash on unexpected errors
-process.on("uncaughtException", (err) => {
-  console.error("❌ UNCAUGHT EXCEPTION! Kreddy is trying to stay alive...", err);
-});
-
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("❌ UNHANDLED REJECTION! Keeping the lights on...", reason);
-});

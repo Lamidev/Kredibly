@@ -42,8 +42,12 @@ const App = () => {
     <>
       <ScrollToTop />
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={user ? <Navigate to={getHomeRedirect()} /> : <Waitlist />} />
+        
+        {/* Landing page is now accessible at /home for everyone */}
         <Route path="/home" element={<LandingPage />} />
+        
         <Route path="/about" element={<AboutUs />} />
         <Route path="/contact" element={<SupportHub />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
@@ -69,7 +73,7 @@ const App = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/sales" element={<SalesList />} />
           <Route path="/sales/new" element={<CreateSale />} />
-          <Route path="/debtors" element={<SalesList initialFilter="outstanding" />} />
+          <Route path="/pending-balances" element={<SalesList initialFilter="outstanding" />} />
           <Route path="/reports" element={<div className="glass-card" style={{ padding: '60px', textAlign: 'center' }}><h2 style={{ fontWeight: 800 }}>Reports Engine</h2><p style={{ color: '#64748B' }}>We are crunching the numbers. Visual insights coming soon.</p></div>} />
           <Route path="/proofs" element={<div className="glass-card" style={{ padding: '60px', textAlign: 'center' }}><h2 style={{ fontWeight: 800 }}>Verifiable Proofs</h2><p style={{ color: '#64748B' }}>Secure portal for customers to verify ledger integrity.</p></div>} />
           <Route path="/settings" element={<SettingsPage />} />
