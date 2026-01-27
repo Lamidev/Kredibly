@@ -4,6 +4,7 @@ const { logActivity } = require("../../utils/activityLogger");
 
 const cleanPhone = (num) => {
     if (!num) return num;
+    if (typeof num !== 'string') num = num.toString();
     let clean = num.replace(/\D/g, ''); // Remove all non-digits
     if (clean.startsWith('0') && clean.length === 11) {
         clean = '234' + clean.slice(1);

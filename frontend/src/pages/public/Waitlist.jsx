@@ -77,7 +77,7 @@ const Waitlist = () => {
             if (res.data.success) {
                 setJoined(true);
                 setReferralData(res.data.data);
-                toast.success("Welcome to the inner circle! 🚀");
+                toast.success("Welcome to the inner circle!");
                 fetchStats();
             }
         } catch (err) {
@@ -88,13 +88,13 @@ const Waitlist = () => {
     };
 
     const copyLink = () => {
-        const link = `${window.location.origin}/?ref=${referralData.referralCode}`;
+        const link = `${window.location.origin}/waitlist?ref=${referralData.referralCode}`;
         navigator.clipboard.writeText(link);
         toast.success("Referral link copied!");
     };
 
     const shareToWhatsApp = () => {
-        const link = `${window.location.origin}/?ref=${referralData.referralCode}`;
+        const link = `${window.location.origin}/waitlist?ref=${referralData.referralCode}`;
         const text = `Hey! I just joined the waitlist for Kreddy AI. It's the smart assistant that handles sales and bookkeeping inside WhatsApp. Check it out: ${link}`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
     };
@@ -136,8 +136,8 @@ const Waitlist = () => {
             {/* 1. Hero Section */}
             <section className="hero-section" style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto', padding: '80px 24px 120px', textAlign: 'center' }}>
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-                    <div className="hero-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', border: '1px solid rgba(76, 29, 149, 0.1)', borderRadius: '100px', color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 800, marginBottom: '40px' }}>
-                        <Sparkles size={14} /> JOIN THE FUTURE OF AFRICAN COMMERCE
+                    <div className="hero-badge" style={{ display: 'inline-flex', alignItems: 'center', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', border: '1px solid rgba(76, 29, 149, 0.1)', borderRadius: '100px', color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 800, marginBottom: '40px' }}>
+                        JOIN THE FUTURE OF AFRICAN COMMERCE
                     </div>
 
                     <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 7vw, 5.5rem)', fontWeight: 950, lineHeight: 0.95, letterSpacing: '-0.05em', marginBottom: '32px', color: '#0F172A' }}>
@@ -222,7 +222,7 @@ const Waitlist = () => {
                                     <p style={{ margin: 0, fontWeight: 900, color: '#075E54', fontSize: '0.7rem', marginBottom: '6px' }}>Kreddy AI</p>
                                     <p style={{ fontWeight: 600, margin: 0 }}>Done! ✅ I've recorded the 50k sale.</p>
                                     <p style={{ fontWeight: 600, margin: '8px 0' }}>💰 Owed: 30k</p>
-                                    <p style={{ fontWeight: 600, margin: 0 }}>I've sent Sarah her branded invoice link. 🚀</p>
+                                    <p style={{ fontWeight: 600, margin: 0 }}>I've sent Sarah her branded invoice link.</p>
                                 </div>
                             </div>
                             <div style={{ padding: '15px', background: '#f0f0f0', display: 'flex', gap: '10px' }}>
@@ -471,11 +471,11 @@ const Waitlist = () => {
                     .waitlist-input-light { height: 60px !important; }
                     .btn-primary { height: 64px !important; }
                     #join-form { padding: 60px 16px !important; }
-                    .form-card { padding: 40px 24px !important; borderRadius: 32px !important; }
+                    .form-card { padding: 40px 24px !important; border-radius: 32px !important; }
                     .hero-section { padding-top: 40px !important; padding-bottom: 60px !important; }
-                    .hero-badge { margin-bottom: 24px !important; }
-                    .hero-title { margin-bottom: 24px !important; }
-                    .hero-subtext { margin-bottom: 32px !important; }
+                    .hero-badge { margin-bottom: 24px !important; padding: 8px 16px !important; gap: 4px !important; }
+                    .hero-title { margin-bottom: 24px !important; line-height: 1.05 !important; }
+                    .hero-subtext { margin-bottom: 32px !important; font-size: 1.1rem !important; }
                     .hero-button-group { margin-bottom: 40px !important; }
                     .waitlist-nav { padding: 24px 20px !important; }
                     .nav-logo { height: 32px !important; }

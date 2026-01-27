@@ -44,8 +44,9 @@ const App = () => {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={user ? <Navigate to={getHomeRedirect()} /> : <Waitlist />} />
+        <Route path="/waitlist" element={<Waitlist />} />
         
-        {/* Landing page is now accessible at /home for everyone */}
+        {/* Landing page accessible at /home for development/reference */}
         <Route path="/home" element={<LandingPage />} />
         
         <Route path="/about" element={<AboutUs />} />

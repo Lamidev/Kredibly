@@ -409,25 +409,26 @@ const AdminDashboard = () => {
 
                             {/* Mobile List */}
                             <div className="md:hidden flex flex-col gap-12">
-                                {filteredUsers.map((u) => (
-                                    <div key={u._id} style={{ padding: '20px', background: '#F8FAFC', borderRadius: '20px', border: '1px solid #EDF2F7' }}>
-                                        <div style={{ display: 'flex', gap: '14px', marginBottom: '16px' }}>
-                                            <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>
-                                                {(u.business?.displayName || u.name || 'K').charAt(0)}
+                                        {filteredUsers.map((u) => (
+                                            <div key={u._id} style={{ padding: '20px', background: '#F8FAFC', borderRadius: '20px', border: '1px solid #EDF2F7' }}>
+                                                <div style={{ display: 'flex', gap: '14px', marginBottom: '16px' }}>
+                                                    <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>
+                                                        {(u.business?.displayName || u.name || 'K').charAt(0)}
+                                                    </div>
+                                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                                        <p style={{ fontWeight: 800, color: 'var(--text)', margin: 0 }}>{u.business?.displayName || u.name}</p>
+                                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.email}</p>
+                                                        <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary)', marginTop: '4px' }}>{u.business?.whatsappNumber || 'No Hub Number'}</p>
+                                                    </div>
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Joined {new Date(u.createdAt).toLocaleDateString()}</span>
+                                                    <span style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 900, background: u.isVerified ? '#DCFCE7' : '#FEE2E2', color: u.isVerified ? '#15803D' : '#B91C1C' }}>
+                                                        {u.isVerified ? 'VERIFIED' : 'PENDING'}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div style={{ minWidth: 0 }}>
-                                                <p style={{ fontWeight: 800, color: 'var(--text)', margin: 0 }}>{u.business?.displayName || u.name}</p>
-                                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.email}</p>
-                                            </div>
-                                        </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Joined {new Date(u.createdAt).toLocaleDateString()}</span>
-                                            <span style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 900, background: u.isVerified ? '#DCFCE7' : '#FEE2E2', color: u.isVerified ? '#15803D' : '#B91C1C' }}>
-                                                {u.isVerified ? 'VERIFIED' : 'PENDING'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
+                                        ))}
                             </div>
                         </div>
                     </motion.div>

@@ -37,7 +37,7 @@ const VerifyEmail = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="input-group">
+                <div className="input-group" style={{ marginBottom: '40px' }}>
                     <label className="input-label">Verification Code</label>
                     <input
                         type="text"
@@ -54,7 +54,7 @@ const VerifyEmail = () => {
                 <button
                     type="submit"
                     className="btn-primary"
-                    style={{ width: '100%', height: '58px', borderRadius: '14px', fontSize: '1.1rem', fontWeight: 700, background: 'var(--primary)' }}
+                    style={{ width: '100%', height: '58px', borderRadius: '14px', fontSize: '1.1rem', fontWeight: 700, background: 'var(--primary)', marginTop: '8px' }}
                     disabled={loading}
                 >
                     {loading ? "Verifying..." : "Confirm Verification"}

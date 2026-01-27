@@ -19,7 +19,7 @@ const BusinessProfileSchema = new mongoose.Schema({
     },
     sellMode: {
         type: String,
-        enum: ["product", "service", "both"],
+        enum: ["product", "service", "both", "offline", "online"],
         default: "both"
     },
     logoUrl: {

@@ -232,7 +232,7 @@ const Onboarding = () => {
                             {/* Step 2 */}
                             {step === 2 && (
                                 <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} key="step2">
-                                    <div className="input-group" style={{ marginBottom: '32px' }}>
+                                    <div className="input-group" style={{ marginBottom: '40px' }}>
                                         <label className="input-label" style={{ fontSize: '1rem' }}>WhatsApp Number</label>
                                         <div style={{ position: 'relative' }}>
                                             <MessageCircle size={20} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
@@ -240,11 +240,12 @@ const Onboarding = () => {
                                                 type="tel" 
                                                 className="input-field" 
                                                 style={{ paddingLeft: '56px', height: '60px', fontSize: '1.1rem', fontWeight: 600 }} 
-                                                placeholder="e.g. 234801234..." 
+                                                placeholder="e.g. 08012345678" 
                                                 value={whatsappNumber} 
                                                 onChange={e => setWhatsappNumber(e.target.value)} 
                                             />
                                         </div>
+                                        <p style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '8px', paddingLeft: '4px' }}>Include your country code if not from Nigeria</p>
                                     </div>
 
                                     <p className="input-label" style={{ marginBottom: '16px', fontSize: '1rem' }}>How do you sell?</p>
@@ -349,7 +350,7 @@ const Onboarding = () => {
                                     <div style={{ display: 'flex', gap: '16px' }}>
                                         <button onClick={() => setStep(3)} className="btn-secondary" style={{ flex: 1, height: '60px' }}>Back</button>
                                         <button onClick={handleSubmit} disabled={loading} className="btn-primary" style={{ flex: 2, height: '60px', fontSize: '1.1rem' }}>
-                                            {loading ? 'Finalizing...' : 'Launch Dashboard 🚀'}
+                                            {loading ? 'Finalizing...' : 'Launch Dashboard'}
                                         </button>
                                     </div>
                                 </motion.div>

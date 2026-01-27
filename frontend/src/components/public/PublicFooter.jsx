@@ -7,8 +7,8 @@ const PublicFooter = () => {
     const location = useLocation();
 
     const scrollToSection = (sectionId) => {
-        if (location.pathname !== '/') {
-            navigate('/', { state: { scrollTo: sectionId } });
+        if (location.pathname !== '/home') {
+            navigate('/home', { state: { scrollTo: sectionId } });
         } else {
             const element = document.getElementById(sectionId);
             if (element) {
@@ -37,8 +37,7 @@ const PublicFooter = () => {
                         <h4 style={{ fontWeight: 800, marginBottom: '24px', color: 'var(--text)' }}>Product</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             <button onClick={() => scrollToSection('features')} style={{ background: 'none', border: 'none', textAlign: 'left', color: '#64748B', fontWeight: 500, cursor: 'pointer', padding: 0, fontSize: '1rem', fontFamily: 'inherit' }}>Features</button>
-                            <button onClick={() => scrollToSection('how-it-works')} style={{ background: 'none', border: 'none', textAlign: 'left', color: '#64748B', fontWeight: 500, cursor: 'pointer', padding: 0, fontSize: '1rem', fontFamily: 'inherit' }}>AI Sales Link</button>
-                            <button onClick={() => scrollToSection('pricing')} style={{ background: 'none', border: 'none', textAlign: 'left', color: '#64748B', fontWeight: 500, cursor: 'pointer', padding: 0, fontSize: '1rem', fontFamily: 'inherit' }}>Pricing</button>
+                            <Link to="/pricing" style={{ textDecoration: 'none', color: '#64748B', fontWeight: 500, fontSize: '1rem' }}>Pricing</Link>
                         </div>
                     </div>
                     <div>
