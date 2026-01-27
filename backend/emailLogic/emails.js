@@ -33,11 +33,11 @@ exports.sendWaitlistEmail = async (adminEmail, userData) => {
 
 exports.sendWaitlistConfirmationEmail = async (userEmail, userData) => {
   try {
-    const referralLink = `${FRONTEND_URL}/?ref=${userData.referralCode}`;
+    const referralLink = `${FRONTEND_URL}/waitlist?ref=${userData.referralCode}`;
     await resendClient.emails.send({
       from: `${sender.name} <${sender.email}>`,
       to: userEmail,
-      subject: "You're in! Welcome to Kredibly 🚀",
+      subject: "You're in! Welcome to Kredibly",
       html: WAITLIST_CONFIRMATION_TEMPLATE
         .replace("{name}", userData.name.split(' ')[0])
         .replace(/{referralLink}/g, referralLink),
@@ -74,7 +74,6 @@ exports.sendWelcomeEmail = async (email, userName) => {
       subject: "Welcome to Kredibly",
       html: WELCOME_EMAIL_TEMPLATE.replace("{name}", userName),
     });
-
   } catch (error) {
     handleEmailError(error, "Error sending welcome email");
   }

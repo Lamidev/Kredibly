@@ -184,7 +184,7 @@ const LandingPage = () => {
                         <motion.button 
                             whileHover={{ scale: 1.02, translateY: -2 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => scrollToSection('how-it-works')} 
+                            onClick={() => navigate('/auth/login')} 
                             className="btn-primary" 
                             style={{ padding: '24px 56px', fontSize: '1.25rem', borderRadius: '24px' }}
                         >
@@ -368,7 +368,7 @@ const LandingPage = () => {
                                                 📥 Received: ₦50,000<br />
                                                 ⏳ Balance: ₦70,000<br /><br />
                                                 🔔 <b>Reminder set: 14 days</b><br /><br />
-                                                Premium invoice sent to Sarah. 🚀
+                                                Premium invoice sent to Sarah.
                                             </p>
                                         </motion.div>
                                     </div>

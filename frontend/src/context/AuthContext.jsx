@@ -81,7 +81,10 @@ export const AuthProvider = ({ children }) => {
     const verifyEmail = async (code) => {
         try {
             setError(null);
-            const res = await axios.post(`${API_URL}/auth/verify-email`, { code });
+            const res = await axios.post(`${API_URL}/auth/verify-email`, { code }, { withCredentials: true });
+            if (res.data.success) {
+                await checkAuth();
+            }
             return res.data;
         } catch (err) {
             setError(err.response?.data?.message || "Verification failed");

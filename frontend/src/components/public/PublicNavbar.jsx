@@ -19,13 +19,13 @@ const PublicNavbar = () => {
         <nav className="glass-nav" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000 }}>
             {/* Same Desktop Nav Code... keeping it brief to focus on mobile menu below */}
             <div className="landing-nav-container" style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Link to="/" onClick={() => window.scrollTo(0, 0)} style={{ display: 'flex', alignItems: 'center' }}>
+                <Link to="/home" onClick={() => window.scrollTo(0, 0)} style={{ display: 'flex', alignItems: 'center' }}>
                     <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '40px', objectFit: 'contain', filter: 'contrast(1.15) brightness(1.02)' }} />
                 </Link>
 
                 {/* Center: Desktop Nav Links... */}
                 <div className="hidden md:flex" style={{ gap: '32px', alignItems: 'center' }}>
-                   <Link to="/" className="nav-link" style={{ textDecoration: 'none', color: 'inherit' }}>Home</Link>
+                   <Link to="/home" className="nav-link" style={{ textDecoration: 'none', color: 'inherit' }}>Home</Link>
                     {/* ... (Existing Desktop Dropdowns - No Changes) ... */}
                     <div className="dropdown-parent">
                         <div className="nav-link">Product <ChevronDown size={14} /></div>
@@ -84,7 +84,7 @@ const PublicNavbar = () => {
                     >
                         <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '80vh', overflowY: 'auto' }}>
                             <div style={{ color: '#94A3B8', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Menu</div>
-                            <Link to="/" onClick={() => setIsMobileMenuOpen(false)} style={{ textDecoration: 'none', color: 'var(--text)', fontWeight: 700, fontSize: '1.1rem' }}>Home</Link>
+                            <Link to="/home" onClick={() => setIsMobileMenuOpen(false)} style={{ textDecoration: 'none', color: 'var(--text)', fontWeight: 700, fontSize: '1.1rem' }}>Home</Link>
                             
                             {/* Products Accordion */}
                             <div>
