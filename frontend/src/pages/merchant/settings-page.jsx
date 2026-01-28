@@ -114,9 +114,9 @@ const SettingsPage = () => {
 
     return (
         <div className="animate-fade-in" style={{ maxWidth: '800px' }}>
-            <div style={{ marginBottom: '40px' }}>
-                <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#1E293B', marginBottom: '8px', letterSpacing: '-0.02em' }}>Settings</h1>
-                <p style={{ color: '#64748B', fontWeight: 500 }}>Manage your business identity, Kreddy (your AI partner), and payments.</p>
+            <div style={{ marginBottom: '32px' }}>
+                <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#1E293B', marginBottom: '8px', letterSpacing: '-0.02em' }}>Settings</h1>
+                <p style={{ color: '#64748B', fontWeight: 500, margin: 0 }}>Manage your business identity, Kreddy (your AI partner), and payments.</p>
             </div>
 
             <div style={{ display: 'grid', gap: '32px' }}>
@@ -232,10 +232,11 @@ const SettingsPage = () => {
                             placeholder="Staff WhatsApp (e.g. 080123...)" 
                             value={newStaffPhone}
                             onChange={(e) => setNewStaffPhone(e.target.value)}
+                            style={{ flex: 1 }}
                         />
                         <button 
                             className="btn-primary" 
-                            style={{ width: 'auto', padding: '0 24px' }}
+                            style={{ width: 'auto', padding: '0 24px', flexShrink: 0, height: '54px' }}
                             type="button"
                             onClick={addStaff}
                         >

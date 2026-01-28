@@ -21,7 +21,8 @@ import {
     Trash2,
     Zap,
     Lock,
-    QrCode
+    QrCode,
+    User
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
@@ -95,11 +96,18 @@ const InvoicePage = () => {
         setReminding(true);
         try {
             await axios.post(`${API_URL}/sales/${id}/remind`, {}, { withCredentials: true });
-            toast.success("Reminder Protocol Initiated 🚀");
+            
+            // Construct the message
+            const shareUrl = `${API_URL}/payments/share/${sale.invoiceNumber}`;
+            const balance = sale.totalAmount - sale.payments.reduce((sum, p) => sum + p.amount, 0);
+            const text = `Hi ${sale.customerName || 'there'}, this is a friendly reminder from ${sale.businessId.displayName} regarding our agreement for ${sale.description}. The balance is ₦${balance.toLocaleString()}. You can view the full invoice and payment details here: ${shareUrl}. Thank you!`;
+
             if (sale.customerPhone) {
-                const shareUrl = `${API_URL}/payments/share/${sale.invoiceNumber}`;
-                const text = `Hi ${sale.customerName || 'there'}, this is an official payment request for ₦${(sale.totalAmount - sale.payments.reduce((sum, p) => sum + p.amount, 0)).toLocaleString()} from ${sale.businessId.displayName}. View details and pay securely here: ${shareUrl}`;
                 window.open(`https://wa.me/${sale.customerPhone}?text=${encodeURIComponent(text)}`, '_blank');
+                toast.success("Opening WhatsApp...");
+            } else {
+                navigator.clipboard.writeText(text);
+                toast.success("Message Copied! Paste it anywhere to send.");
             }
         } catch (err) {
             toast.error("Failed to initiate reminder");
@@ -160,11 +168,28 @@ const InvoicePage = () => {
         }
     };
 
-    const copyLink = () => {
-        const url = `${API_URL}/payments/share/${sale.invoiceNumber}`;
-        navigator.clipboard.writeText(url);
-        toast.success("Secure Payment Link Copied");
+    const handleShare = async () => {
+        const shareUrl = `${API_URL}/payments/share/${sale.invoiceNumber}`;
+        const balance = sale.totalAmount - sale.payments.reduce((sum, p) => sum + p.amount, 0);
+        const text = `Hi ${sale.customerName || 'there'}, this is a friendly reminder from ${sale.businessId.displayName} regarding our agreement for ${sale.description}. The balance is ₦${balance.toLocaleString()}. You can view the full invoice and payment details here: ${shareUrl}. Thank you!`;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `Invoice from ${sale.businessId.displayName}`,
+                    text: text,
+                    url: shareUrl,
+                });
+                // Optional: Track share as a reminder?
+            } catch (err) {
+                // Share cancelled
+            }
+        } else {
+            navigator.clipboard.writeText(text);
+            toast.success("Invoice Message Copied!");
+        }
     };
+
 
     if (loading) return (
         <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -198,14 +223,14 @@ const InvoicePage = () => {
             {/* Strategic Layout Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '48px', gap: '24px', flexWrap: 'wrap' }}>
                 <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 800, marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         <Link to={isInternal ? "/sales" : "/"} style={{ color: 'inherit', textDecoration: 'none' }}>Records</Link>
-                        <ChevronRight size={14} />
+                        <ChevronRight size={12} />
                         <span style={{ color: 'var(--primary)' }}>Invoice {sale.invoiceNumber}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                        <h1 style={{ fontSize: '2.5rem', fontWeight: 950, color: 'var(--text)', margin: 0, letterSpacing: '-0.05em' }}>
-                            {sale.totalAmount.toLocaleString()} <span style={{ fontSize: '1.2rem', color: 'var(--text-muted)', fontWeight: 700 }}>NGN</span>
+                        <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 950, color: 'var(--text)', margin: 0, letterSpacing: '-0.05em' }}>
+                            {sale.totalAmount.toLocaleString()} <span style={{ fontSize: 'clamp(0.9rem, 2vw, 1.2rem)', color: 'var(--text-muted)', fontWeight: 700 }}>NGN</span>
                         </h1>
                         <span style={{
                             padding: '8px 16px',
@@ -233,11 +258,11 @@ const InvoicePage = () => {
 
                 <div style={{ display: 'flex', gap: '12px' }}>
                     <button
-                        onClick={copyLink}
+                        onClick={handleShare}
                         className="btn-primary"
-                        style={{ padding: '16px 32px', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, boxShadow: '0 10px 20px -5px var(--primary-glow)' }}
+                        style={{ padding: '14px 24px', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, boxShadow: '0 10px 20px -5px var(--primary-glow)', fontSize: '0.9rem' }}
                     >
-                        <Share2 size={18} strokeWidth={2.5} /> Copy Payment Link
+                        <Share2 size={18} strokeWidth={2.5} /> Share Invoice
                     </button>
                     {/* Public QR Code Toggle or Download could go here */}
                 </div>
@@ -253,51 +278,63 @@ const InvoicePage = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                     
                     {/* High-Impact Info Cards */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
-                        <div className="dashboard-glass" style={{ padding: '32px', borderRadius: '32px', border: '1px solid var(--border)', background: 'white' }}>
-                            <p style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Amount Paid</p>
-                            <h3 style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--success)', margin: 0 }}>₦{paidAmount.toLocaleString()}</h3>
+                    {/* High-Impact Info Cards */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '20px' }}>
+                        <div className="dashboard-glass" style={{ padding: '20px', borderRadius: '24px', border: '1px solid var(--border)', background: 'white' }}>
+                            <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Billed To</p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                                    <User size={16} />
+                                </div>
+                                <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>
+                                    {sale.customerName || 'Walk-in Customer'}
+                                </h3>
+                            </div>
                         </div>
-                        <div className="dashboard-glass" style={{ padding: '32px', borderRadius: '32px', border: '1px solid var(--border)', background: 'white' }}>
-                            <p style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Balance Remaining</p>
-                            <h3 style={{ fontSize: '2rem', fontWeight: 900, color: balance > 0 ? 'var(--warning)' : 'var(--text-muted)', margin: 0 }}>₦{balance.toLocaleString()}</h3>
+                        <div className="dashboard-glass" style={{ padding: '20px', borderRadius: '24px', border: '1px solid var(--border)', background: 'white' }}>
+                            <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Paid Amount</p>
+                            <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--success)', margin: 0 }}>₦{paidAmount.toLocaleString()}</h3>
+                        </div>
+                        <div className="dashboard-glass" style={{ padding: '20px', borderRadius: '24px', border: '1px solid var(--border)', background: 'white' }}>
+                            <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Balance</p>
+                            <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: balance > 0 ? 'var(--warning)' : 'var(--text-muted)', margin: 0 }}>₦{balance.toLocaleString()}</h3>
                         </div>
                     </div>
 
                     {/* Official Description */}
-                    <div className="dashboard-glass" style={{ background: 'white', borderRadius: '32px', border: '1px solid var(--border)', padding: '40px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-                            <FileText size={20} color="var(--primary)" strokeWidth={2.5} />
-                            <h3 style={{ fontWeight: 900, fontSize: '1.2rem', margin: 0, letterSpacing: '-0.02em' }}>Sale Information</h3>
+                    <div className="dashboard-glass" style={{ background: 'white', borderRadius: '28px', border: '1px solid var(--border)', padding: '32px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
+                            <FileText size={18} color="var(--primary)" strokeWidth={2.5} />
+                            <h3 style={{ fontWeight: 800, fontSize: '1rem', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Transaction Details</h3>
                         </div>
 
-                        <div style={{ fontSize: '1.1rem', color: 'var(--text)', lineHeight: 1.7, background: 'var(--background)', padding: '32px', borderRadius: '24px', border: '1px solid var(--border)', position: 'relative' }}>
-                            <span style={{ position: 'absolute', top: '16px', right: '16px', opacity: 0.1 }}><Edit2 size={40} /></span>
+                        <div style={{ fontSize: '1rem', color: 'var(--text)', lineHeight: 1.6, background: 'var(--background)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border)', position: 'relative' }}>
+                            <span style={{ position: 'absolute', top: '12px', right: '12px', opacity: 0.1 }}><Edit2 size={32} /></span>
                             {sale.description}
                         </div>
 
-                        <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '40px' }}>
+                        <div style={{ marginTop: '32px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '32px' }}>
                             <div>
-                                <p style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.05em' }}>Seller</p>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.2rem' }}>
+                                <p style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Merchant</p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1rem' }}>
                                         {sale.businessId?.displayName?.[0]}
                                     </div>
                                     <div>
-                                        <p style={{ fontWeight: 800, color: 'var(--text)', margin: 0 }}>{sale.businessId.displayName}</p>
-                                        <p style={{ fontSize: '0.8rem', color: 'var(--success)', fontWeight: 700 }}>Official Merchant</p>
+                                        <p style={{ fontWeight: 800, color: 'var(--text)', margin: 0, fontSize: '0.9rem' }}>{sale.businessId.displayName}</p>
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--success)', fontWeight: 700, margin: 0 }}>Verified Seller</p>
                                     </div>
                                 </div>
                             </div>
                             <div>
-                                <p style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.05em' }}>Timestamp</p>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--background)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Calendar size={20} />
+                                <p style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Issued On</p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--background)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Calendar size={18} />
                                     </div>
                                     <div>
-                                        <p style={{ fontWeight: 800, color: 'var(--text)', margin: 0 }}>{new Date(sale.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Created at {new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                        <p style={{ fontWeight: 800, color: 'var(--text)', margin: 0, fontSize: '0.9rem' }}>{new Date(sale.createdAt).toLocaleDateString()}</p>
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, margin: 0 }}>{new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                     </div>
                                 </div>
                             </div>
@@ -540,9 +577,6 @@ const InvoicePage = () => {
                 @media (max-width: 1024px) {
                     .invoice-grid-responsive {
                         grid-template-columns: 1fr !important;
-                    }
-                    .invoice-grid-responsive > div:last-child {
-                        order: -1;
                     }
                 }
             `}</style>

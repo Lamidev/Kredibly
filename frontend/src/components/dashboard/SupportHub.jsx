@@ -33,6 +33,15 @@ const SupportHub = () => {
     const { profile } = useAuth();
 
     useEffect(() => {
+        if (isOpen) {
+            document.body.classList.add('lock-scroll');
+        } else {
+            document.body.classList.remove('lock-scroll');
+        }
+        return () => document.body.classList.remove('lock-scroll');
+    }, [isOpen]);
+
+    useEffect(() => {
         const handleOpen = () => {
             setIsOpen(true);
             setView('tickets');
@@ -163,7 +172,7 @@ const SupportHub = () => {
     };
 
     return (
-        <div style={{ position: 'fixed', bottom: '30px', right: '30px', zIndex: 1000 }}>
+        <div style={{ position: 'fixed', bottom: '30px', right: '30px', zIndex: 3000 }}>
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -334,7 +343,7 @@ const SupportHub = () => {
                                         <button onClick={() => setView('tickets')} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                             ← List
                                         </button>
-                                        {activeTicket.status !== 'resolved' && (
+                                        {activeTicket.status !== 'resolved' && profile?.role === 'admin' && ( // Only admin can mark resolved
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); handleResolve(activeTicket._id); }}
                                                 style={{ background: '#F5F3FF', border: 'none', color: 'var(--primary)', fontSize: '0.7rem', fontWeight: 800, padding: '4px 10px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
@@ -506,7 +515,7 @@ const SupportHub = () => {
                         right: 16px !important;
                         bottom: 80px !important;
                         position: fixed !important;
-                        height: calc(100vh - 120px) !important;
+                        height: calc(100dvh - 120px) !important;
                         max-height: 600px !important;
                     }
                     div[style*="height: 500px"] {

@@ -30,6 +30,8 @@ const PublicInvoicePage = () => {
     const [sale, setSale] = useState(null);
     const [loading, setLoading] = useState(true);
     const [verifying, setVerifying] = useState(false);
+    const [paymentMode, setPaymentMode] = useState("full"); // "full" or "partial"
+    const [customAmount, setCustomAmount] = useState("");
 
     useEffect(() => {
         fetchInvoice();
@@ -98,11 +100,25 @@ const PublicInvoicePage = () => {
         }
 
         const balance = sale.totalAmount - sale.paidAmount;
+        let finalAmount = balance;
+
+        if (paymentMode === "partial") {
+            const parsed = parseFloat(customAmount);
+            if (!parsed || parsed < 100) {
+                toast.error("Minimum payment is ₦100");
+                return;
+            }
+            if (parsed > balance) {
+                toast.error(`Amount exceeds balance (₦${balance.toLocaleString()})`);
+                return;
+            }
+            finalAmount = parsed;
+        }
 
         const handler = window.PaystackPop.setup({
             key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_placeholder', 
             email: sale.customerEmail || 'customer@usekredibly.com',
-            amount: Math.round(balance * 100), // in kobo
+            amount: Math.round(finalAmount * 100), // in kobo
             currency: 'NGN',
             ref: `KRED_${sale.invoiceNumber}_${Date.now()}`,
             metadata: {
@@ -280,6 +296,47 @@ const PublicInvoicePage = () => {
 
                             {!isPaid ? (
                                 <div>
+                                    {/* Payment Mode Selector */}
+                                    <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                                        <button 
+                                            onClick={() => setPaymentMode('full')}
+                                            style={{ flex: 1, padding: '16px', borderRadius: '14px', border: '1.5px solid', borderColor: paymentMode === 'full' ? '#7C3AED' : '#E2E8F0', background: paymentMode === 'full' ? '#F5F3FF' : 'white', cursor: 'pointer', transition: '0.2s' }}
+                                        >
+                                            <p style={{ margin: 0, fontSize: '10px', fontWeight: 900, color: paymentMode === 'full' ? '#7C3AED' : '#94A3B8', textTransform: 'uppercase' }}>Full Balance</p>
+                                            <p style={{ margin: '4px 0 0 0', fontSize: '15px', fontWeight: 800, color: paymentMode === 'full' ? '#7C3AED' : '#475569' }}>₦{balance.toLocaleString()}</p>
+                                        </button>
+                                        <button 
+                                            onClick={() => setPaymentMode('partial')}
+                                            style={{ flex: 1, padding: '16px', borderRadius: '14px', border: '1.5px solid', borderColor: paymentMode === 'partial' ? '#7C3AED' : '#E2E8F0', background: paymentMode === 'partial' ? '#F5F3FF' : 'white', cursor: 'pointer', transition: '0.2s' }}
+                                        >
+                                            <p style={{ margin: 0, fontSize: '10px', fontWeight: 900, color: paymentMode === 'partial' ? '#7C3AED' : '#94A3B8', textTransform: 'uppercase' }}>Other Amount</p>
+                                            <p style={{ margin: '4px 0 0 0', fontSize: '15px', fontWeight: 800, color: paymentMode === 'partial' ? '#7C3AED' : '#475569' }}>Installment</p>
+                                        </button>
+                                    </div>
+
+                                    {/* Custom Amount Input */}
+                                    <AnimatePresence>
+                                        {paymentMode === 'partial' && (
+                                            <motion.div 
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                style={{ marginBottom: '24px', overflow: 'hidden' }}
+                                            >
+                                                <div style={{ background: '#F8FAFC', padding: '20px', borderRadius: '18px', border: '1.5px solid #E2E8F0' }}>
+                                                    <label style={{ display: 'block', fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Enter Amount (₦)</label>
+                                                    <input 
+                                                        type="number"
+                                                        value={customAmount}
+                                                        onChange={(e) => setCustomAmount(e.target.value)}
+                                                        placeholder="e.g. 20000"
+                                                        style={{ width: '100%', background: 'transparent', border: 'none', fontSize: '24px', fontWeight: 900, color: '#0F172A', outline: 'none' }}
+                                                    />
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+
                                     <button 
                                         onClick={handlePaystackPayment}
                                         disabled={verifying}

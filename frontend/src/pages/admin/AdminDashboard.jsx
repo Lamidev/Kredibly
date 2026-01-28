@@ -513,30 +513,44 @@ const AdminDashboard = () => {
                                     <motion.div
                                         key={t._id}
                                         className="glass-card"
-                                        style={{ padding: '32px 24px', background: 'white', borderRadius: '32px', border: '1px solid var(--border)', opacity: t.status === 'resolved' ? 0.7 : 1 }}
+                                        style={{ padding: '24px', background: 'white', borderRadius: '24px', border: '1px solid var(--border)', opacity: t.status === 'resolved' ? 0.8 : 1 }}
                                     >
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-                                            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                                <div style={{ width: '48px', height: '48px', background: 'var(--primary)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'white' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+                                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                                <div style={{ width: '40px', height: '40px', background: 'var(--primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'white' }}>
                                                     {(t.businessId?.displayName || t.userId?.name || 'K').charAt(0)}
                                                  </div>
                                                  <div>
-                                                     <h4 style={{ margin: 0, fontWeight: 900, color: 'var(--text)', fontSize: '1.1rem' }}>{t.businessId?.displayName || 'Merchant'}</h4>
-                                                     <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t.userId?.email}</p>
+                                                     <h4 style={{ margin: 0, fontWeight: 900, color: 'var(--text)', fontSize: '1rem' }}>{t.businessId?.displayName || 'Merchant'}</h4>
+                                                     <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t.userId?.email}</p>
                                                  </div>
                                             </div>
-                                            <span style={{ padding: '8px 16px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 900, background: '#F1F5F9', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t.status}</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                {t.status !== 'resolved' && (
+                                                    <button 
+                                                        onClick={() => handleResolve(t._id)}
+                                                        style={{ 
+                                                            padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, 
+                                                            background: '#ECFDF5', color: '#10B981', border: 'none', cursor: 'pointer',
+                                                            display: 'flex', alignItems: 'center', gap: '6px'
+                                                        }}
+                                                    >
+                                                        <ShieldCheck size={14} /> Resolve 
+                                                    </button>
+                                                )}
+                                                <span style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 900, background: '#F1F5F9', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t.status}</span>
+                                            </div>
                                         </div>
 
-                                        <div style={{ padding: '20px', background: '#F8FAFC', borderRadius: '20px', fontSize: '1rem', color: 'var(--text)', lineHeight: 1.6, fontWeight: 500, border: '1px solid #EDF2F7', marginBottom: '24px' }}>
-                                            {t.message}
+                                        <div style={{ background: '#F0F9FF', borderRadius: '16px', padding: '16px', marginBottom: '20px', borderTopLeftRadius: '4px' }}>
+                                            <p style={{ fontSize: '0.95rem', color: 'var(--text)', lineHeight: 1.5, margin: 0, fontWeight: 500 }}>{t.message}</p>
                                         </div>
 
                                         {t.status !== 'resolved' && (
-                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: '#F8FAFC', padding: '8px', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
                                                 <input
                                                     type="text"
-                                                    placeholder="Founder response..."
+                                                    placeholder="Type a message..."
                                                     id={`reply-${t._id}`}
                                                     value={t.replyText || ''}
                                                     onChange={(e) => {
@@ -545,9 +559,25 @@ const AdminDashboard = () => {
                                                         newTickets[idx].replyText = e.target.value;
                                                         setTickets(newTickets);
                                                     }}
-                                                    style={{ flex: 1, padding: '14px 20px', borderRadius: '16px', border: '1px solid #E2E8F0', outline: 'none', fontWeight: 600 }}
+                                                    style={{ flex: 1, padding: '10px 14px', borderRadius: '12px', border: 'none', background: 'transparent', outline: 'none', fontWeight: 600, fontSize: '0.9rem' }}
                                                 />
-                                                <button onClick={() => handleReply(t)} disabled={!t.replyText?.trim()} className="btn-primary" style={{ padding: '0 24px', borderRadius: '16px' }}>Send</button>
+                                                <button 
+                                                    onClick={() => handleReply(t)} 
+                                                    disabled={!t.replyText?.trim()} 
+                                                    className="btn-primary" 
+                                                    style={{ 
+                                                        padding: '10px', 
+                                                        borderRadius: '12px', 
+                                                        minWidth: '40px', 
+                                                        display: 'flex', 
+                                                        alignItems: 'center', 
+                                                        justifyContent: 'center', 
+                                                        background: t.replyText?.trim() ? 'var(--primary)' : '#CBD5E1',
+                                                        boxShadow: 'none'
+                                                    }}
+                                                >
+                                                    <Zap size={18} fill="white" />
+                                                </button>
                                             </div>
                                         )}
                                     </motion.div>
