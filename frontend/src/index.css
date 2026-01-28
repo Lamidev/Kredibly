@@ -53,6 +53,12 @@ body {
   color: var(--text);
   overflow-x: hidden;
   transition: background-color 0.3s ease;
+  width: 100%;
+  position: relative;
+}
+
+body.lock-scroll {
+  overflow: hidden;
 }
 
 .auth-pattern {
@@ -546,8 +552,14 @@ body {
   flex-direction: column;
   position: fixed;
   height: 100vh;
-  z-index: 1000;
-  transition: transform 0.3s ease;
+  height: 100dvh;
+  z-index: 2000;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none;
 }
 
 .sidebar-header {
@@ -592,15 +604,49 @@ body {
 
 .main-content-layout {
   flex: 1;
-  margin-left: 280px;
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
+  position: relative;
   width: 100%;
+  padding-left: 280px;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.timeline-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  background: white;
+  flex-shrink: 0;
+  margin-top: 5px;
+  position: relative;
+  z-index: 2;
+}
+
+.timeline-track {
+  position: relative;
+}
+
+/* Connect dots with a line */
+.timeline-track::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 5px;
+  bottom: 10px;
+  width: 2px;
+  background: #E2E8F0;
+  z-index: 1;
 }
 
 .top-header {
   height: 80px;
-  background: white;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid #E2E8F0;
   display: flex;
   align-items: center;
@@ -608,7 +654,7 @@ body {
   padding: 0 40px;
   position: sticky;
   top: 0;
-  z-index: 900;
+  z-index: 1500;
 }
 
 .search-container {
@@ -636,6 +682,10 @@ body {
 .content-body {
   padding: 40px;
   flex: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 /* Visibility & Breakpoint Helpers */
@@ -681,7 +731,8 @@ body {
   }
 
   .main-content-layout {
-    margin-left: 0;
+    padding-left: 0 !important;
+    width: 100% !important;
   }
 
   .top-header {
@@ -689,7 +740,10 @@ body {
   }
 
   .content-body {
-    padding: 20px 16px;
+    padding: 32px 16px;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 100%;
   }
 
   .glass-card {
@@ -747,7 +801,7 @@ body {
 .grid-2-col-responsive {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 24px;
+  gap: 20px;
 }
 
 @media (min-width: 640px) {
@@ -759,7 +813,7 @@ body {
 /* Responsive Dashboard Adjustments */
 @media (max-width: 768px) {
   .content-body {
-    padding: 24px 20px;
+    padding: 32px 16px !important;
   }
 
   .top-header {

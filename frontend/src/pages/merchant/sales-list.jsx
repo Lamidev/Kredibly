@@ -81,20 +81,20 @@ const SalesList = ({ initialFilter }) => {
     return (
         <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
             {/* Executive Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px', gap: '24px', flexWrap: 'wrap' }}>
-                <div>
-                    <h1 style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--text)', marginBottom: '8px', letterSpacing: '-0.04em' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', gap: '20px', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: '200px' }}>
+                    <h1 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text)', marginBottom: '4px', letterSpacing: '-0.04em' }}>
                         {filterStatus === 'outstanding' ? 'Unpaid Bills' : 'All Sales'}
                     </h1>
-                    <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '1.1rem' }}>
+                    <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.9rem' }}>
                         {filterStatus === 'outstanding' 
-                            ? 'Keep track of customers who haven\'t paid yet.' 
-                            : 'See a list of all your sales and payments.'}
+                            ? 'Keep track of pending payments.' 
+                            : 'See all your business transactions.'}
                     </p>
                 </div>
                 <Link to="/sales/new" style={{ textDecoration: 'none' }}>
-                    <button className="btn-primary" style={{ padding: '16px 32px', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, boxShadow: '0 10px 20px -5px var(--primary-glow)' }}>
-                        <Plus size={20} strokeWidth={3} /> New Record
+                    <button className="btn-primary" style={{ padding: '12px 24px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}>
+                        <Plus size={18} strokeWidth={3} /> New Record
                     </button>
                 </Link>
             </div>
@@ -129,32 +129,30 @@ const SalesList = ({ initialFilter }) => {
                         )}
                     </div>
                     
-                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', width: '100%' }}>
                         <button onClick={() => setFilterStatus("all")} style={{ 
-                            padding: '10px 24px', 
+                            padding: '8px 20px', 
                             borderRadius: '100px', 
                             border: 'none', 
                             background: filterStatus === 'all' ? 'var(--primary)' : 'white',
                             color: filterStatus === 'all' ? 'white' : 'var(--text-muted)',
                             fontWeight: 700,
-                            fontSize: '0.9rem',
+                            fontSize: '0.85rem',
                             cursor: 'pointer',
-                            transition: '0.2s',
-                            boxShadow: filterStatus === 'all' ? '0 10px 15px -3px var(--primary-glow)' : 'none'
+                            whiteSpace: 'nowrap'
                         }}>
                             All Sales
                         </button>
                         <button onClick={() => setFilterStatus("outstanding")} style={{ 
-                            padding: '10px 24px', 
+                            padding: '8px 20px', 
                             borderRadius: '100px', 
                             border: 'none', 
                             background: filterStatus === 'outstanding' ? 'var(--warning)' : 'white',
                             color: filterStatus === 'outstanding' ? 'white' : 'var(--text-muted)',
                             fontWeight: 700,
-                            fontSize: '0.9rem',
+                            fontSize: '0.85rem',
                             cursor: 'pointer',
-                            transition: '0.2s',
-                            boxShadow: filterStatus === 'outstanding' ? '0 10px 15px -3px rgba(245, 158, 11, 0.3)' : 'none'
+                            whiteSpace: 'nowrap'
                         }}>
                             Unpaid
                         </button>

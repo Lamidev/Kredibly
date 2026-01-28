@@ -42,6 +42,15 @@ const DashboardLayout = () => {
     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
     useEffect(() => {
+        if (isSidebarOpen) {
+            document.body.classList.add('lock-scroll');
+        } else {
+            document.body.classList.remove('lock-scroll');
+        }
+        return () => document.body.classList.remove('lock-scroll');
+    }, [isSidebarOpen]);
+
+    useEffect(() => {
         if (profile) {
             fetchNotifications();
             const interval = setInterval(fetchNotifications, 30000); // 30s
@@ -192,7 +201,7 @@ const DashboardLayout = () => {
                     ))}
                 </nav>
 
-                <div className="sidebar-footer" style={{ borderTop: '1px solid #F1F5F9', padding: '20px 0' }}>
+                <div className="sidebar-footer" style={{ borderTop: '1px solid #F1F5F9', padding: '16px 0 32px' }}>
                     <NavLink
                         to="/settings"
                         className={({ isActive }) => `nav-item-premium ${isActive ? 'active' : ''}`}
@@ -204,7 +213,16 @@ const DashboardLayout = () => {
                     <button
                         onClick={() => setShowLogoutConfirm(true)}
                         className="nav-item-premium"
-                        style={{ width: 'calc(100% - 32px)', background: 'none', border: 'none', cursor: 'pointer', margin: '8px 16px', color: '#EF4444' }}
+                        style={{ 
+                            width: 'calc(100% - 32px)', 
+                            background: 'rgba(239, 68, 68, 0.05)', 
+                            border: '1px solid rgba(239, 68, 68, 0.1)', 
+                            cursor: 'pointer', 
+                            margin: '8px 16px', 
+                            color: '#EF4444',
+                            borderRadius: '12px',
+                            justifyContent: 'flex-start'
+                        }}
                     >
                         <LogOut size={20} /> <span style={{ fontWeight: 700 }}>Logout</span>
                     </button>

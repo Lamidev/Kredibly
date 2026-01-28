@@ -113,14 +113,7 @@ exports.addPayment = async (req, res) => {
 
         await sale.populate("businessId");
 
-        // Notify Business Owner on WhatsApp
-        if (sale.businessId && sale.businessId.whatsappNumber) {
-            const paid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
-            const balance = sale.totalAmount - paid;
-            const msg = `💰 *Payment Alert!*\n\nYou just recorded a payment of *₦${amount.toLocaleString()}* for *${sale.customerName}* (Invoice #${sale.invoiceNumber}).\n\n*Remaining Balance:* ₦${balance.toLocaleString()}\n*Status:* ${sale.status.toUpperCase()}`;
-            await sendWhatsAppMessage(sale.businessId.whatsappNumber, msg);
-        }
-
+        // Create Activity Log First
         await logActivity({
             businessId: sale.businessId._id,
             action: "PAYMENT_RECORDED",
@@ -128,6 +121,32 @@ exports.addPayment = async (req, res) => {
             entityId: sale._id,
             details: `Recorded payment of ₦${amount.toLocaleString()} for ${sale.customerName} via ${method}`
         });
+
+        // Create In-App Notification
+        await Notification.create({
+            businessId: sale.businessId._id,
+            title: "Payment Received 💰",
+            message: `₦${amount.toLocaleString()} recorded for ${sale.customerName}.`,
+            type: "payment",
+            saleId: sale._id
+        });
+
+        // Notify Business Owner on WhatsApp (Kreddy)
+        if (sale.businessId && sale.businessId.whatsappNumber) {
+            const paid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
+            const balance = sale.totalAmount - paid;
+            
+            // Smart message logic based on balance
+            let msg = `🔔 *Payment Alert!*\n\nChief, I've just recorded a payment of *₦${amount.toLocaleString()}* for *${sale.customerName}*.\n\n`;
+            
+            if (balance <= 0) {
+                msg += `✅ *Fully Paid!* This debt is now cleared from the ledger. Well done!`;
+            } else {
+                msg += `⏳ *Balance Expected:* ₦${balance.toLocaleString()}\n*Action:* I've updated the invoice status to ${sale.status.toUpperCase()}.`;
+            }
+
+            await sendWhatsAppMessage(sale.businessId.whatsappNumber, msg);
+        }
 
         res.status(200).json({ success: true, data: sale });
     } catch (error) {
@@ -318,6 +337,14 @@ exports.sendReminder = async (req, res) => {
 
         sale.reminderSentAt = new Date();
         await sale.save();
+        
+        await logActivity({
+            businessId: sale.businessId,
+            action: "REMINDER_SENT",
+            entityType: "SALE",
+            entityId: sale._id,
+            details: `Sent payment reminder to ${sale.customerName}`
+        });
 
         res.status(200).json({ success: true, message: "Reminder logged. Link shared with customer." });
     } catch (error) {

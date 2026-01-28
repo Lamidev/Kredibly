@@ -99,8 +99,12 @@ exports.shareInvoice = async (req, res) => {
         const description = `This is a verified payment request from ${sale.businessId?.displayName || "a verified merchant"}. Click to safely view invoice details for "${sale.description}" and make payment.`;
         
         // Use business logo if available, or our official brand logo
-        const imageUrl = sale.businessId?.logoUrl || "https://usekredibly.com/Krediblylogo.jpeg"; 
-
+        const imageUrl = "https://usekredibly.com/krediblyoriginal.png"; 
+        // Note: User requested to use 'krediblyoriginal' regardless of business logo for consistent branding on share, or maybe as a fallback. 
+        // Reading the request: "metadata... is suppose to be the kredibly logo krediblyoriginal in public file".
+        // This implies overriding the business logo or just ensuring the fallback is correct.
+        // Let's use the Kredibly logo as the primary image for the link preview to ensure brand consistency as requested.
+        
         const html = `
             <!DOCTYPE html>
             <html>
