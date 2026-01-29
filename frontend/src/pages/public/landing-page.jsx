@@ -485,23 +485,23 @@ const LandingPage = () => {
                     <div style={{ textAlign: 'center', marginBottom: '80px' }}>
                         <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem' }}>TRANSPARENT PRICING</div>
                         <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 3.5rem)', fontWeight: 950, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Start free. Scale endlessly.</h2>
-                        <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginTop: '20px', maxWidth: '600px', margin: '20px auto 0' }}>No hidden setup fees. No credit card required to start.</p>
+                        <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginTop: '20px', maxWidth: '600px', margin: '20px auto 0' }}>Join today and get <span style={{ color: 'var(--text)', fontWeight: 700 }}>7 Days of Oga Plan for FREE.</span><br />No credit card required to start.</p>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px', alignItems: 'center' }}>
                         {/* Free Tier */}
                         <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', border: '1px solid #E2E8F0' }}>
                             <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>Hustler</h3>
-                            <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: 500 }}>For the "One-Man Army" vendor.</p>
+                            <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: 500 }}>The Beginner's Tool</p>
                             <div style={{ fontSize: '3rem', fontWeight: 950, marginBottom: '16px', letterSpacing: '-0.05em' }}>Free</div>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '40px' }}>Forever free for up to 50 transactions/mo.</p>
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '40px' }}>Forever free for up to 20 sales records/mo.</p>
                             <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Start Hustling</button>
                             <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 {[
-                                    "Kreddy AI Assistant",
-                                    "Ditch the Notebook",
-                                    "Track Money Outside",
-                                    "Basic Invoices"
+                                    "Basic AI Assistant",
+                                    "20 Sales Records / month",
+                                    "Basic WhatsApp Hub",
+                                    "Standard Debt Tracking"
                                 ].map((feat, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500, color: '#334155' }}>
                                         <CheckCheck size={18} color="var(--primary)" /> {feat}
@@ -511,22 +511,22 @@ const LandingPage = () => {
                         </div>
 
                         {/* Pro Tier - highlighted */}
-                        <div style={{ padding: '48px', borderRadius: '32px', background: 'var(--text)', color: 'white', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', transform: 'scale(1.05)' }}>
+                        <div className="pricing-card highlight-card-landing" style={{ padding: '48px', borderRadius: '32px', background: 'var(--text)', color: 'white', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', zIndex: 2 }}>
                             <div style={{ position: 'absolute', top: '32px', right: '32px', background: 'var(--primary)', padding: '6px 16px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 800 }}>POPULAR</div>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>Oga Mode</h3>
-                            <p style={{ opacity: 0.7, marginBottom: '32px', fontWeight: 500 }}>For shop owners who want sleep.</p>
-                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '16px' }}>
-                                <span style={{ fontSize: '3rem', fontWeight: 950, letterSpacing: '-0.05em' }}>₦4,500</span>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>Oga Plan</h3>
+                            <p style={{ opacity: 0.7, marginBottom: '32px', fontWeight: 500 }}>Your business partner that never forgets.</p>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '40px' }}>
+                                <span style={{ fontSize: '3rem', fontWeight: 950, letterSpacing: '-0.05em' }}>₦7,000</span>
                                 <span style={{ opacity: 0.7 }}>/mo</span>
                             </div>
-                            <p style={{ fontSize: '0.9rem', opacity: 0.7, marginBottom: '40px' }}>Billed annually. ₦5,000 billed monthly.</p>
-                            <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ width: '100%', justifyContent: 'center', background: 'white !important', color: 'black !important' }}>Take Control</button>
+                            <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ width: '100%', justifyContent: 'center', background: 'white !important', color: 'black !important' }}>Become an Oga</button>
                             <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 {[
-                                    "Unlimited Sales Recording",
-                                    "Monitor 5 Staff (Anti-Theft)",
-                                    "Premium Branded Invoices",
-                                    "Inventory Tracking"
+                                    "Super Smart AI",
+                                    "2,000 WhatsApp Msgs / mo",
+                                    "Monitor 2 Staff Members",
+                                    "Unlimited Smart Recording",
+                                    "Branded WhatsApp Invoices"
                                 ].map((feat, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500 }}>
                                         <CheckCheck size={18} color="#4ade80" /> {feat}
@@ -537,18 +537,23 @@ const LandingPage = () => {
 
                         {/* Enterprise Tier */}
                         <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', border: '1px solid #E2E8F0' }}>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>Empire</h3>
-                            <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: 500 }}>For distributors & supermarkets.</p>
-                            <div style={{ fontSize: '3rem', fontWeight: 950, marginBottom: '16px', letterSpacing: '-0.05em' }}>Custom</div>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '40px' }}>Tailored infrastructure for high volume.</p>
-                            <button onClick={() => navigate('/contact')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Contact Sales</button>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>Chairman</h3>
+                            <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: 500 }}>Run multiple shops without stress.</p>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '40px' }}>
+                                <span style={{ fontSize: '3rem', fontWeight: 950, letterSpacing: '-0.05em' }}>₦30,000</span>
+                                <span style={{ opacity: 0.7 }}>/mo</span>
+                            </div>
+                            <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Lead Your Empire</button>
                             <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 {[
-                                { t: "No more paper notebooks", d: "Record your sales in 2 seconds. Kreddy handles the math for you." },
-                                { t: "Easy for everyone", d: "If you can send a message on WhatsApp, you can use Kredibly. It's that simple." }
-                            ].map((item, i) => (
+                                    "Everything in Oga Plan",
+                                    "10,000 WhatsApp Msgs / mo",
+                                    "Voice Note Recording",
+                                    "Multi-Staff / Multi-Shop",
+                                    "Weekly Business Insights"
+                                ].map((feat, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500, color: '#334155' }}>
-                                        <CheckCheck size={18} color="var(--primary)" /> {item.t}
+                                        <CheckCheck size={18} color="var(--primary)" /> {feat}
                                     </div>
                                 ))}
                             </div>
@@ -623,6 +628,11 @@ const LandingPage = () => {
                     .bento-grid { grid-template-columns: 1fr !important; }
                     .marquee-track { animation-duration: 40s !important; }
                     .testimonial-card { min-width: 280px !important; padding: 24px !important; }
+                    .pricing-card { padding: 32px 24px !important; }
+                    .highlight-card-landing { transform: none !important; margin: 0 !important; }
+                }
+                .highlight-card-landing {
+                    transform: scale(1.05);
                 }
             `}</style>
         </div>

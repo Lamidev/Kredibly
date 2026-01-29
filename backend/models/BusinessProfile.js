@@ -57,6 +57,28 @@ const BusinessProfileSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    // Subscription & Plan Tracking
+    plan: {
+        type: String,
+        enum: ["hustler", "oga", "chairman"],
+        default: "hustler"
+    },
+    isFoundingMember: {
+        type: Boolean,
+        default: false
+    },
+    planStatus: {
+        type: String,
+        enum: ["trialing", "active", "past_due", "cancelled"],
+        default: "trialing"
+    },
+    trialExpiresAt: {
+        type: Date,
+        default: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days trial
+    },
+    discountActiveUntil: {
+        type: Date
+    },
     createdAt: {
         type: Date,
         default: Date.now

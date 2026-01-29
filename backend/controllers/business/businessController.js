@@ -1,5 +1,6 @@
 const BusinessProfile = require("../../models/BusinessProfile");
 const ActivityLog = require("../../models/ActivityLog");
+const Waitlist = require("../../models/Waitlist");
 const { logActivity } = require("../../utils/activityLogger");
 
 const cleanPhone = (num) => {
@@ -33,6 +34,10 @@ exports.updateProfile = async (req, res) => {
             }
             await profile.save();
         } else {
+            // New Profile Creation: Check if user is from Waitlist
+            const waitlistEntry = await Waitlist.findOne({ email: req.user.email });
+            const isWaitlistUser = !!waitlistEntry;
+
             profile = new BusinessProfile({
                 ownerId: req.user._id,
                 displayName,
@@ -44,9 +49,23 @@ exports.updateProfile = async (req, res) => {
                 address,
                 assistantSettings,
                 bankDetails,
-                staffNumbers: staffNumbers ? staffNumbers.map(n => cleanPhone(n)).filter(n => n) : []
+                staffNumbers: staffNumbers ? staffNumbers.map(n => cleanPhone(n)).filter(n => n) : [],
+                // Founding Member Benefits
+                // Everyone starts with a 7-day trial of the OGA PLAN to see its power
+                plan: 'oga',
+                planStatus: 'trialing',
+                trialExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 
+                isFoundingMember: isWaitlistUser,
+                discountActiveUntil: isWaitlistUser ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) : null
             });
+
             await profile.save();
+
+            // Update Waitlist status
+            if (waitlistEntry) {
+                waitlistEntry.status = 'active';
+                await waitlistEntry.save();
+            }
         }
 
         await logActivity({

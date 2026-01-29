@@ -164,15 +164,26 @@ const cleanPhone = (num) => {
 };
 
 const HUMANIZE = {
-    greetings: [
-        "Boss {name}! 🫡 How can I help your hustle today?",
-        "Good to see you, {name}! 🚀 What's the latest update?",
-        "Hey {name}! Kreddy is online. Ready to record some wins?",
-        "Welcome back, {name}! 🛡️ Need to track a payment or record a sale?"
-    ],
+    greetings: {
+        hustler: [
+            "Boss {name}! 🫡 How can I help your hustle today?",
+            "Good to see you, {name}! 🚀 Ready to record some wins?",
+            "Kreddy is online, {name}. What's the latest update?"
+        ],
+        oga: [
+            "Good day, Oga {name}! 💼 Your smart assistant is ready. What are we tracking today?",
+            "Oga {name}! 🚀 High power! Kreddy is online and locked in for your business.",
+            "Welcome back, Oga {name}! 🛡️ Need to track a payment or record a sale?"
+        ],
+        chairman: [
+            "Good morning, Chairman {name}! 👑 Your empire is growing. I'm standing by for your instructions.",
+            "Chairman {name}! 💎 Respect! Your business is moving fast. How can I help you lead today?",
+            "Greetings, Chairman {name}! 🦁 Your records are safe and the ledger is ready for more wins."
+        ]
+    },
     success: [
         "Nice one! 🎈 I've logged that for you.",
-        "Got it, Boss! ✅ Record is safe and sound.",
+        "Got it, Chief! ✅ Record is safe and sound.",
         "Record saved! 🚀 Keep that momentum going.",
         "Done! 🛡️ I've updated your ledger."
     ],
@@ -184,8 +195,9 @@ const HUMANIZE = {
     ]
 };
 
-const getRandom = (arr, data = {}) => {
-    let pick = arr[Math.floor(Math.random() * arr.length)];
+const getRandom = (arr, data = {}, plan = "hustler") => {
+    let pool = Array.isArray(arr) ? arr : (arr[plan] || arr["hustler"]);
+    let pick = pool[Math.floor(Math.random() * pool.length)];
     for (let [k, v] of Object.entries(data)) {
         pick = pick.replace(new RegExp(`{${k}}`, 'g'), v);
     }
@@ -399,6 +411,18 @@ exports.handleIncoming = async (req, res) => {
 
         const isStaff = profile && profile.whatsappNumber !== cleanFrom;
 
+        let plan = profile.plan || "hustler";
+        
+        // Trial Over Logic: If trialing and current date > trialExpiresAt, downgrade behavior
+        const isTrialing = profile.planStatus === 'trialing';
+        const isTrialExpired = isTrialing && new Date() > new Date(profile.trialExpiresAt);
+        
+        if (isTrialExpired) {
+            plan = "hustler";
+        }
+        
+        const isHustler = plan === "hustler";
+
         if (profile && !profile.isKreddyConnected && !isStaff) {
             profile.isKreddyConnected = true;
             await profile.save();
@@ -416,8 +440,28 @@ exports.handleIncoming = async (req, res) => {
             return;
         }
 
+        // HUSTLER LIMIT CHECK
+        if (isHustler && (text.toLowerCase().includes("sold") || text.toLowerCase().includes("selling") || text.toLowerCase().includes("sale") || text.toLowerCase().includes("record"))) {
+            const startOfMonth = new Date();
+            startOfMonth.setDate(1);
+            startOfMonth.setHours(0, 0, 0, 0);
+            
+            const saleCount = await Sale.countDocuments({
+                businessId: profile._id,
+                createdAt: { $gte: startOfMonth }
+            });
+
+            if (saleCount >= 20) {
+                return await sendReply(from, "Oga, you've reached your free limit of 20 records this month! 📈 \n\nUpgrade to the *Oga Plan* for unlimited records and a smarter Kreddy. Visit your dashboard to upgrade!");
+            }
+        }
+
         if (msgType === "audio" || msgType === "voice" || msgType !== "text") {
-            await sendReply(from, "I can only process text commands for now! ✍️");
+            if (plan === "chairman") {
+                await sendReply(from, "Chairman, I catch the voice note! 💎 I'm still learning to hear, so for now, abeg type am so I no go make mistake for your ledger. ✍️");
+            } else {
+                await sendReply(from, "I can only process text commands for now! ✍️");
+            }
             return;
         }
 
@@ -513,7 +557,8 @@ exports.handleIncoming = async (req, res) => {
                     }
 
                     const bal = totalAmount - (paidAmount || 0);
-                    return await sendReply(from, `✅ *Record Confirmed!* \n\nI've logged Invoice *#${newSale.invoiceNumber}* for *${customerName}*.\n💰 Paid: ₦${paidAmount.toLocaleString()}\n⏳ Balance: ₦${bal.toLocaleString()}\n\n🔗 View & Share Preview: ${BACKEND_URL}/api/payments/share/${newSale.invoiceNumber}`);
+                    const successMsg = getRandom(HUMANIZE.success, {}, plan);
+                    return await sendReply(from, `${successMsg} \n\nI've logged Invoice *#${newSale.invoiceNumber}* for *${customerName}*.\n💰 Paid: ₦${paidAmount.toLocaleString()}\n⏳ Balance: ₦${bal.toLocaleString()}\n\n🔗 View & Share Preview: ${BACKEND_URL}/api/payments/share/${newSale.invoiceNumber}`);
                 } else if (intent === 'update_record') {
                     // 🧠 ROBUST SEARCH: Find the best match for the customer
                     let cleanName = customerName.replace(/^(for|to|from|of)\s+/i, '').trim();
@@ -570,13 +615,9 @@ exports.handleIncoming = async (req, res) => {
         const entityLabel = profile.entityType === 'business' ? 'Business' : 'Hustle';
 
         if (["hi", "hello", "h", "connect", "kreddy"].includes(lowerText)) {
-            const hour = new Date().getHours();
-            let timeGreeting = "Hi";
-            if (hour >= 22 || hour < 5) timeGreeting = "Working late? I'm here for you! 🌙";
-            else if (hour < 12) timeGreeting = "Good morning! Let's make today productive ☀️";
-
-            const personalizedGreeting = getRandom(HUMANIZE.greetings, { name: profile.displayName });
-            await sendReply(from, `${personalizedGreeting} \n\nI'm *Kreddy*, your Kredibly partner. I'm here to make sure you never lose track of a single Naira. 🚀\n\n*What's the plan for today?*\n📊 *S*: See Performance\n⏳ *D*: See Debtors\n💡 *HELP*: Learn how to use Kreddy`);
+            const personalizedGreeting = getRandom(HUMANIZE.greetings, { name: profile.displayName }, plan);
+            const statusLabel = plan === "chairman" ? "📊 *EMPIRE STATUS*" : "📊 *STATS*";
+            await sendReply(from, `${personalizedGreeting} \n\nI'm *Kreddy*, your Kredibly partner. \n\n*What's the plan for today?*\n${statusLabel}: Type *S*\n⏳ *DEBTS*: Type *D*\n💡 *HELP*: Type *HELP*`);
         } else if (
             lowerText.includes("mistake") || 
             lowerText.includes("correct name") || 
@@ -621,7 +662,7 @@ exports.handleIncoming = async (req, res) => {
                 return await sendReply(from, `✅ *Name Corrected!* \n\nI've updated the record. The name is now *${saleToUpdate.customerName}* instead of *${oldName}*. 🫡`);
             }
             
-            await sendReply(from, `I hear you, Boss! I want to change the name to *${newName}*, but I couldn't find a recent record to update. Which record did you mean? (Type "D" to see debtors)`);
+            await sendReply(from, `I hear you, Boss! I want to change the name to *${newName}*, but I couldn't find a recent record to update.`);
         } else if (["thanks", "thank you", "merci", "jazakallah", "gracias"].includes(lowerText)) {
             await sendReply(from, "You're very welcome, Boss! 🫡 Always happy to help your business grow. Let me know if you need anything else!");
         } else if (["help", "?"].includes(lowerText)) {
@@ -731,25 +772,39 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
                 return `${s.customerName}: ₦${bal.toLocaleString()} (Invoice #${s.invoiceNumber})`;
             }).join(", ");
 
-            // 🧠 GEMINI AI ("The Brain")
-            let aiResponse = await processMessageWithAI(text, { 
-                merchantName: profile.displayName,
-                entityType: profile.entityType,
-                debtors: debtorContext || "No active debtors yet.",
-                currentSession: session || null,
-                hasOpenTicket: !!openTicket
-            });
-
-            if (!aiResponse) {
-                console.warn("AI Offline: Switching to Smart Kreddy Robust Logic...");
+            // 🧠 INTELLIGENCE SELECTION (Based on Plan)
+            let aiResponse = null;
+            if (isHustler) {
+                console.log("⚡ Plan: Hustler (Using Regex/Robust Logic)");
                 aiResponse = extractInfoRobust(text, { 
                     merchantName: profile.displayName,
                     currentSession: session || null 
                 });
-                console.log(`🧠 Robust Logic Result: Intent=${aiResponse.intent}, Name=${aiResponse.data.customerName}`);
+            } else {
+                console.log(`💎 Plan: ${plan.toUpperCase()} (Using Gemini AI)`);
+                aiResponse = await processMessageWithAI(text, { 
+                    merchantName: profile.displayName,
+                    entityType: profile.entityType,
+                    debtors: debtorContext || "No active debtors yet.",
+                    currentSession: session || null,
+                    hasOpenTicket: !!openTicket
+                });
+                
+                // FALLBACK if AI fails for premium users
+                if (!aiResponse) {
+                    console.warn("AI Offline: Switching to Smart Kreddy Robust Logic...");
+                    aiResponse = extractInfoRobust(text, { 
+                        merchantName: profile.displayName,
+                        currentSession: session || null 
+                    });
+                } else {
+                    console.log(`🤖 AI Result: Intent=${aiResponse.intent}, Confidence=${aiResponse.confidence}`);
+                }
+            }
 
-                // PERSIST for "Yes/No" confirmation
-                if (aiResponse.intent !== "general_chat") {
+            // PERSIST for "Yes/No" confirmation (if Regex was used either as plan or fallback)
+            if (isHustler || !aiResponse?.confidence) {
+                 if (aiResponse && aiResponse.intent !== "general_chat" && !aiResponse.confidence) {
                     await WhatsAppSession.findOneAndUpdate(
                         { whatsappNumber: cleanFrom },
                         {
@@ -761,8 +816,6 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
                     );
                     console.log("💾 Session persisted for robust logic.");
                 }
-            } else {
-                console.log(`🤖 AI Result: Intent=${aiResponse.intent}, Confidence=${aiResponse.confidence}`);
             }
 
             if (aiResponse && (aiResponse.intent === "create_sale" || aiResponse.intent === "update_record") && aiResponse.data.customerName && aiResponse.data.customerName.toLowerCase() !== "customer") {

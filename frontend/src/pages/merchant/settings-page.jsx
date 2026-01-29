@@ -12,7 +12,10 @@ import {
     Mail,
     Smartphone,
     Camera,
-    Upload
+    Upload,
+    Zap,
+    ShieldCheck,
+    Clock
 } from 'lucide-react';
 import axios from 'axios';
 import { isValidNigerianPhone, formatPhoneForDB } from '../../utils/validation';
@@ -310,6 +313,104 @@ const SettingsPage = () => {
                                 />
                             </div>
                         </div>
+                    </div>
+                </section>
+
+                {/* Subscription & Plan Section */}
+                <section className="glass-card" style={{ padding: '32px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+                        <div style={{ background: '#FFF1F2', color: '#E11D48', padding: '10px', borderRadius: '12px' }}>
+                            <Zap size={24} />
+                        </div>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Subscription & Plan</h2>
+                    </div>
+
+                    <div style={{ 
+                        padding: '24px', 
+                        background: profile?.plan === 'chairman' ? 'linear-gradient(135deg, #0F172A, #1E293B)' : 
+                                    profile?.plan === 'oga' ? 'linear-gradient(135deg, #B45309, #D97706)' : 
+                                    '#F8FAFC', 
+                        borderRadius: '20px', 
+                        border: '1px solid #E2E8F0',
+                        color: (profile?.plan === 'oga' || profile?.plan === 'chairman') ? 'white' : '#1E293B'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.8, letterSpacing: '0.05em' }}>Current Plan</span>
+                                    {profile?.isFoundingMember && (
+                                        <span style={{ fontSize: '0.65rem', fontWeight: 900, background: '#4ADE80', color: '#064E3B', padding: '2px 8px', borderRadius: '6px' }}>★ FOUNDING MEMBER</span>
+                                    )}
+                                </div>
+                                <h3 style={{ fontSize: '1.75rem', fontWeight: 950, margin: 0, letterSpacing: '-0.02em' }}>
+                                    {profile?.plan?.toUpperCase() || 'HUSTLER'}
+                                </h3>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                                <p style={{ fontSize: '0.85rem', fontWeight: 700, opacity: 0.8, marginBottom: '4px' }}>Status</p>
+                                <span style={{ 
+                                    fontSize: '0.8rem', 
+                                    fontWeight: 800, 
+                                    background: 'rgba(255,255,255,0.2)', 
+                                    padding: '6px 16px', 
+                                    borderRadius: '100px',
+                                    border: '1px solid rgba(255,255,255,0.1)'
+                                }}>
+                                    {profile?.planStatus?.toUpperCase() || 'ACTIVE'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                            <div style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(clamp(120px, 45%, 140px), 1fr))', 
+                                gap: '16px', 
+                                marginBottom: '24px' 
+                            }}>
+                                <div>
+                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>AI Intelligence</p>
+                                    <p style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? 'Basic AI' : 'Super Smart AI'}</p>
+                                </div>
+                                <div>
+                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>Monthly Records</p>
+                                    <p style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? '20' : 'Unlimited'}</p>
+                                </div>
+                                <div>
+                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>WhatsApp Limit</p>
+                                    <p style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? 'Standard' : profile?.plan === 'oga' ? '2,000/mo' : '10,000/mo'}</p>
+                                </div>
+                                <div>
+                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>Staff Limit</p>
+                                    <p style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? '1 (Owner)' : profile?.plan === 'oga' ? '3 (Owner + 2)' : 'Unlimited'}</p>
+                                </div>
+                                <div>
+                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>Voice Sync</p>
+                                    <p style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'chairman' ? 'Enabled' : 'Disabled'}</p>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <Clock size={16} />
+                                <p style={{ fontSize: '0.9rem', fontWeight: 600, margin: 0 }}>
+                                    {profile?.planStatus === 'trialing' ? 
+                                        `Your free trial ends on ${new Date(profile?.trialExpiresAt).toLocaleDateString()}` :
+                                        profile?.isFoundingMember ? 
+                                        `Pioneer period active until ${new Date(profile?.trialExpiresAt).toLocaleDateString()}` :
+                                        'Plan renews automatically per your billing cycle.'
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ marginTop: '24px', textAlign: 'center' }}>
+                        <button 
+                            type="button"
+                            onClick={() => window.open('/pricing', '_blank')}
+                            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                            View Plan Details & Pricing
+                        </button>
                     </div>
                 </section>
 

@@ -306,9 +306,9 @@ const Waitlist = () => {
                                 <div style={{ display: 'inline-flex', padding: '8px 20px', borderRadius: '100px', background: 'rgba(244, 114, 182, 0.1)', color: '#F472B6', fontSize: '0.8rem', fontWeight: 900, marginBottom: '24px', letterSpacing: '0.05em' }}>
                                     LIMITED FOUNDING SPOTS
                                 </div>
-                                <h3 style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '12px', letterSpacing: '-0.03em', color: '#0F172A' }}>The "Founding 100"</h3>
+                                <h3 style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '12px', letterSpacing: '-0.03em', color: '#0F172A' }}>The "Pioneer Council"</h3>
                                 <p style={{ color: '#64748B', marginBottom: '48px', fontWeight: 500, fontSize: '1.2rem', lineHeight: 1.5 }}>
-                                    The first 100 Founders on the waitlist get <span style={{ color: '#0F172A', fontWeight: 800 }}>The Platinum Badge</span> + <span style={{ color: '#0F172A', fontWeight: 800 }}>25% off Oga Mode</span> for the first 6 months.
+                                    Join the inner circle. Founding members get an exclusive <span style={{ color: '#0F172A', fontWeight: 800 }}>Lifetime Pioneer Badge</span> + <span style={{ color: '#0F172A', fontWeight: 800 }}>Exclusive Lifetime Pricing</span> for being part of the journey.
                                 </p>
 
                                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
