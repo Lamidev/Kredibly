@@ -128,13 +128,51 @@ const Dashboard = () => {
             </a>
 
             {/* Executive Header */}
-            <div style={{ marginBottom: '32px' }}>
-                <h1 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text)', marginBottom: '4px', letterSpacing: '-0.04em' }}>
-                    {greeting()}, {profile?.displayName?.split(' ')[0] || 'Founder'}.
-                </h1>
-                <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.95rem' }}>
-                    Here's your business overview.
-                </p>
+            <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+                <div>
+                    <h1 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text)', marginBottom: '4px', letterSpacing: '-0.04em' }}>
+                        {greeting()}, {profile?.displayName?.split(' ')[0] || 'Founder'}.
+                    </h1>
+                    <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.95rem' }}>
+                        Here's your business overview.
+                    </p>
+                </div>
+
+                {/* Plan Badge */}
+                <motion.div 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    style={{ 
+                        padding: '10px 20px', 
+                        borderRadius: '16px', 
+                        background: profile?.plan === 'chairman' ? 'linear-gradient(135deg, #0F172A 0%, #334155 100%)' : 
+                                    profile?.plan === 'oga' ? 'linear-gradient(135deg, #B45309 0%, #D97706 100%)' : 
+                                    '#F1F5F9',
+                        color: profile?.plan === 'hustler' ? '#64748B' : 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        boxShadow: '0 10px 20px -5px rgba(0,0,0,0.1)',
+                        border: '1px solid rgba(0,0,0,0.05)'
+                    }}
+                >
+                    <div style={{ 
+                        width: '32px', height: '32px', borderRadius: '10px', 
+                        background: 'rgba(255,255,255,0.2)', 
+                        display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                    }}>
+                        {profile?.plan === 'chairman' ? <Shield size={18} /> : 
+                         profile?.plan === 'oga' ? <Zap size={18} fill="white" /> : 
+                         <Activity size={18} />}
+                    </div>
+                    <div>
+                        <p style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', opacity: 0.8, letterSpacing: '0.05em', marginBottom: '-2px' }}>Account Status</p>
+                        <p style={{ fontSize: '0.9rem', fontWeight: 900, letterSpacing: '0.02em' }}>
+                            {profile?.plan?.toUpperCase() || 'HUSTLER'}
+                            {profile?.isFoundingMember && <span style={{ marginLeft: '8px', fontSize: '0.7rem', color: '#4ADE80' }}>★ FOUNDER</span>}
+                        </p>
+                    </div>
+                </motion.div>
             </div>
 
             {/* Premium Stats Bento Grid */}
