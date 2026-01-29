@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-    Zap, 
     MessageCircle, 
-    ShieldCheck, 
     BarChart3, 
     ArrowRight, 
     CheckCircle2, 
@@ -17,8 +15,7 @@ import {
     Lock,
     CheckCircle,
     ArrowDown,
-    FileText,
-    Smile
+    FileText
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";

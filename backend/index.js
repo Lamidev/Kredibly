@@ -88,6 +88,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/support", supportRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/waitlist", waitlistRoutes);
+app.use("/api/coupons", require("./routes/common/couponRoutes"));
 
 // 5. Global Error Handler
 app.use((err, req, res, next) => {

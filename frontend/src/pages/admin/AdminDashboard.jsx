@@ -6,7 +6,6 @@ import {
     CreditCard,
     Activity,
     ShieldAlert,
-    ChevronRight,
     Search,
     X,
     LayoutDashboard,
@@ -18,7 +17,9 @@ import {
     ShieldCheck,
     Globe,
     LogOut,
-    Trash2
+    Trash2,
+    Tag,
+    Banknote
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -30,13 +31,16 @@ const AdminDashboard = () => {
     const [users, setUsers] = useState([]);
     const [tickets, setTickets] = useState([]);
     const [waitlist, setWaitlist] = useState([]);
+    const [coupons, setCoupons] = useState([]);
+    const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'users', 'tickets', 'waitlist'
+    const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'users', 'tickets', 'waitlist', 'revenue', 'coupons'
     const [searchTerm, setSearchTerm] = useState('');
     const [visibleActivities, setVisibleActivities] = useState(10);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showCouponModal, setShowCouponModal] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
     const [deleteType, setDeleteType] = useState('waitlist'); // 'waitlist' or 'user'
     const { logout } = useAuth();
@@ -58,11 +62,13 @@ const AdminDashboard = () => {
         if (manual) setIsRefreshing(true);
 
         try {
-            const [statsRes, usersRes, ticketsRes, waitlistRes] = await Promise.all([
+            const [statsRes, usersRes, ticketsRes, waitlistRes, couponsRes, paymentsRes] = await Promise.all([
                 axios.get(`${API_URL}/admin/stats`, { withCredentials: true }),
                 axios.get(`${API_URL}/admin/users`, { withCredentials: true }),
                 axios.get(`${API_URL}/support/tickets/all`, { withCredentials: true }),
-                axios.get(`${API_URL}/admin/waitlist`, { withCredentials: true })
+                axios.get(`${API_URL}/admin/waitlist`, { withCredentials: true }),
+                axios.get(`${API_URL}/admin/coupons`, { withCredentials: true }),
+                axios.get(`${API_URL}/admin/payments`, { withCredentials: true })
             ]);
 
             if (statsRes.data.success) {
@@ -77,6 +83,12 @@ const AdminDashboard = () => {
             }
             if (waitlistRes.data.success) {
                 setWaitlist(waitlistRes.data.data);
+            }
+            if (couponsRes.data.success) {
+                setCoupons(couponsRes.data.data);
+            }
+            if (paymentsRes.data.success) {
+                setPayments(paymentsRes.data.data);
             }
             if (manual) toast.success("System Data Synced");
         } catch (err) {
@@ -113,16 +125,18 @@ const AdminDashboard = () => {
 
     const confirmDelete = async () => {
         if (!itemToDelete) return;
-        const endpoint = deleteType === 'waitlist' ? `/admin/waitlist/${itemToDelete}` : `/admin/users/${itemToDelete}`;
+        let endpoint = '';
+        if (deleteType === 'waitlist') endpoint = `/admin/waitlist/${itemToDelete}`;
+        else if (deleteType === 'user') endpoint = `/admin/users/${itemToDelete}`;
+        else if (deleteType === 'coupon') endpoint = `/admin/coupons/${itemToDelete}`;
+
         try {
             await axios.delete(`${API_URL}${endpoint}`, { withCredentials: true });
-            toast.success(deleteType === 'waitlist' ? "Entry deleted" : "User and data purged");
+            toast.success(`${deleteType.charAt(0).toUpperCase() + deleteType.slice(1)} removed successfully`);
             
-            if (deleteType === 'waitlist') {
-                setWaitlist(waitlist.filter(w => w._id !== itemToDelete));
-            } else {
-                setUsers(users.filter(u => u._id !== itemToDelete));
-            }
+            if (deleteType === 'waitlist') setWaitlist(waitlist.filter(w => w._id !== itemToDelete));
+            else if (deleteType === 'user') setUsers(users.filter(u => u._id !== itemToDelete));
+            else if (deleteType === 'coupon') setCoupons(coupons.filter(c => c._id !== itemToDelete));
             
             setShowDeleteConfirm(false);
             setItemToDelete(null);
@@ -150,7 +164,7 @@ const AdminDashboard = () => {
 
     const statCards = [
         { label: 'Total Members', value: stats?.totalUsers || 0, icon: Users, color: '#6366F1', trend: '+12%' },
-        { label: 'Platform Volume', value: `₦${stats?.totalRevenue?.toLocaleString()}`, icon: TrendingUp, color: '#10B981', trend: '+8%' },
+        { label: 'Sub Revenue', value: `₦${stats?.totalKrediblyRevenue?.toLocaleString()}`, icon: TrendingUp, color: '#10B981', trend: '+100%' },
         { label: 'Money Outside', value: `₦${stats?.totalOutstanding?.toLocaleString()}`, icon: CreditCard, color: '#F59E0B', trend: '+24%' },
         { label: 'Ledger Records', value: stats?.totalSalesCount || 0, icon: Activity, color: '#8B5CF6', trend: '+15%' },
     ];
@@ -192,13 +206,15 @@ const AdminDashboard = () => {
                         }}
                     >
                         <LogOut size={18} />
-                        <span className="hidden md:block">Logout</span>
+                        <span className="hidden-mobile">Logout</span>
                     </button>
                     
                     <div style={{ display: 'flex', background: 'white', padding: '6px', borderRadius: '20px', border: '1px solid var(--border)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
                         {[
                             { id: 'overview', label: 'Overview', icon: LayoutDashboard },
                             { id: 'users', label: 'Members', icon: Users },
+                            { id: 'revenue', label: 'Revenue', icon: Banknote },
+                            { id: 'coupons', label: 'Coupons', icon: Tag },
                             { id: 'waitlist', label: 'Waitlist', icon: Zap }, // Using Zap for Waitlist
                             { id: 'tickets', label: 'Support', icon: MessageSquare }
                         ].map(tab => {
@@ -216,7 +232,7 @@ const AdminDashboard = () => {
                                     }}
                                 >
                                     <Icon size={16} />
-                                    <span className="hidden md:block">{tab.label}</span>
+                                    <span className="hidden-mobile">{tab.label}</span>
                                     {tab.id === 'tickets' && tickets.filter(t => t.status === 'open').length > 0 && (
                                         <span style={{ background: '#EF4444', color: 'white', padding: '2px 6px', borderRadius: '8px', fontSize: '0.65rem' }}>
                                             {tickets.filter(t => t.status === 'open').length}
@@ -289,7 +305,7 @@ const AdminDashboard = () => {
                                                     onClick={() => setVisibleActivities(prev => prev + 10)}
                                                     style={{ width: '100%', background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '14px', borderRadius: '16px', color: 'var(--primary)', fontWeight: 800, cursor: 'pointer', marginTop: '16px', fontSize: '0.85rem' }}
                                                 >
-                                                    View Morer
+                                                    View More Activity
                                                 </button>
                                             )}
                                         </>
@@ -356,7 +372,7 @@ const AdminDashboard = () => {
                             </div>
 
                             {/* Tablet/Desktop Table */}
-                            <div style={{ overflowX: 'auto' }} className="hidden md:block no-scrollbar">
+                            <div style={{ overflowX: 'auto' }} className="desktop-only no-scrollbar">
                                 <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
                                     <thead>
                                         <tr>
@@ -408,7 +424,7 @@ const AdminDashboard = () => {
                             </div>
 
                             {/* Mobile List */}
-                            <div className="md:hidden flex flex-col gap-12">
+                            <div className="mobile-only flex-col-gap-4">
                                         {filteredUsers.map((u) => (
                                             <div key={u._id} style={{ padding: '20px', background: '#F8FAFC', borderRadius: '20px', border: '1px solid #EDF2F7' }}>
                                                 <div style={{ display: 'flex', gap: '14px', marginBottom: '16px' }}>
@@ -444,7 +460,7 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                            <div style={{ overflowX: 'auto' }} className="no-scrollbar">
+                            <div style={{ overflowX: 'auto' }} className="desktop-only no-scrollbar">
                                 <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
                                     <thead>
                                         <tr>
@@ -474,7 +490,7 @@ const AdminDashboard = () => {
                                                 <td style={{ padding: '16px 20px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
                                                     <p style={{ margin: 0, fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-muted)' }}>{new Date(w.createdAt).toLocaleDateString()}</p>
                                                 </td>
-                                                <td style={{ padding: '16px 20px', borderRadius: '0 16px 16px 0', border: '1px solid #F1F5F9', borderLeft: 'none' }}>
+                                                <td style={{ padding: '16px 20px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                         <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: w.referralCount > 0 ? 'var(--primary-glow)' : '#F1F5F9', color: w.referralCount > 0 ? 'var(--primary)' : '#94A3B8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900 }}>
                                                             {w.referralCount}
@@ -496,10 +512,155 @@ const AdminDashboard = () => {
                                     </tbody>
                                 </table>
                             </div>
+
+                            {/* Mobile list for Waitlist */}
+                            <div className="mobile-only flex-col-gap-4">
+                                {waitlist.filter(w => !searchTerm || w.name.toLowerCase().includes(searchTerm.toLowerCase()) || w.email.toLowerCase().includes(searchTerm.toLowerCase())).map((w) => (
+                                    <div key={w._id} style={{ padding: '20px', background: '#F8FAFC', borderRadius: '20px', border: '1px solid #EDF2F7' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                                            <div>
+                                                <p style={{ fontWeight: 800, color: 'var(--text)', margin: 0 }}>{w.name}</p>
+                                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>{w.email}</p>
+                                            </div>
+                                            <button 
+                                                onClick={() => handleDeleteClick(w._id, 'waitlist')}
+                                                style={{ padding: '8px', borderRadius: '10px', background: '#FEE2E2', border: 'none', color: '#EF4444' }}
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary)' }}>{w.industry}</span>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{w.whatsappNumber}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </motion.div>
                 )}
 
+                {activeTab === 'revenue' && (
+                    <motion.div key="revenue" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className="glass-card" style={{ padding: '32px 20px', background: 'white', border: '1px solid var(--border)', borderRadius: '32px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                                <h3 style={{ fontWeight: 900, fontSize: '1.4rem', color: 'var(--text)', margin: 0 }}>Subscription Revenue</h3>
+                                <div style={{ fontSize: '1rem', fontWeight: 900, color: '#10B981', background: '#ECFDF5', padding: '10px 20px', borderRadius: '100px' }}>
+                                    Lifetime: ₦{stats?.totalKrediblyRevenue?.toLocaleString()}
+                                </div>
+                            </div>
+
+                            <div style={{ overflowX: 'auto' }} className="desktop-only no-scrollbar">
+                                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
+                                    <thead>
+                                        <tr>
+                                            <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Business</th>
+                                            <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Plan</th>
+                                            <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Cycle</th>
+                                            <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Amount</th>
+                                            <th style={{ textAlign: 'left', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Date</th>
+                                            <th style={{ textAlign: 'right', padding: '12px 20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {payments.map((p) => (
+                                            <tr key={p._id} className="row-hover" style={{ background: 'white' }}>
+                                                <td style={{ padding: '16px 20px', borderRadius: '16px 0 0 16px', border: '1px solid #F1F5F9' }}>
+                                                    <p style={{ fontWeight: 800, margin: 0 }}>{p.businessId?.displayName || 'Merchant'}</p>
+                                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0 }}>{p.reference}</p>
+                                                </td>
+                                                <td style={{ padding: '16px 20px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
+                                                    <span style={{ textTransform: 'uppercase', fontWeight: 800, fontSize: '0.75rem', color: p.plan === 'chairman' ? '#8B5CF6' : 'var(--primary)' }}>{p.plan}</span>
+                                                </td>
+                                                <td style={{ padding: '16px 20px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
+                                                    <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{p.billingCycle}</span>
+                                                </td>
+                                                <td style={{ padding: '16px 20px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
+                                                    <p style={{ fontWeight: 800, margin: 0 }}>₦{p.amount.toLocaleString()}</p>
+                                                    {p.couponUsed && <p style={{ fontSize: '0.65rem', color: '#10B981', fontWeight: 800 }}>COUPON: {p.couponUsed}</p>}
+                                                </td>
+                                                <td style={{ padding: '16px 20px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
+                                                    <p style={{ fontSize: '0.8rem', fontWeight: 600 }}>{new Date(p.paidAt || p.createdAt).toLocaleDateString()}</p>
+                                                </td>
+                                                <td style={{ padding: '16px 20px', borderRadius: '0 16px 16px 0', border: '1px solid #F1F5F9', textAlign: 'right' }}>
+                                                    <span style={{ padding: '6px 12px', borderRadius: '100px', background: '#DCFCE7', color: '#15803D', fontSize: '0.7rem', fontWeight: 900 }}>SUCCESS</span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Mobile list for Revenue */}
+                            <div className="mobile-only flex-col-gap-4">
+                                {payments.map((p) => (
+                                    <div key={p._id} style={{ padding: '20px', background: '#F8FAFC', borderRadius: '20px', border: '1px solid #EDF2F7' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                            <div>
+                                                <p style={{ fontWeight: 800, color: 'var(--text)', margin: 0 }}>{p.businessId?.displayName || 'Merchant'}</p>
+                                                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0 }}>{p.reference}</p>
+                                            </div>
+                                            <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 900, background: '#DCFCE7', color: '#15803D' }}>SUCCESS</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                                            <div>
+                                                <p style={{ margin: 0, fontWeight: 900, fontSize: '1.1rem', color: 'var(--primary)' }}>₦{p.amount.toLocaleString()}</p>
+                                                <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{p.plan.toUpperCase()} • {p.billingCycle}</p>
+                                            </div>
+                                            <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>{new Date(p.paidAt || p.createdAt).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
+                {activeTab === 'coupons' && (
+                    <motion.div key="coupons" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className="glass-card" style={{ padding: '32px 20px', background: 'white', border: '1px solid var(--border)', borderRadius: '32px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                                <h3 style={{ fontWeight: 900, fontSize: '1.4rem', color: 'var(--text)', margin: 0 }}>Discount Engine</h3>
+                                <button className="btn-primary" onClick={() => setShowCouponModal(true)}>
+                                    Create New Coupon
+                                </button>
+                            </div>
+
+                            <div style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', display: 'grid', gap: '20px' }}>
+                                {coupons.map((c) => (
+                                    <div key={c._id} className="row-hover" style={{ padding: '24px', border: '1px solid #F1F5F9', borderRadius: '24px', background: 'white' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                <div style={{ padding: '8px 16px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '12px', border: '1px dashed var(--primary)' }}>
+                                                    <code style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--primary)', letterSpacing: '0.1em' }}>{c.code}</code>
+                                                </div>
+                                                <button onClick={() => handleDeleteClick(c._id, 'coupon')} style={{ background: '#FEF2F2', border: 'none', padding: '8px', borderRadius: '10px', color: '#EF4444', cursor: 'pointer' }}>
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                            <span style={{ padding: '4px 10px', borderRadius: '100px', background: c.isActive ? '#ECFDF5' : '#F1F5F9', color: c.isActive ? '#10B981' : '#64748B', fontSize: '0.75rem', fontWeight: 900 }}>
+                                                {c.isActive ? 'ACTIVE' : 'EXPIRED'}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                                            <div>
+                                                <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900 }}>{c.discountValue}{c.discountType === 'percentage' ? '%' : ' NGN'} OFF</p>
+                                                <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                                    Waitlist Only: {c.requiresWaitlist ? 'Yes' : 'No'}
+                                                </p>
+                                            </div>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800 }}>{c.usedCount} Uses</p>
+                                                <p style={{ margin: 0, fontSize: '0.65rem', color: 'var(--text-muted)' }}>Limit: {c.maxUses || '∞'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+                
                 {activeTab === 'tickets' && (
                     <motion.div key="tickets" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -574,7 +735,7 @@ const AdminDashboard = () => {
                                                         justifyContent: 'center', 
                                                         background: t.replyText?.trim() ? 'var(--primary)' : '#CBD5E1',
                                                         boxShadow: 'none'
-                                                    }}
+                                                     }}
                                                 >
                                                     <Zap size={18} fill="white" />
                                                 </button>
@@ -627,7 +788,9 @@ const AdminDashboard = () => {
                         <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 500 }}>
                             {deleteType === 'waitlist' 
                                 ? 'You are about to remove this entry from the waitlist. This action is irreversible.' 
-                                : 'CRITICAL: You are about to purge this user and ALL their business data (invoices, sales, logs). This cannot be undone.'}
+                                : deleteType === 'user' 
+                                ? 'CRITICAL: You are about to purge this user and ALL their business data. This cannot be undone.'
+                                : 'You are about to delete this discount code. It will no longer be valid for any merchant.'}
                         </p>
                         <div style={{ display: 'flex', gap: '12px' }}>
                             <button 
@@ -651,6 +814,74 @@ const AdminDashboard = () => {
                 </div>
             )}
 
+            {/* Coupon Creation Modal */}
+            {showCouponModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.15)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }} className="animate-fade-in">
+                    <div className="glass-card" style={{ padding: '32px', maxWidth: '500px', width: '100%', background: 'white', borderRadius: '28px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1E293B', letterSpacing: '-0.02em', margin: 0 }}>Create Discount Code</h3>
+                            <button onClick={() => setShowCouponModal(false)} style={{ background: '#F1F5F9', border: 'none', padding: '8px', borderRadius: '12px', cursor: 'pointer', color: '#64748B' }}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={async (e) => {
+                            e.preventDefault();
+                            const formData = new FormData(e.target);
+                            const data = {
+                                code: formData.get('code').toUpperCase(),
+                                discountType: 'percentage',
+                                discountValue: Number(formData.get('discount')),
+                                maxUses: Number(formData.get('limit')) || null,
+                                expiresAt: formData.get('expiry') || null,
+                                requiresWaitlist: formData.get('waitlistOnly') === 'on'
+                            };
+
+                            try {
+                                await axios.post(`${API_URL}/coupons/create`, data, { withCredentials: true });
+                                toast.success("Coupon Created Successfully");
+                                setShowCouponModal(false);
+                                fetchAdminData(false, true);
+                            } catch (err) {
+                                toast.error(err.response?.data?.message || "Failed to create coupon");
+                            }
+                        }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#64748B', marginBottom: '8px', textTransform: 'uppercase' }}>Coupon Code</label>
+                                    <input name="code" required placeholder="E.g. PIONEER50" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '1px solid #E2E8F0', outline: 'none', fontWeight: 600 }} />
+                                </div>
+                                
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#64748B', marginBottom: '8px', textTransform: 'uppercase' }}>Discount %</label>
+                                        <input name="discount" type="number" required min="1" max="100" placeholder="50" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '1px solid #E2E8F0', outline: 'none', fontWeight: 600 }} />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#64748B', marginBottom: '8px', textTransform: 'uppercase' }}>Usage Limit</label>
+                                        <input name="limit" type="number" placeholder="100" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '1px solid #E2E8F0', outline: 'none', fontWeight: 600 }} />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#64748B', marginBottom: '8px', textTransform: 'uppercase' }}>Expiry Date</label>
+                                    <input name="expiry" type="date" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '1px solid #E2E8F0', outline: 'none', fontWeight: 600 }} />
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#F8FAFC', padding: '16px', borderRadius: '16px' }}>
+                                    <input name="waitlistOnly" type="checkbox" id="waitlistOnly" style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+                                    <label htmlFor="waitlistOnly" style={{ fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', color: 'var(--text)' }}>Restrict to Founding Members (Waitlist)</label>
+                                </div>
+
+                                <button type="submit" className="btn-primary" style={{ width: '100%', padding: '16px' }}>
+                                    Generate Coupon
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             <style>{`
                 .skeleton {
                     background: linear-gradient(90deg, #F8FAFC 25%, #F1F5F9 50%, #F8FAFC 75%);
@@ -665,6 +896,17 @@ const AdminDashboard = () => {
                     background: #F8FAFC !important;
                 }
                 .no-scrollbar::-webkit-scrollbar { display: none; }
+                
+                .desktop-only { display: block; }
+                .mobile-only { display: none; }
+                .flex-col-gap-4 { display: flex; flex-direction: column; gap: 16px; }
+
+                @media (max-width: 768px) {
+                    .desktop-only { display: none; }
+                    .mobile-only { display: block; }
+                    .hidden-mobile { display: none !important; }
+                }
+
                 @media (max-width: 640px) {
                     .admin-container { padding: 40px 16px !important; }
                     .admin-actions-header { width: 100%; margin-top: 10px; }

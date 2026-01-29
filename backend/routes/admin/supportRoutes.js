@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const supportController = require("../../controllers/admin/supportController");
-const authMiddleware = require("../../utils/authMiddleware");
+const { protect } = require("../../utils/authMiddleware");
 const adminMiddleware = require("../../utils/adminMiddleware");
 
-router.use(authMiddleware);
+router.use(protect);
 
 // User routes
 router.post("/tickets", supportController.createTicket);

@@ -20,4 +20,14 @@ const authMiddleware = async (req, res, next) => {
     }
 };
 
-module.exports = authMiddleware;
+const protect = authMiddleware;
+
+const admin = (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        next();
+    } else {
+        res.status(403).json({ message: "Not authorized as an admin" });
+    }
+};
+
+module.exports = { protect, admin };

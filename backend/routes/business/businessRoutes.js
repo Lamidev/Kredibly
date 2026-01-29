@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const businessController = require("../../controllers/business/businessController");
-const authMiddleware = require("../../utils/authMiddleware");
+const { protect } = require("../../utils/authMiddleware");
 
-router.get("/profile", authMiddleware, businessController.getProfile);
-router.post("/profile", authMiddleware, businessController.updateProfile);
-router.get("/activity-logs", authMiddleware, businessController.getActivityLogs);
+router.get("/profile", protect, businessController.getProfile);
+router.post("/profile", protect, businessController.updateProfile);
+router.get("/activity-logs", protect, businessController.getActivityLogs);
 
 module.exports = router;

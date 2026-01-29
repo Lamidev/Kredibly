@@ -1,20 +1,16 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import CheckoutModal from '../../components/payment/CheckoutModal';
 import { toast } from 'sonner';
 import {
-    Bell,
     CreditCard,
     Shield,
     User,
     MessageCircle,
     Save,
-    Building,
-    Mail,
     Smartphone,
-    Camera,
     Upload,
     Zap,
-    ShieldCheck,
     Clock
 } from 'lucide-react';
 import axios from 'axios';
@@ -23,6 +19,8 @@ import { isValidNigerianPhone, formatPhoneForDB } from '../../utils/validation';
 const SettingsPage = () => {
     const { profile, updateProfile } = useAuth();
     const [saving, setSaving] = useState(false);
+    const [showCheckout, setShowCheckout] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState('oga');
     const [form, setForm] = useState({
         displayName: profile?.displayName || "",
         whatsappNumber: profile?.whatsappNumber || "",
@@ -403,16 +401,85 @@ const SettingsPage = () => {
                         </div>
                     </div>
 
-                    <div style={{ marginTop: '24px', textAlign: 'center' }}>
-                        <button 
-                            type="button"
-                            onClick={() => window.open('/pricing', '_blank')}
-                            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', textDecoration: 'underline' }}
-                        >
-                            View Plan Details & Pricing
-                        </button>
+                    <div style={{ marginTop: '32px' }}>
+                        <p style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textAlign: 'center', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Available Upgrades</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                            {profile?.plan !== 'oga' && profile?.plan !== 'chairman' && (
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedPlan('oga');
+                                        setShowCheckout(true);
+                                    }}
+                                    className="glass-card clickable-card"
+                                    style={{ padding: '20px', border: '1px solid var(--border)', background: 'white', cursor: 'pointer', textAlign: 'left' }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: 'var(--primary)' }}>OGA PLAN</span>
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>₦7,000/mo</span>
+                                    </div>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, fontWeight: 600 }}>Multi-device support & Automated Reminders.</p>
+                                </button>
+                            )}
+
+                            {profile?.plan !== 'chairman' && (
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedPlan('chairman');
+                                        setShowCheckout(true);
+                                    }}
+                                    className="glass-card clickable-card"
+                                    style={{ padding: '20px', border: '1px solid #E9D5FF', background: 'linear-gradient(135deg, white, #FAF5FF)', cursor: 'pointer', textAlign: 'left' }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#8B5CF6' }}>CHAIRMAN</span>
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>₦30,000/mo</span>
+                                    </div>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, fontWeight: 600 }}>Voice Sync, Custom Branding & Priority Kreddy.</p>
+                                </button>
+                            )}
+
+                            {profile?.plan !== 'hustler' && (
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedPlan(profile.plan);
+                                        setShowCheckout(true);
+                                    }}
+                                    style={{ padding: '20px', borderRadius: '20px', border: '1px dashed var(--border)', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.9rem' }}
+                                >
+                                    Renew Current Plan
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </section>
+
+                {showCheckout && (
+                    <CheckoutModal 
+                        plan={selectedPlan}
+                        billingCycle="monthly"
+                        userEmail={profile?.email}
+                        onClose={() => setShowCheckout(false)}
+                        onSuccess={async (reference, plan, billingCycle, couponCode) => {
+                            try {
+                                const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+                                await axios.post(`${API_URL}/payments/verify`, {
+                                    reference: reference.reference,
+                                    plan,
+                                    billingCycle,
+                                    couponCode
+                                }, { withCredentials: true });
+                                
+                                toast.success("Upgrade successful! Refeshing...");
+                                setTimeout(() => window.location.reload(), 2000);
+                            } catch (err) {
+                                toast.error("Payment verified but upgrade failed. Contact support.");
+                            }
+                        }}
+                    />
+                )}
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', paddingBottom: '40px' }}>
                     <button
