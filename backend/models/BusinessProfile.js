@@ -37,7 +37,8 @@ const BusinessProfileSchema = new mongoose.Schema({
     }],
     assistantSettings: {
         enableReminders: { type: Boolean, default: true },
-        reminderFrequency: { type: String, default: "daily" }
+        reminderFrequency: { type: String, default: "daily" },
+        reminderTemplate: { type: String, enum: ["friendly", "formal"], default: "friendly" }
     },
     bankDetails: {
         bankName: { type: String, default: "" },

@@ -27,7 +27,12 @@ exports.updateProfile = async (req, res) => {
             profile.phoneNumber = phoneNumber || profile.phoneNumber;
             profile.whatsappNumber = whatsappNumber ? cleanPhone(whatsappNumber) : profile.whatsappNumber;
             profile.address = address || profile.address;
-            if (assistantSettings) profile.assistantSettings = assistantSettings;
+            if (assistantSettings) {
+                profile.assistantSettings = {
+                    ...profile.assistantSettings,
+                    ...assistantSettings
+                };
+            }
             if (bankDetails) profile.bankDetails = bankDetails;
             if (staffNumbers) {
                 profile.staffNumbers = staffNumbers.map(n => cleanPhone(n)).filter(n => n);

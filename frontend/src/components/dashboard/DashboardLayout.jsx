@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import {
     LayoutDashboard,
@@ -339,31 +340,32 @@ const DashboardLayout = () => {
             <SupportHub />
 
             {/* Logout Confirmation Modal */}
-            {showLogoutConfirm && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.15)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }} className="animate-fade-in">
-                    <div className="glass-card" style={{ padding: '32px', maxWidth: '400px', width: '100%', background: 'white', borderRadius: '28px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
-                        <div style={{ background: '#FEF2F2', color: '#EF4444', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                            <LogOut size={28} />
+            {showLogoutConfirm && createPortal(
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20000, padding: '20px' }}>
+                    <div className="animate-scale-in" style={{ padding: '32px', maxWidth: '400px', width: '100%', background: 'white', borderRadius: '32px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+                        <div style={{ background: '#FEF2F2', color: '#EF4444', width: '72px', height: '72px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                            <LogOut size={32} />
                         </div>
-                        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1E293B', marginBottom: '12px', letterSpacing: '-0.02em' }}>Ready to Leave?</h3>
-                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 500 }}>You are about to sign out of your dashboard. Any unsaved changes might be lost.</p>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#0F172A', marginBottom: '12px', letterSpacing: '-0.02em' }}>Ready to Leave?</h3>
+                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>You are about to sign out of your dashboard. Any unsaved changes might be lost.</p>
                         <div style={{ display: 'flex', gap: '12px' }}>
                             <button 
                                 className="btn-secondary" 
-                                style={{ flex: 1, padding: '14px', borderRadius: '16px', fontWeight: 700, fontSize: '0.95rem' }} 
+                                style={{ flex: 1, padding: '16px', borderRadius: '16px', fontWeight: 800, fontSize: '0.95rem', border: '1px solid #E2E8F0' }} 
                                 onClick={() => setShowLogoutConfirm(false)}
                             >
                                 Stay Here
                             </button>
                             <button 
-                                style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '14px', borderRadius: '16px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} 
+                                style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '16px', borderRadius: '16px', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} 
                                 onClick={logout}
                             >
                                 Log Out
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

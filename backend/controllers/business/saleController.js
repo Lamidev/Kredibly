@@ -328,25 +328,59 @@ exports.sendReminder = async (req, res) => {
         let sale;
 
         if (id.match(/^[0-9a-fA-F]{24}$/)) {
-            sale = await Sale.findById(id);
+            sale = await Sale.findById(id).populate("businessId");
         } else {
-            sale = await Sale.findOne({ invoiceNumber: id.toUpperCase() });
+            sale = await Sale.findOne({ invoiceNumber: id.toUpperCase() }).populate("businessId");
         }
 
         if (!sale) return res.status(404).json({ message: "Sale record not found" });
+
+        const business = sale.businessId;
+        if (!business) return res.status(404).json({ message: "Business data missing" });
+
+        // Generate the payment link
+        const frontendUrl = process.env.FRONTEND_URL || 'https://usekredibly.com';
+        const paymentLink = `${frontendUrl}/i/${sale.invoiceNumber}`;
+        const balance = sale.totalAmount - sale.payments.reduce((sum, p) => sum + p.amount, 0);
+
+        // Template logic
+        let message = "";
+        const tone = business.assistantSettings?.reminderTemplate || "friendly";
+
+        if (tone === "formal") {
+            message = `*OFFICIAL PAYMENT NOTICE*\n\n` +
+                      `Dear ${sale.customerName},\n\n` +
+                      `This is a formal reminder regarding your outstanding balance with *${business.displayName}*.\n\n` +
+                      `*Invoice:* #${sale.invoiceNumber}\n` +
+                      `*Balance Due:* ₦${balance.toLocaleString()}\n\n` +
+                      `Please use the secure link below to clear this payment immediately:\n` +
+                      `${paymentLink}\n\n` +
+                      `Ignore if payment has already been made.`;
+        } else {
+            message = `Hi ${sale.customerName}! 👋\n\n` +
+                      `Friendly nudge from *${business.displayName}* regarding your invoice (#${sale.invoiceNumber}).\n\n` +
+                      `There's a remaining balance of *₦${balance.toLocaleString()}*. You can easily settle it here:\n` +
+                      `${paymentLink}\n\n` +
+                      `Thank you!`;
+        }
+
+        // Send to customer if phone exists
+        if (sale.customerPhone) {
+            await sendWhatsAppMessage(sale.customerPhone, message);
+        }
 
         sale.reminderSentAt = new Date();
         await sale.save();
         
         await logActivity({
-            businessId: sale.businessId,
+            businessId: business._id,
             action: "REMINDER_SENT",
             entityType: "SALE",
             entityId: sale._id,
-            details: `Sent payment reminder to ${sale.customerName}`
+            details: `Sent ${tone} payment reminder to ${sale.customerName}`
         });
 
-        res.status(200).json({ success: true, message: "Reminder logged. Link shared with customer." });
+        res.status(200).json({ success: true, message: "Reminder sent to customer via WhatsApp!" });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

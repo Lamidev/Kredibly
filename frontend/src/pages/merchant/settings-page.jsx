@@ -25,6 +25,7 @@ const SettingsPage = () => {
         displayName: profile?.displayName || "",
         whatsappNumber: profile?.whatsappNumber || "",
         enableReminders: profile?.assistantSettings?.enableReminders ?? true,
+        reminderTemplate: profile?.assistantSettings?.reminderTemplate || "friendly",
         bankName: profile?.bankDetails?.bankName || "",
         accountNumber: profile?.bankDetails?.accountNumber || "",
         accountName: profile?.bankDetails?.accountName || "",
@@ -78,7 +79,8 @@ const SettingsPage = () => {
                 displayName: form.displayName,
                 whatsappNumber: formatPhoneForDB(form.whatsappNumber),
                 assistantSettings: {
-                    enableReminders: form.enableReminders
+                    enableReminders: form.enableReminders,
+                    reminderTemplate: form.reminderTemplate
                 },
                 bankDetails: {
                     bankName: form.bankName,
@@ -213,6 +215,36 @@ const SettingsPage = () => {
                             </label>
                         </div>
                     </div>
+
+                    <div style={{ marginTop: '24px' }}>
+                        <p style={{ fontWeight: 700, color: '#1E293B', marginBottom: '12px', fontSize: '0.95rem' }}>Reminder Tone</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <button 
+                                onClick={() => setForm({ ...form, reminderTemplate: 'friendly' })}
+                                style={{ 
+                                    padding: '16px', borderRadius: '16px', border: '2px solid', 
+                                    borderColor: form.reminderTemplate === 'friendly' ? 'var(--primary)' : '#F1F5F9',
+                                    background: form.reminderTemplate === 'friendly' ? '#F5F3FF' : 'white',
+                                    textAlign: 'left', cursor: 'pointer', transition: '0.2s'
+                                }}
+                            >
+                                <p style={{ margin: 0, fontWeight: 800, color: form.reminderTemplate === 'friendly' ? 'var(--primary)' : '#475569', fontSize: '0.9rem' }}>Friendly Nudge</p>
+                                <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>Soft, professional reminder for early debts.</p>
+                            </button>
+                            <button 
+                                onClick={() => setForm({ ...form, reminderTemplate: 'formal' })}
+                                style={{ 
+                                    padding: '16px', borderRadius: '16px', border: '2px solid', 
+                                    borderColor: form.reminderTemplate === 'formal' ? 'var(--primary)' : '#F1F5F9',
+                                    background: form.reminderTemplate === 'formal' ? '#F5F3FF' : 'white',
+                                    textAlign: 'left', cursor: 'pointer', transition: '0.2s'
+                                }}
+                            >
+                                <p style={{ margin: 0, fontWeight: 800, color: form.reminderTemplate === 'formal' ? 'var(--primary)' : '#475569', fontSize: '0.9rem' }}>Formal Statement</p>
+                                <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>Strict & clear for overdue accounts.</p>
+                            </button>
+                        </div>
+                    </div>
                 </section>
 
                 {/* Staff Management Section */}
@@ -315,8 +347,8 @@ const SettingsPage = () => {
                 </section>
 
                 {/* Subscription & Plan Section */}
-                <section className="glass-card" style={{ padding: '32px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+                <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                         <div style={{ background: '#FFF1F2', color: '#E11D48', padding: '10px', borderRadius: '12px' }}>
                             <Zap size={24} />
                         </div>
@@ -340,7 +372,7 @@ const SettingsPage = () => {
                                         <span style={{ fontSize: '0.65rem', fontWeight: 900, background: '#4ADE80', color: '#064E3B', padding: '2px 8px', borderRadius: '6px' }}>★ FOUNDING MEMBER</span>
                                     )}
                                 </div>
-                                <h3 style={{ fontSize: '1.75rem', fontWeight: 950, margin: 0, letterSpacing: '-0.02em' }}>
+                                <h3 style={{ fontSize: 'clamp(1.25rem, 5vw, 1.75rem)', fontWeight: 950, margin: 0, letterSpacing: '-0.02em' }}>
                                     {profile?.plan?.toUpperCase() || 'HUSTLER'}
                                 </h3>
                             </div>
@@ -359,42 +391,38 @@ const SettingsPage = () => {
                             </div>
                         </div>
 
-                        <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                             <div style={{ 
                                 display: 'grid', 
-                                gridTemplateColumns: 'repeat(auto-fit, minmax(clamp(120px, 45%, 140px), 1fr))', 
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', 
                                 gap: '16px', 
                                 marginBottom: '24px' 
                             }}>
                                 <div>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>AI Intelligence</p>
-                                    <p style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? 'Basic AI' : 'Super Smart AI'}</p>
+                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>Intelligence</p>
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? 'Basic' : 'Genius'}</p>
                                 </div>
                                 <div>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>Monthly Records</p>
-                                    <p style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? '20' : 'Unlimited'}</p>
+                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>Records</p>
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? '20' : 'Unlimited'}</p>
                                 </div>
                                 <div>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>WhatsApp Limit</p>
-                                    <p style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? 'Standard' : profile?.plan === 'oga' ? '2,000/mo' : '10,000/mo'}</p>
+                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>Staff</p>
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? 'Owner Only' : profile?.plan === 'oga' ? 'Owner + 2' : 'Unlimited'}</p>
                                 </div>
                                 <div>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>Staff Limit</p>
-                                    <p style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? '1 (Owner)' : profile?.plan === 'oga' ? '3 (Owner + 2)' : 'Unlimited'}</p>
-                                </div>
-                                <div>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>Voice Sync</p>
-                                    <p style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'chairman' ? 'Enabled' : 'Disabled'}</p>
+                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>WhatsApp</p>
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? 'Standard' : profile?.plan === 'oga' ? '2,000/mo' : '10,000/mo'}</p>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <Clock size={16} />
-                                <p style={{ fontSize: '0.9rem', fontWeight: 600, margin: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Clock size={14} />
+                                <p style={{ fontSize: '0.8rem', fontWeight: 600, margin: 0, opacity: 0.9 }}>
                                     {profile?.planStatus === 'trialing' ? 
-                                        `Your free trial ends on ${new Date(profile?.trialExpiresAt).toLocaleDateString()}` :
+                                        `Free trial ends: ${new Date(profile?.trialExpiresAt).toLocaleDateString()}` :
                                         profile?.isFoundingMember ? 
-                                        `Pioneer period active until ${new Date(profile?.trialExpiresAt).toLocaleDateString()}` :
-                                        'Plan renews automatically per your billing cycle.'
+                                        `Pioneer active until: ${new Date(profile?.trialExpiresAt).toLocaleDateString()}` :
+                                        'Plan renews automatically.'
                                     }
                                 </p>
                             </div>
@@ -402,8 +430,8 @@ const SettingsPage = () => {
                     </div>
 
                     <div style={{ marginTop: '32px' }}>
-                        <p style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textAlign: 'center', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Available Upgrades</p>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#94A3B8', textAlign: 'center', marginBottom: '20px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Premium Upgrades</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(clamp(200px, 100%, 250px), 1fr))', gap: '16px' }}>
                             {profile?.plan !== 'oga' && profile?.plan !== 'chairman' && (
                                 <button 
                                     type="button"
@@ -412,13 +440,13 @@ const SettingsPage = () => {
                                         setShowCheckout(true);
                                     }}
                                     className="glass-card clickable-card"
-                                    style={{ padding: '20px', border: '1px solid var(--border)', background: 'white', cursor: 'pointer', textAlign: 'left' }}
+                                    style={{ padding: '24px', border: '1px solid var(--border)', background: 'white', cursor: 'pointer', textAlign: 'left', width: '100%' }}
                                 >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: 'var(--primary)' }}>OGA PLAN</span>
-                                        <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>₦7,000/mo</span>
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--primary)' }}>OGA PLAN</span>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0F172A' }}>₦7k/mo</span>
                                     </div>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, fontWeight: 600 }}>Multi-device support & Automated Reminders.</p>
+                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Multi-device support, Staff accounts & Smart Kreddy reminders.</p>
                                 </button>
                             )}
 
@@ -430,13 +458,13 @@ const SettingsPage = () => {
                                         setShowCheckout(true);
                                     }}
                                     className="glass-card clickable-card"
-                                    style={{ padding: '20px', border: '1px solid #E9D5FF', background: 'linear-gradient(135deg, white, #FAF5FF)', cursor: 'pointer', textAlign: 'left' }}
+                                    style={{ padding: '24px', border: '1px solid #E9D5FF', background: 'linear-gradient(135deg, white, #FAF5FF)', cursor: 'pointer', textAlign: 'left', width: '100%' }}
                                 >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#8B5CF6' }}>CHAIRMAN</span>
-                                        <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>₦30,000/mo</span>
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#8B5CF6' }}>CHAIRMAN</span>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0F172A' }}>₦30k/mo</span>
                                     </div>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, fontWeight: 600 }}>Voice Sync, Custom Branding & Priority Kreddy.</p>
+                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Voice Sync, Custom Branding, Global Exports & Priority Kreddy AI.</p>
                                 </button>
                             )}
 
