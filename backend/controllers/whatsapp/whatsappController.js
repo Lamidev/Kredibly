@@ -452,7 +452,11 @@ exports.handleIncoming = async (req, res) => {
             });
 
             if (saleCount >= 20) {
-                return await sendReply(from, "Oga, you've reached your free limit of 20 records this month! 📈 \n\nUpgrade to the *Oga Plan* for unlimited records and a smarter Kreddy. Visit your dashboard to upgrade!");
+                return await sendReply(from, `Wow, Oga! 📈 That's 20 sales recorded this month! Your business is moving fast. 
+
+To record this 21st sale and keep the momentum going, abeg upgrade to the *Oga Plan* now. No time to check time! 🚀 
+
+Upgrade here: ${APP_URL}/pricing`);
             }
         }
 

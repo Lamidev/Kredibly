@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import PublicNavbar from '../../components/public/PublicNavbar';
 import PublicFooter from '../../components/public/PublicFooter';
 import { motion } from 'framer-motion';
-import { Check, X, ArrowRight, Zap, HelpCircle } from 'lucide-react';
+import { Check, X, Zap, HelpCircle } from 'lucide-react';
 
 const PricingPage = () => {
     const navigate = useNavigate();

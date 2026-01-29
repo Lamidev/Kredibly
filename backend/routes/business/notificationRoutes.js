@@ -6,10 +6,10 @@ const {
     dismissNotification,
     clearAllNotifications
 } = require("../../controllers/business/notificationController");
-const authMiddleware = require("../../utils/authMiddleware");
+const { protect } = require("../../utils/authMiddleware");
 
 // All routes are protected
-router.use(authMiddleware);
+router.use(protect);
 
 router.get("/", getNotifications);
 router.delete("/clear-all", clearAllNotifications);

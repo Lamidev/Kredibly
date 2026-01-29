@@ -5,6 +5,7 @@ const ActivityLog = require("../../models/ActivityLog");
 const Waitlist = require("../../models/Waitlist");
 const Notification = require("../../models/Notification");
 const SupportTicket = require("../../models/SupportTicket");
+const Payment = require("../../models/Payment");
 
 exports.getGlobalStats = async (req, res) => {
     try {
@@ -12,16 +13,20 @@ exports.getGlobalStats = async (req, res) => {
         const totalBusinesses = await BusinessProfile.countDocuments();
         const totalSalesCount = await Sale.countDocuments();
 
-        // Aggregate total revenue across all sales
+        // 1. Merchant Platform Volume (Money flowing through merchants)
         const sales = await Sale.find({});
-        let totalRevenue = 0;
+        let totalPlatformVolume = 0;
         let totalOutstanding = 0;
 
         sales.forEach(s => {
             const paid = (s.payments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
-            totalRevenue += paid;
+            totalPlatformVolume += paid;
             totalOutstanding += Math.max(0, (s.totalAmount || 0) - paid);
         });
+
+        // 2. Kredibly Revenue (Subscription payments)
+        const allPayments = await Payment.find({ status: 'success' });
+        const totalKrediblyRevenue = allPayments.reduce((sum, p) => sum + p.amount, 0);
 
         // Get latest 50 activities across the entire platform
         const globalActivities = await ActivityLog.find({})
@@ -34,8 +39,9 @@ exports.getGlobalStats = async (req, res) => {
                 totalUsers,
                 totalBusinesses,
                 totalSalesCount,
-                totalRevenue,
-                totalOutstanding
+                totalPlatformVolume,
+                totalOutstanding,
+                totalKrediblyRevenue
             },
             activities: globalActivities
         });
@@ -105,6 +111,38 @@ exports.deleteUser = async (req, res) => {
         await User.findByIdAndDelete(id);
 
         res.status(200).json({ success: true, message: "User and all associated data purged successfully." });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.getCoupons = async (req, res) => {
+    try {
+        const Coupon = require("../../models/Coupon");
+        const coupons = await Coupon.find({}).sort({ createdAt: -1 });
+        res.status(200).json({ success: true, data: coupons });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.deleteCoupon = async (req, res) => {
+    try {
+        const Coupon = require("../../models/Coupon");
+        const { id } = req.params;
+        await Coupon.findByIdAndDelete(id);
+        res.status(200).json({ success: true, message: "Coupon deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.getPayments = async (req, res) => {
+    try {
+        const payments = await Payment.find({})
+            .populate('businessId', 'displayName')
+            .sort({ createdAt: -1 });
+        res.status(200).json({ success: true, data: payments });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
