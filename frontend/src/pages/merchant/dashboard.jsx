@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { KREDDY_CONFIG } from "../../config/kreddy";
 
+import { createPortal } from "react-dom";
+
 const Dashboard = () => {
     const { stats, sales, fetchSales, fetchStats, loading, deleteSale } = useSales();
     const { profile, updateProfile } = useAuth();
@@ -466,27 +468,28 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {deleteModal.show && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.15)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px' }}>
+            {deleteModal.show && createPortal(
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
                     <motion.div 
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        className="dashboard-glass" 
-                        style={{ padding: '40px', maxWidth: '440px', width: '90%', background: 'white', borderRadius: '32px', textAlign: 'center' }}
+                        className="animate-scale-in" 
+                        style={{ padding: '40px', maxWidth: '440px', width: '100%', background: 'white', borderRadius: '32px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}
                     >
-                        <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)', width: '72px', height: '72px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                        <div style={{ background: '#FEF2F2', color: '#EF4444', width: '72px', height: '72px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
                             <Trash2 size={32} />
                         </div>
-                        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '12px', letterSpacing: '-0.02em' }}>Delete this record?</h3>
-                        <p style={{ color: 'var(--text-muted)', marginBottom: '32px', lineHeight: 1.6, fontWeight: 500 }}>
-                            You are about to remove the entry for <b>{deleteModal.sale?.customerName}</b>. This action cannot be undone.
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#0F172A', marginBottom: '12px', letterSpacing: '-0.02em' }}>Delete Recording?</h3>
+                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>
+                            You are about to remove the entry for <b>{deleteModal.sale?.customerName}</b>. This will correct your balance but the action cannot be undone.
                         </p>
-                        <div style={{ display: 'flex', gap: '16px' }}>
-                            <button className="btn-secondary" style={{ flex: 1, padding: '16px', borderRadius: '16px', fontWeight: 800 }} onClick={() => setDeleteModal({ show: false, sale: null })}>Keep it</button>
-                            <button className="btn-primary" style={{ flex: 1, background: 'var(--error)', border: 'none', padding: '16px', borderRadius: '16px', fontWeight: 800 }} onClick={confirmDelete}>Delete Record</button>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button className="btn-secondary" style={{ flex: 1, padding: '16px', borderRadius: '16px', fontWeight: 800, fontSize: '0.95rem' }} onClick={() => setDeleteModal({ show: false, sale: null })}>Keep it</button>
+                            <button style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '16px', borderRadius: '16px', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} onClick={confirmDelete}>Delete Record</button>
                         </div>
                     </motion.div>
-                </div>
+                </div>,
+                document.body
             )}
 
             <style>{`

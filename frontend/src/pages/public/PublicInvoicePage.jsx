@@ -40,7 +40,7 @@ const PublicInvoicePage = () => {
     useEffect(() => {
         if (sale) {
             // Strategic SEO & Browser Tab updates
-            const pageTitle = `Invoice Issued: ₦${sale.totalAmount.toLocaleString()} from ${sale.business?.displayName}`;
+            const pageTitle = `Invoice Issued: ₦${sale.totalAmount.toLocaleString()} from ${sale.businessId?.displayName}`;
             document.title = pageTitle;
 
             // Attempt to update meta tags for smarter crawlers
@@ -50,7 +50,7 @@ const PublicInvoicePage = () => {
                 if (meta) meta.setAttribute('content', content);
             };
 
-            const invoiceDesc = `An official invoice has been issued to you by ${sale.business?.displayName} for ${sale.description}. Total: ₦${sale.totalAmount.toLocaleString()}.`;
+            const invoiceDesc = `An official invoice has been issued to you by ${sale.businessId?.displayName} for ${sale.description}. Total: ₦${sale.totalAmount.toLocaleString()}.`;
             
             updateMeta('og:title', pageTitle);
             updateMeta('og:description', invoiceDesc);
@@ -64,7 +64,9 @@ const PublicInvoicePage = () => {
     const fetchInvoice = async () => {
         try {
             const res = await axios.get(`${API_BASE}/payments/invoice/${id}`);
-            setSale(res.data);
+            if (res.data.success) {
+                setSale(res.data.data);
+            }
         } catch (err) {
             toast.error("Invoice not found or expired");
         } finally {
@@ -229,7 +231,7 @@ const PublicInvoicePage = () => {
                         <p style={{ color: '#94A3B8', fontWeight: 500, maxWidth: '320px', margin: '0 auto', fontSize: '14px', lineHeight: 1.6 }}>
                             {isPaid 
                                 ? `Invoice #${sale.invoiceNumber} has been fully settled. Thank you for your business!` 
-                                : `This payment for #${sale.invoiceNumber} is requested by ${sale.business?.displayName}.`
+                                : `This payment for #${sale.invoiceNumber} is requested by ${sale.businessId?.displayName}.`
                             }
                         </p>
                     </header>
@@ -240,16 +242,16 @@ const PublicInvoicePage = () => {
                         {/* Merchant Banner */}
                         <div style={{ padding: '32px', borderBottom: '1px solid #F8FAFC', display: 'flex', alignItems: 'center', gap: '20px' }}>
                              <div style={{ width: '64px', height: '64px', background: 'linear-gradient(to bottom right, #7C3AED, #4338CA)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', border: '2px solid white', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-                                {sale.business?.logoUrl ? <img src={sale.business.logoUrl} style={{ width: '100%', height: '100%', objectCover: 'cover' }} /> : <Building2 size={32} />}
+                                {sale.businessId?.logoUrl ? <img src={sale.businessId.logoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Building2 size={32} />}
                              </div>
                              <div style={{ flex: 1 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-                                    <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A' }}>{sale.business?.displayName}</h3>
+                                    <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A' }}>{sale.businessId?.displayName}</h3>
                                     <CheckCircle size={10} color="#3B82F6" style={{ fill: '#3B82F6' }} />
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <span style={{ fontSize: '9px', fontWeight: 900, background: '#F1F5F9', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', color: '#64748B' }}>Verified Merchant</span>
-                                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8' }}>• {sale.business?.entityType || 'Business'}</span>
+                                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8' }}>• {sale.businessId?.entityType || 'Business'}</span>
                                 </div>
                              </div>
                         </div>
@@ -352,11 +354,49 @@ const PublicInvoicePage = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <div style={{ background: '#10B981', padding: '32px', borderRadius: '24px', textAlign: 'center', color: 'white' }}>
-                                    <CheckCircle2 size={40} color="white" style={{ margin: '0 auto 16px' }} />
-                                    <h3 style={{ fontSize: '20px', fontWeight: 900 }}>Payment Successful!</h3>
-                                    <p style={{ fontSize: '12px', fontWeight: 700, opacity: 0.8, textTransform: 'uppercase', marginTop: '4px' }}>Ledger Updated Automatically</p>
-                                </div>
+                                <motion.div 
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    style={{ background: '#F8FAFC', borderRadius: '24px', overflow: 'hidden', border: '1px dashed #10B981' }}
+                                >
+                                    <div style={{ background: '#10B981', padding: '24px', textAlign: 'center', color: 'white' }}>
+                                        <CheckCircle2 size={32} color="white" style={{ margin: '0 auto 12px' }} />
+                                        <h3 style={{ fontSize: '18px', fontWeight: 900 }}>Payment Received!</h3>
+                                        <p style={{ fontSize: '10px', fontWeight: 700, opacity: 0.9, textTransform: 'uppercase' }}>Verified Official Receipt</p>
+                                    </div>
+                                    
+                                    <div style={{ padding: '24px' }}>
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <p style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Total Settled</p>
+                                            <p style={{ fontSize: '24px', fontWeight: 900, color: '#0F172A' }}>₦{sale.paidAmount.toLocaleString()}</p>
+                                        </div>
+
+                                        <div style={{ borderTop: '1px solid #EDF2F7', paddingTop: '16px', marginBottom: '24px' }}>
+                                            <p style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '12px' }}>Payment History</p>
+                                            {sale.payments.map((p, idx) => (
+                                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>{new Date(p.date).toLocaleDateString()}</span>
+                                                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>₦{p.amount.toLocaleString()}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <button 
+                                            onClick={() => {
+                                                const text = `Hello! I've just made a payment of ₦${sale.paidAmount.toLocaleString()} to ${sale.businessId?.displayName} for ${sale.description}. You can verify my receipt here: ${window.location.href}`;
+                                                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+                                                window.open(whatsappUrl, '_blank');
+                                            }}
+                                            style={{ width: '100%', padding: '16px', background: 'white', border: '2px solid #10B981', color: '#10B981', borderRadius: '12px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                        >
+                                            <Share2 size={18} /> Share Confirmation
+                                        </button>
+                                        
+                                        <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>
+                                            This link serves as your permanent proof of payment.
+                                        </p>
+                                    </div>
+                                </motion.div>
                             )}
 
                             {/* Powered by Kredibly Badge */}

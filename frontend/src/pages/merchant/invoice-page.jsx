@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
@@ -478,100 +479,121 @@ const InvoicePage = () => {
             </div>
 
             {/* Premium Overlays */}
-            <AnimatePresence>
-                {(showEditModal || showPaymentModal || deleteModal.show) && (
+            {showEditModal && createPortal(
+                <motion.div 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    exit={{ opacity: 0 }} 
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.5)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)', padding: '20px' }}
+                >
                     <motion.div 
-                        initial={{ opacity: 0 }} 
-                        animate={{ opacity: 1 }} 
-                        exit={{ opacity: 0 }} 
-                        style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.15)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)', padding: '20px' }}
+                        initial={{ scale: 0.9, opacity: 0 }} 
+                        animate={{ scale: 1, opacity: 1 }} 
+                        className="animate-scale-in" 
+                        style={{ background: 'white', padding: '40px', width: '100%', maxWidth: '440px', borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}
                     >
-                        <motion.div 
-                            initial={{ scale: 0.9, opacity: 0 }} 
-                            animate={{ scale: 1, opacity: 1 }} 
-                            className="dashboard-glass" 
-                            style={{ background: 'white', padding: '40px', width: '90%', maxWidth: '440px', borderRadius: '32px' }}
-                        >
-                            {showEditModal && (
-                                <>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
-                                        <h3 style={{ fontWeight: 950, fontSize: '1.6rem', letterSpacing: '-0.04em' }}>Edit Invoice</h3>
-                                        <button onClick={() => setShowEditModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} color="#94A3B8" /></button>
-                                    </div>
-                                    <form onSubmit={handleUpdateSale} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                                        <div>
-                                            <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: '8px', color: 'var(--text-muted)' }}>Customer Identity</label>
-                                            <input className="input-field" style={{ borderRadius: '16px', background: 'var(--background)' }} value={editForm.customerName} onChange={e => setEditForm({ ...editForm, customerName: e.target.value })} />
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: '8px', color: 'var(--text-muted)' }}>Memo Change</label>
-                                            <textarea className="input-field" style={{ minHeight: '120px', resize: 'none', borderRadius: '16px', background: 'var(--background)' }} value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} />
-                                        </div>
-                                        <button type="submit" disabled={processing} className="btn-primary" style={{ padding: '18px', borderRadius: '18px', fontWeight: 900 }}>
-                                            {processing ? 'Saving...' : 'Update Details'}
-                                        </button>
-                                    </form>
-                                </>
-                            )}
-
-                            {showPaymentModal && (
-                                <>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
-                                        <h3 style={{ fontWeight: 950, fontSize: '1.6rem', letterSpacing: '-0.04em' }}>Record Payment</h3>
-                                        <button onClick={() => setShowPaymentModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} color="#94A3B8" /></button>
-                                    </div>
-                                    <form onSubmit={handleAddPayment} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                                        <div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
-                                                <label style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Amount to Record (₦)</label>
-                                                <button 
-                                                    type="button" 
-                                                    onClick={() => setPaymentAmount(balance.toString())}
-                                                    style={{ background: 'var(--background)', border: 'none', padding: '4px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)', cursor: 'pointer' }}
-                                                >
-                                                    Full Payment
-                                                </button>
-                                            </div>
-                                            <input 
-                                                type="number" 
-                                                className="input-field" 
-                                                autoFocus 
-                                                placeholder="0.00"
-                                                value={paymentAmount} 
-                                                onChange={e => setPaymentAmount(e.target.value)} 
-                                                style={{ fontSize: '2rem', fontWeight: 950, borderRadius: '16px', background: 'var(--background)', color: 'var(--success)', border: 'none' }} 
-                                                required 
-                                            />
-                                            {paymentAmount && !isNaN(parseFloat(paymentAmount)) && (
-                                                <p style={{ marginTop: '12px', fontSize: '1rem', fontWeight: 800, color: 'var(--success)' }}>
-                                                    ₦{parseFloat(paymentAmount).toLocaleString()}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <button type="submit" disabled={processing} className="btn-primary" style={{ padding: '18px', borderRadius: '18px', fontWeight: 900 }}>
-                                            {processing ? 'Recording...' : 'Confirm Payment'}
-                                        </button>
-                                    </form>
-                                </>
-                            )}
-
-                            {deleteModal.show && (
-                                <div style={{ textAlign: 'center' }}>
-                                    <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)', width: '72px', height: '72px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                                        <Trash2 size={32} />
-                                    </div>
-                                    <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '12px' }}>Delete this invoice?</h3>
-                                    <p style={{ color: 'var(--text-muted)', marginBottom: '32px', lineHeight: 1.6 }}>This will permanently remove the transaction record.</p>
-                                    <div style={{ display: 'flex', gap: '16px' }}>
-                                        <button className="btn-secondary" style={{ flex: 1, padding: '16px', borderRadius: '16px', fontWeight: 800 }} onClick={() => setDeleteModal({ show: false, sale: null })}>Cancel</button>
-                                        <button className="btn-primary" style={{ flex: 1, background: 'var(--error)', border: 'none', padding: '16px', borderRadius: '16px', fontWeight: 800 }} onClick={confirmDelete}>Confirm Delete</button>
-                                    </div>
-                                </div>
-                            )}
-                        </motion.div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
+                            <h3 style={{ fontWeight: 950, fontSize: '1.6rem', letterSpacing: '-0.04em', color: '#0F172A' }}>Edit Invoice</h3>
+                            <button onClick={() => setShowEditModal(false)} style={{ background: '#F1F5F9', border: 'none', cursor: 'pointer', padding: '10px', borderRadius: '12px', display: 'flex' }}><X size={20} color="#64748B" /></button>
+                        </div>
+                        <form onSubmit={handleUpdateSale} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            <div>
+                                <label style={{ display: 'block', fontWeight: 800, fontSize: '0.85rem', marginBottom: '8px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Customer Identity</label>
+                                <input className="input-field" style={{ borderRadius: '16px', background: '#F8FAFC', fontWeight: 700 }} value={editForm.customerName} onChange={e => setEditForm({ ...editForm, customerName: e.target.value })} />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontWeight: 800, fontSize: '0.85rem', marginBottom: '8px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Memo Change</label>
+                                <textarea className="input-field" style={{ minHeight: '120px', resize: 'none', borderRadius: '16px', background: '#F8FAFC', fontWeight: 600 }} value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} />
+                            </div>
+                            <button type="submit" disabled={processing} className="btn-primary" style={{ padding: '18px', borderRadius: '18px', fontWeight: 900, fontSize: '1rem' }}>
+                                {processing ? 'Saving...' : 'Update Details'}
+                            </button>
+                        </form>
                     </motion.div>
-                )}
-            </AnimatePresence>
+                </motion.div>,
+                document.body
+            )}
+
+            {showPaymentModal && createPortal(
+                <motion.div 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    exit={{ opacity: 0 }} 
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.5)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)', padding: '20px' }}
+                >
+                    <motion.div 
+                        initial={{ scale: 0.9, opacity: 0 }} 
+                        animate={{ scale: 1, opacity: 1 }} 
+                        className="animate-scale-in" 
+                        style={{ background: 'white', padding: '40px', width: '100%', maxWidth: '440px', borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
+                            <h3 style={{ fontWeight: 950, fontSize: '1.6rem', letterSpacing: '-0.04em', color: '#0F172A' }}>Record Payment</h3>
+                            <button onClick={() => setShowPaymentModal(false)} style={{ background: '#F1F5F9', border: 'none', cursor: 'pointer', padding: '10px', borderRadius: '12px', display: 'flex' }}><X size={20} color="#64748B" /></button>
+                        </div>
+                        <form onSubmit={handleAddPayment} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
+                                    <label style={{ fontWeight: 800, fontSize: '0.85rem', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Amount to Record (₦)</label>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setPaymentAmount(balance.toString())}
+                                        style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '6px 14px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)', cursor: 'pointer' }}
+                                    >
+                                        Full Payment
+                                    </button>
+                                </div>
+                                <input 
+                                    type="number" 
+                                    className="input-field" 
+                                    autoFocus 
+                                    placeholder="0.00"
+                                    value={paymentAmount} 
+                                    onChange={e => setPaymentAmount(e.target.value)} 
+                                    style={{ fontSize: '2rem', fontWeight: 950, borderRadius: '16px', background: '#F8FAFC', color: 'var(--success)', border: '2px solid #E2E8F0' }} 
+                                    required 
+                                />
+                                {paymentAmount && !isNaN(parseFloat(paymentAmount)) && (
+                                    <p style={{ marginTop: '12px', fontSize: '1rem', fontWeight: 800, color: 'var(--success)' }}>
+                                        ₦{parseFloat(paymentAmount).toLocaleString()}
+                                    </p>
+                                )}
+                            </div>
+                            <button type="submit" disabled={processing} className="btn-primary" style={{ padding: '18px', borderRadius: '18px', fontWeight: 900, fontSize: '1rem' }}>
+                                {processing ? 'Recording...' : 'Confirm Payment'}
+                            </button>
+                        </form>
+                    </motion.div>
+                </motion.div>,
+                document.body
+            )}
+
+            {deleteModal.show && createPortal(
+                <motion.div 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    exit={{ opacity: 0 }} 
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.5)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)', padding: '20px' }}
+                >
+                    <motion.div 
+                        initial={{ scale: 0.9, opacity: 0 }} 
+                        animate={{ scale: 1, opacity: 1 }} 
+                        className="animate-scale-in" 
+                        style={{ background: 'white', padding: '40px', width: '100%', maxWidth: '440px', borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', textAlign: 'center' }}
+                    >
+                        <div style={{ background: '#FEF2F2', color: '#EF4444', width: '72px', height: '72px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                            <Trash2 size={32} />
+                        </div>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#0F172A', marginBottom: '12px', letterSpacing: '-0.02em' }}>Delete Invoice?</h3>
+                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>This will permanently remove the transaction record and cannot be undone.</p>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button className="btn-secondary" style={{ flex: 1, padding: '16px', borderRadius: '16px', fontWeight: 800, fontSize: '0.95rem', border: '1px solid #E2E8F0' }} onClick={() => setDeleteModal({ show: false, sale: null })}>Cancel</button>
+                            <button style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '16px', borderRadius: '16px', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} onClick={confirmDelete}>Delete Forever</button>
+                        </div>
+                    </motion.div>
+                </motion.div>,
+                document.body
+            )}
 
             <style>{`
                 @media (max-width: 1024px) {

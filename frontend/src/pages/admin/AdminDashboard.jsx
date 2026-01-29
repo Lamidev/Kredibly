@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import {
     Users,
@@ -750,42 +751,43 @@ const AdminDashboard = () => {
             </AnimatePresence>
 
             {/* Logout Confirmation Modal */}
-            {showLogoutConfirm && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.15)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }} className="animate-fade-in">
-                    <div className="glass-card" style={{ padding: '32px', maxWidth: '400px', width: '100%', background: 'white', borderRadius: '28px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
-                        <div style={{ background: '#FEF2F2', color: '#EF4444', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                            <LogOut size={28} />
+            {showLogoutConfirm && createPortal(
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
+                    <div className="animate-scale-in" style={{ padding: '32px', maxWidth: '400px', width: '100%', background: 'white', borderRadius: '32px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+                        <div style={{ background: '#FEF2F2', color: '#EF4444', width: '72px', height: '72px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                            <LogOut size={32} />
                         </div>
-                        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1E293B', marginBottom: '12px', letterSpacing: '-0.02em' }}>Ready to Leave?</h3>
-                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 500 }}>You are about to sign out of the founder's dashboard. Ensure all sensitive data is synced.</p>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#0F172A', marginBottom: '12px', letterSpacing: '-0.02em' }}>Ready to Leave?</h3>
+                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>You are about to sign out of the founder's dashboard. Ensure all sensitive data is synced.</p>
                         <div style={{ display: 'flex', gap: '12px' }}>
                             <button 
                                 className="btn-secondary" 
-                                style={{ flex: 1, padding: '14px', borderRadius: '16px', fontWeight: 700, fontSize: '0.95rem', background: '#F8FAFC', border: '1px solid #E2E8F0', cursor: 'pointer' }} 
+                                style={{ flex: 1, padding: '16px', borderRadius: '16px', fontWeight: 800, fontSize: '0.95rem', background: '#F8FAFC', border: '1px solid #E2E8F0', cursor: 'pointer' }} 
                                 onClick={() => setShowLogoutConfirm(false)}
                             >
                                 Stay Here
                             </button>
                             <button 
-                                style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '14px', borderRadius: '16px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} 
+                                style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '16px', borderRadius: '16px', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} 
                                 onClick={logout}
                             >
                                 Log Out
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* Delete Confirmation Modal */}
-            {showDeleteConfirm && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.15)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }} className="animate-fade-in">
-                    <div className="glass-card" style={{ padding: '32px', maxWidth: '400px', width: '100%', background: 'white', borderRadius: '28px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
-                        <div style={{ background: '#FEF2F2', color: '#EF4444', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                            <Trash2 size={28} />
+            {showDeleteConfirm && createPortal(
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
+                    <div className="animate-scale-in" style={{ padding: '32px', maxWidth: '400px', width: '100%', background: 'white', borderRadius: '32px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+                        <div style={{ background: '#FEF2F2', color: '#EF4444', width: '72px', height: '72px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                            <Trash2 size={32} />
                         </div>
-                        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1E293B', marginBottom: '12px', letterSpacing: '-0.02em' }}>Confirm Deletion?</h3>
-                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 500 }}>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#0F172A', marginBottom: '12px', letterSpacing: '-0.02em' }}>Confirm Deletion?</h3>
+                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>
                             {deleteType === 'waitlist' 
                                 ? 'You are about to remove this entry from the waitlist. This action is irreversible.' 
                                 : deleteType === 'user' 
@@ -795,7 +797,7 @@ const AdminDashboard = () => {
                         <div style={{ display: 'flex', gap: '12px' }}>
                             <button 
                                 className="btn-secondary" 
-                                style={{ flex: 1, padding: '14px', borderRadius: '16px', fontWeight: 700, fontSize: '0.95rem', background: '#F8FAFC', border: '1px solid #E2E8F0', cursor: 'pointer' }} 
+                                style={{ flex: 1, padding: '16px', borderRadius: '16px', fontWeight: 800, fontSize: '0.95rem', background: '#F8FAFC', border: '1px solid #E2E8F0', cursor: 'pointer' }} 
                                 onClick={() => {
                                     setShowDeleteConfirm(false);
                                     setItemToDelete(null);
@@ -804,23 +806,24 @@ const AdminDashboard = () => {
                                 Cancel
                             </button>
                              <button 
-                                style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '14px', borderRadius: '16px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} 
+                                style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '16px', borderRadius: '16px', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} 
                                 onClick={confirmDelete}
                              >
                                 {deleteType === 'user' ? 'Purge User' : 'Delete Forever'}
                              </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* Coupon Creation Modal */}
-            {showCouponModal && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.15)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }} className="animate-fade-in">
-                    <div className="glass-card" style={{ padding: '32px', maxWidth: '500px', width: '100%', background: 'white', borderRadius: '28px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+            {showCouponModal && createPortal(
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
+                    <div className="animate-scale-in" style={{ padding: '32px', maxWidth: '500px', width: '100%', background: 'white', borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1E293B', letterSpacing: '-0.02em', margin: 0 }}>Create Discount Code</h3>
-                            <button onClick={() => setShowCouponModal(false)} style={{ background: '#F1F5F9', border: 'none', padding: '8px', borderRadius: '12px', cursor: 'pointer', color: '#64748B' }}>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#0F172A', letterSpacing: '-0.02em', margin: 0 }}>Create Discount</h3>
+                            <button onClick={() => setShowCouponModal(false)} style={{ background: '#F1F5F9', border: 'none', padding: '10px', borderRadius: '12px', cursor: 'pointer', color: '#64748B', display: 'flex' }}>
                                 <X size={20} />
                             </button>
                         </div>
@@ -848,38 +851,33 @@ const AdminDashboard = () => {
                         }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#64748B', marginBottom: '8px', textTransform: 'uppercase' }}>Coupon Code</label>
-                                    <input name="code" required placeholder="E.g. PIONEER50" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '1px solid #E2E8F0', outline: 'none', fontWeight: 600 }} />
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: '#475569', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Coupon Code</label>
+                                    <input name="code" className="input-field" placeholder="e.g. WELCOME100" required style={{ background: '#F8FAFC', fontWeight: 700 }} />
                                 </div>
-                                
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                                     <div>
-                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#64748B', marginBottom: '8px', textTransform: 'uppercase' }}>Discount %</label>
-                                        <input name="discount" type="number" required min="1" max="100" placeholder="50" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '1px solid #E2E8F0', outline: 'none', fontWeight: 600 }} />
+                                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: '#475569', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Discount (%)</label>
+                                        <input name="discount" type="number" className="input-field" placeholder="10" required style={{ background: '#F8FAFC', fontWeight: 700 }} />
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#64748B', marginBottom: '8px', textTransform: 'uppercase' }}>Usage Limit</label>
-                                        <input name="limit" type="number" placeholder="100" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '1px solid #E2E8F0', outline: 'none', fontWeight: 600 }} />
+                                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: '#475569', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Max Uses</label>
+                                        <input name="limit" type="number" className="input-field" placeholder="Unlimited" style={{ background: '#F8FAFC', fontWeight: 700 }} />
                                     </div>
                                 </div>
-
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#64748B', marginBottom: '8px', textTransform: 'uppercase' }}>Expiry Date</label>
-                                    <input name="expiry" type="date" style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '1px solid #E2E8F0', outline: 'none', fontWeight: 600 }} />
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: '#475569', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Expiration Date</label>
+                                    <input name="expiry" type="date" className="input-field" style={{ background: '#F8FAFC', fontWeight: 700 }} />
                                 </div>
-
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#F8FAFC', padding: '16px', borderRadius: '16px' }}>
-                                    <input name="waitlistOnly" type="checkbox" id="waitlistOnly" style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
-                                    <label htmlFor="waitlistOnly" style={{ fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', color: 'var(--text)' }}>Restrict to Founding Members (Waitlist)</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px', background: '#F0F9FF', borderRadius: '16px', border: '1px solid #BAE6FD' }}>
+                                    <input type="checkbox" name="waitlistOnly" id="waitlistOnly" style={{ width: '18px', height: '18px' }} />
+                                    <label htmlFor="waitlistOnly" style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0369A1' }}>Only for Waitlisted Users</label>
                                 </div>
-
-                                <button type="submit" className="btn-primary" style={{ width: '100%', padding: '16px' }}>
-                                    Generate Coupon
-                                </button>
+                                <button type="submit" className="btn-primary" style={{ height: '56px', borderRadius: '16px', fontWeight: 900, fontSize: '1rem', marginTop: '8px' }}>Create Coupon</button>
                             </div>
                         </form>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             <style>{`
