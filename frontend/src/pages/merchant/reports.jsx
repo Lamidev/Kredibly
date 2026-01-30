@@ -85,7 +85,7 @@ const ReportsPage = () => {
                 </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '32px' }}>
                 
                 {/* VIP Customers */}
                 <div className="dashboard-glass" style={{ padding: '32px', background: 'white', borderRadius: '32px', border: '1px solid var(--border)' }}>
