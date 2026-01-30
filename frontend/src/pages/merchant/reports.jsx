@@ -48,7 +48,8 @@ const ReportsPage = () => {
             await axios.post(`${API_URL}/sales/${sale._id}/remind`, {}, { withCredentials: true });
             
             // Construct the message
-            const shareUrl = `${API_URL}/payments/share/${sale.invoiceNumber}`;
+            const frontendUrl = window.location.origin;
+            const shareUrl = `${frontendUrl}/i/${sale.invoiceNumber}`;
             const balance = sale.totalAmount - sale.payments.reduce((sum, p) => sum + p.amount, 0);
             const tone = profile?.assistantSettings?.reminderTemplate || 'friendly';
             let text = "";
@@ -141,10 +142,10 @@ const ReportsPage = () => {
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {debtors.map((d, i) => (
-                                <div key={i} style={{ padding: '16px', borderRadius: '20px', background: '#FEF2F2', border: '1px solid #FEE2E2', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                                <div key={i} style={{ padding: '16px', borderRadius: '20px', background: '#FEF2F2', border: '1px solid #FEE2E2', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div>
                                         <p style={{ margin: 0, fontWeight: 800, color: '#991B1B', fontSize: '0.9rem' }}>{d.customerName}</p>
-                                        <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#B91C1C' }}>Owes: ₦{d.balance.toLocaleString()}</p>
+                                        <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#B91C1C', fontWeight: 700 }}>Owes: ₦{d.balance.toLocaleString()}</p>
                                     </div>
                                     <button 
                                         onClick={() => handleReminder(d)}

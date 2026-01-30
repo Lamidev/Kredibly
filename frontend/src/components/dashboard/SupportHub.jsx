@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
     MessageSquare,
     MessagesSquare,
@@ -171,8 +172,8 @@ const SupportHub = () => {
         }
     };
 
-    return (
-        <div style={{ position: 'fixed', bottom: '30px', right: '30px', zIndex: 3000 }}>
+    return createPortal(
+        <div style={{ position: 'fixed', bottom: '30px', right: '30px', zIndex: 10000 }}>
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -530,7 +531,8 @@ const SupportHub = () => {
                     }
                 }
             `}</style>
-        </div>
+        </div>,
+        document.body
     );
 };
 
