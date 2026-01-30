@@ -26,6 +26,12 @@ import SettingsPage from "./pages/merchant/settings-page";
 import ProofsPage from "./pages/merchant/proofs";
 import ReportsPage from "./pages/merchant/reports";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminMerchants from "./pages/admin/AdminMerchants";
+import AdminWaitlist from "./pages/admin/AdminWaitlist";
+import AdminSupport from "./pages/admin/AdminSupport";
+import AdminRevenue from "./pages/admin/AdminRevenue";
+import AdminCoupons from "./pages/admin/AdminCoupons";
+import AdminLayout from "./components/admin/AdminLayout";
 
 import DashboardLayout from "./components/dashboard/DashboardLayout";
 
@@ -90,11 +96,17 @@ const App = () => {
           element={user ? (user.role === 'admin' ? <Navigate to="/admin" /> : (!profile ? <Onboarding /> : <Navigate to="/dashboard" />)) : <Navigate to="/auth/login" />}
         />
 
-        {/* Admin Route - Restricted to Founders */}
+        {/* Admin Routes - Restricted to Founders */}
         <Route
-          path="/admin"
-          element={user && user.role === 'admin' ? <AdminDashboard /> : (profile ? <Navigate to="/dashboard" /> : <Navigate to="/onboarding" />)}
-        />
+          element={user && user.role === 'admin' ? <AdminLayout /> : <Navigate to={getHomeRedirect()} />}
+        >
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/merchants" element={<AdminMerchants />} />
+          <Route path="/admin/waitlist" element={<AdminWaitlist />} />
+          <Route path="/admin/support" element={<AdminSupport />} />
+          <Route path="/admin/revenue" element={<AdminRevenue />} />
+          <Route path="/admin/coupons" element={<AdminCoupons />} />
+        </Route>
 
         {/* Default Catch-all */}
         <Route path="*" element={<Navigate to="/" />} />

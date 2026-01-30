@@ -10,11 +10,13 @@ router.post("/migrate-invoices", protect, saleController.migrateInvoices);
 router.post("/", protect, saleController.createSale);
 router.get("/", protect, saleController.getSales);
 router.get("/dashboard-stats", protect, saleController.getDashboardStats);
+router.get("/analytics", protect, saleController.getAnalytics);
 
 // Parameterized routes
 router.get("/:id", saleController.getSale); // Publicly accessible for invoice page
 router.put("/:id", protect, saleController.updateSale);
 router.post("/:id/payment", protect, saleController.addPayment);
+router.post("/:id/track-view", saleController.trackView);
 router.post("/:id/confirm", saleController.confirmSale); // Publicly accessible
 router.post("/:id/share-email", protect, saleController.shareSaleByEmail);
 router.post("/:id/remind", protect, saleController.sendReminder);

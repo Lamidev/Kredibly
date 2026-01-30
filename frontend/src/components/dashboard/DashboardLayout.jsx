@@ -112,8 +112,8 @@ const DashboardLayout = () => {
 
     const navItems = [
         { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, end: true },
-        { label: 'Invoices', path: '/sales', icon: FileText, activeIfMatch: ['/sales'] },
-        { label: 'Debtors', path: '/debtors', icon: Users, activeIfMatch: ['/debtors'] },
+        { label: 'Ledger (Sales)', path: '/sales', icon: FileText, activeIfMatch: ['/sales'] },
+        { label: 'Money Outside', path: '/debtors', icon: Users, activeIfMatch: ['/debtors'] },
         { label: 'Reports', path: '/reports', icon: BarChart3 },
         { label: 'Verifiable Proofs', path: '/proofs', icon: ShieldCheck },
     ];

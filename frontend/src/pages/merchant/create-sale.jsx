@@ -37,7 +37,7 @@ const CreateSale = () => {
                 amountPaid: parseFloat(formData.amountPaid) || 0
             });
             toast.success("Transaction Secured! 🚀");
-            navigate(`/invoice/${res.data._id}`);
+            navigate(`/dashboard/invoice/${res.data.invoiceNumber}`, { state: { showSuccessModal: true } }); // Redirect with success modal trigger
         } catch (err) {
             toast.error("Failed to commit transaction to ledger");
         } finally {

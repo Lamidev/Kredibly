@@ -10,7 +10,8 @@ const BusinessProfileSchema = new mongoose.Schema({
     displayName: {
         type: String,
         required: [true, "Display name is required (name shown on invoices)"],
-        trim: true
+        trim: true,
+        index: true
     },
     entityType: {
         type: String,
@@ -29,7 +30,8 @@ const BusinessProfileSchema = new mongoose.Schema({
     phoneNumber: String,
     whatsappNumber: {
         type: String,
-        trim: true
+        trim: true,
+        index: true
     },
     staffNumbers: [{
         type: String,
@@ -77,8 +79,18 @@ const BusinessProfileSchema = new mongoose.Schema({
         type: Date,
         default: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days trial
     },
-    discountActiveUntil: {
-        type: Date
+    // Pilot Strategy: Usage & Success Tracking
+    usageCredits: {
+        type: Number,
+        default: 100 // Starting credits for trial
+    },
+    isSuccessBased: {
+        type: Boolean,
+        default: false // Whether they pay a commission on recovered debt
+    },
+    successFeePercentage: {
+        type: Number,
+        default: 5 // Default 5% success fee
     },
     createdAt: {
         type: Date,

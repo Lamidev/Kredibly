@@ -6,6 +6,7 @@ const SupportTicket = require("../../models/SupportTicket");
 const axios = require("axios");
 const { logActivity } = require("../../utils/activityLogger");
 const { processMessageWithAI } = require("../../utils/aiService");
+const { logUsage } = require("../../utils/usageTracker");
 
 // Duplicate Shield: Store message IDs to prevent double-processing (cleared every 10 mins)
 const processedMessages = new Set();
@@ -59,10 +60,10 @@ const extractInfoRobust = (text, context = {}) => {
             if (unit.startsWith("hour")) date.setHours(date.getHours() + val);
             result.data.dueDate = date;
         }
+    } else if (lower.includes(" paid") || lower.includes(" pay") || lower.includes(" brought") || lower.includes(" sent") || lower.includes("received") || lower.includes("collect")) {
+        result.intent = "update_record";
     } else if (lower.includes("sold") || lower.includes("selling") || lower.includes("sale") || lower.includes("record")) {
         result.intent = "create_sale";
-    } else if (lower.includes(" paid") || lower.includes(" pay") || lower.includes(" brought") || lower.includes(" sent") || lower.includes("received")) {
-        result.intent = "update_record";
     }
 
     // 2. Extract Amounts (handle 10k, 10000, 245k)
@@ -131,7 +132,9 @@ const extractInfoRobust = (text, context = {}) => {
         } else {
             result.data.reply = `Oshey! 🥳 I've spotted the *₦${amounts[0]?.toLocaleString()}* for *${result.data.customerName}*. Making I update the record sharp-sharp? (Reply Yes/No)`;
         }
-    } else if (result.intent === "create_sale" && result.data.totalAmount > 0) {
+        if (result.data.item === "Item" || !result.data.item) {
+            result.data.item = "Purchase"; // Cleaner default
+        }
         const lines = [
             `I catch the work! 🛡️ Recording *${result.data.item}* for *${result.data.customerName}*.`,
             `Total: *₦${result.data.totalAmount.toLocaleString()}*`,
@@ -318,6 +321,10 @@ const sendReply = async (to, text) => {
                 headers: { Authorization: `Bearer ${accessToken}` },
             }
         );
+
+        // LOG USAGE (Async, don't wait for it)
+        logUsage("whatsapp").catch(e => console.error("Logger fail:", e));
+
     } catch (error) {
         console.error("WhatsApp Send Error:", error.response?.data || error.message);
     }
@@ -604,11 +611,19 @@ Upgrade here: ${APP_URL}/pricing`);
                         await WhatsAppSession.deleteOne({ _id: session._id });
 
                         const sale = await Sale.findById(saleId);
+                        
+                        // ✅ SAFETY CHECK: Don't send reminders for fully paid debts
+                        if (sale && sale.status === 'paid') {
+                            return await sendReply(from, `🎉 *Good News!* \n\n*${customerName}* has already cleared this debt! No reminder needed. Keep winning! 🥂`);
+                        }
+                        
                         if (sale && sale.customerPhone) {
                             await sendReply(sale.customerPhone, debtorMsg);
                             return await sendReply(from, `✅ *Sent!* \n\nI've forwarded the reminder link directly to *${customerName}* on WhatsApp. 🚀`);
-                        } else {
+                        } else if (sale) {
                             return await sendReply(from, `📋 *Copy & Forward this to ${customerName}:* \n\n_"${debtorMsg}"_\n\n(I couldn't send it automatically because I don't have their WhatsApp number in my records yet)`);
+                        } else {
+                            return await sendReply(from, `🤔 I couldn't locate that record anymore. It might have been deleted.`);
                         }
                     }
                 }
@@ -863,7 +878,7 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
                 const newSale = new Sale({
                     businessId: profile._id,
                     customerName: customerName || (session?.data?.customerName) || "Customer",
-                    description: item || (session?.data?.description) || text,
+                    description: item && item !== "Item" ? item : "Purchase recorded via WhatsApp",
                     totalAmount: totalAmount,
                     payments: [{ amount: paidAmount || 0, method: "WhatsApp" }],
                     dueDate: dueDate && !isNaN(new Date(dueDate).getTime()) ? new Date(dueDate) : undefined,

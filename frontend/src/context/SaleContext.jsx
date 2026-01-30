@@ -7,6 +7,7 @@ const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api"
 export const SaleProvider = ({ children }) => {
     const [sales, setSales] = useState([]);
     const [stats, setStats] = useState(null);
+    const [analytics, setAnalytics] = useState(null);
     const [loading, setLoading] = useState(false);
 
     const fetchSales = async () => {
@@ -25,6 +26,15 @@ export const SaleProvider = ({ children }) => {
         try {
             const res = await axios.get(`${API_URL}/sales/dashboard-stats`, { withCredentials: true });
             if (res.data.success) setStats(res.data.data);
+        } catch (err) {
+            // Silently fail
+        }
+    };
+
+    const fetchAnalytics = async () => {
+        try {
+            const res = await axios.get(`${API_URL}/sales/analytics`, { withCredentials: true });
+            if (res.data.success) setAnalytics(res.data.data);
         } catch (err) {
             // Silently fail
         }
@@ -96,7 +106,7 @@ export const SaleProvider = ({ children }) => {
 
     return (
         <SaleContext.Provider value={{
-            sales, stats, loading, fetchSales, fetchStats, createSale, addPayment, updateSale, deleteSale, migrateInvoices
+            sales, stats, analytics, loading, fetchSales, fetchStats, fetchAnalytics, createSale, addPayment, updateSale, deleteSale, migrateInvoices
         }}>
             {children}
         </SaleContext.Provider>

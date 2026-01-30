@@ -52,7 +52,10 @@ const SalesList = ({ initialFilter }) => {
             if (filterStatus === "all") {
                 matchesStatus = true;
             } else if (filterStatus === "pending" || filterStatus === "outstanding") {
-                matchesStatus = sale.status === "unpaid" || sale.status === "partial";
+                // Strict check: Status is NOT 'paid' AND Balance > 0
+                const paid = sale.payments ? sale.payments.reduce((sum, p) => sum + p.amount, 0) : 0;
+                const balance = sale.totalAmount - paid;
+                matchesStatus = sale.status !== 'paid' && balance > 0;
             } else if (filterStatus === "revenue") {
                 matchesStatus = sale.status === "paid" || sale.status === "partial";
             } else {
@@ -220,9 +223,12 @@ const SalesList = ({ initialFilter }) => {
                                         {sale.status === 'paid' ? <CheckCircle size={20} strokeWidth={2.5} /> : <Clock size={20} strokeWidth={2.5} />}
                                     </div>
                                     <div style={{ overflow: 'hidden' }}>
-                                        <p style={{ fontWeight: 800, color: 'var(--text)', fontSize: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {sale.customerName || 'Standard Sale'}
-                                        </p>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <p style={{ fontWeight: 800, color: 'var(--text)', fontSize: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0 }}>
+                                                {sale.customerName || 'Standard Sale'}
+                                            </p>
+                                            {sale.viewed && <span title="Viewed by customer" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: 'var(--primary)', fontWeight: 800, background: '#F3E8FF', padding: '2px 6px', borderRadius: '4px' }}>VIEWED</span>}
+                                        </div>
                                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {sale.description}
                                         </p>
@@ -295,7 +301,10 @@ const SalesList = ({ initialFilter }) => {
                                             {sale.status === 'paid' ? <CheckCircle size={18} /> : <Clock size={18} />}
                                         </div>
                                         <div>
-                                            <p style={{ fontWeight: 800, color: 'var(--text)', fontSize: '1rem', margin: 0 }}>{sale.customerName || 'Standard Sale'}</p>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <p style={{ fontWeight: 800, color: 'var(--text)', fontSize: '1rem', margin: 0 }}>{sale.customerName || 'Standard Sale'}</p>
+                                                {sale.viewed && <span style={{ fontSize: '9px', color: 'var(--primary)', fontWeight: 800, background: '#F3E8FF', padding: '2px 4px', borderRadius: '4px' }}>VIEWED</span>}
+                                            </div>
                                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, margin: 0 }}>#{sale.invoiceNumber}</p>
                                         </div>
                                     </div>

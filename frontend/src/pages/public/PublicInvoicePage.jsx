@@ -58,6 +58,11 @@ const PublicInvoicePage = () => {
             updateMeta('twitter:title', pageTitle);
             updateMeta('twitter:description', invoiceDesc);
             updateMeta('twitter:image', 'https://usekredibly.com/og-receipt-preview.png');
+
+            // Track View (Internal)
+            if (!sale.viewed) {
+                axios.post(`${API_BASE}/sales/${sale._id}/track-view`).catch(() => {});
+            }
         }
     }, [sale]);
 
@@ -137,10 +142,21 @@ const PublicInvoicePage = () => {
             callback: function (response) {
                 toast.success("Payment Received! Updating ledger...");
                 setVerifying(true);
-                setTimeout(() => {
-                    fetchInvoice();
-                    setVerifying(false);
-                }, 3000);
+                
+                // Polling for the update (Check every 2s for 10s max)
+                let attempts = 0;
+                const pollInterval = setInterval(async () => {
+                    attempts++;
+                    const res = await axios.get(`${API_BASE}/payments/invoice/${id}`);
+                    const updatedSale = res.data.data;
+                    const newBalance = updatedSale.totalAmount - updatedSale.paidAmount;
+                    
+                    if (newBalance < balance || updatedSale.status === 'paid' || attempts >= 5) {
+                        clearInterval(pollInterval);
+                        setSale(updatedSale);
+                        setVerifying(false);
+                    }
+                }, 2000);
             },
             onClose: function () {
                 toast.info("Payment window closed.");
@@ -182,24 +198,88 @@ const PublicInvoicePage = () => {
     const isDebtRecovery = !isPaid && (sale.status === 'partial' || isOverdue);
 
     // STYLE OBJECTS FOR PURE CSS
-    const containerStyle = { minHeight: '100vh', background: '#FAFAFC', color: '#1A1A1A', paddingBottom: '80px', overflowX: 'hidden', position: 'relative' };
-    const maxW2xl = { maxWidth: '672px', margin: '0 auto' };
-    const flexBtw = { display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
-    
     return (
         <div style={containerStyle}>
+            <div className="printable-receipt" style={{ display: 'none' }}>
+                {/* This hidden copy is what actually gets printed to ensure perfect layout */}
+                <div style={{ background: 'white', padding: '40px', maxWidth: '800px', margin: '0 auto' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #F1F5F9', paddingBottom: '24px', marginBottom: '32px' }}>
+                        <div>
+                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '24px', marginBottom: '8px' }} />
+                            <p style={{ fontSize: '10px', color: '#64748B', fontWeight: 800 }}>OFFICIAL PAYMENT RECEIPT</p>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                            {sale.businessId?.logoUrl && (
+                                <img src={sale.businessId.logoUrl} alt="Merchant Logo" style={{ height: '32px', marginBottom: '8px', objectFit: 'contain' }} />
+                            )}
+                            <h2 style={{ fontSize: '18px', fontWeight: 900, margin: 0 }}>{sale.businessId?.displayName}</h2>
+                            <p style={{ fontSize: '12px', color: '#64748B', margin: 0 }}>Invoice #{sale.invoiceNumber}</p>
+                        </div>
+                    </div>
+                    
+                    <div style={{ marginBottom: '40px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
+                            <div>
+                                <h4 style={{ fontSize: '10px', color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Customer</h4>
+                                <p style={{ fontSize: '16px', fontWeight: 700 }}>{sale.customerName}</p>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                                <h4 style={{ fontSize: '10px', color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Date Issued</h4>
+                                <p style={{ fontSize: '16px', fontWeight: 700 }}>{new Date(sale.createdAt).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ background: '#F8FAFC', padding: '32px', borderRadius: '16px', marginBottom: '40px' }}>
+                        <h4 style={{ fontSize: '10px', color: '#94A3B8', textTransform: 'uppercase', marginBottom: '16px' }}>Transaction Details</h4>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                            <span style={{ fontSize: '14px', color: '#475569', fontWeight: 600 }}>{sale.description}</span>
+                            <span style={{ fontSize: '14px', fontWeight: 800 }}>₦{sale.totalAmount.toLocaleString()}</span>
+                        </div>
+                        <div style={{ borderTop: '1px solid #E2E8F0', marginTop: '20px', paddingTop: '20px', display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '16px', fontWeight: 900 }}>Total Paid</span>
+                            <span style={{ fontSize: '20px', fontWeight: 950, color: '#10B981' }}>₦{sale.paidAmount.toLocaleString()}</span>
+                        </div>
+                    </div>
+
+                    <div style={{ textAlign: 'center', borderTop: '1px solid #F1F5F9', paddingTop: '32px' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 24px', background: '#ECFDF5', borderRadius: '100px', border: '1px solid #D1FAE5', marginBottom: '16px' }}>
+                            <CheckCircle size={16} color="#10B981" />
+                            <span style={{ fontSize: '12px', fontWeight: 900, color: '#065F46' }}>VERIFIED BY KREDIDLY LEDGER</span>
+                        </div>
+                        <p style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 600, maxWidth: '400px', margin: '0 auto' }}>
+                            This receipt is generated by Kredibly's secure business verification system. 
+                            Security Key: KR-V-{(sale._id || '').slice(-8).toUpperCase()}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Interactive UI */}
+            <div className="no-print">
             {/* Background elements */}
             <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '500px', background: 'linear-gradient(to bottom, rgba(245, 243, 255, 0.5), transparent)', pointerEvents: 'none' }} />
 
             {/* Navbar */}
             <nav style={{ ...maxW2xl, position: 'relative', zIndex: 10, padding: '24px', ...flexBtw }}>
                 <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '24px' }} />
-                <button 
-                    onClick={handleShare}
-                    style={{ padding: '12px', background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(8px)', borderRadius: '50%', border: '1px solid #E2E8F0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', cursor: 'pointer' }}
-                >
-                    <Share2 size={18} color="#475569" />
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    {sale.businessId && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {sale.businessId.logoUrl ? (
+                                <img src={sale.businessId.logoUrl} alt={sale.businessId.displayName} style={{ height: '32px', width: '32px', borderRadius: '50%', objectFit: 'cover', border: '2px solid white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                            ) : (
+                                <span style={{ fontSize: '14px', fontWeight: 800, color: '#1E293B' }}>{sale.businessId.displayName}</span>
+                            )}
+                        </div>
+                    )}
+                    <button 
+                        onClick={handleShare}
+                        style={{ padding: '12px', background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(8px)', borderRadius: '50%', border: '1px solid #E2E8F0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', cursor: 'pointer' }}
+                    >
+                        <Share2 size={18} color="#475569" />
+                    </button>
+                </div>
             </nav>
 
             <main style={{ ...maxW2xl, position: 'relative', zIndex: 10, padding: '0 16px' }}>
@@ -391,6 +471,20 @@ const PublicInvoicePage = () => {
                                         >
                                             <Share2 size={18} /> Share Confirmation
                                         </button>
+
+                                        <button 
+                                            onClick={() => {
+                                                const printContent = document.querySelector('.printable-receipt');
+                                                if (printContent) {
+                                                    printContent.style.display = 'block';
+                                                    window.print();
+                                                    printContent.style.display = 'none';
+                                                }
+                                            }}
+                                            style={{ width: '100%', padding: '16px', background: '#0F172A', color: 'white', borderRadius: '12px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '12px' }}
+                                        >
+                                            <FileText size={18} /> Download Official Receipt
+                                        </button>
                                         
                                         <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>
                                             This link serves as your permanent proof of payment.
@@ -434,6 +528,7 @@ const PublicInvoicePage = () => {
                     </div>
                 </motion.div>
             </main>
+            </div>
         </div>
     );
 };

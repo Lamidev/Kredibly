@@ -16,7 +16,7 @@ const NotificationSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ["confirmation", "debt_reminder", "system", "sale"],
+        enum: ["confirmation", "debt_reminder", "system", "sale", "payment"],
         default: "system"
     },
     saleId: {

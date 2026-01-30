@@ -1,3 +1,4 @@
+require("./instrument");
 const express = require("express");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
@@ -26,6 +27,8 @@ const paymentRoutes = require("./routes/common/paymentRoutes");
 const waitlistRoutes = require("./routes/common/waitlistRoutes");
 const { startProactiveAssistant } = require("./utils/proactiveAssistant");
 const { startTicketCleanup } = require("./utils/ticketScheduler");
+const { startBackupScheduler } = require("./utils/backupService");
+const { setupSentryErrorHandler } = require("./utils/sentry");
 
 const app = express();
 const PORT = process.env.PORT || 7050;
@@ -85,12 +88,16 @@ app.use("/api/common", uploadRoutes);
 app.use("/api/whatsapp", whatsappRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/admin/stats", require("./routes/admin/statsRoutes"));
 app.use("/api/support", supportRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/waitlist", waitlistRoutes);
 app.use("/api/coupons", require("./routes/common/couponRoutes"));
 
-// 5. Global Error Handler
+// 5. Sentry Error Handler (Must be before any other error middleware)
+setupSentryErrorHandler(app);
+
+// 6. Global Error Handler
 app.use((err, req, res, next) => {
   console.error("🚨 Global Error Catch:", err.stack);
   res.status(err.status || 500).json({
@@ -113,6 +120,7 @@ mongoose
     console.log("✅ MongoDB Connected Successfully");
     startProactiveAssistant();
     startTicketCleanup();
+    startBackupScheduler();
   })
   .catch((error) => {
     console.error("❌ MongoDB connection failed:", error);
