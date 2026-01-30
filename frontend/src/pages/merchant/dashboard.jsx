@@ -436,13 +436,7 @@ const Dashboard = () => {
                                                 {sale.status === 'partial' ? 'PARTIAL' : 'UNPAID'}
                                             </span>
                                         </div>
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/invoice/${sale.invoiceNumber}?action=remind`); }}
-                                            className="hover-scale"
-                                            style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '10px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 800 }}
-                                        >
-                                            Remind
-                                        </button>
+                                        <ChevronRight size={18} color="var(--text-muted)" />
                                     </div>
                                 </motion.div>
                             ))

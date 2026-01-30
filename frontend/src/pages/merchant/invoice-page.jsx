@@ -185,7 +185,8 @@ const InvoicePage = () => {
     const handleShare = async () => {
         const frontendUrl = window.location.origin;
         const shareUrl = `${frontendUrl}/i/${sale.invoiceNumber}`;
-        const balance = sale.totalAmount - sale.payments.reduce((sum, p) => sum + p.amount, 0);
+        const paid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
+        const balance = sale.totalAmount - paid;
         const tone = sale.businessId.assistantSettings?.reminderTemplate || 'friendly';
         
         let text = "";
@@ -316,20 +317,19 @@ const InvoicePage = () => {
 
                 <div style={{ display: 'flex', gap: '12px' }}>
                     <button
-                        onClick={handleDownloadImage}
+                        onClick={() => setShowSuccessModal(true)}
                         className="btn-secondary"
                         style={{ padding: '14px 24px', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, fontSize: '0.9rem', border: '1px solid var(--border)' }}
                     >
-                        <ImageIcon size={18} strokeWidth={2.5} /> Share as Image
+                        <FileText size={18} strokeWidth={2.5} /> Share Receipt
                     </button>
                     <button
                         onClick={handleShare}
                         className="btn-primary"
                         style={{ padding: '14px 24px', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, boxShadow: '0 10px 20px -5px var(--primary-glow)', fontSize: '0.9rem' }}
                     >
-                        <Share2 size={18} strokeWidth={2.5} /> Share Invoice
+                        <Share2 size={18} strokeWidth={2.5} /> Share Link
                     </button>
-                    {/* Public QR Code Toggle or Download could go here */}
                 </div>
             </div>
 
@@ -691,9 +691,11 @@ const InvoicePage = () => {
                             </div>
                         </div>
                         
-                        <h3 style={{ fontSize: '1.8rem', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.03em' }}>Payment Secured!</h3>
+                        <h3 style={{ fontSize: '1.8rem', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.03em' }}>
+                            {sale.payments.length > 0 ? 'Receipt Center' : 'Payment Locked'}
+                        </h3>
                         <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '1rem' }}>
-                            The transaction has been successfully recorded on your ledger. How would you like to share the receipt?
+                            {location.state?.showSuccessModal ? "Payment secured! The transaction has been recorded." : "Share the official proof of this transaction with your customer."}
                         </p>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -702,10 +704,17 @@ const InvoicePage = () => {
                                 className="btn-primary"
                                 style={{ padding: '18px', borderRadius: '20px', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: '0 10px 25px -5px var(--primary-glow)' }}
                             >
-                                <ImageIcon size={20} /> Share Receipt (Image)
+                                <ImageIcon size={20} /> Download Receipt Image
                             </button>
                             
                             <button 
+                                onClick={handleShare}
+                                style={{ padding: '18px', background: '#F8FAFC', color: 'var(--primary)', border: '1px solid var(--primary)', borderRadius: '20px', fontWeight: 800, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', cursor: 'pointer' }}
+                            >
+                                <Share2 size={20} /> Share Secure Link
+                            </button>
+
+                            <p 
                                 onClick={() => {
                                     const printContent = document.querySelector('.printable-receipt');
                                     if (printContent) {
@@ -714,11 +723,10 @@ const InvoicePage = () => {
                                         printContent.style.display = 'none';
                                     }
                                 }}
-                                style={{ padding: '18px', background: '#F8FAFC', color: '#0F172A', border: '1px solid #E2E8F0', borderRadius: '20px', fontWeight: 800, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', cursor: 'pointer' }}
+                                style={{ fontSize: '0.85rem', color: '#64748B', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
                             >
-                                <FileText size={20} /> Share Receipt (PDF)
-                            </button>
-
+                                or Print/Save as PDF
+                            </p>
                         </div>
                     </motion.div>
                 </motion.div>,
@@ -733,18 +741,15 @@ const InvoicePage = () => {
                 }
             `}</style>
             
-            {/* Hidden Receipt Template for Image Generation */}
+            {/* Hidden Receipt Template for Image/PDF Generation */}
             <div style={{ position: 'fixed', left: '-9999px', top: 0 }}>
-                <div id="receipt-download-target" style={{ width: '600px', background: 'white', padding: '48px', fontFamily: "'Inter', sans-serif" }}>
+                <div id="receipt-download-target" className="printable-receipt" style={{ width: '600px', background: 'white', padding: '48px', fontFamily: "'Inter', sans-serif" }}>
                     {/* Receipt Header */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', borderBottom: '2px solid #F1F5F9', paddingBottom: '32px' }}>
-                        {/* Left: Kredibly Brand */}
-                        {/* Left: Kredibly Brand */}
                         <div>
                             <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '32px' }} />
                         </div>
                         
-                        {/* Right: Merchant Brand */}
                         <div style={{ textAlign: 'right' }}>
                             {sale?.businessId?.logoUrl ? (
                                 <img src={sale.businessId.logoUrl} alt="Merchant Logo" style={{ height: '48px', objectFit: 'contain', marginBottom: '8px' }} />
@@ -755,44 +760,55 @@ const InvoicePage = () => {
                         </div>
                     </div>
 
-                    {/* Amount */}
-                    <div style={{  textAlign: 'center', marginBottom: '48px' }}>
-                        <p style={{ fontSize: '14px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: '8px' }}>Total Amount</p>
-                        <h1 style={{ fontSize: '48px', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.02em', margin: 0 }}>
-                            ₦{sale?.totalAmount.toLocaleString()}
-                        </h1>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 0', marginTop: '8px' }}>
-                            {paidAmount >= (sale?.totalAmount || 0) ? <CheckCircle size={16} color="#10B981" /> : <Clock size={16} color="#7C3AED" />}
-                            <span style={{ fontSize: '12px', fontWeight: 800, color: paidAmount >= (sale?.totalAmount || 0) ? '#059669' : '#7C3AED', textTransform: 'uppercase' }}>
-                                {paidAmount >= (sale?.totalAmount || 0) ? 'Payment Complete' : 'Payment Pending'}
-                            </span>
+                    {/* Financial Summary */}
+                    <div style={{ background: '#F8FAFC', padding: '32px', borderRadius: '24px', marginBottom: '32px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                            <div>
+                                <p style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '4px' }}>Customer</p>
+                                <p style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>{sale?.customerName || 'Walk-in Customer'}</p>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                                <p style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '4px' }}>Total Amount</p>
+                                <p style={{ fontSize: '15px', fontWeight: 900, color: '#0F172A', margin: 0 }}>₦{sale?.totalAmount.toLocaleString()}</p>
+                            </div>
+                        </div>
+
+                        <div style={{ borderTop: '1px solid #E2E8F0', marginTop: '20px', paddingTop: '20px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Total Paid</span>
+                                <span style={{ fontSize: '13px', fontWeight: 800, color: '#10B981' }}>₦{paidAmount.toLocaleString()}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ fontSize: '15px', fontWeight: 900, color: '#0F172A' }}>Balance Due</span>
+                                <span style={{ fontSize: '18px', fontWeight: 950, color: balance > 0 ? '#EF4444' : '#10B981' }}>₦{balance.toLocaleString()}</span>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Details Grid */}
-                    <div style={{ background: '#F8FAFC', padding: '32px', borderRadius: '24px', marginBottom: '40px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-                            <div>
-                                <p style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Customer</p>
-                                <p style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>{sale?.customerName || 'Walk-in Customer'}</p>
+                    {/* Payment History */}
+                    <div style={{ marginBottom: '40px' }}>
+                        <p style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '16px', letterSpacing: '0.05em' }}>Payment Timeline</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px dashed #E2E8F0' }}>
+                                <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748B' }}>Invoice Issued</span>
+                                <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>{new Date(sale?.createdAt).toLocaleDateString()}</span>
                             </div>
-                            <div style={{ textAlign: 'right' }}>
-                                <p style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Date</p>
-                                <p style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>{new Date(sale?.createdAt).toLocaleDateString()}</p>
-                            </div>
-                            <div style={{ gridColumn: 'span 2' }}>
-                                <p style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Description</p>
-                                <p style={{ fontSize: '16px', fontWeight: 600, color: '#334155', margin: 0, lineHeight: 1.5 }}>{sale?.description}</p>
-                            </div>
-                            {sale?.balance > 0 && sale?.dueDate && (
-                                <div style={{ gridColumn: 'span 2', borderTop: '1px solid #E2E8F0', paddingTop: '16px', marginTop: '8px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#EA580C' }}>
-                                        <AlertCircle size={14} />
-                                        <span style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase' }}>Balance Due: {new Date(sale.dueDate).toLocaleDateString()}</span>
+                            {(sale?.payments || []).map((p, idx) => (
+                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px dashed #E2E8F0' }}>
+                                    <div>
+                                        <p style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Payment Received</p>
+                                        <p style={{ fontSize: '11px', color: '#94A3B8', margin: 0 }}>{new Date(p.date).toLocaleDateString()} ({p.method})</p>
                                     </div>
+                                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#10B981' }}>+ ₦{p.amount.toLocaleString()}</span>
                                 </div>
-                            )}
+                            ))}
                         </div>
+                    </div>
+
+                    {/* Details */}
+                    <div style={{ marginBottom: '40px' }}>
+                         <p style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Description</p>
+                         <p style={{ fontSize: '14px', fontWeight: 600, color: '#334155', margin: 0, lineHeight: 1.5 }}>{sale?.description}</p>
                     </div>
 
                     {/* Footer */}

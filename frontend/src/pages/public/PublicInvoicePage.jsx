@@ -40,26 +40,32 @@ const PublicInvoicePage = () => {
     useEffect(() => {
         if (sale) {
             // Strategic SEO & Browser Tab updates
-            const pageTitle = `Invoice Issued: ₦${sale.totalAmount.toLocaleString()} from ${sale.businessId?.displayName}`;
+            const pageTitle = `Invoice: ₦${sale.totalAmount.toLocaleString()} from ${sale.businessId?.displayName || 'Merchant'}`;
             document.title = pageTitle;
 
             // Attempt to update meta tags for smarter crawlers
             const updateMeta = (property, content) => {
                 let meta = document.querySelector(`meta[property="${property}"]`) || 
                            document.querySelector(`meta[name="${property}"]`);
-                if (meta) meta.setAttribute('content', content);
+                if (meta) {
+                    meta.setAttribute('content', content);
+                } else {
+                    const newMeta = document.createElement('meta');
+                    newMeta.setAttribute(property.includes('og:') ? 'property' : 'name', property);
+                    newMeta.setAttribute('content', content);
+                    document.head.appendChild(newMeta);
+                }
             };
 
-            const invoiceDesc = `An official invoice has been issued to you by ${sale.businessId?.displayName} for ${sale.description}. Total: ₦${sale.totalAmount.toLocaleString()}.`;
+            const invoiceDesc = `Official invoice for ${sale.description} from ${sale.businessId?.displayName}. Total: ₦${sale.totalAmount.toLocaleString()}.`;
             
             updateMeta('og:title', pageTitle);
             updateMeta('og:description', invoiceDesc);
-            updateMeta('og:image', 'https://usekredibly.com/og-receipt-preview.png');
+            updateMeta('og:image', '/krediblyrevamped.png');
             updateMeta('twitter:title', pageTitle);
             updateMeta('twitter:description', invoiceDesc);
-            updateMeta('twitter:image', 'https://usekredibly.com/og-receipt-preview.png');
 
-            // Track View (Internal)
+            // Track View
             if (!sale.viewed) {
                 axios.post(`${API_BASE}/sales/${sale._id}/track-view`).catch(() => {});
             }
@@ -80,21 +86,58 @@ const PublicInvoicePage = () => {
     };
 
     const handleShare = async () => {
+        const shareUrl = window.location.href;
         if (navigator.share) {
             try {
-                const shareUrl = `${API_BASE}/payments/share/${sale.invoiceNumber}`;
                 await navigator.share({
-                    title: `Official Invoice from ${sale?.business?.displayName}`,
-                    text: `This is a verified payment request of ₦${sale?.totalAmount.toLocaleString()} from ${sale?.business?.displayName}. Click to safely view details and pay:`,
+                    title: `Official Invoice from ${sale?.businessId?.displayName}`,
+                    text: `This is a verified payment request of ₦${sale?.totalAmount.toLocaleString()} from ${sale?.businessId?.displayName}. Click to safely view details and pay:`,
                     url: shareUrl,
                 });
             } catch (err) {
                 // User cancelled or share failed
             }
         } else {
-            const shareUrl = `${API_BASE}/payments/share/${sale?.invoiceNumber}`;
             navigator.clipboard.writeText(shareUrl);
             toast.success("Secure link copied to clipboard!");
+        }
+    };
+
+    const handleDownloadImage = async () => {
+        const receiptElement = document.getElementById('receipt-download-target');
+        if (!receiptElement) return;
+
+        const toastId = toast.loading("Generating your receipt image...");
+        
+        try {
+            // Import html2canvas dynamically
+            const html2canvas = (await import('html2canvas')).default;
+            
+            // Wait for images to load if any
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            const canvas = await html2canvas(receiptElement, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                logging: false,
+                useCORS: true
+            });
+
+            const image = canvas.toDataURL("image/png");
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = `Receipt_${sale.invoiceNumber}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            toast.dismiss(toastId);
+            toast.success("Receipt downloaded!");
+        } catch (err) {
+            console.error("Image generation failed:", err);
+            toast.dismiss(toastId);
+            toast.error("Could not generate image. Standard print will open instead.");
+            window.print();
         }
     };
 
@@ -212,7 +255,7 @@ const PublicInvoicePage = () => {
                             {sale.businessId?.logoUrl && (
                                 <img src={sale.businessId.logoUrl} alt="Merchant Logo" style={{ height: '32px', marginBottom: '8px', objectFit: 'contain' }} />
                             )}
-                            <h2 style={{ fontSize: '18px', fontWeight: 900, margin: 0 }}>{sale.businessId?.displayName}</h2>
+                            <h2 style={{ fontSize: '18px', fontWeight: 900, margin: 0 }}>{sale.businessId?.displayName || 'Merchant'}</h2>
                             <p style={{ fontSize: '12px', color: '#64748B', margin: 0 }}>Invoice #{sale.invoiceNumber}</p>
                         </div>
                     </div>
@@ -221,11 +264,11 @@ const PublicInvoicePage = () => {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '40px' }}>
                             <div>
                                 <h4 style={{ fontSize: '10px', color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Customer</h4>
-                                <p style={{ fontSize: '16px', fontWeight: 700 }}>{sale.customerName}</p>
+                                <p style={{ fontSize: '16px', fontWeight: 700 }}>{sale.customerName || 'Customer'}</p>
                             </div>
                             <div style={{ textAlign: 'right' }}>
                                 <h4 style={{ fontSize: '10px', color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Date Issued</h4>
-                                <p style={{ fontSize: '16px', fontWeight: 700 }}>{new Date(sale.createdAt).toLocaleDateString()}</p>
+                                <p style={{ fontSize: '16px', fontWeight: 700 }}>{sale.createdAt ? new Date(sale.createdAt).toLocaleDateString() : 'N/A'}</p>
                             </div>
                         </div>
                     </div>
@@ -236,9 +279,26 @@ const PublicInvoicePage = () => {
                             <span style={{ fontSize: '14px', color: '#475569', fontWeight: 600 }}>{sale.description}</span>
                             <span style={{ fontSize: '14px', fontWeight: 800 }}>₦{sale.totalAmount.toLocaleString()}</span>
                         </div>
-                        <div style={{ borderTop: '1px solid #E2E8F0', marginTop: '20px', paddingTop: '20px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontSize: '16px', fontWeight: 900 }}>Total Paid</span>
-                            <span style={{ fontSize: '20px', fontWeight: 950, color: '#10B981' }}>₦{sale.paidAmount.toLocaleString()}</span>
+                        
+                        <div style={{ borderTop: '1px solid #E2E8F0', marginTop: '20px', paddingTop: '20px' }}>
+                             <p style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '12px' }}>Payment Breakdown</p>
+                             {(sale.payments || []).map((p, idx) => (
+                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                    <span style={{ fontSize: '12px', color: '#64748B' }}>{new Date(p.date).toLocaleDateString()} ({p.method})</span>
+                                    <span style={{ fontSize: '12px', fontWeight: 700 }}>₦{p.amount.toLocaleString()}</span>
+                                </div>
+                             ))}
+                        </div>
+
+                        <div style={{ borderTop: '2px solid #E2E8F0', marginTop: '20px', paddingTop: '20px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <span style={{ fontSize: '14px', fontWeight: 700, color: '#64748B' }}>Total Paid</span>
+                                <span style={{ fontSize: '16px', fontWeight: 800, color: '#10B981' }}>₦{sale.paidAmount.toLocaleString()}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ fontSize: '16px', fontWeight: 900 }}>Balance Remaining</span>
+                                <span style={{ fontSize: '22px', fontWeight: 950, color: (sale.totalAmount - sale.paidAmount) > 0 ? '#EF4444' : '#10B981' }}>₦{(sale.totalAmount - sale.paidAmount).toLocaleString()}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -264,7 +324,7 @@ const PublicInvoicePage = () => {
             <nav style={{ ...maxW2xl, position: 'relative', zIndex: 10, padding: '24px', ...flexBtw }}>
                 <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '24px' }} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    {sale.businessId && (
+                    {sale.businessId ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             {sale.businessId.logoUrl ? (
                                 <img src={sale.businessId.logoUrl} alt={sale.businessId.displayName} style={{ height: '32px', width: '32px', borderRadius: '50%', objectFit: 'cover', border: '2px solid white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
@@ -272,6 +332,8 @@ const PublicInvoicePage = () => {
                                 <span style={{ fontSize: '14px', fontWeight: 800, color: '#1E293B' }}>{sale.businessId.displayName}</span>
                             )}
                         </div>
+                    ) : (
+                         <span style={{ fontSize: '14px', fontWeight: 800, color: '#1E293B' }}>Merchant</span>
                     )}
                     <button 
                         onClick={handleShare}
@@ -362,7 +424,7 @@ const PublicInvoicePage = () => {
                                     <div style={{ padding: '8px', background: '#F5F3FF', borderRadius: '8px' }}><Calendar size={14} color="#7C3AED" /></div>
                                     <div>
                                         <p style={{ fontSize: '9px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>Issued</p>
-                                        <p style={{ fontSize: '11px', fontWeight: 700 }}>{new Date(sale.createdAt).toLocaleDateString()}</p>
+                                        <p style={{ fontSize: '11px', fontWeight: 700 }}>{sale.createdAt ? new Date(sale.createdAt).toLocaleDateString() : 'N/A'}</p>
                                     </div>
                                 </div>
                                 {sale.dueDate && (
@@ -453,7 +515,7 @@ const PublicInvoicePage = () => {
 
                                         <div style={{ borderTop: '1px solid #EDF2F7', paddingTop: '16px', marginBottom: '24px' }}>
                                             <p style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '12px' }}>Payment History</p>
-                                            {sale.payments.map((p, idx) => (
+                                            {(sale.payments || []).map((p, idx) => (
                                                 <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                                     <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>{new Date(p.date).toLocaleDateString()}</span>
                                                     <span style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>₦{p.amount.toLocaleString()}</span>
@@ -473,17 +535,10 @@ const PublicInvoicePage = () => {
                                         </button>
 
                                         <button 
-                                            onClick={() => {
-                                                const printContent = document.querySelector('.printable-receipt');
-                                                if (printContent) {
-                                                    printContent.style.display = 'block';
-                                                    window.print();
-                                                    printContent.style.display = 'none';
-                                                }
-                                            }}
+                                            onClick={handleDownloadImage}
                                             style={{ width: '100%', padding: '16px', background: '#0F172A', color: 'white', borderRadius: '12px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '12px' }}
                                         >
-                                            <FileText size={18} /> Download Official Receipt
+                                            <ImageIcon size={18} /> Download High-Res Receipt
                                         </button>
                                         
                                         <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>
