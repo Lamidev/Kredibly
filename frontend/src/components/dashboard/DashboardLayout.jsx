@@ -155,7 +155,10 @@ const DashboardLayout = () => {
                             letterSpacing: '-0.01em',
                             boxShadow: '0 10px 20px -5px var(--primary-glow)'
                         }}
-                        onClick={() => navigate('/sales/new')}
+                        onClick={() => {
+                            navigate('/sales/new');
+                            setIsSidebarOpen(false);
+                        }}
                     >
                         <Plus size={20} strokeWidth={3} /> Create Sale
                     </button>
@@ -275,32 +278,41 @@ const DashboardLayout = () => {
 
                             {showNotifications && (
                                 <div className="glass-card" style={{
-                                    position: 'absolute', top: '45px', right: '0', width: '300px',
+                                    position: 'absolute', top: '50px', right: '0', 
+                                    width: 'calc(100vw - 32px)', maxWidth: '350px',
                                     background: 'white', border: '1px solid #E2E8F0', padding: '0',
-                                    zIndex: 100, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+                                    zIndex: 1000, borderRadius: '24px', overflow: 'hidden', 
+                                    boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+                                    animation: 'slideDown 0.2s ease-out'
                                 }}>
-                                    <div style={{ padding: '16px', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800 }}>Notifications</h4>
-                                        <button onClick={markAllRead} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>Clear All</button>
+                                    <div style={{ padding: '20px', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900 }}>Alerts</h4>
+                                        <button onClick={markAllRead} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}>Clear All</button>
                                     </div>
-                                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                    <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
                                         {notifications.length === 0 ? (
-                                            <div style={{ padding: '24px', textAlign: 'center', color: '#94A3B8', fontSize: '0.85rem' }}>No new notifications</div>
+                                            <div style={{ padding: '40px 20px', textAlign: 'center', color: '#94A3B8', fontSize: '0.85rem' }}>
+                                                <Bell size={24} style={{ opacity: 0.2, marginBottom: '12px' }} />
+                                                <p style={{ margin: 0, fontWeight: 600 }}>No new notifications</p>
+                                            </div>
                                         ) : (
                                             notifications.map(n => (
                                                 <div 
                                                     key={n._id} 
                                                     onClick={() => {
-                                                        if (n.title.includes('Support')) {
+                                                        if (n.title?.includes('Support')) {
                                                             window.dispatchEvent(new CustomEvent('openSupportHub'));
                                                         }
                                                         clearOne(n._id);
+                                                        setShowNotifications(false);
                                                     }}
-                                                    style={{ padding: '12px 16px', borderBottom: '1px solid #F8FAFC', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                                    style={{ padding: '16px 20px', borderBottom: '1px solid #F8FAFC', cursor: 'pointer', display: 'flex', gap: '12px', alignItems: 'flex-start', background: n.isRead ? 'transparent' : 'rgba(124, 58, 237, 0.02)' }}
+                                                    className="notification-item-hover"
                                                 >
+                                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)', marginTop: '6px', opacity: n.isRead ? 0 : 1 }} />
                                                     <div style={{ flex: 1 }}>
                                                         <p style={{ margin: 0, fontWeight: 800, fontSize: '0.85rem', color: '#1E293B' }}>{n.title}</p>
-                                                        <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#64748B', lineHeight: 1.4 }}>{n.message}</p>
+                                                        <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#64748B', lineHeight: 1.5 }}>{n.message}</p>
                                                     </div>
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); clearOne(n._id); }}
