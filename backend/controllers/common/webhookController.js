@@ -16,31 +16,35 @@ exports.handlePaystackWebhook = async (req, res) => {
             .digest('hex');
 
         if (hash !== req.headers['x-paystack-signature']) {
-            console.error('🚨 Webhook Signature Mismatch!');
+            console.error('🚨 Webhook Signature Mismatch! Provided:', req.headers['x-paystack-signature']);
             return res.status(401).send('Invalid signature');
         }
 
         const event = req.body;
+        console.log(`📡 Webhook Received Event: ${event.event} [${event.data?.reference}]`);
 
         // 2. Handle successful payment
         if (event.event === 'charge.success') {
-            const { reference, metadata, amount, customer } = event.data;
+            const { reference, metadata, amount } = event.data;
             
             // Extract useful info from metadata
-            const invoiceNumber = metadata.invoiceNumber;
+            const invoiceNumber = metadata?.invoiceNumber;
+            console.log(`💰 Charge Success: Ref=${reference}, Amount=${amount}, Invoice=${invoiceNumber}`);
             
             if (invoiceNumber) {
                 // Atomic update of the Sale record
                 const paidAmount = amount / 100; // Convert from kobo to NGN
                 
                 // Find the sale
-                const sale = await Sale.findOne({ invoiceNumber: invoiceNumber }).populate('businessId');
+                const sale = await Sale.findOne({ invoiceNumber: invoiceNumber.toUpperCase() }).populate('businessId');
 
                 if (sale) {
+                    console.log(`✅ Matching Sale Found: ${sale._id} for Customer ${sale.customerName}`);
+                    
                     // Idempotency: Check if this reference has already been processed for this sale
                     const alreadyProcessed = sale.payments.some(p => p.reference === reference);
                     if (alreadyProcessed) {
-                        console.log(`⏩ Webhook reference ${reference} already processed. Skipping.`);
+                        console.log(`⏩ Webhook reference ${reference} already processed for Sale ${invoiceNumber}. Skipping.`);
                         return res.sendStatus(200);
                     }
 
@@ -52,6 +56,7 @@ exports.handlePaystackWebhook = async (req, res) => {
                     });
                     
                     await sale.save();
+                    console.log(`💾 Sale ${invoiceNumber} updated successfully with new payment.`);
                     
                     const business = sale.businessId;
 
@@ -74,7 +79,7 @@ exports.handlePaystackWebhook = async (req, res) => {
                     });
 
                     // WhatsApp Alert via Kreddy
-                    if (business.whatsappNumber) {
+                    if (business && business.whatsappNumber) {
                         const balance = sale.totalAmount - sale.payments.reduce((sum, p) => sum + p.amount, 0);
                         const receiptLink = `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/i/${invoiceNumber}`;
                         
@@ -88,15 +93,21 @@ exports.handlePaystackWebhook = async (req, res) => {
 
                         msg += `📄 *View/Share Receipt:* ${receiptLink}\n\n_Kreddy - Your Digital Trust Assistant_`;
                         
-                        await sendWhatsAppMessage(business.whatsappNumber, msg);
+                        await sendWhatsAppMessage(business.whatsappNumber, msg).catch(err => {
+                            console.error(`❌ Failed to send WhatsApp notification for payment ${reference}:`, err.message);
+                        });
                     }
+                } else {
+                    console.error(`❌ Webhook Error: No sale found for Invoice #${invoiceNumber}`);
                 }
+            } else {
+                console.warn(`⚠️ Webhook Warning: charge.success event missing invoiceNumber in metadata. Data:`, JSON.stringify(event.data.metadata));
             }
         }
 
         res.sendStatus(200);
     } catch (error) {
-        console.error('Webhook Error:', error);
+        console.error('🚨 Global Webhook Exception:', error);
         res.sendStatus(500);
     }
 };

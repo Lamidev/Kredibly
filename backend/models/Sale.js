@@ -4,7 +4,8 @@ const SaleSchema = new mongoose.Schema({
     businessId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "BusinessProfile",
-        required: true
+        required: true,
+        index: true
     },
     invoiceNumber: {
         type: String,
@@ -12,7 +13,8 @@ const SaleSchema = new mongoose.Schema({
     },
     customerName: {
         type: String,
-        trim: true
+        trim: true,
+        index: true
     },
     customerPhone: {
         type: String,
@@ -41,17 +43,27 @@ const SaleSchema = new mongoose.Schema({
     status: {
         type: String,
         enum: ["unpaid", "partial", "paid"],
-        default: "unpaid"
+        default: "unpaid",
+        index: true
     },
     confirmed: {
         type: Boolean,
         default: false
     },
     confirmedAt: Date,
-    dueDate: Date,
+    dueDate: {
+        type: Date,
+        index: true
+    },
     reminderSentAt: Date,
     lastAutoReminderSent: Date,
-    recordedBy: String
+    lastMessageSentAt: Date,
+    recordedBy: String,
+    viewed: {
+        type: Boolean,
+        default: false
+    },
+    viewedAt: Date
 }, {
     timestamps: true,
     toJSON: { virtuals: true },

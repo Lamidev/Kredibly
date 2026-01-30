@@ -53,3 +53,11 @@ export const loginFormControls = [
     type: "password",
   },
 ];
+
+export const KREDDY_CONFIG = {
+    // Kreddy WhatsApp Business Number
+    PHONE_NUMBER: "2347071238658", 
+    
+    // The link format for deep linking
+    getLink: (text = "Hi Kreddy") => `https://wa.me/2347071238658?text=${encodeURIComponent(text)}`
+};

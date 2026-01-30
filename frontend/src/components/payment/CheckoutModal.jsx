@@ -122,8 +122,8 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
                 {/* Body */}
                 <div style={{ padding: '24px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#334155' }}>
-                            {plan === 'oga' ? 'Oga Plan' : plan === 'chairman' ? 'Chairman Plan' : 'Custom Plan'}
+                        <span className={plan === 'hustler' ? "plan-tag-hustler" : "plan-tag-bright"}>
+                            {plan === 'oga' ? 'Oga Plan' : plan === 'chairman' ? 'Chairman Plan' : plan === 'hustler' ? 'Hustler Plan' : 'Custom Plan'}
                         </span>
                         <span style={{ fontSize: '1.05rem', fontWeight: 900 }}>₦{basePrice.toLocaleString()}</span>
                     </div>

@@ -1,4 +1,5 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { logUsage } = require("./usageTracker");
 
 const genAI = new GoogleGenerativeAI(process.env.KREDDY_API_KEY || "");
 
@@ -112,6 +113,9 @@ Rules:
     if (parsed.intent === "create_sale" && !parsed.data.totalAmount && !parsed.data.reply) {
         parsed.data.reply = "I catch the sale, but how much be the total money? 💰";
     }
+
+    // LOG USAGE (Gemini Call)
+    logUsage("ai").catch(e => console.error("Logger fail:", e));
 
     return parsed;
   } catch (error) {

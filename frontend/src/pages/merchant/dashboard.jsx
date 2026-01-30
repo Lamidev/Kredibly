@@ -10,12 +10,16 @@ import {
 import axios from "axios";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { KREDDY_CONFIG } from "../../config/kreddy";
+import { KREDDY_CONFIG } from "../../config";
 
 import { createPortal } from "react-dom";
+import { 
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, 
+    Tooltip, ResponsiveContainer, BarChart, Bar, Legend 
+} from 'recharts';
 
 const Dashboard = () => {
-    const { stats, sales, fetchSales, fetchStats, loading, deleteSale } = useSales();
+    const { stats, sales, analytics, fetchSales, fetchStats, fetchAnalytics, loading, deleteSale } = useSales();
     const { profile, updateProfile } = useAuth();
     const navigate = useNavigate();
     const [whatsappInput, setWhatsappInput] = useState("");
@@ -28,6 +32,7 @@ const Dashboard = () => {
     useEffect(() => {
         fetchSales();
         fetchStats();
+        fetchAnalytics();
         fetchActivities();
     }, []);
 
@@ -210,7 +215,8 @@ const Dashboard = () => {
                 <motion.div 
                     whileHover={{ y: -5 }}
                     className="dashboard-glass stat-card-premium" 
-                    style={{ padding: '24px', borderRadius: '28px', border: '1px solid var(--border)', background: 'white' }}
+                    style={{ padding: '24px', borderRadius: '28px', border: '1px solid var(--border)', background: 'white', cursor: 'pointer' }}
+                    onClick={() => navigate("/sales?status=outstanding")}
                 >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                         <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning)', padding: '10px', borderRadius: '14px' }}>
@@ -249,6 +255,106 @@ const Dashboard = () => {
                 </motion.div>
             </div>
 
+            {/* SIMPLIFIED WEEKLY BATTLE CHART */}
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                style={{ 
+                    background: 'white', 
+                    padding: '32px', 
+                    borderRadius: '32px', 
+                    border: '1px solid var(--border)', 
+                    marginBottom: '40px',
+                    boxShadow: 'var(--shadow-premium)'
+                }}
+            >
+                <div className="weekly-battle-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+                    <div>
+                        <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text)', margin: 0 }}>This Week's Battle</h3>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, marginTop: '4px' }}>Money In vs. Money Outside</p>
+                    </div>
+                    
+                    {analytics?.summary && (
+                        <div className="weekly-summary-cards" style={{ display: 'flex', gap: '12px' }}>
+                            <div style={{ padding: '12px 20px', background: '#F0FDF4', borderRadius: '16px', border: '1px solid #DCFCE7' }}>
+                                <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase', marginBottom: '4px' }}>Money In</p>
+                                <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#14532D' }}>₦{analytics.summary.moneyIn.toLocaleString()}</p>
+                            </div>
+                            <div style={{ padding: '12px 20px', background: '#FEF2F2', borderRadius: '16px', border: '1px solid #FEE2E2' }}>
+                                <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#991B1B', textTransform: 'uppercase', marginBottom: '4px' }}>Money Outside</p>
+                                <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#7F1D1D' }}>₦{analytics.summary.moneyOutside.toLocaleString()}</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Kreddy Insight Box */}
+                {analytics?.summary && (
+                    <div style={{ 
+                        background: 'linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)', 
+                        padding: '16px 20px', 
+                        borderRadius: '18px', 
+                        marginBottom: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        border: '1px solid #E2E8F0'
+                    }}>
+                        <div style={{ background: 'var(--primary)', color: 'white', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Sparkles size={18} fill="white" />
+                        </div>
+                        <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#475569', margin: 0 }}>
+                            {analytics.summary.collectionRate >= 70 
+                                ? "Kreddy Says: Chief, your cash flow is strong! You've collected most of your money."
+                                : analytics.summary.collectionRate >= 40
+                                ? "Kreddy Says: Good progress! Send a few reminders to bring more money in today."
+                                : "Kreddy Says: A lot of money is still outside. Let's send some reminders to your debtors."}
+                        </p>
+                    </div>
+                )}
+
+                <div style={{ width: '100%', height: 260 }}>
+                    {!analytics?.daily || analytics.daily.length === 0 ? (
+                        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#CBD5E1', flexDirection: 'column', gap: '12px' }}>
+                            <Activity size={48} strokeWidth={1} />
+                            <p style={{ fontWeight: 600 }}>Analyzing this week's records...</p>
+                        </div>
+                    ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={analytics.daily}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                                <XAxis 
+                                    dataKey="date" 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fontSize: 11, fontWeight: 700, fill: '#64748B' }}
+                                />
+                                <YAxis 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fontSize: 10, fontWeight: 600, fill: '#94A3B8' }}
+                                    tickFormatter={(val) => `₦${val >= 1000 ? (val/1000).toFixed(0) + 'k' : val}`}
+                                />
+                                <Tooltip 
+                                    cursor={{ fill: '#F8FAFC' }}
+                                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', padding: '12px' }}
+                                    itemStyle={{ fontWeight: 800, fontSize: '12px' }}
+                                    labelStyle={{ fontWeight: 900, marginBottom: '4px', fontSize: '10px', color: '#94A3B8' }}
+                                />
+                                <Legend 
+                                    verticalAlign="top" 
+                                    align="right" 
+                                    iconType="circle"
+                                    wrapperStyle={{ paddingTop: '0', paddingBottom: '24px', fontSize: '11px', fontWeight: 700 }}
+                                />
+                                <Bar dataKey="Money In" fill="var(--success)" radius={[6, 6, 0, 0]} barSize={24} />
+                                <Bar dataKey="Money Outside" fill="#FCA5A5" radius={[6, 6, 0, 0]} barSize={24} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )}
+                </div>
+            </motion.div>
+
             <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', 
@@ -256,26 +362,29 @@ const Dashboard = () => {
                 width: '100%',
                 boxSizing: 'border-box'
             }} className="dashboard-main-grid">
-                {/* Left Column: Recent Activity */}
+                {/* Left Column: Priority Collection */}
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px', paddingRight: '4px' }}>
-                        <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text)', margin: 0 }}>Recent Activity</h3>
-                        <Link to="/sales" style={{ padding: '8px 16px', background: 'var(--background)', color: 'var(--primary)', textDecoration: 'none', borderRadius: '100px', fontWeight: 800, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--border)' }}>
-                            View All <ChevronRight size={16} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text)', margin: 0 }}>Priority Collection</h3>
+                            <span style={{ padding: '4px 10px', background: '#FEF2F2', color: '#EF4444', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 800 }}>{sales.filter(s => s.status !== 'paid').length} PENDING</span>
+                        </div>
+                        <Link to="/debtors" style={{ padding: '8px 16px', background: 'var(--background)', color: 'var(--primary)', textDecoration: 'none', borderRadius: '100px', fontWeight: 800, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--border)' }}>
+                            View All Debtors <ChevronRight size={16} />
                         </Link>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {sales.length === 0 ? (
+                        {sales.filter(s => s.status !== 'paid').length === 0 ? (
                             <div style={{ padding: '80px 20px', textAlign: 'center', background: 'var(--background)', borderRadius: '32px', border: '2px dashed var(--border)' }}>
                                 <div style={{ background: 'white', width: '64px', height: '64px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: 'var(--shadow-premium)' }}>
-                                    <Activity size={32} color="#CBD5E1" />
+                                    <CheckCircle size={32} color="var(--success)" />
                                 </div>
-                                <h4 style={{ fontWeight: 800, color: 'var(--text-muted)' }}>The ledger is empty.</h4>
-                                <p style={{ color: '#94A3B8', fontWeight: 500, marginTop: '8px' }}>Record your first sale to start building your trust score.</p>
+                                <h4 style={{ fontWeight: 800, color: 'var(--text-muted)' }}>All caught up!</h4>
+                                <p style={{ color: '#94A3B8', fontWeight: 500, marginTop: '8px' }}>Your collection is 100%. No active debtors detected.</p>
                             </div>
                         ) : (
-                            sales.slice(0, visibleSales).map(sale => (
+                            sales.filter(s => s.status !== 'paid').slice(0, visibleSales).map(sale => (
                                 <motion.div
                                     key={sale._id}
                                     whileHover={{ x: 4, scale: 1.01 }}
@@ -298,45 +407,51 @@ const Dashboard = () => {
                                 >
                                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center', minWidth: 0, flex: 2 }}>
                                         <div style={{
-                                            background: sale.status === 'paid' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                                            background: 'rgba(245, 158, 11, 0.1)',
                                             padding: '10px',
                                             borderRadius: '12px',
-                                            color: sale.status === 'paid' ? 'var(--success)' : 'var(--warning)',
+                                            color: 'var(--warning)',
                                             flexShrink: 0
                                         }}>
-                                            {sale.status === 'paid' ? <CheckCircle size={20} strokeWidth={2.5} /> : <Clock size={20} strokeWidth={2.5} />}
+                                            <Clock size={20} strokeWidth={2.5} />
                                         </div>
                                         <div style={{ overflow: 'hidden' }}>
-                                            <p style={{ fontWeight: 800, color: 'var(--text)', fontSize: '0.95rem', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sale.customerName || 'Standard Order'}</p>
-                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>#{sale.invoiceNumber}</p>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <p style={{ fontWeight: 800, color: 'var(--text)', fontSize: '0.95rem', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sale.customerName || 'Standard Order'}</p>
+                                                {sale.viewed && <span title="Viewed by customer" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: 'var(--primary)', fontWeight: 800 }}><Sparkles size={10} fill="var(--primary)" /> VIEWED</span>}
+                                            </div>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>#{sale.invoiceNumber} • {sale.description.slice(0, 30)}{sale.description.length > 30 ? '...' : ''}</p>
                                         </div>
                                     </div>
                                     <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
                                         <div style={{ textAlign: 'right', minWidth: '80px' }}>
-                                            <p style={{ fontWeight: 900, fontSize: '0.95rem', color: 'var(--text)', marginBottom: '2px' }}>₦{sale.totalAmount.toLocaleString()}</p>
+                                            <p style={{ fontWeight: 950, fontSize: '1.05rem', color: 'var(--text)', marginBottom: '2px' }}>₦{(sale.totalAmount - (sale.payments?.reduce((sum, p) => sum + p.amount, 0) || 0)).toLocaleString()}</p>
                                             <span className="premium-badge" style={{ 
-                                                background: sale.status === 'paid' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                                                color: sale.status === 'paid' ? 'var(--success)' : 'var(--warning)',
-                                                textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 800,
+                                                background: 'rgba(245, 158, 11, 0.1)',
+                                                color: 'var(--warning)',
+                                                textTransform: 'uppercase', fontSize: '0.6rem', fontWeight: 900,
                                                 padding: '2px 8px', borderRadius: '6px'
                                             }}
                                             >
-                                                {sale.status === 'paid' ? 'PAID' : sale.status === 'partial' ? 'PARTIAL' : 'UNPAID'}
+                                                {sale.status === 'partial' ? 'PARTIAL' : 'UNPAID'}
                                             </span>
                                         </div>
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button 
-                                                onClick={(e) => handleDelete(e, sale)}
-                                                style={{ background: 'white', color: 'var(--error)', border: '1px solid #FEE2E2', padding: '6px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                title="Delete Record"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/invoice/${sale.invoiceNumber}?action=remind`); }}
+                                            className="hover-scale"
+                                            style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '10px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 800 }}
+                                        >
+                                            Remind
+                                        </button>
                                     </div>
                                 </motion.div>
                             ))
                         )}
+                        <Link to="/sales/new" style={{ textDecoration: 'none' }}>
+                            <button className="dashboard-glass" style={{ width: '100%', padding: '16px', borderRadius: '18px', border: '2px dashed var(--border)', background: 'transparent', color: 'var(--text-muted)', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                                <Plus size={18} /> Record New Sale
+                            </button>
+                        </Link>
                     </div>
                 </div>
 
@@ -507,6 +622,27 @@ const Dashboard = () => {
                         border-radius: 24px !important;
                     }
                 }
+                
+                @media (max-width: 640px) {
+                    .weekly-battle-header {
+                        flex-direction: column !important;
+                        align-items: flex-start !important;
+                    }
+                    .weekly-summary-cards {
+                        width: 100% !important;
+                        flex-direction: column !important;
+                    }
+                    .weekly-summary-cards > div {
+                        width: 100% !important;
+                    }
+                    .dashboard-glass {
+                        padding: 16px !important;
+                    }
+                    .recharts-cartesian-axis-tick text {
+                        font-size: 10px !important;
+                    }
+                }
+
                 .dashboard-glass {
                     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
                     width: 100%;

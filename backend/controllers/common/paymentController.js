@@ -2,6 +2,7 @@ const BusinessProfile = require('../../models/BusinessProfile');
 const Coupon = require('../../models/Coupon');
 const Payment = require('../../models/Payment');
 const crypto = require('crypto');
+const { logUsage } = require('../../utils/usageTracker');
 
 exports.verifyPayment = async (req, res) => {
     try {
@@ -88,6 +89,9 @@ exports.verifyPayment = async (req, res) => {
             status: 'success',
             paidAt: new Date()
         });
+
+        // LOG REVENUE (Async)
+        logUsage("revenue", { amount: paystackData.amount / 100 }).catch(e => console.error("Revenue log fail:", e));
 
         res.status(200).json({ 
             success: true, 

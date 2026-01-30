@@ -50,7 +50,14 @@ const ReportsPage = () => {
             // Construct the message
             const shareUrl = `${API_URL}/payments/share/${sale.invoiceNumber}`;
             const balance = sale.totalAmount - sale.payments.reduce((sum, p) => sum + p.amount, 0);
-            const text = `Hi ${sale.customerName || 'there'}, this is a friendly reminder from ${sale.businessId?.displayName || profile?.displayName} regarding our agreement for ${sale.description}. The balance is ₦${balance.toLocaleString()}. You can view the full invoice and payment details here: ${shareUrl}. Thank you!`;
+            const tone = profile?.assistantSettings?.reminderTemplate || 'friendly';
+            let text = "";
+
+            if (tone === 'formal') {
+                text = `Dear ${sale.customerName || 'Customer'},\n\nThis is a formal payment notice from *${sale.businessId?.displayName || profile?.displayName}*.\n\nReference: Invoice #${sale.invoiceNumber}\nDescription: ${sale.description}\nOutstanding Balance: *₦${balance.toLocaleString()}*\n\nPlease arrange for settlement using this secure link: ${shareUrl}\n\nThank you.`;
+            } else {
+                text = `Hi ${sale.customerName || 'Friend'},\n\nThis is a friendly reminder from *${sale.businessId?.displayName || profile?.displayName}*.\n\nWe have an outstanding balance of *₦${balance.toLocaleString()}* for your recent purchase (${sale.description}).\n\nPlease check the invoice details here: ${shareUrl}\n\nThank you for your business!`;
+            }
 
             if (sale.customerPhone) {
                 window.open(`https://wa.me/${sale.customerPhone}?text=${encodeURIComponent(text)}`, '_blank');

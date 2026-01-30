@@ -108,25 +108,35 @@ exports.addPayment = async (req, res) => {
 
         if (!sale) return res.status(404).json({ message: "Sale record not found" });
 
-        sale.payments.push({ amount, method, date: new Date() });
+        sale.payments.push({ 
+            amount: Number(amount), 
+            method: method || "Manual", 
+            date: new Date() 
+        });
+        
         await sale.save();
-
         await sale.populate("businessId");
+
+        if (!sale.businessId) {
+            console.error(`⚠️ addPayment: Sale ${id} has no associated business profile.`);
+        }
+
+        const businessId = sale.businessId?._id || "SYSTEM";
 
         // Create Activity Log First
         await logActivity({
-            businessId: sale.businessId._id,
+            businessId: businessId,
             action: "PAYMENT_RECORDED",
             entityType: "PAYMENT",
             entityId: sale._id,
-            details: `Recorded payment of ₦${amount.toLocaleString()} for ${sale.customerName} via ${method}`
+            details: `Recorded payment of ₦${Number(amount).toLocaleString()} for ${sale.customerName || 'Customer'} via ${method}`
         });
 
         // Create In-App Notification
         await Notification.create({
-            businessId: sale.businessId._id,
+            businessId: businessId,
             title: "Payment Received 💰",
-            message: `₦${amount.toLocaleString()} recorded for ${sale.customerName}.`,
+            message: `₦${Number(amount).toLocaleString()} recorded for ${sale.customerName || 'Customer'}.`,
             type: "payment",
             saleId: sale._id
         });
@@ -137,7 +147,7 @@ exports.addPayment = async (req, res) => {
             const balance = sale.totalAmount - paid;
             
             // Smart message logic based on balance
-            let msg = `🔔 *Payment Alert!*\n\nChief, I've just recorded a payment of *₦${amount.toLocaleString()}* for *${sale.customerName}*.\n\n`;
+            let msg = `🔔 *Payment Alert!*\n\nChief, I've just recorded a payment of *₦${Number(amount).toLocaleString()}* for *${sale.customerName}*.\n\n`;
             
             if (balance <= 0) {
                 msg += `✅ *Fully Paid!* This debt is now cleared from the ledger. Well done!`;
@@ -145,12 +155,49 @@ exports.addPayment = async (req, res) => {
                 msg += `⏳ *Balance Expected:* ₦${balance.toLocaleString()}\n*Action:* I've updated the invoice status to ${sale.status.toUpperCase()}.`;
             }
 
-            await sendWhatsAppMessage(sale.businessId.whatsappNumber, msg);
+            await sendWhatsAppMessage(sale.businessId.whatsappNumber, msg).catch(e => {
+                console.error("WhatsApp Notify Error (non-blocking):", e.message);
+            });
+
+            // Notify Business Owner via Email (Redundancy)
+            if (sale.businessId && sale.businessId.ownerId) {
+                // Ensure ownerId is populated to access email
+                const BusinessProfile = require("../../models/BusinessProfile");
+                const fullProfile = await BusinessProfile.findById(sale.businessId._id).populate("ownerId");
+                
+                if (fullProfile && fullProfile.ownerId && fullProfile.ownerId.email) {
+                    const emailSubject = `Payment Received: ₦${Number(amount).toLocaleString()} from ${sale.customerName}`;
+                    const emailHtml = `
+                        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+                            <h2 style="color: #0F172A;">Payment Received 💰</h2>
+                            <p>Great news! A payment has been recorded on your ledger.</p>
+                            
+                            <div style="background: #F8FAFC; padding: 24px; border-radius: 12px; margin: 24px 0;">
+                                <p style="margin: 0 0 12px 0;"><strong>Customer:</strong> ${sale.customerName}</p>
+                                <p style="margin: 0 0 12px 0;"><strong>Amount Paid:</strong> ₦${Number(amount).toLocaleString()}</p>
+                                <p style="margin: 0 0 12px 0;"><strong>Remaining Balance:</strong> ₦${balance.toLocaleString()}</p>
+                                <p style="margin: 0;"><strong>Invoice:</strong> #${sale.invoiceNumber}</p>
+                            </div>
+                            
+                            <a href="https://usekredibly.com/dashboard/invoice/${sale.invoiceNumber}" style="display: inline-block; background: #0F172A; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">View Invoice</a>
+                        </div>
+                    `;
+                    
+                    const { sendEmail } = require("../../utils/emailService");
+                    await sendEmail({
+                        to: fullProfile.ownerId.email,
+                        subject: emailSubject,
+                        html: emailHtml
+                    });
+                }
+            }
         }
 
+        console.log(`✅ Payment of ${amount} recorded successfully for Sale ${sale.invoiceNumber}`);
         res.status(200).json({ success: true, data: sale });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error("🚨 Error in addPayment:", error);
+        res.status(500).json({ message: error.message || "Internal server error while recording payment" });
     }
 };
 
@@ -203,6 +250,54 @@ exports.confirmSale = async (req, res) => {
         res.status(200).json({ success: true, message: "Service/Delivery confirmed!" });
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+// Track Invoice View
+exports.trackView = async (req, res) => {
+    try {
+        const { id } = req.params;
+        let sale;
+
+        if (id.match(/^[0-9a-fA-F]{24}$/)) {
+            sale = await Sale.findById(id).populate("businessId");
+        } else {
+            sale = await Sale.findOne({ invoiceNumber: id.toUpperCase() }).populate("businessId");
+        }
+
+        if (!sale) return res.status(404).json({ message: "Sale record not found" });
+
+        if (!sale.viewed) {
+            sale.viewed = true;
+            sale.viewedAt = new Date();
+            await sale.save();
+
+            // Log Activity for Merchant
+            if (sale.businessId) {
+                await logActivity({
+                    businessId: sale.businessId._id,
+                    action: "INVOICE_VIEWED",
+                    entityType: "SALE",
+                    entityId: sale._id,
+                    details: `${sale.customerName || 'A customer'} viewed Invoice #${sale.invoiceNumber} 👁️`
+                });
+                
+                // Also create a notification
+                await Notification.create({
+                    businessId: sale.businessId._id,
+                    title: "Invoice Viewed 👁️",
+                    message: `${sale.customerName || 'A customer'} has opened Invoice #${sale.invoiceNumber}.`,
+                    type: "system",
+                    saleId: sale._id
+                });
+            }
+        }
+
+        res.status(200).json({ success: true });
+    } catch (error) {
+        // Silent error for tracking to avoid breaking the customer view
+        console.error("Tracking Error:", error);
+        res.status(200).json({ success: true });
     }
 };
 
@@ -436,6 +531,93 @@ exports.migrateInvoices = async (req, res) => {
         }
 
         res.status(200).json({ success: true, message: `${updatedCount} invoices migrated successfully.` });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Get detailed growth analytics (Simplified: Money In vs Money Outside)
+exports.getAnalytics = async (req, res) => {
+    try {
+        const business = await BusinessProfile.findOne({ ownerId: req.user._id });
+        if (!business) return res.status(404).json({ message: "Business profile not found" });
+
+        const now = new Date();
+        const startOfWeek = new Date();
+        startOfWeek.setDate(now.getDate() - 7);
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        // 1. Calculate "This Week" (Last 7 days)
+        const weeklySales = await Sale.find({
+            businessId: business._id,
+            createdAt: { $gte: startOfWeek }
+        });
+
+        // Money In: Total cash received THIS WEEK (from any sale)
+        const allSalesWithPaymentsThisWeek = await Sale.find({
+            businessId: business._id,
+            "payments.date": { $gte: startOfWeek }
+        });
+
+        let moneyIn = 0;
+        allSalesWithPaymentsThisWeek.forEach(sale => {
+            sale.payments.forEach(p => {
+                if (new Date(p.date) >= startOfWeek) moneyIn += p.amount;
+            });
+        });
+
+        // Money Outside: Total currently unpaid from sales made THIS WEEK
+        let moneyOutside = 0;
+        let totalBilled = 0;
+        weeklySales.forEach(s => {
+            totalBilled += s.totalAmount;
+            const paidForThisSale = s.payments.reduce((sum, p) => sum + p.amount, 0);
+            moneyOutside += Math.max(0, s.totalAmount - paidForThisSale);
+        });
+
+        // 2. Prepare daily data for a simple bar chart (Last 7 days)
+        const dailyData = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            dailyData.push({ 
+                date: d.toLocaleDateString('en-US', { weekday: 'short' }), 
+                "Money In": 0, 
+                "Money Outside": 0,
+                fullDate: dateStr
+            });
+        }
+
+        weeklySales.forEach(sale => {
+            const dayStr = sale.createdAt.toLocaleDateString('en-US', { weekday: 'short' });
+            const dayEntry = dailyData.find(d => d.date === dayStr);
+            const paidForThisSale = sale.payments.reduce((sum, p) => sum + p.amount, 0);
+            if (dayEntry) dayEntry["Money Outside"] += Math.max(0, sale.totalAmount - paidForThisSale);
+        });
+
+        allSalesWithPaymentsThisWeek.forEach(sale => {
+            sale.payments.forEach(p => {
+                if (p.date >= startOfWeek) {
+                    const dayStr = p.date.toLocaleDateString('en-US', { weekday: 'short' });
+                    const dayEntry = dailyData.find(d => d.date === dayStr);
+                    if (dayEntry) dayEntry["Money In"] += p.amount;
+                }
+            });
+        });
+
+        res.status(200).json({
+            success: true,
+            data: {
+                summary: {
+                    moneyIn,
+                    moneyOutside,
+                    totalBilled,
+                    collectionRate: totalBilled > 0 ? Math.round((moneyIn / totalBilled) * 100) : 0
+                },
+                daily: dailyData
+            }
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
