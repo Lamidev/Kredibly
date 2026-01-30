@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSales } from '../../context/SaleContext';
-import { TrendingUp, Users, AlertCircle, Calendar, ArrowUpRight, ArrowDownRight, BarChart3, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, Users, AlertCircle, Calendar, ArrowUpRight, ArrowDownRight, BarChart3, CheckCircle2, Copy } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 
@@ -147,13 +147,26 @@ const ReportsPage = () => {
                                         <p style={{ margin: 0, fontWeight: 800, color: '#991B1B', fontSize: '0.9rem' }}>{d.customerName}</p>
                                         <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#B91C1C', fontWeight: 700 }}>Owes: ₦{d.balance.toLocaleString()}</p>
                                     </div>
-                                    <button 
-                                        onClick={() => handleReminder(d)}
-                                        style={{ background: 'white', border: '1px solid #FECACA', color: '#DC2626', padding: '8px 16px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s' }}
-                                        className="hover-scale"
-                                    >
-                                        Remind
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button 
+                                            onClick={() => {
+                                                const shareUrl = `${window.location.origin}/i/${d.invoiceNumber}`;
+                                                navigator.clipboard.writeText(shareUrl);
+                                                toast.success("Link copied! Paste anywhere.");
+                                            }}
+                                            style={{ background: 'white', border: '1px solid #FECACA', color: '#DC2626', padding: '8px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                            title="Copy Link"
+                                        >
+                                            <Copy size={16} />
+                                        </button>
+                                        <button 
+                                            onClick={() => handleReminder(d)}
+                                            style={{ background: '#DC2626', color: 'white', padding: '8px 16px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', border: 'none' }}
+                                            className="hover-scale"
+                                        >
+                                            Remind
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>

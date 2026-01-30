@@ -27,9 +27,11 @@ import {
     Lock,
     QrCode,
     User,
-    AlertCircle
+    AlertCircle,
+    Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { jsPDF } from "jspdf";
 import { useAuth } from "../../context/AuthContext";
 import { useSales } from "../../context/SaleContext";
 
@@ -51,6 +53,8 @@ const InvoicePage = () => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [showCelebration, setShowCelebration] = useState(false);
+    const [generating, setGenerating] = useState(null);
     const [deleteModal, setDeleteModal] = useState({ show: false, sale: null });
 
     // Forms
@@ -63,12 +67,15 @@ const InvoicePage = () => {
         fetchSale();
         if (location.state?.showSuccessModal) {
             setShowSuccessModal(true);
+            setShowCelebration(true);
             // Clear state so refresh doesn't show it again
             window.history.replaceState({}, document.title);
         }
     }, [id]);
 
     const fetchSale = async () => {
+        setSale(null);
+        setLoading(true);
         try {
             const res = await axios.get(`${API_URL}/sales/${id}`);
             if (res.data.success) {
@@ -108,12 +115,23 @@ const InvoicePage = () => {
         setReminding(true);
         try {
             await axios.post(`${API_URL}/sales/${id}/remind`, {}, { withCredentials: true });
-            
-            // Construct the message
+
             const frontendUrl = window.location.origin;
             const shareUrl = `${frontendUrl}/i/${sale.invoiceNumber}`;
-            const balance = sale.totalAmount - sale.payments.reduce((sum, p) => sum + p.amount, 0);
-            const text = `Hi ${sale.customerName || 'there'}, this is a friendly reminder from ${sale.businessId.displayName} for your invoice (#${sale.invoiceNumber}). The balance is ₦${balance.toLocaleString()}. You can view the details and pay here: ${shareUrl}. Thank you!`;
+            const paid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
+            const balance = sale.totalAmount - paid;
+            
+            let text = "";
+            if (balance <= 0) {
+                text = `Hi ${sale.customerName || 'Customer'},\n\nThank you for your payment! Your invoice (#${sale.invoiceNumber}) from *${sale.businessId.displayName}* is now fully settled.\n\nYou can view and download your official receipt here: ${shareUrl}\n\nWe appreciate your business!`;
+            } else {
+                const tone = sale.businessId.assistantSettings?.reminderTemplate || 'friendly';
+                if (tone === 'formal') {
+                    text = `Dear ${sale.customerName || 'Customer'},\n\nThis is a formal update regarding your invoice (#${sale.invoiceNumber}) from *${sale.businessId.displayName}*.\n\nTotal Paid: ₦${paid.toLocaleString()}\nOutstanding Balance: *₦${balance.toLocaleString()}*\n\nPlease view the updated invoice and settle the balance here: ${shareUrl}\n\nThank you.`;
+                } else {
+                    text = `Hi ${sale.customerName || 'Friend'},\n\nFriendly update from *${sale.businessId.displayName}* regarding your invoice (#${sale.invoiceNumber}).\n\nYou've paid ₦${paid.toLocaleString()}, leaving a balance of *₦${balance.toLocaleString()}*.\n\nCheck the details and pay here: ${shareUrl}\n\nThanks!`;
+                }
+            }
 
             if (sale.customerPhone) {
                 window.open(`https://wa.me/${sale.customerPhone}?text=${encodeURIComponent(text)}`, '_blank');
@@ -163,6 +181,7 @@ const InvoicePage = () => {
             setShowPaymentModal(false);
             setPaymentAmount("");
             toast.success("Payment Recorded Successfully");
+            setShowCelebration(false);
             setShowSuccessModal(true);
         } catch (err) {
             toast.error("Failed to record payment");
@@ -213,39 +232,134 @@ const InvoicePage = () => {
         }
     };
 
-    const handleDownloadImage = async () => {
+    const handleDownloadPDF = async () => {
+        if (generating) return;
         const receiptElement = document.getElementById('receipt-download-target');
         if (!receiptElement) return;
 
+        setGenerating('pdf');
+        const toastId = toast.loading("Preparing official PDF...");
+        
+        try {
+            const html2canvas = (await import('html2canvas')).default;
+            
+            // Robust Clone & Reveal (Fixes blank/0kb issues)
+            const clone = receiptElement.cloneNode(true);
+            clone.style.position = 'fixed';
+            clone.style.left = '0';
+            clone.style.top = '0';
+            clone.style.zIndex = '-9999';
+            clone.style.visibility = 'visible';
+            clone.style.display = 'block';
+            clone.style.width = '600px'; 
+            clone.style.background = 'white';
+            document.body.appendChild(clone);
+
+            // Wait for images in clone to load
+            const images = clone.getElementsByTagName('img');
+            await Promise.all(Array.from(images).map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(r => { img.onload = r; img.onerror = r; });
+            }));
+            
+            // Reduced timeout for speed as images are pre-loaded
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            const canvas = await html2canvas(clone, {
+                scale: 3, 
+                backgroundColor: '#ffffff',
+                useCORS: true,
+                logging: false,
+                allowTaint: true
+            });
+
+            document.body.removeChild(clone);
+
+            const imgData = canvas.toDataURL('image/png');
+            if (imgData === 'data:,') throw new Error("Blank canvas generated");
+
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const imgProps = pdf.getImageProperties(imgData);
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`Invoice_${sale.invoiceNumber}.pdf`);
+            
+            toast.dismiss(toastId);
+            toast.success("PDF Downloaded!");
+        } catch (err) {
+            console.error("PDF generation failed:", err);
+            toast.dismiss(toastId);
+            toast.error("Could not generate PDF document.");
+        } finally {
+            setGenerating(null);
+        }
+    };
+
+    const handleDownloadImage = async () => {
+        if (generating) return;
+        const receiptElement = document.getElementById('receipt-download-target');
+        if (!receiptElement) return;
+
+        setGenerating('image');
         const toastId = toast.loading("Generating receipt image...");
         
         try {
-            // Wait for images to load if any
-            await new Promise(resolve => setTimeout(resolve, 500));
+            const html2canvas = (await import('html2canvas')).default;
 
-            const canvas = await html2canvas(receiptElement, {
-                scale: 2, // Retina quality
+            const clone = receiptElement.cloneNode(true);
+            clone.style.position = 'fixed';
+            clone.style.left = '0';
+            clone.style.top = '0';
+            clone.style.zIndex = '-9999';
+            clone.style.visibility = 'visible';
+            clone.style.display = 'block';
+            clone.style.width = '600px'; 
+            clone.style.background = 'white';
+            document.body.appendChild(clone);
+
+            const images = clone.getElementsByTagName('img');
+            await Promise.all(Array.from(images).map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(r => { img.onload = r; img.onerror = r; });
+            }));
+            
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            const canvas = await html2canvas(clone, {
+                scale: 2,
                 backgroundColor: '#ffffff',
                 logging: false,
-                useCORS: true // Important for external images
+                useCORS: true,
+                allowTaint: true
             });
 
+            document.body.removeChild(clone);
+
             const image = canvas.toDataURL("image/png");
-            
-            // Create download link
+            if (image === 'data:,') throw new Error("Blank image generated");
+
             const link = document.createElement('a');
             link.href = image;
-            link.download = `Receipt_${sale.invoiceNumber}.png`;
+            link.download = `Invoice_${sale.invoiceNumber}.png`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             
             toast.dismiss(toastId);
-            toast.success("Receipt downloaded!");
+            toast.success("Receipt image downloaded!");
         } catch (err) {
             console.error("Image generation failed:", err);
             toast.dismiss(toastId);
-            toast.error("Could not generate image. Please try again.");
+            toast.error("Could not generate receipt image.");
+        } finally {
+            setGenerating(null);
         }
     };
 
@@ -318,17 +432,10 @@ const InvoicePage = () => {
                 <div style={{ display: 'flex', gap: '12px' }}>
                     <button
                         onClick={() => setShowSuccessModal(true)}
-                        className="btn-secondary"
-                        style={{ padding: '14px 24px', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, fontSize: '0.9rem', border: '1px solid var(--border)' }}
-                    >
-                        <FileText size={18} strokeWidth={2.5} /> Share Receipt
-                    </button>
-                    <button
-                        onClick={handleShare}
                         className="btn-primary"
-                        style={{ padding: '14px 24px', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, boxShadow: '0 10px 20px -5px var(--primary-glow)', fontSize: '0.9rem' }}
+                        style={{ padding: '14px 24px', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 900, fontSize: '0.95rem', boxShadow: '0 10px 25px -5px var(--primary-glow)' }}
                     >
-                        <Share2 size={18} strokeWidth={2.5} /> Share Link
+                        <Share2 size={18} strokeWidth={3} /> Share Receipt
                     </button>
                 </div>
             </div>
@@ -469,14 +576,28 @@ const InvoicePage = () => {
                                     >
                                         <PlusCircle size={20} strokeWidth={2.5} /> Record Payment
                                     </button>
-                                    <button
-                                        onClick={handleReminder}
-                                        disabled={reminding}
-                                        className="btn-secondary"
-                                        style={{ width: '100%', padding: '18px', borderRadius: '18px', border: '1px solid #25D366', color: '#25D366', fontWeight: 800, background: 'rgba(37, 211, 102, 0.05)' }}
-                                    >
-                                        <MessageCircle size={20} /> {reminding ? 'Initiating...' : 'WhatsApp Reminder'}
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '12px' }}>
+                                        <button
+                                            onClick={handleReminder}
+                                            disabled={reminding}
+                                            className="btn-secondary"
+                                            style={{ flex: 3, padding: '18px', borderRadius: '18px', border: '1px solid #25D366', color: '#25D366', fontWeight: 800, background: 'rgba(37, 211, 102, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                                        >
+                                            <MessageCircle size={20} /> {reminding ? '...' : 'WhatsApp'}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const shareUrl = `${window.location.origin}/i/${sale.invoiceNumber}`;
+                                                navigator.clipboard.writeText(shareUrl);
+                                                toast.success("Link copied! Paste anywhere.");
+                                            }}
+                                            className="btn-secondary"
+                                            style={{ flex: 1, padding: '18px', borderRadius: '18px', border: '1px solid var(--border)', color: 'var(--text-muted)', fontWeight: 800, background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                            title="Copy Invoice Link"
+                                        >
+                                            <Copy size={20} />
+                                        </button>
+                                    </div>
                                 </div>
                             ) : (
                                 <div style={{ background: 'rgba(16, 185, 129, 0.05)', padding: '24px', borderRadius: '24px', border: '1px solid var(--success)', textAlign: 'center' }}>
@@ -680,53 +801,47 @@ const InvoicePage = () => {
                             >
                                 <X size={20} />
                             </button>
-                            <div style={{ background: '#F0FDF4', color: '#16A34A', width: '80px', height: '80px', borderRadius: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', position: 'relative' }}>
-                                <CheckCircle size={40} strokeWidth={3} />
-                                <motion.div 
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1.2 }}
-                                    transition={{ delay: 0.2, type: "spring" }}
-                                    style={{ position: 'absolute', top: -5, right: -5, background: '#16A34A', border: '4px solid white', width: '24px', height: '24px', borderRadius: '50%' }} 
-                                />
-                            </div>
+                            {showCelebration ? (
+                                <div style={{ background: '#F0FDF4', color: '#16A34A', width: '80px', height: '80px', borderRadius: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', position: 'relative' }}>
+                                    <CheckCircle size={40} strokeWidth={3} />
+                                    <motion.div 
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1.2 }}
+                                        transition={{ delay: 0.2, type: "spring" }}
+                                        style={{ position: 'absolute', top: -5, right: -5, background: '#16A34A', border: '4px solid white', width: '24px', height: '24px', borderRadius: '50%' }} 
+                                    />
+                                </div>
+                            ) : (
+                                <div style={{ background: 'rgba(76, 29, 149, 0.1)', color: 'var(--primary)', width: '80px', height: '80px', borderRadius: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                    <FileText size={40} strokeWidth={2.5} />
+                                </div>
+                            )}
                         </div>
                         
                         <h3 style={{ fontSize: '1.8rem', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.03em' }}>
-                            {sale.payments.length > 0 ? 'Receipt Center' : 'Payment Locked'}
+                            Invoice Center
                         </h3>
-                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '1rem' }}>
-                            {location.state?.showSuccessModal ? "Payment secured! The transaction has been recorded." : "Share the official proof of this transaction with your customer."}
+                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>
+                            {showCelebration ? "Transaction secured! Download the official receipt below." : "View and download the latest version of this invoice."}
                         </p>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             <button 
-                                onClick={handleDownloadImage}
-                                className="btn-primary"
-                                style={{ padding: '18px', borderRadius: '20px', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: '0 10px 25px -5px var(--primary-glow)' }}
+                                onClick={handleDownloadPDF}
+                                disabled={!!generating}
+                                style={{ padding: '20px', background: 'var(--primary)', color: 'white', borderRadius: '20px', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', cursor: generating ? 'not-allowed' : 'pointer', border: 'none', boxShadow: '0 10px 20px -5px var(--primary-glow)', opacity: generating ? 0.7 : 1 }}
                             >
-                                <ImageIcon size={20} /> Download Receipt Image
+                                {generating === 'pdf' ? <Loader2 size={22} className="spin-animation" /> : <FileText size={22} />} 
+                                {generating === 'pdf' ? 'Processing...' : 'Download Invoice PDF'}
                             </button>
-                            
                             <button 
-                                onClick={handleShare}
-                                style={{ padding: '18px', background: '#F8FAFC', color: 'var(--primary)', border: '1px solid var(--primary)', borderRadius: '20px', fontWeight: 800, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', cursor: 'pointer' }}
+                                onClick={handleDownloadImage}
+                                disabled={!!generating}
+                                style={{ padding: '20px', background: 'white', color: 'var(--primary)', border: '2.5px solid var(--primary)', borderRadius: '20px', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', cursor: generating ? 'not-allowed' : 'pointer', opacity: generating ? 0.7 : 1 }}
                             >
-                                <Share2 size={20} /> Share Secure Link
+                                {generating === 'image' ? <Loader2 size={22} className="spin-animation" /> : <ImageIcon size={22} />}
+                                {generating === 'image' ? 'Processing...' : 'Save as Image (Receipt)'}
                             </button>
-
-                            <p 
-                                onClick={() => {
-                                    const printContent = document.querySelector('.printable-receipt');
-                                    if (printContent) {
-                                        printContent.style.display = 'block';
-                                        window.print();
-                                        printContent.style.display = 'none';
-                                    }
-                                }}
-                                style={{ fontSize: '0.85rem', color: '#64748B', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
-                            >
-                                or Print/Save as PDF
-                            </p>
                         </div>
                     </motion.div>
                 </motion.div>,
