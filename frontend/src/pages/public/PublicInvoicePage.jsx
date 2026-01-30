@@ -218,7 +218,7 @@ const PublicInvoicePage = () => {
                     </div>
                     
                     <div style={{ marginBottom: '40px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '40px' }}>
                             <div>
                                 <h4 style={{ fontSize: '10px', color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Customer</h4>
                                 <p style={{ fontSize: '16px', fontWeight: 700 }}>{sale.customerName}</p>
@@ -338,7 +338,7 @@ const PublicInvoicePage = () => {
 
                         {/* Breakdown */}
                         <div style={{ padding: '32px' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '32px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '32px', marginBottom: '32px' }}>
                                 <div>
                                     <label style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Customer</label>
                                     <p style={{ fontSize: '14px', fontWeight: 700, color: '#334155' }}>{sale.customerName}</p>
@@ -505,7 +505,7 @@ const PublicInvoicePage = () => {
 
                     {/* Footer Reassurance */}
                     <div style={{ marginTop: '48px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '40px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '16px', marginBottom: '40px' }}>
                             {[
                                 { i: ShieldCheck, l: "Trust Score", v: "+12 pts" },
                                 { i: CheckCircle, l: "Verified", v: "On Chain" },
