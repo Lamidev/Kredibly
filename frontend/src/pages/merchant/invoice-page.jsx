@@ -243,37 +243,45 @@ const InvoicePage = () => {
         try {
             const html2canvas = (await import('html2canvas')).default;
             
-            // Robust Clone & Reveal (Fixes blank/0kb issues)
+            // Create a dedicated container for capture
+            const container = document.createElement('div');
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.style.top = '0';
+            container.style.width = '600px';
+            document.body.appendChild(container);
+
+            // Clone into the container
             const clone = receiptElement.cloneNode(true);
-            clone.style.position = 'fixed';
-            clone.style.left = '0';
-            clone.style.top = '0';
-            clone.style.zIndex = '-9999';
-            clone.style.visibility = 'visible';
+            clone.style.position = 'relative';
             clone.style.display = 'block';
             clone.style.width = '600px'; 
+            clone.style.height = 'auto'; // expanded height
             clone.style.background = 'white';
-            document.body.appendChild(clone);
+            clone.style.overflow = 'visible';
+            container.appendChild(clone);
 
-            // Wait for images in clone to load
+            // Wait for images
             const images = clone.getElementsByTagName('img');
             await Promise.all(Array.from(images).map(img => {
                 if (img.complete) return Promise.resolve();
                 return new Promise(r => { img.onload = r; img.onerror = r; });
             }));
             
-            // Reduced timeout for speed as images are pre-loaded
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await new Promise(resolve => setTimeout(resolve, 500)); // slight buffer
 
             const canvas = await html2canvas(clone, {
                 scale: 3, 
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 logging: false,
-                allowTaint: true
+                allowTaint: true,
+                height: clone.scrollHeight,
+                windowHeight: clone.scrollHeight,
+                scrollY: 0
             });
 
-            document.body.removeChild(clone);
+            document.body.removeChild(container);
 
             const imgData = canvas.toDataURL('image/png');
             if (imgData === 'data:,') throw new Error("Blank canvas generated");
@@ -288,7 +296,25 @@ const InvoicePage = () => {
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            // Handle multi-page if receipt is very long, otherwise single page
+            if (pdfHeight > 297) {
+                let heightLeft = pdfHeight;
+                let position = 0;
+                let pageHeight = 297;
+
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                heightLeft -= pageHeight;
+
+                while (heightLeft >= 0) {
+                    position = heightLeft - pdfHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                    heightLeft -= pageHeight;
+                }
+            } else {
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            }
+
             pdf.save(`Invoice_${sale.invoiceNumber}.pdf`);
             
             toast.dismiss(toastId);
@@ -313,16 +339,21 @@ const InvoicePage = () => {
         try {
             const html2canvas = (await import('html2canvas')).default;
 
+            const container = document.createElement('div');
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.style.top = '0';
+            container.style.width = '600px';
+            document.body.appendChild(container);
+
             const clone = receiptElement.cloneNode(true);
-            clone.style.position = 'fixed';
-            clone.style.left = '0';
-            clone.style.top = '0';
-            clone.style.zIndex = '-9999';
-            clone.style.visibility = 'visible';
+            clone.style.position = 'relative';
             clone.style.display = 'block';
             clone.style.width = '600px'; 
+            clone.style.height = 'auto';
             clone.style.background = 'white';
-            document.body.appendChild(clone);
+            clone.style.overflow = 'visible';
+            container.appendChild(clone);
 
             const images = clone.getElementsByTagName('img');
             await Promise.all(Array.from(images).map(img => {
@@ -330,17 +361,20 @@ const InvoicePage = () => {
                 return new Promise(r => { img.onload = r; img.onerror = r; });
             }));
             
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             const canvas = await html2canvas(clone, {
                 scale: 2,
                 backgroundColor: '#ffffff',
                 logging: false,
                 useCORS: true,
-                allowTaint: true
+                allowTaint: true,
+                height: clone.scrollHeight,
+                windowHeight: clone.scrollHeight,
+                scrollY: 0
             });
 
-            document.body.removeChild(clone);
+            document.body.removeChild(container);
 
             const image = canvas.toDataURL("image/png");
             if (image === 'data:,') throw new Error("Blank image generated");
@@ -679,7 +713,7 @@ const InvoicePage = () => {
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
                             <h3 style={{ fontWeight: 950, fontSize: '1.6rem', letterSpacing: '-0.04em', color: '#0F172A' }}>Edit Invoice</h3>
-                            <button onClick={() => setShowEditModal(false)} style={{ background: '#F1F5F9', border: 'none', cursor: 'pointer', padding: '10px', borderRadius: '12px', display: 'flex' }}><X size={20} color="#64748B" /></button>
+                            <button onClick={() => setShowEditModal(false)} style={{ background: '#F1F5F9', border: 'none', cursor: 'pointer', padding: '10px', borderRadius: '12px', display: 'flex' }}><X size={20} color="#334155" /></button>
                         </div>
                         <form onSubmit={handleUpdateSale} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                             <div>
@@ -714,7 +748,7 @@ const InvoicePage = () => {
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
                             <h3 style={{ fontWeight: 950, fontSize: '1.6rem', letterSpacing: '-0.04em', color: '#0F172A' }}>Record Payment</h3>
-                            <button onClick={() => setShowPaymentModal(false)} style={{ background: '#F1F5F9', border: 'none', cursor: 'pointer', padding: '10px', borderRadius: '12px', display: 'flex' }}><X size={20} color="#64748B" /></button>
+                            <button onClick={() => setShowPaymentModal(false)} style={{ background: '#F1F5F9', border: 'none', cursor: 'pointer', padding: '10px', borderRadius: '12px', display: 'flex' }}><X size={20} color="#334155" /></button>
                         </div>
                         <form onSubmit={handleAddPayment} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                             <div>
@@ -770,7 +804,7 @@ const InvoicePage = () => {
                             <Trash2 size={32} />
                         </div>
                         <h3 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#0F172A', marginBottom: '12px', letterSpacing: '-0.02em' }}>Delete Invoice?</h3>
-                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>This will permanently remove the transaction record and cannot be undone.</p>
+                        <p style={{ color: '#334155', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>This will permanently remove the transaction record and cannot be undone.</p>
                         <div style={{ display: 'flex', gap: '12px' }}>
                             <button className="btn-secondary" style={{ flex: 1, padding: '16px', borderRadius: '16px', fontWeight: 800, fontSize: '0.95rem', border: '1px solid #E2E8F0' }} onClick={() => setDeleteModal({ show: false, sale: null })}>Cancel</button>
                             <button style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '16px', borderRadius: '16px', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} onClick={confirmDelete}>Delete Forever</button>
@@ -797,7 +831,7 @@ const InvoicePage = () => {
                         <div style={{ position: 'relative' }}>
                             <button 
                                 onClick={() => setShowSuccessModal(false)}
-                                style={{ position: 'absolute', top: '-24px', right: '-24px', background: '#F1F5F9', border: 'none', borderRadius: '12px', padding: '8px', cursor: 'pointer', color: '#64748B' }}
+                                style={{ position: 'absolute', top: '-24px', right: '-24px', background: '#F1F5F9', border: 'none', borderRadius: '12px', padding: '8px', cursor: 'pointer', color: '#334155' }}
                             >
                                 <X size={20} />
                             </button>
@@ -821,7 +855,7 @@ const InvoicePage = () => {
                         <h3 style={{ fontSize: '1.8rem', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.03em' }}>
                             Invoice Center
                         </h3>
-                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>
+                        <p style={{ color: '#334155', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>
                             {showCelebration ? "Transaction secured! Download the official receipt below." : "View and download the latest version of this invoice."}
                         </p>
 
@@ -871,7 +905,7 @@ const InvoicePage = () => {
                             ) : (
                                 <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: '#0F172A', marginBottom: '4px' }}>{sale?.businessId?.displayName}</h3>
                             )}
-                            <p style={{ margin: 0, fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Invoice #{sale?.invoiceNumber}</p>
+                            <p style={{ margin: 0, fontSize: '12px', color: '#334155', fontWeight: 600 }}>Invoice #{sale?.invoiceNumber}</p>
                         </div>
                     </div>
 
@@ -905,7 +939,7 @@ const InvoicePage = () => {
                         <p style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '16px', letterSpacing: '0.05em' }}>Payment Timeline</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px dashed #E2E8F0' }}>
-                                <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748B' }}>Invoice Issued</span>
+                                <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>Invoice Issued</span>
                                 <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>{new Date(sale?.createdAt).toLocaleDateString()}</span>
                             </div>
                             {(sale?.payments || []).map((p, idx) => (

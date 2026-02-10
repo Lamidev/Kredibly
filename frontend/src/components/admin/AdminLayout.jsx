@@ -119,7 +119,19 @@ const AdminLayout = () => {
 
             {/* Main Content Area */}
             <main className="main-content-layout" style={{ background: '#F8FAFC' }}>
-                <header className="top-header" style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(20px)', borderBottom: '1px solid #E2E8F0', padding: '0 24px' }}>
+                <header className="top-header" style={{ 
+                    background: 'rgba(255,255,255,0.9)', 
+                    backdropFilter: 'blur(20px)', 
+                    borderBottom: '1px solid #E2E8F0', 
+                    padding: '0 24px',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 40,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    height: '80px'
+                }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <button
                             onClick={() => setIsSidebarOpen(true)}
@@ -130,12 +142,12 @@ const AdminLayout = () => {
                         </button>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <img src="/krediblyrevamped.png" alt="logo" style={{ height: '22px' }} className="lg:hidden" />
-                            <h2 style={{ fontSize: 'clamp(0.9rem, 4vw, 1.1rem)', fontWeight: 900, color: '#0F172A', margin: 0, whiteSpace: 'nowrap' }}>Command Center</h2>
+                            <h2 className="hidden sm:block" style={{ fontSize: 'clamp(0.9rem, 4vw, 1.1rem)', fontWeight: 900, color: '#0F172A', margin: 0, whiteSpace: 'nowrap' }}>Command Center</h2>
                         </div>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#F1F5F9', padding: '6px 12px', borderRadius: '12px' }}>
+                        <div className="hidden sm:flex" style={{ alignItems: 'center', gap: '10px', background: '#F1F5F9', padding: '6px 12px', borderRadius: '12px' }}>
                              <div className="pulse-dot" style={{ width: '8px', height: '8px', background: 'var(--success)', borderRadius: '50%', boxShadow: '0 0 10px var(--success)' }}></div>
                              <span style={{ fontSize: '11px', fontWeight: 800, color: '#475569' }}>SYSTEM LIVE</span>
                         </div>

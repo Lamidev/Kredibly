@@ -1,6 +1,7 @@
 import PublicNavbar from "../../components/public/PublicNavbar";
 import PublicFooter from "../../components/public/PublicFooter";
 import { Users, ShieldCheck } from "lucide-react";
+import { motion } from "framer-motion";
 
 const AboutUs = () => {
     return (
@@ -38,8 +39,72 @@ const AboutUs = () => {
                         <p style={{ color: '#64748B', lineHeight: 1.6 }}>Our goal isn't just tools; it's trust. We verify your business so you can sell with confidence.</p>
                     </div>
                 </div>
+                <section style={{ marginTop: '120px', paddingBottom: '80px' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+                        <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem' }}>THE MISSION MAP</div>
+                        <h2 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '16px' }}>Our Journey & Vision</h2>
+                        <p style={{ color: '#64748B', fontWeight: 500, fontSize: '1.2rem' }}>Building the future of African commerce, one milestone at a time.</p>
+                    </div>
+
+                    <div style={{ position: 'relative', paddingLeft: '40px', maxWidth: '800px', margin: '0 auto' }}>
+                        <div style={{ position: 'absolute', left: '7px', top: '0', bottom: '0', width: '2px', background: 'linear-gradient(to bottom, #E2E8F0 0%, var(--primary) 30%, var(--primary) 70%, #E2E8F0 100%)' }} />
+
+                        {[
+                            { date: "JULY '25", title: "The Genesis", desc: "Concept & Research Phase. Identifying the 'Trust Gap' in African commerce.", status: "completed" },
+                            { date: "SEPT '25", title: "Strategic Architecture", desc: "Core blueprinting of the Kredibly ledger and AI interface flow.", status: "completed" },
+                            { date: "DEC '25", title: "Kreddy AI Core", desc: "Intelligence engine development. Teaching Kreddy to understand merchant slang and complex debts.", status: "completed" },
+                            { date: "JAN '26 - PRESENT", title: "Founding Member Waitlist", desc: "Onboarding our first 1,000 pioneers. Early access rewards and lifetime status for active participants.", status: "active" },
+                            { date: "FEBRUARY", title: "Premium Ledger UX", desc: "Rollout of smart telemetry, professional document generators, and cross-device syncing.", status: "building" },
+                            { date: "Q2 2026", title: "Global Marketplace Launch", desc: "Opening the ecosystem for public merchant registration and global transactions.", status: "future" },
+                            { date: "Q3 2026", title: "Kredibly Mobile (Native)", desc: "The full ledger in your pocket. Offline-first, biometric security, and instant push intelligence.", status: "future" }
+                        ].map((m, i) => (
+                            <motion.div 
+                                key={i}
+                                initial={{ opacity: 0, x: -20 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: i * 0.1 }}
+                                style={{ marginBottom: '64px', position: 'relative' }}
+                            >
+                                <div style={{ 
+                                    position: 'absolute', 
+                                    left: '-41px', 
+                                    top: '4px', 
+                                    width: '16px', 
+                                    height: '16px', 
+                                    borderRadius: '50%', 
+                                    background: m.status === 'active' ? 'var(--primary)' : m.status === 'completed' ? '#10B981' : 'white',
+                                    border: m.status === 'future' ? '2px solid #E2E8F0' : 'none',
+                                    zIndex: 2
+                                }}>
+                                    {m.status === 'active' && <div className="pulse-dot-about" />}
+                                </div>
+
+                                <div style={{ opacity: m.status === 'completed' ? 0.7 : 1 }}>
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 900, color: m.status === 'active' ? 'var(--primary)' : '#94A3B8', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>{m.date}</span>
+                                    <h4 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1E293B', marginBottom: '10px' }}>{m.title}</h4>
+                                    <p style={{ color: '#64748B', fontWeight: 500, lineHeight: 1.6 }}>{m.desc}</p>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </section>
             </div>
             <PublicFooter />
+            <style>{`
+                .pulse-dot-about {
+                    position: absolute;
+                    inset: -4px;
+                    border-radius: 50%;
+                    background: var(--primary);
+                    opacity: 0.3;
+                    animation: pulse-ring-about 2s infinite;
+                }
+                @keyframes pulse-ring-about {
+                    0% { transform: scale(1); opacity: 0.3; }
+                    100% { transform: scale(2.5); opacity: 0; }
+                }
+            `}</style>
         </div>
     );
 };

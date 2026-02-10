@@ -227,7 +227,12 @@ const SalesList = ({ initialFilter }) => {
                                             <p style={{ fontWeight: 800, color: 'var(--text)', fontSize: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0 }}>
                                                 {sale.customerName || 'Standard Sale'}
                                             </p>
-                                            {sale.viewed && <span title="Viewed by customer" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: 'var(--primary)', fontWeight: 800, background: '#F3E8FF', padding: '2px 6px', borderRadius: '4px' }}>VIEWED</span>}
+                                            {(() => {
+                                                const isViewed = sale.lastOpenedAt && sale.lastLinkSentAt 
+                                                    ? new Date(sale.lastOpenedAt) > new Date(sale.lastLinkSentAt)
+                                                    : sale.viewed;
+                                                return isViewed && <span title="Viewed by customer" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: 'var(--primary)', fontWeight: 800, background: '#F3E8FF', padding: '2px 6px', borderRadius: '4px' }}>VIEWED</span>;
+                                            })()}
                                         </div>
                                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {sale.description}
@@ -303,7 +308,12 @@ const SalesList = ({ initialFilter }) => {
                                         <div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <p style={{ fontWeight: 800, color: 'var(--text)', fontSize: '1rem', margin: 0 }}>{sale.customerName || 'Standard Sale'}</p>
-                                                {sale.viewed && <span style={{ fontSize: '9px', color: 'var(--primary)', fontWeight: 800, background: '#F3E8FF', padding: '2px 4px', borderRadius: '4px' }}>VIEWED</span>}
+                                                {(() => {
+                                                    const isViewed = sale.lastOpenedAt && sale.lastLinkSentAt 
+                                                        ? new Date(sale.lastOpenedAt) > new Date(sale.lastLinkSentAt)
+                                                        : sale.viewed;
+                                                    return isViewed && <span style={{ fontSize: '9px', color: 'var(--primary)', fontWeight: 800, background: '#F3E8FF', padding: '2px 4px', borderRadius: '4px' }}>VIEWED</span>;
+                                                })()}
                                             </div>
                                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, margin: 0 }}>#{sale.invoiceNumber}</p>
                                         </div>
@@ -331,7 +341,7 @@ const SalesList = ({ initialFilter }) => {
                             <Trash2 size={32} />
                         </div>
                         <h3 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#0F172A', marginBottom: '12px', letterSpacing: '-0.02em' }}>Remove Record?</h3>
-                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>
+                        <p style={{ color: '#334155', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>
                             Deleting this will remove the transaction from your ledger permanently and cannot be undone.
                         </p>
                         <div style={{ display: 'flex', gap: '12px' }}>
