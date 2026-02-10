@@ -434,6 +434,8 @@ const LandingPage = () => {
                 {/* Background Ambient Glow */}
                 <div style={{ position: 'absolute', top: '20%', right: '-10%', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(124, 58, 237, 0.1) 0%, transparent 70%)', filter: 'blur(120px)', zIndex: 0 }} />
 
+
+
                 <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1, padding: '0 40px' }}>
                     <div className="mobile-reverse" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '80px', alignItems: 'center' }}>
                         
@@ -453,7 +455,7 @@ const LandingPage = () => {
                                     style={{ 
                                         position: 'absolute', 
                                         top: '20%', 
-                                        left: '-80px', 
+                                        left: '-40px', 
                                         zIndex: 50, 
                                         background: 'rgba(255,255,255,0.05)', 
                                         backdropFilter: 'blur(20px)', 
@@ -481,7 +483,7 @@ const LandingPage = () => {
                                     style={{ 
                                         position: 'absolute', 
                                         bottom: '15%', 
-                                        right: '-80px', 
+                                        right: '-40px', 
                                         zIndex: 50, 
                                         background: 'rgba(255,255,255,0.05)', 
                                         backdropFilter: 'blur(20px)', 

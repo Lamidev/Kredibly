@@ -491,7 +491,7 @@ const PublicInvoicePage = () => {
             <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '500px', background: 'linear-gradient(to bottom, rgba(245, 243, 255, 0.5), transparent)', pointerEvents: 'none' }} />
 
             {/* Navbar */}
-            <nav style={{ ...maxW2xl, position: 'relative', zIndex: 10, padding: '24px', ...flexBtw }}>
+            <nav style={{ ...maxW2xl, position: 'relative', zIndex: 10, padding: '24px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '24px' }} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     {sale.businessId ? (

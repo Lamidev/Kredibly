@@ -117,16 +117,20 @@ const Waitlist = () => {
             
             {/* Nav */}
             <nav className="waitlist-nav" style={{ 
-                padding: '32px 40px', 
-                position: 'relative', 
-                zIndex: 10, 
+                padding: '16px 20px', 
+                position: 'sticky', 
+                top: 0,
+                background: 'rgba(255,255,255,0.8)',
+                backdropFilter: 'blur(10px)',
+                zIndex: 1000, 
                 maxWidth: '1200px', 
                 margin: '0 auto',
                 display: 'flex', 
                 justifyContent: 'space-between', 
-                alignItems: 'center' 
+                alignItems: 'center',
+                borderBottom: '1px solid rgba(0,0,0,0.05)'
             }}>
-                <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '40px', filter: 'contrast(1.15) brightness(1.02)' }} className="nav-logo" />
+                <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '36px', filter: 'contrast(1.15) brightness(1.02)' }} className="nav-logo" />
                 <div>
                      {/* Links removed for public as per strategy */}
                 </div>
