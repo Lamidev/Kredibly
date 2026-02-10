@@ -1,8 +1,12 @@
 const BusinessProfile = require('../../models/BusinessProfile');
 const Coupon = require('../../models/Coupon');
 const Payment = require('../../models/Payment');
+const Sale = require('../../models/Sale');
+const ActivityLog = require('../../models/ActivityLog');
+const Notification = require('../../models/Notification');
 const crypto = require('crypto');
 const { logUsage } = require('../../utils/usageTracker');
+const { sendWhatsAppMessage } = require('../whatsapp/whatsappController');
 
 exports.verifyPayment = async (req, res) => {
     try {
@@ -102,5 +106,122 @@ exports.verifyPayment = async (req, res) => {
     } catch (error) {
         console.error("Payment Verification Error:", error);
         res.status(500).json({ message: "Server error during upgrade" });
+    }
+};
+
+exports.verifyInvoicePayment = async (req, res) => {
+    try {
+        const { reference, invoiceId } = req.body;
+        if (!reference || !invoiceId) {
+            return res.status(400).json({ success: false, message: "Missing reference or invoiceId" });
+        }
+
+        // 1. Verify with Paystack
+        const https = require('https');
+        const options = {
+            hostname: 'api.paystack.co',
+            port: 443,
+            path: `/transaction/verify/${reference}`,
+            method: 'GET',
+            headers: {
+                Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
+            }
+        };
+
+        const verifyRequest = new Promise((resolve, reject) => {
+            const req = https.request(options, res => {
+                let data = '';
+                res.on('data', (chunk) => { data += chunk; });
+                res.on('end', () => { resolve(JSON.parse(data)); });
+            });
+            req.on('error', (e) => { reject(e); });
+            req.end();
+        });
+
+        const paystackRes = await verifyRequest;
+
+        if (!paystackRes.status || paystackRes.data.status !== 'success') {
+            return res.status(400).json({ success: false, message: "Payment verification failed with Paystack" });
+        }
+
+        const paystackData = paystackRes.data;
+        const paidAmount = paystackData.amount / 100;
+
+        // 2. Find and Update Sale
+        let sale;
+        if (invoiceId.match(/^[0-9a-fA-F]{24}$/)) {
+            sale = await Sale.findById(invoiceId).populate('businessId');
+        } else {
+            sale = await Sale.findOne({ invoiceNumber: invoiceId.toUpperCase() }).populate('businessId');
+        }
+
+        if (!sale) {
+            return res.status(404).json({ success: false, message: "Sale record not found" });
+        }
+
+        // 3. Idempotency Check
+        const alreadyProcessed = sale.payments.some(p => p.reference === reference);
+        if (alreadyProcessed) {
+            return res.status(200).json({ success: true, data: sale, message: "Payment already processed" });
+        }
+
+        // 4. Update the Sale
+        sale.payments.push({
+            amount: paidAmount,
+            method: 'Paystack',
+            reference: reference,
+            date: new Date()
+        });
+
+        await sale.save();
+        
+        // 5. Background Tasks (Notifications, etc)
+        const business = sale.businessId;
+        if (business) {
+             // Log Activity
+             await ActivityLog.create({
+                businessId: business._id,
+                action: 'PAYMENT_RECEIVED',
+                entityType: 'PAYMENT',
+                entityId: sale._id,
+                details: `Online payment of ₦${paidAmount.toLocaleString()} verified for Invoice #${sale.invoiceNumber}`
+            });
+
+            // Create Notification
+            await Notification.create({
+                businessId: business._id,
+                title: 'Payment Received 💰',
+                message: `₦${paidAmount.toLocaleString()} received for Invoice #${sale.invoiceNumber} from ${sale.customerName}.`,
+                type: 'sale',
+                saleId: sale._id
+            });
+
+            // WhatsApp Notification
+            if (business.whatsappNumber) {
+                const totalPaid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
+                const balance = sale.totalAmount - totalPaid;
+                const receiptLink = `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/i/${sale.invoiceNumber}`;
+                
+                let msg = `🔔 *Payment Verified!*\n\nChief, I've just verified an online payment of *₦${paidAmount.toLocaleString()}* for *Invoice #${sale.invoiceNumber}* (${sale.customerName}).\n\n`;
+                
+                if (balance <= 0) {
+                    msg += `✅ *Fully Paid!* This debt is now cleared. I've updated your ledger records accordingly.\n\n`;
+                } else {
+                    msg += `⏳ *Balance Remaining:* ₦${balance.toLocaleString()}\n*Action:* I've updated the invoice status to ${sale.status.toUpperCase()}.\n\n`;
+                }
+
+                msg += `📄 *View/Share Receipt:* ${receiptLink}\n\n_Kreddy - Your Digital Trust Assistant_`;
+                
+                await sendWhatsAppMessage(business.whatsappNumber, msg).catch(err => {
+                    console.error(`❌ Failed to send WhatsApp notification for payment ${reference}:`, err.message);
+                });
+            }
+        }
+
+        res.status(200).json({ success: true, data: sale, message: "Payment verified successfully" });
+
+    } catch (error) {
+        console.error("verifyInvoicePayment Error:", error);
+        res.status(500).json({ success: false, message: "Internal server error during verification" });
     }
 };
