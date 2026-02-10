@@ -264,7 +264,7 @@ const PublicInvoicePage = () => {
     };
 
     const handlePaystackPayment = () => {
-        if (!sale) return;
+        if (!sale || verifying) return;
         
         if (!window.PaystackPop) {
             toast.error("Payment system still loading. Please wait a second and try again.");
@@ -276,8 +276,8 @@ const PublicInvoicePage = () => {
 
         if (paymentMode === "partial") {
             const parsed = parseFloat(customAmount);
-            if (!parsed || parsed < 100) {
-                toast.error("Minimum payment is ₦100");
+            if (!parsed || isNaN(parsed) || parsed < 100) {
+                toast.error("Please enter a valid amount (Minimum ₦100)");
                 return;
             }
             if (parsed > balance) {
@@ -287,89 +287,98 @@ const PublicInvoicePage = () => {
             finalAmount = parsed;
         }
 
-        const handler = window.PaystackPop.setup({
-            key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_placeholder', 
-            email: sale.customerEmail || 'customer@usekredibly.com',
-            amount: Math.round(finalAmount * 100), // in kobo
-            currency: 'NGN',
-            ref: `KRED_${sale.invoiceNumber}_${Date.now()}`,
-            metadata: {
-                invoiceNumber: sale.invoiceNumber,
-                customerName: sale.customerName,
-                custom_fields: [
-                    {
-                        display_name: "Invoice Number",
-                        variable_name: "invoice_number",
-                        value: sale.invoiceNumber
-                    }
-                ]
-            },
-            callback: async function (response) {
-                toast.success("Payment Received! Updating your ledger...");
-                setVerifying(true);
-                
-                try {
-                    // 1. Proactive Verification (Fastest)
-                    const verifyRes = await axios.post(`${API_BASE}/payments/verify-invoice`, {
-                        reference: response.reference,
-                        invoiceId: id
-                    });
-
-                    if (verifyRes.data.success) {
-                        setSale(verifyRes.data.data);
-                        setVerifying(false);
-                        
-                        // WOW: Trigger confetti on success
-                        confetti({
-                            particleCount: 150,
-                            spread: 70,
-                            origin: { y: 0.6 },
-                            colors: ['#7C3AED', '#10B981', '#F59E0B']
-                        });
-                        return;
-                    }
-                } catch (err) {
-                    console.error("Proactive verification failed, falling back to polling...", err);
-                }
-
-                // 2. Fallback Polling (In case backend is slow or verification endpoint failed)
-                let attempts = 0;
-                const pollInterval = setInterval(async () => {
-                    attempts++;
+        setVerifying(true); // Show loader immediately to indicate progress
+        
+        try {
+            const handler = window.PaystackPop.setup({
+                key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_placeholder', 
+                email: sale.customerEmail || 'customer@usekredibly.com',
+                amount: Math.round(finalAmount * 100), // in kobo
+                currency: 'NGN',
+                ref: `KRED_${sale.invoiceNumber}_${Date.now()}`,
+                metadata: {
+                    invoiceNumber: sale.invoiceNumber,
+                    customerName: sale.customerName,
+                    custom_fields: [
+                        {
+                            display_name: "Invoice Number",
+                            variable_name: "invoice_number",
+                            value: sale.invoiceNumber
+                        }
+                    ]
+                },
+                callback: async function (response) {
+                    toast.success("Payment Received! Updating your ledger...");
+                    // Keep verifying true
+                    
                     try {
-                        const res = await axios.get(`${API_BASE}/payments/invoice/${id}`);
-                        const updatedSale = res.data.data;
-                        const newBalance = updatedSale.totalAmount - updatedSale.paidAmount;
-                        
-                        // Success conditions
-                        if (newBalance < balance || updatedSale.status === 'paid') {
-                            clearInterval(pollInterval);
-                            setSale(updatedSale);
+                        // 1. Proactive Verification (Fastest)
+                        const verifyRes = await axios.post(`${API_BASE}/payments/verify-invoice`, {
+                            reference: response.reference,
+                            invoiceId: id
+                        });
+
+                        if (verifyRes.data.success) {
+                            setSale(verifyRes.data.data);
                             setVerifying(false);
+                            
+                            // WOW: Trigger confetti on success
                             confetti({
                                 particleCount: 150,
                                 spread: 70,
                                 origin: { y: 0.6 },
                                 colors: ['#7C3AED', '#10B981', '#F59E0B']
                             });
-                        } else if (attempts >= 15) { // Stop after 30s
-                            clearInterval(pollInterval);
-                            setVerifying(false);
-                            toast.error("Verification is taking longer than expected. Please refresh in a moment.");
+                            return;
                         }
                     } catch (err) {
-                        if (attempts >= 15) {
-                            clearInterval(pollInterval);
-                            setVerifying(false);
-                        }
+                        console.error("Proactive verification failed, falling back to polling...", err);
                     }
-                }, 2000);
-            },
-            onClose: function () {
-                toast.info("Payment window closed.");
-            }
-        });
-        handler.openIframe();
+
+                    // 2. Fallback Polling (In case backend is slow or verification endpoint failed)
+                    let attempts = 0;
+                    const pollInterval = setInterval(async () => {
+                        attempts++;
+                        try {
+                            const res = await axios.get(`${API_BASE}/payments/invoice/${id}`);
+                            const updatedSale = res.data.data;
+                            const newBalance = updatedSale.totalAmount - updatedSale.paidAmount;
+                            
+                            // Success conditions
+                            if (newBalance < balance || updatedSale.status === 'paid') {
+                                clearInterval(pollInterval);
+                                setSale(updatedSale);
+                                setVerifying(false);
+                                confetti({
+                                    particleCount: 150,
+                                    spread: 70,
+                                    origin: { y: 0.6 },
+                                    colors: ['#7C3AED', '#10B981', '#F59E0B']
+                                });
+                            } else if (attempts >= 15) { // Stop after 30s
+                                clearInterval(pollInterval);
+                                setVerifying(false);
+                                toast.error("Verification is taking longer than expected. Please refresh in a moment.");
+                            }
+                        } catch (err) {
+                            if (attempts >= 15) {
+                                clearInterval(pollInterval);
+                                setVerifying(false);
+                            }
+                        }
+                    }, 2000);
+                },
+                onClose: function () {
+                    setVerifying(false);
+                    toast.info("Payment window closed.");
+                }
+            });
+            handler.openIframe();
+        } catch (err) {
+            console.error("Paystack initialization failed:", err);
+            setVerifying(false);
+            toast.error("Internal error starting payment system. Please try again.");
+        }
     };
 
     if (loading) return (
@@ -724,9 +733,8 @@ const PublicInvoicePage = () => {
                                         >
                                             <CheckCircle2 size={64} color="white" style={{ margin: '0 auto 20px', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.1))' }} />
                                         </motion.div>
-                                        <h3 style={{ fontSize: '28px', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.02em' }}>Settled & Verified!</h3>
-                                        <div style={{ fontSize: '11px', fontWeight: 800, opacity: 0.9, textTransform: 'uppercase', letterSpacing: '0.15em', background: 'rgba(0,0,0,0.1)', padding: '6px 12px', borderRadius: '100px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                            <ShieldCheck size={14} /> Kredibly Trust Ledger Updated
+                                        <div style={{ fontSize: '11px', fontWeight: 800, opacity: 0.9, textTransform: 'uppercase', letterSpacing: '0.15em', background: 'rgba(0,0,0,0.1)', padding: '6px 12px', borderRadius: '100px', display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '12px' }}>
+                                            <ShieldCheck size={14} /> Official Receipt Verified
                                         </div>
                                     </div>
                                     
@@ -781,10 +789,6 @@ const PublicInvoicePage = () => {
                                                 {generating === 'pdf' ? '...' : 'PDF'}
                                             </button>
                                         </div>
-                                        
-                                        <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>
-                                            This link serves as your permanent proof of payment.
-                                        </p>
                                     </div>
                                 </motion.div>
                             )}
@@ -798,26 +802,11 @@ const PublicInvoicePage = () => {
                             </div>
                         </div>
 
-                    {/* Footer Reassurance */}
+                    {/* Footer Area */}
                     <div style={{ marginTop: '48px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '16px', marginBottom: '40px' }}>
-                            {[
-                                { i: ShieldCheck, l: "Trust Score", v: "+12 pts" },
-                                { i: CheckCircle, l: "Verified", v: "On Chain" },
-                                { i: Building2, l: "Settlement", v: "Direct" }
-                            ].map((item, idx) => (
-                                <div key={idx} style={{ background: 'white', padding: '16px', borderRadius: '16px', border: '1px solid #F1F5F9', textAlign: 'center' }}>
-                                    <item.i size={16} color="var(--primary)" style={{ margin: '0 auto 8px' }} />
-                                    <p style={{ fontSize: '8px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>{item.l}</p>
-                                    <p style={{ fontSize: '10px', fontWeight: 900 }}>{item.v}</p>
-                                </div>
-                            ))}
-                        </div>
-
                         <footer style={{ textAlign: 'center', padding: '40px 0', borderTop: '1px solid #F1F5F9' }}>
-                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '22px', filter: 'grayscale(0.5) contrast(1.2)', margin: '0 auto 24px' }} />
                             <p style={{ fontSize: '10px', fontWeight: 700, color: '#64748B', lineHeight: 1.8, maxWidth: '400px', margin: '0 auto' }}>
-                                Kredibly is a decentralized financial trust ledger. Every record is secured to ensure merchant and customer transparency. © 2026.
+                                Kredibly is the intelligent ledger for modern commerce. Secure, transparent, and built for scale. © 2026.
                             </p>
                         </footer>
                     </div>
