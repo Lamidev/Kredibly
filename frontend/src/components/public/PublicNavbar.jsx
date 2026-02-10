@@ -22,7 +22,7 @@ const PublicNavbar = () => {
                 {/* Same Desktop Nav Code... keeping it brief to focus on mobile menu below */}
                 <div className="landing-nav-container" style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Link to="/home" onClick={() => window.scrollTo(0, 0)} style={{ display: 'flex', alignItems: 'center' }}>
-                        <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '40px', objectFit: 'contain', filter: 'contrast(1.15) brightness(1.02)' }} />
+                        <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '36px', objectFit: 'contain', filter: 'contrast(1.15) brightness(1.02)' }} />
                     </Link>
 
                     {/* Center: Desktop Nav Links... */}
