@@ -7,10 +7,6 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
-/**
- * 👑 Admin Dashboard (Overview Component)
- * Now purely focused on the main platform metrics.
- */
 const AdminDashboard = () => {
     const navigate = useNavigate();
     const [stats, setStats] = useState(null);

@@ -287,8 +287,6 @@ const PublicInvoicePage = () => {
             finalAmount = parsed;
         }
 
-        setVerifying(true); // Show loader immediately to indicate progress
-        
         try {
             const handler = window.PaystackPop.setup({
                 key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_placeholder', 
@@ -308,8 +306,8 @@ const PublicInvoicePage = () => {
                     ]
                 },
                 callback: async function (response) {
+                    setVerifying(true); // Now we definitely want to show the loader
                     toast.success("Payment Received! Updating your ledger...");
-                    // Keep verifying true
                     
                     try {
                         // 1. Proactive Verification (Fastest)
@@ -322,7 +320,6 @@ const PublicInvoicePage = () => {
                             setSale(verifyRes.data.data);
                             setVerifying(false);
                             
-                            // WOW: Trigger confetti on success
                             confetti({
                                 particleCount: 150,
                                 spread: 70,
@@ -335,7 +332,7 @@ const PublicInvoicePage = () => {
                         console.error("Proactive verification failed, falling back to polling...", err);
                     }
 
-                    // 2. Fallback Polling (In case backend is slow or verification endpoint failed)
+                    // 2. Fallback Polling
                     let attempts = 0;
                     const pollInterval = setInterval(async () => {
                         attempts++;
@@ -344,7 +341,6 @@ const PublicInvoicePage = () => {
                             const updatedSale = res.data.data;
                             const newBalance = updatedSale.totalAmount - updatedSale.paidAmount;
                             
-                            // Success conditions
                             if (newBalance < balance || updatedSale.status === 'paid') {
                                 clearInterval(pollInterval);
                                 setSale(updatedSale);
@@ -355,10 +351,10 @@ const PublicInvoicePage = () => {
                                     origin: { y: 0.6 },
                                     colors: ['#7C3AED', '#10B981', '#F59E0B']
                                 });
-                            } else if (attempts >= 15) { // Stop after 30s
+                            } else if (attempts >= 15) {
                                 clearInterval(pollInterval);
                                 setVerifying(false);
-                                toast.error("Verification is taking longer than expected. Please refresh in a moment.");
+                                toast.error("Verification is taking longer than expected. Please refresh.");
                             }
                         } catch (err) {
                             if (attempts >= 15) {
@@ -373,11 +369,21 @@ const PublicInvoicePage = () => {
                     toast.info("Payment window closed.");
                 }
             });
-            handler.openIframe();
+            
+            // Open the payment window
+            if (handler.openIframe) {
+                handler.openIframe();
+            } else if (handler.open) {
+                handler.open();
+            }
+            
+            // We set verifying here only AFTER the popup logic is triggered
+            // to avoid re-render conflicts
+            setVerifying(true);
         } catch (err) {
             console.error("Paystack initialization failed:", err);
             setVerifying(false);
-            toast.error("Internal error starting payment system. Please try again.");
+            toast.error(`Payment Error: ${err.message || "Failed to start"}`);
         }
     };
 
