@@ -41,7 +41,7 @@ const PricingPage = () => {
             cta: profile?.plan === "hustler" ? "Current Plan" : "Get Started",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
             highlight: false,
-            color: "#64748B"
+            color: "#475569"
         },
         {
             name: "Oga Plan",
@@ -105,15 +105,15 @@ const PricingPage = () => {
             <PublicNavbar />
             
             {/* Header */}
-            <section style={{ paddingTop: '180px', paddingBottom: '80px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+            <section className="pricing-header" style={{ paddingBottom: '80px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
                 <div className="pattern-dots" />
                 <div style={{ position: 'relative', zIndex: 10, padding: '0 20px' }}>
                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.9rem', border: '1px solid rgba(76, 29, 149, 0.1)' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px', background: 'var(--primary-glow)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.9rem', border: '1px solid rgba(59, 18, 138, 0.1)' }}>
                             <Zap size={16} fill="currentColor" />
                             SPECIAL PIONEER PRICING ENDS SOON
                         </div>
-                        <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 950, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: '24px' }}>
+                        <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', fontWeight: 950, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: '24px' }}>
                             The smart assistant <br />
                             <span style={{ color: 'var(--primary)' }}>for your empire.</span>
                         </h1>
@@ -131,7 +131,7 @@ const PricingPage = () => {
                                     borderRadius: '100px', 
                                     border: 'none', 
                                     background: billingCycle === 'monthly' ? 'white' : 'transparent', 
-                                    color: billingCycle === 'monthly' ? 'var(--text)' : '#64748B', 
+                                    color: billingCycle === 'monthly' ? 'var(--text)' : '#475569', 
                                     fontWeight: 700, 
                                     cursor: 'pointer',
                                     boxShadow: billingCycle === 'monthly' ? '0 4px 12px rgba(0,0,0,0.05)' : 'none',
@@ -202,11 +202,11 @@ const PricingPage = () => {
                                 {plan.isFoundingMember ? (
                                     <>
                                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                                            <span style={{ fontSize: '1.25rem', color: plan.highlight ? 'rgba(255,255,255,0.6)' : '#94A3B8', textDecoration: 'line-through', fontWeight: 600 }}>{plan.originalPrice}</span>
+                                            <span style={{ fontSize: '1.25rem', color: plan.highlight ? 'rgba(255,255,255,0.7)' : '#334155', textDecoration: 'line-through', fontWeight: 600 }}>{plan.originalPrice}</span>
                                             <span style={{ fontSize: '3rem', fontWeight: 950, letterSpacing: '-0.05em' }}>{plan.discountPrice}</span>
-                                            <span style={{ opacity: 0.7, fontWeight: 500 }}>{plan.period}</span>
+                                            <span style={{ opacity: 0.8, fontWeight: 500 }}>{plan.period}</span>
                                         </div>
-                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: plan.highlight ? '#4ADE80' : '#16A34A', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: plan.highlight ? '#4ADE80' : '#10B981', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                             <Zap size={12} fill="currentColor" /> FOUNDING MEMBER PRICE (-25%)
                                         </div>
                                     </>
@@ -273,13 +273,13 @@ const PricingPage = () => {
                                 {comparisonFeatures.map((row, i) => (
                                     <tr key={i} style={{ borderBottom: i === comparisonFeatures.length - 1 ? 'none' : '1px solid #F1F5F9' }}>
                                         <td style={{ padding: '24px', fontWeight: 600 }}>{row.name}</td>
-                                        <td style={{ padding: '24px', textAlign: 'center', color: '#64748B' }}>
+                                        <td style={{ padding: '24px', textAlign: 'center', color: '#334155' }}>
                                             {typeof row.free === 'boolean' ? (row.free ? <Check size={20} color="var(--primary)" style={{margin:'auto'}} /> : <X size={20} color="#94A3B8" style={{margin:'auto'}} />) : row.free}
                                         </td>
                                         <td style={{ padding: '24px', textAlign: 'center', fontWeight: 700, background: 'rgba(76,29,149,0.02)' }}>
                                             {typeof row.pro === 'boolean' ? (row.pro ? <Check size={20} color="var(--primary)" style={{margin:'auto'}} /> : <X size={20} color="#94A3B8" style={{margin:'auto'}} />) : row.pro}
                                         </td>
-                                        <td style={{ padding: '24px', textAlign: 'center', color: '#64748B' }}>
+                                        <td style={{ padding: '24px', textAlign: 'center', color: '#334155' }}>
                                             {typeof row.ent === 'boolean' ? (row.ent ? <Check size={20} color="var(--primary)" style={{margin:'auto'}} /> : <X size={20} color="#94A3B8" style={{margin:'auto'}} />) : row.ent}
                                         </td>
                                     </tr>
@@ -307,7 +307,7 @@ const PricingPage = () => {
                                     </div>
                                     <div>
                                         <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '12px' }}>{faq.q}</h4>
-                                        <p style={{ lineHeight: 1.6, color: 'var(--text-muted)' }}>{faq.a}</p>
+                                        <p style={{ lineHeight: 1.6, color: '#334155' }}>{faq.a}</p>
                                     </div>
                                 </div>
                             </div>
@@ -322,12 +322,23 @@ const PricingPage = () => {
                 .highlight-card {
                     transform: scale(1.05);
                 }
+                .pricing-header {
+                    padding-top: 180px;
+                }
                 @media (max-width: 1024px) {
+                    .pricing-header {
+                        padding-top: 140px;
+                    }
                     .highlight-card {
                         transform: none !important;
                     }
                     .pricing-grid {
                         gap: 24px !important;
+                    }
+                }
+                @media (max-width: 640px) {
+                    .pricing-header {
+                        padding-top: 120px;
                     }
                 }
                 @media (max-width: 480px) {

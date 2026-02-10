@@ -388,7 +388,7 @@ const Dashboard = () => {
                                 <motion.div
                                     key={sale._id}
                                     whileHover={{ x: 4, scale: 1.01 }}
-                                    className="dashboard-glass"
+                                    className="dashboard-glass priority-item"
                                     style={{ 
                                         padding: '16px 20px', 
                                         display: 'flex', 
@@ -405,7 +405,7 @@ const Dashboard = () => {
                                     }}
                                     onClick={() => navigate(`/dashboard/invoice/${sale.invoiceNumber}`)}
                                 >
-                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', minWidth: 0, flex: 2 }}>
+                                    <div className="priority-info" style={{ display: 'flex', gap: '12px', alignItems: 'center', minWidth: 0, flex: 2 }}>
                                         <div style={{
                                             background: 'rgba(245, 158, 11, 0.1)',
                                             padding: '10px',
@@ -418,12 +418,17 @@ const Dashboard = () => {
                                         <div style={{ overflow: 'hidden' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <p style={{ fontWeight: 800, color: 'var(--text)', fontSize: '0.95rem', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sale.customerName || 'Standard Order'}</p>
-                                                {sale.viewed && <span title="Viewed by customer" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: 'var(--primary)', fontWeight: 800 }}><Sparkles size={10} fill="var(--primary)" /> VIEWED</span>}
+                                                {(() => {
+                                                    const isViewed = sale.lastOpenedAt && sale.lastLinkSentAt 
+                                                        ? new Date(sale.lastOpenedAt) > new Date(sale.lastLinkSentAt)
+                                                        : sale.viewed;
+                                                    return isViewed && <span title="Viewed by customer" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: 'var(--primary)', fontWeight: 800 }}><Sparkles size={10} fill="var(--primary)" /> VIEWED</span>;
+                                                })()}
                                             </div>
                                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>#{sale.invoiceNumber} • {sale.description.slice(0, 30)}{sale.description.length > 30 ? '...' : ''}</p>
                                         </div>
                                     </div>
-                                    <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                                    <div className="priority-amount" style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
                                         <div style={{ textAlign: 'right', minWidth: '80px' }}>
                                             <p style={{ fontWeight: 950, fontSize: '1.05rem', color: 'var(--text)', marginBottom: '2px' }}>₦{(sale.totalAmount - (sale.payments?.reduce((sum, p) => sum + p.amount, 0) || 0)).toLocaleString()}</p>
                                             <span className="premium-badge" style={{ 
@@ -589,7 +594,7 @@ const Dashboard = () => {
                             <Trash2 size={32} />
                         </div>
                         <h3 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#0F172A', marginBottom: '12px', letterSpacing: '-0.02em' }}>Delete Recording?</h3>
-                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>
+                        <p style={{ color: '#334155', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>
                             You are about to remove the entry for <b>{deleteModal.sale?.customerName}</b>. This will correct your balance but the action cannot be undone.
                         </p>
                         <div style={{ display: 'flex', gap: '12px' }}>
@@ -605,7 +610,7 @@ const Dashboard = () => {
                 @media (max-width: 1024px) {
                     .dashboard-main-grid {
                         grid-template-columns: 1fr !important;
-                        gap: 20px !important;
+                        gap: 12px !important;
                     }
                     .dashboard-glass {
                         padding: 24px !important;
@@ -631,6 +636,20 @@ const Dashboard = () => {
                     }
                     .dashboard-glass {
                         padding: 16px !important;
+                    }
+                    .priority-item {
+                        flex-direction: column !important;
+                        align-items: flex-start !important;
+                        gap: 16px !important;
+                    }
+                    .priority-info {
+                        width: 100% !important;
+                    }
+                    .priority-amount {
+                        width: 100% !important;
+                        justify-content: space-between !important;
+                        padding-top: 12px !important;
+                        border-top: 1px dashed #E2E8F0 !important;
                     }
                     .recharts-cartesian-axis-tick text {
                         font-size: 10px !important;

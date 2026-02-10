@@ -270,7 +270,11 @@ exports.trackView = async (req, res) => {
         if (!sale.viewed) {
             sale.viewed = true;
             sale.viewedAt = new Date();
-            await sale.save();
+        }
+        
+        // Always update lastOpenedAt on every visit
+        sale.lastOpenedAt = new Date();
+        await sale.save();
 
             // Log Activity for Merchant
             if (sale.businessId) {
@@ -291,7 +295,6 @@ exports.trackView = async (req, res) => {
                     saleId: sale._id
                 });
             }
-        }
 
         res.status(200).json({ success: true });
     } catch (error) {
@@ -410,6 +413,9 @@ exports.shareSaleByEmail = async (req, res) => {
 
         if (!sale) return res.status(404).json({ message: "Sale record not found" });
 
+        sale.lastLinkSentAt = new Date();
+        await sale.save();
+
         res.status(200).json({ success: true, message: "Email sent successfully" });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -465,6 +471,7 @@ exports.sendReminder = async (req, res) => {
         }
 
         sale.reminderSentAt = new Date();
+        sale.lastLinkSentAt = new Date();
         await sale.save();
         
         await logActivity({

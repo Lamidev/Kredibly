@@ -104,7 +104,7 @@ const ReportsPage = () => {
                             {topCustomers.map((c, i) => (
                                 <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: i === 0 ? 'var(--primary)' : '#F1F5F9', color: i === 0 ? 'white' : '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.9rem' }}>
+                                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: i === 0 ? 'var(--primary)' : '#F1F5F9', color: i === 0 ? 'white' : '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.9rem' }}>
                                             {i + 1}
                                         </div>
                                         <div>
@@ -137,7 +137,7 @@ const ReportsPage = () => {
                                 <CheckCircle2 size={24} color="#059669" />
                             </div>
                             <p style={{ fontWeight: 800, color: '#059669' }}>All clear!</p>
-                            <p style={{ fontSize: '0.85rem', color: '#64748B' }}>No outstanding debts found.</p>
+                            <p style={{ fontSize: '0.85rem', color: '#334155' }}>No outstanding debts found.</p>
                          </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { jsPDF } from "jspdf";
+import confetti from "canvas-confetti";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
@@ -319,6 +320,14 @@ const PublicInvoicePage = () => {
                         clearInterval(pollInterval);
                         setSale(updatedSale);
                         setVerifying(false);
+                        
+                        // WOW: Trigger confetti on success
+                        confetti({
+                            particleCount: 150,
+                            spread: 70,
+                            origin: { y: 0.6 },
+                            colors: ['#7C3AED', '#10B981', '#F59E0B']
+                        });
                     }
                 }, 2000);
             },
@@ -471,7 +480,7 @@ const PublicInvoicePage = () => {
                 </div>
             </nav>
 
-            <main style={{ ...maxW2xl, position: 'relative', zIndex: 10, padding: '0 16px' }}>
+            <main className="invoice-main-content" style={{ ...maxW2xl, position: 'relative', zIndex: 10 }}>
                 <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
                     
                     {/* Status Pill */}
@@ -489,11 +498,11 @@ const PublicInvoicePage = () => {
 
                     {/* HERO SECTION */}
                     <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-                        <h1 style={{ fontSize: '52px', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <span style={{ color: '#94A3B8', fontSize: '20px', fontWeight: 700, marginBottom: '4px' }}>
-                                {isPaid ? 'Total Amount' : isDebtRecovery ? 'Outstanding Balance' : 'Amount Due'}
+                        <h1 style={{ fontSize: 'clamp(2.5rem, 10vw, 52px)', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <span style={{ color: '#94A3B8', fontSize: '14px', fontWeight: 700, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                                {isPaid ? 'Settled on Ledger' : isDebtRecovery ? 'Outstanding Balance' : 'Amount Due'}
                             </span>
-                            <span style={{ background: isOverdue ? 'linear-gradient(to right, #DC2626, #991B1B)' : 'linear-gradient(to right, #0F172A, #4C1D95)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                            <span style={{ background: isOverdue ? 'linear-gradient(to right, #DC2626, #991B1B)' : 'linear-gradient(135deg, var(--primary), #6366f1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                                 ₦{isPaid ? sale.totalAmount.toLocaleString() : balance.toLocaleString()}
                             </span>
                         </h1>
@@ -610,14 +619,60 @@ const PublicInvoicePage = () => {
                                     <button 
                                         onClick={handlePaystackPayment}
                                         disabled={verifying}
-                                        style={{ width: '100%', padding: '20px', background: isOverdue ? '#DC2626' : '#1e144d', color: 'white', borderRadius: '16px', border: 'none', fontWeight: 900, fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: '0 10px 15px -3px rgba(30, 20, 77, 0.2)' }}
+                                        style={{ 
+                                            width: '100%', 
+                                            padding: '20px', 
+                                            background: isOverdue ? '#DC2626' : 'var(--primary)', 
+                                            color: 'white', 
+                                            borderRadius: '16px', 
+                                            border: 'none', 
+                                            fontWeight: 900, 
+                                            fontSize: '18px', 
+                                            cursor: verifying ? 'not-allowed' : 'pointer', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center', 
+                                            gap: '12px', 
+                                            boxShadow: '0 10px 15px -3px var(--primary-glow)',
+                                            transition: 'all 0.3s ease'
+                                        }}
+                                        onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
+                                        onMouseOut={(e) => e.currentTarget.style.filter = 'none'}
                                     >
-                                        {verifying ? <Loader2 size={20} className="spin-animation" /> : <><Wallet size={20} /> <span>{isOverdue ? 'Clear Outstanding Now' : 'Secure Checkout'}</span></>}
+                                        {verifying ? (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <Loader2 size={20} className="spin-animation" /> 
+                                                <span>Verifying Receipt...</span>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <ShieldCheck size={22} /> 
+                                                <span>{isOverdue ? 'Settle Outstanding Now' : 'Pay Secured Invoice'}</span>
+                                            </>
+                                        )}
                                     </button>
+
+                                    {verifying && (
+                                        <motion.p 
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            style={{ textAlign: 'center', marginTop: '16px', fontSize: '12px', color: 'var(--primary)', fontWeight: 700 }}
+                                        >
+                                            Don't close this window. We're finalizing your entry on the ledger.
+                                        </motion.p>
+                                    )}
+
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginTop: '24px' }}>
-                                        <p style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <ShieldCheck size={14} color="#10B981" /> SSL Encrypted Payment
-                                        </p>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', opacity: 0.6 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <ShieldCheck size={14} color="#10B981" />
+                                                <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>256-bit SSL</span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <CheckCircle size={14} color="#10B981" />
+                                                <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Verified Merchant</span>
+                                            </div>
+                                        </div>
                                         <img src="https://paystack.com/assets/img/login/paystack-logo.png" style={{ height: '12px', opacity: 0.3 }} />
                                     </div>
                                 </div>
@@ -627,16 +682,30 @@ const PublicInvoicePage = () => {
                                     animate={{ opacity: 1, scale: 1 }}
                                     style={{ background: '#F8FAFC', borderRadius: '24px', overflow: 'hidden', border: '1px dashed #10B981' }}
                                 >
-                                    <div style={{ background: '#10B981', padding: '24px', textAlign: 'center', color: 'white' }}>
-                                        <CheckCircle2 size={32} color="white" style={{ margin: '0 auto 12px' }} />
-                                        <h3 style={{ fontSize: '18px', fontWeight: 900 }}>Payment Received!</h3>
-                                        <p style={{ fontSize: '10px', fontWeight: 700, opacity: 0.9, textTransform: 'uppercase' }}>Verified Official Receipt</p>
+                                    <div style={{ background: 'var(--success)', padding: '40px 32px', textAlign: 'center', color: 'white' }}>
+                                        <motion.div
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            transition={{ type: "spring", damping: 12, stiffness: 200 }}
+                                        >
+                                            <CheckCircle2 size={64} color="white" style={{ margin: '0 auto 20px', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.1))' }} />
+                                        </motion.div>
+                                        <h3 style={{ fontSize: '28px', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.02em' }}>Settled & Verified!</h3>
+                                        <div style={{ fontSize: '11px', fontWeight: 800, opacity: 0.9, textTransform: 'uppercase', letterSpacing: '0.15em', background: 'rgba(0,0,0,0.1)', padding: '6px 12px', borderRadius: '100px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                            <ShieldCheck size={14} /> Kredibly Trust Ledger Updated
+                                        </div>
                                     </div>
                                     
-                                    <div style={{ padding: '24px' }}>
-                                        <div style={{ marginBottom: '20px' }}>
-                                            <p style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Total Settled</p>
-                                            <p style={{ fontSize: '24px', fontWeight: 900, color: '#0F172A' }}>₦{sale.paidAmount.toLocaleString()}</p>
+                                    <div style={{ padding: '24px 20px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+                                            <div style={{ minWidth: '140px' }}>
+                                                <p style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '4px' }}>Total Settled</p>
+                                                <p style={{ fontSize: '28px', fontWeight: 950, color: '#0F172A', letterSpacing: '-0.03em', margin: 0 }}>₦{sale.paidAmount.toLocaleString()}</p>
+                                            </div>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <p style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '4px' }}>Status</p>
+                                                <div style={{ background: '#ECFDF5', color: '#059669', padding: '6px 14px', borderRadius: '100px', fontSize: '11px', fontWeight: 900, display: 'inline-block', boxShadow: '0 2px 10px rgba(16, 185, 129, 0.1)' }}>{sale.status.toUpperCase()}</div>
+                                            </div>
                                         </div>
 
                                         <div style={{ borderTop: '1px solid #EDF2F7', paddingTop: '16px', marginBottom: '24px' }}>
@@ -720,6 +789,22 @@ const PublicInvoicePage = () => {
                     </div>
                 </motion.div>
             </main>
+            <style>{`
+                .invoice-main-content {
+                    padding: 40px 16px 0;
+                }
+                @media (min-width: 768px) {
+                    .invoice-main-content {
+                        padding: 80px 16px 0;
+                    }
+                }
+                @media (max-width: 480px) {
+                    .spin-animation {
+                        width: 16px !important;
+                        height: 16px !important;
+                    }
+                }
+            `}</style>
             </div>
         </div>
     );

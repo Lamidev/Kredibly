@@ -63,7 +63,12 @@ const SaleSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    viewedAt: Date
+    viewedAt: Date,
+    lastLinkSentAt: {
+        type: Date,
+        default: Date.now
+    },
+    lastOpenedAt: Date
 }, {
     timestamps: true,
     toJSON: { virtuals: true },

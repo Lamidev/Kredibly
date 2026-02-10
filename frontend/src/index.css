@@ -1,14 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --primary: #4C1D95;
-  --primary-glow: rgba(76, 29, 149, 0.3);
+  --primary: #3B128A;
+  --primary-glow: rgba(59, 18, 138, 0.3);
   --secondary: #FF6B35;
   --accent: #FFD23F;
   --background: #F8FAFC;
   --surface: #FFFFFF;
   --text: #111827;
-  --text-muted: #4B5563;
+  --text-muted: #334155;
   --border: rgba(0, 0, 0, 0.06); 
   --success: #10B981;
   --warning: #F59E0B;

@@ -277,18 +277,26 @@ const DashboardLayout = () => {
                             </button>
 
                             {showNotifications && (
-                                <div className="glass-card" style={{
-                                    position: 'absolute', top: '50px', right: '0', 
-                                    width: 'calc(100vw - 32px)', maxWidth: '350px',
-                                    background: 'white', border: '1px solid #E2E8F0', padding: '0',
-                                    zIndex: 1000, borderRadius: '24px', overflow: 'hidden', 
-                                    boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
-                                    animation: 'slideDown 0.2s ease-out'
-                                }}>
-                                    <div style={{ padding: '20px', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900 }}>Alerts</h4>
-                                        <button onClick={markAllRead} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}>Clear All</button>
-                                    </div>
+                                <>
+                                    {/* Mobile Backdrop to close on click outside */}
+                                    <div 
+                                        className="md:hidden"
+                                        style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+                                        onClick={() => setShowNotifications(false)}
+                                    />
+                                    <div className="glass-card notification-dropdown">
+                                        <div style={{ padding: '20px', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900 }}>Alerts</h4>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <button onClick={markAllRead} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}>Clear All</button>
+                                                <button 
+                                                    onClick={() => setShowNotifications(false)}
+                                                    style={{ background: '#E2E8F0', border: 'none', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B', cursor: 'pointer' }}
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        </div>
                                     <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
                                         {notifications.length === 0 ? (
                                             <div style={{ padding: '40px 20px', textAlign: 'center', color: '#94A3B8', fontSize: '0.85rem' }}>
@@ -325,6 +333,7 @@ const DashboardLayout = () => {
                                         )}
                                     </div>
                                 </div>
+                                </>
                             )}
                         </div>
 
@@ -350,6 +359,34 @@ const DashboardLayout = () => {
             </main>
             {/* Support Hub Floating Chat */}
             <SupportHub />
+            <style>{`
+                .notification-dropdown {
+                    position: absolute;
+                    top: 50px;
+                    right: 0;
+                    width: 360px;
+                    background: white;
+                    border: 1px solid #E2E8F0;
+                    padding: 0;
+                    z-index: 1000;
+                    border-radius: 24px;
+                    overflow: hidden;
+                    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+                    animation: slideDown 0.2s ease-out;
+                }
+                @media (max-width: 640px) {
+                    .notification-dropdown {
+                        position: fixed;
+                        top: 80px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        width: 95%;
+                        max-width: 400px;
+                        right: auto;
+                        box-shadow: 0 0 0 100vw rgba(15, 23, 42, 0.2);
+                    }
+                }
+            `}</style>
 
             {/* Logout Confirmation Modal */}
             {showLogoutConfirm && createPortal(
