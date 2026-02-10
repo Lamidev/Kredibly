@@ -8,6 +8,10 @@ const saleController = require('../../controllers/business/saleController');
 // Verify payment and upgrade plan
 router.post('/verify', protect, verifyPayment);
 
+// Verify invoice payment (Public)
+const { verifyInvoicePayment } = require('../../controllers/common/paymentController');
+router.post('/verify-invoice', verifyInvoicePayment);
+
 // Webhook for invoice payments and other Paystack events
 router.post('/webhook', handlePaystackWebhook);
 
