@@ -54,7 +54,7 @@ const AdminLayout = () => {
                         <img 
                             src="/krediblyrevamped.png" 
                             alt="Kredibly" 
-                            style={{ height: '24px', width: 'auto', filter: 'brightness(0) invert(1)', flexShrink: 0 }} 
+                            style={{ height: '34px', width: 'auto', filter: 'brightness(0) invert(1)', flexShrink: 0 }} 
                         />
                         <span style={{ 
                             background: 'rgba(255, 255, 255, 0.1)', 
@@ -141,7 +141,7 @@ const AdminLayout = () => {
                             <Menu size={20} />
                         </button>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <img src="/krediblyrevamped.png" alt="logo" style={{ height: '22px' }} className="lg:hidden" />
+                            <img src="/krediblyrevamped.png" alt="logo" style={{ height: '34px' }} className="lg:hidden" />
                             <h2 className="hidden sm:block" style={{ fontSize: 'clamp(0.9rem, 4vw, 1.1rem)', fontWeight: 900, color: '#0F172A', margin: 0, whiteSpace: 'nowrap' }}>Command Center</h2>
                         </div>
                     </div>
