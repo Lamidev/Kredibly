@@ -96,7 +96,7 @@ const PaymentSuccessModal = ({
                             />
                         </motion.div>
                         <h2 style={{
-                            fontSize: '28px',
+                            fontSize: 'clamp(22px, 6vw, 28px)',
                             fontWeight: 900,
                             margin: '0 0 8px 0',
                             letterSpacing: '-0.02em'
@@ -114,7 +114,7 @@ const PaymentSuccessModal = ({
                     </div>
 
                     {/* Payment Details */}
-                    <div style={{ padding: '32px' }}>
+                    <div style={{ padding: 'clamp(20px, 5vw, 32px)' }}>
                         <div style={{
                             background: '#F8FAFC',
                             borderRadius: '20px',
@@ -134,7 +134,7 @@ const PaymentSuccessModal = ({
                                     You Paid
                                 </p>
                                 <p style={{
-                                    fontSize: '32px',
+                                    fontSize: 'clamp(28px, 8vw, 36px)',
                                     fontWeight: 950,
                                     color: '#10B981',
                                     margin: 0,
