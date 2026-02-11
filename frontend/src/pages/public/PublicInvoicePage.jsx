@@ -877,7 +877,7 @@ const PublicInvoicePage = () => {
                                                 <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Secure 256-bit SSL</span>
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <img src="https://assets.paystack.com/assets/img/logos/merchants/paystack.svg" style={{ height: '14px' }} alt="Paystack" />
+                                                <img src="/paystack-logo.jpg" style={{ height: '14px', objectFit: 'contain', filter: 'contrast(1.1)' }} alt="Paystack" />
                                             </div>
                                         </div>
                                     </div>
