@@ -95,10 +95,8 @@ const PublicInvoicePage = () => {
             updateMeta('twitter:title', pageTitle);
             updateMeta('twitter:description', invoiceDesc);
 
-            // Track View
-            if (!sale.viewed) {
-                axios.post(`${API_BASE}/sales/${sale._id}/track-view`).catch(() => {});
-            }
+            // Track Engagement (Always ping on load)
+            axios.post(`${API_BASE}/sales/${sale._id}/track-view`).catch(() => {});
         }
     }, [sale]);
 

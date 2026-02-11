@@ -36,6 +36,13 @@ const PublicReceiptPage = () => {
         }
     }, [sale]);
 
+    useEffect(() => {
+        if (sale) {
+            // Track Engagement
+            axios.post(`${API_BASE}/sales/${sale._id}/track-view`).catch(() => {});
+        }
+    }, [sale]);
+
     const fetchReceipt = async () => {
         try {
             const res = await axios.get(`${API_BASE}/payments/invoice/${id}`);
