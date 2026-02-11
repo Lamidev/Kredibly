@@ -487,7 +487,7 @@ const PublicInvoicePage = () => {
     const isDebtRecovery = !isPaid && (sale.status === 'partial' || isOverdue);
 
     return (
-        <div style={containerStyle}>
+        <div style={{ minHeight: '100vh', background: '#FDFCFE', color: '#0F172A', fontFamily: "'Inter', sans-serif", paddingBottom: '100px' }}>
             <div className="printable-receipt" style={{ position: 'fixed', left: '-9999px', top: 0 }}>
                 {/* This hidden copy is what actually gets captured for PDF/Image */}
                 <div id="receipt-download-target" style={{ width: '600px', background: 'white', padding: '48px', fontFamily: "'Inter', sans-serif" }}>
@@ -573,7 +573,7 @@ const PublicInvoicePage = () => {
             <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '500px', background: 'linear-gradient(to bottom, rgba(245, 243, 255, 0.5), transparent)', pointerEvents: 'none' }} />
 
             {/* Navbar */}
-            <nav style={{ ...maxW2xl, position: 'relative', zIndex: 10, padding: '24px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <nav style={{ maxWidth: '42rem', margin: '0 auto', width: '100%', position: 'relative', zIndex: 10, padding: '24px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '24px' }} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     {sale.businessId ? (
