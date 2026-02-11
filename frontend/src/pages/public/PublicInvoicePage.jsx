@@ -305,64 +305,66 @@ const PublicInvoicePage = () => {
                         }
                     ]
                 },
-                callback: async function (response) {
-                    setVerifying(true); // Now we definitely want to show the loader
-                    toast.success("Payment Received! Updating your ledger...");
-                    
-                    try {
-                        // 1. Proactive Verification (Fastest)
-                        const verifyRes = await axios.post(`${API_BASE}/payments/verify-invoice`, {
-                            reference: response.reference,
-                            invoiceId: id
-                        });
-
-                        if (verifyRes.data.success) {
-                            setSale(verifyRes.data.data);
-                            setVerifying(false);
-                            
-                            confetti({
-                                particleCount: 150,
-                                spread: 70,
-                                origin: { y: 0.6 },
-                                colors: ['#7C3AED', '#10B981', '#F59E0B']
-                            });
-                            return;
-                        }
-                    } catch (err) {
-                        console.error("Proactive verification failed, falling back to polling...", err);
-                    }
-
-                    // 2. Fallback Polling
-                    let attempts = 0;
-                    const pollInterval = setInterval(async () => {
-                        attempts++;
+                callback: function (response) {
+                    (async () => {
+                        setVerifying(true); // Now we definitely want to show the loader
+                        toast.success("Payment Received! Updating your ledger...");
+                        
                         try {
-                            const res = await axios.get(`${API_BASE}/payments/invoice/${id}`);
-                            const updatedSale = res.data.data;
-                            const newBalance = updatedSale.totalAmount - updatedSale.paidAmount;
-                            
-                            if (newBalance < balance || updatedSale.status === 'paid') {
-                                clearInterval(pollInterval);
-                                setSale(updatedSale);
+                            // 1. Proactive Verification (Fastest)
+                            const verifyRes = await axios.post(`${API_BASE}/payments/verify-invoice`, {
+                                reference: response.reference,
+                                invoiceId: id
+                            });
+
+                            if (verifyRes.data.success) {
+                                setSale(verifyRes.data.data);
                                 setVerifying(false);
+                                
                                 confetti({
                                     particleCount: 150,
                                     spread: 70,
                                     origin: { y: 0.6 },
                                     colors: ['#7C3AED', '#10B981', '#F59E0B']
                                 });
-                            } else if (attempts >= 15) {
-                                clearInterval(pollInterval);
-                                setVerifying(false);
-                                toast.error("Verification is taking longer than expected. Please refresh.");
+                                return;
                             }
                         } catch (err) {
-                            if (attempts >= 15) {
-                                clearInterval(pollInterval);
-                                setVerifying(false);
-                            }
+                            console.error("Proactive verification failed, falling back to polling...", err);
                         }
-                    }, 2000);
+
+                        // 2. Fallback Polling
+                        let attempts = 0;
+                        const pollInterval = setInterval(async () => {
+                            attempts++;
+                            try {
+                                const res = await axios.get(`${API_BASE}/payments/invoice/${id}`);
+                                const updatedSale = res.data.data;
+                                const newBalance = updatedSale.totalAmount - updatedSale.paidAmount;
+                                
+                                if (newBalance < balance || updatedSale.status === 'paid') {
+                                    clearInterval(pollInterval);
+                                    setSale(updatedSale);
+                                    setVerifying(false);
+                                    confetti({
+                                        particleCount: 150,
+                                        spread: 70,
+                                        origin: { y: 0.6 },
+                                        colors: ['#7C3AED', '#10B981', '#F59E0B']
+                                    });
+                                } else if (attempts >= 15) {
+                                    clearInterval(pollInterval);
+                                    setVerifying(false);
+                                    toast.error("Verification is taking longer than expected. Please refresh.");
+                                }
+                            } catch (err) {
+                                if (attempts >= 15) {
+                                    clearInterval(pollInterval);
+                                    setVerifying(false);
+                                }
+                            }
+                        }, 2000);
+                    })();
                 },
                 onClose: function () {
                     setVerifying(false);
