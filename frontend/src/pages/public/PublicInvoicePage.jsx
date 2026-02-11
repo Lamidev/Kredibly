@@ -460,7 +460,7 @@ const PublicInvoicePage = () => {
                 <motion.div 
                     animate={{ rotate: 360 }}
                     transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                    style={{ position: 'absolute', inset: 0, border: '4px solid #F3E8FF', borderRadius: '50%', borderTopColor: '#7C3AED' }}
+                    style={{ position: 'absolute', inset: 0, border: '4px solid #F3E8FF', borderRadius: '50%', borderTopColor: '#4C1D95' }}
                 />
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <img src="/krediblyrevamped.png" alt="" style={{ height: '24px', opacity: 0.3 }} />
@@ -605,10 +605,10 @@ const PublicInvoicePage = () => {
                         <div style={{ 
                             padding: '6px 16px', borderRadius: '100px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', border: '1px solid',
                             backgroundColor: isPaid ? '#ECFDF5' : 'white',
-                            color: isPaid ? '#059669' : '#7C3AED',
+                            color: isPaid ? '#059669' : '#4C1D95',
                             borderColor: isPaid ? '#D1FAE5' : '#F3E8FF'
                         }}>
-                             <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: isPaid ? '#10B981' : isOverdue ? '#EF4444' : '#8B5CF6' }} />
+                             <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: isPaid ? '#10B981' : isOverdue ? '#EF4444' : '#4C1D95' }} />
                              {isPaid ? 'Settled on Ledger' : isOverdue ? 'Overdue Payment' : 'Payment Awaiting'}
                         </div>
                     </div>
@@ -690,7 +690,7 @@ const PublicInvoicePage = () => {
                                     ? 'linear-gradient(135deg, #10B981, #059669)' 
                                     : isOverdue 
                                         ? 'linear-gradient(to right, #DC2626, #991B1B)' 
-                                        : 'linear-gradient(135deg, var(--primary), #6366f1)', 
+                                        : 'linear-gradient(135deg, #4C1D95, #2E1065)', 
                                 WebkitBackgroundClip: 'text', 
                                 WebkitTextFillColor: 'transparent' 
                             }}>
@@ -822,7 +822,7 @@ const PublicInvoicePage = () => {
                                             padding: isMobile ? '18px' : '20px', 
                                             background: isOverdue 
                                                 ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)' 
-                                                : 'linear-gradient(135deg, #7C3AED 0%, #6366F1 100%)', 
+                                                : 'linear-gradient(135deg, #4C1D95 0%, #2E1065 100%)', 
                                             color: 'white', 
                                             borderRadius: '16px', 
                                             border: 'none', 
@@ -877,7 +877,7 @@ const PublicInvoicePage = () => {
                                                 <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Secure 256-bit SSL</span>
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <img src="https://paystack.com/assets/img/login/paystack-logo.png" style={{ height: '12px' }} alt="Paystack" />
+                                                <img src="https://assets.paystack.com/assets/img/logos/merchants/paystack.svg" style={{ height: '14px' }} alt="Paystack" />
                                             </div>
                                         </div>
                                     </div>

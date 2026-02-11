@@ -495,7 +495,7 @@ const PublicReceiptPage = () => {
                                 disabled={!!generating}
                                 style={{
                                     padding: '16px',
-                                    background: '#0F172A',
+                                    background: 'linear-gradient(135deg, #4C1D95, #2E1065)',
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '14px',
