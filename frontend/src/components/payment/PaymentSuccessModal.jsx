@@ -1,7 +1,8 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Download, X } from 'lucide-react';
+import { CheckCircle2, Download, X, Share2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const PaymentSuccessModal = ({ isOpen, onClose, amountPaid, balanceRemaining, onDownloadReceipt }) => {
     if (!isOpen) return null;
