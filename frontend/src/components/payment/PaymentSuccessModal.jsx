@@ -209,47 +209,85 @@ const PaymentSuccessModal = ({ isOpen, onClose, amountPaid, balanceRemaining, on
                         </div>
 
                         {/* Action Buttons */}
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            <button
-                                onClick={onDownloadReceipt}
-                                style={{
-                                    flex: 1,
-                                    padding: '16px',
-                                    background: '#0F172A',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '14px',
-                                    fontWeight: 900,
-                                    fontSize: '15px',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '8px',
-                                    transition: 'all 0.2s'
-                                }}
-                                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                            >
-                                <Download size={18} />
-                                Download Receipt
-                            </button>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button
+                                    onClick={onDownloadReceipt}
+                                    style={{
+                                        flex: 2,
+                                        padding: '16px',
+                                        background: '#0F172A',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '14px',
+                                        fontWeight: 900,
+                                        fontSize: '15px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                    onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                                >
+                                    <Download size={18} />
+                                    Download
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        const text = `I've just made a payment of ₦${amountPaid.toLocaleString()}! You can view my verified receipt here:`;
+                                        const url = window.location.href;
+                                        if (navigator.share) {
+                                            try {
+                                                await navigator.share({ title: 'Payment Receipt', text, url });
+                                            } catch (err) {}
+                                        } else {
+                                            navigator.clipboard.writeText(`${text} ${url}`);
+                                            toast.success("Link copied to clipboard!");
+                                        }
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        padding: '16px',
+                                        background: '#F1F5F9',
+                                        color: '#0F172A',
+                                        border: '1px solid #E2E8F0',
+                                        borderRadius: '14px',
+                                        fontWeight: 800,
+                                        fontSize: '15px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    <Share2 size={18} />
+                                </button>
+                            </div>
                             <button
                                 onClick={onClose}
                                 style={{
-                                    flex: 1,
+                                    width: '100%',
                                     padding: '16px',
-                                    background: '#F1F5F9',
-                                    color: '#334155',
-                                    border: 'none',
+                                    background: 'white',
+                                    color: '#64748B',
+                                    border: '1px solid #E2E8F0',
                                     borderRadius: '14px',
-                                    fontWeight: 900,
+                                    fontWeight: 800,
                                     fontSize: '15px',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s'
                                 }}
-                                onMouseOver={(e) => e.currentTarget.style.background = '#E2E8F0'}
-                                onMouseOut={(e) => e.currentTarget.style.background = '#F1F5F9'}
+                                onMouseOver={(e) => {
+                                    e.currentTarget.style.background = '#F8FAFC';
+                                    e.currentTarget.style.color = '#0F172A';
+                                }}
+                                onMouseOut={(e) => {
+                                    e.currentTarget.style.background = 'white';
+                                    e.currentTarget.style.color = '#64748B';
+                                }}
                             >
                                 Close
                             </button>

@@ -145,37 +145,45 @@ const PublicInvoicePage = () => {
         try {
             const html2canvas = (await import('html2canvas')).default;
             
-            // Robust Clone & Reveal (Fixes blank/0kb issues)
+            // Create a dedicated container for capture (fixes height issues)
+            const container = document.createElement('div');
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.style.top = '0';
+            container.style.width = '600px';
+            document.body.appendChild(container);
+
+            // Clone & Reveal
             const clone = receiptElement.cloneNode(true);
-            clone.style.position = 'fixed';
-            clone.style.left = '0';
-            clone.style.top = '0';
-            clone.style.zIndex = '-9999';
-            clone.style.visibility = 'visible';
+            clone.style.position = 'relative';
             clone.style.display = 'block';
             clone.style.width = '600px'; 
+            clone.style.height = 'auto'; // allow it to grow
             clone.style.background = 'white';
-            document.body.appendChild(clone);
+            clone.style.overflow = 'visible';
+            container.appendChild(clone);
 
-            // Wait for images in clone to load
+            // Wait for images
             const images = clone.getElementsByTagName('img');
             await Promise.all(Array.from(images).map(img => {
                 if (img.complete) return Promise.resolve();
                 return new Promise(r => { img.onload = r; img.onerror = r; });
             }));
             
-            // Reduced timeout for speed as images are pre-loaded
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             const canvas = await html2canvas(clone, {
                 scale: 3, 
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 logging: false,
-                allowTaint: true
+                allowTaint: true,
+                height: clone.scrollHeight,
+                windowHeight: clone.scrollHeight,
+                scrollY: 0
             });
 
-            document.body.removeChild(clone);
+            document.body.removeChild(container);
 
             const imgData = canvas.toDataURL('image/png');
             if (imgData === 'data:,') throw new Error("Blank canvas generated");
@@ -190,7 +198,25 @@ const PublicInvoicePage = () => {
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            // Handle multi-page if receipt is very long
+            if (pdfHeight > 297) {
+                let heightLeft = pdfHeight;
+                let position = 0;
+                let pageHeight = 297;
+
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                heightLeft -= pageHeight;
+
+                while (heightLeft >= 0) {
+                    position = heightLeft - pdfHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                    heightLeft -= pageHeight;
+                }
+            } else {
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            }
+
             pdf.save(`Invoice_${sale.invoiceNumber}.pdf`);
             
             toast.dismiss(toastId);
@@ -215,16 +241,21 @@ const PublicInvoicePage = () => {
         try {
             const html2canvas = (await import('html2canvas')).default;
 
+            const container = document.createElement('div');
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.style.top = '0';
+            container.style.width = '600px';
+            document.body.appendChild(container);
+
             const clone = receiptElement.cloneNode(true);
-            clone.style.position = 'fixed';
-            clone.style.left = '0';
-            clone.style.top = '0';
-            clone.style.zIndex = '-9999';
-            clone.style.visibility = 'visible';
+            clone.style.position = 'relative';
             clone.style.display = 'block';
             clone.style.width = '600px'; 
+            clone.style.height = 'auto'; // ensure full height for capture
             clone.style.background = 'white';
-            document.body.appendChild(clone);
+            clone.style.overflow = 'visible';
+            container.appendChild(clone);
 
             const images = clone.getElementsByTagName('img');
             await Promise.all(Array.from(images).map(img => {
@@ -232,18 +263,20 @@ const PublicInvoicePage = () => {
                 return new Promise(r => { img.onload = r; img.onerror = r; });
             }));
             
-            // Reduced timeout
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             const canvas = await html2canvas(clone, {
                 scale: 2,
                 backgroundColor: '#ffffff',
                 logging: false,
                 useCORS: true,
-                allowTaint: true
+                allowTaint: true,
+                height: clone.scrollHeight,
+                windowHeight: clone.scrollHeight,
+                scrollY: 0
             });
 
-            document.body.removeChild(clone);
+            document.body.removeChild(container);
 
             const image = canvas.toDataURL("image/png");
             if (image === 'data:,') throw new Error("Blank image generated");
@@ -563,6 +596,7 @@ const PublicInvoicePage = () => {
                     )}
                     <button 
                         onClick={handleShare}
+                        title="Share this invoice link"
                         style={{ padding: '12px', background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(8px)', borderRadius: '50%', border: '1px solid #E2E8F0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', cursor: 'pointer' }}
                     >
                         <Share2 size={18} color="#475569" />

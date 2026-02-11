@@ -853,29 +853,38 @@ const InvoicePage = () => {
                         </div>
                         
                         <h3 style={{ fontSize: '1.8rem', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.03em' }}>
-                            Invoice Center
+                            Receipt & Sharing
                         </h3>
                         <p style={{ color: '#334155', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>
-                            {showCelebration ? "Transaction secured! Download the official receipt below." : "View and download the latest version of this invoice."}
+                            {showCelebration ? "Transaction secured! Share the link or download the receipt." : "View, share, or download the latest version of this invoice."}
                         </p>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             <button 
-                                onClick={handleDownloadPDF}
-                                disabled={!!generating}
-                                style={{ padding: '20px', background: 'var(--primary)', color: 'white', borderRadius: '20px', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', cursor: generating ? 'not-allowed' : 'pointer', border: 'none', boxShadow: '0 10px 20px -5px var(--primary-glow)', opacity: generating ? 0.7 : 1 }}
+                                onClick={handleShare}
+                                style={{ padding: '20px', background: '#0F172A', color: 'white', borderRadius: '20px', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', border: 'none', cursor: 'pointer', boxShadow: '0 10px 20px -5px rgba(15, 23, 42, 0.2)' }}
                             >
-                                {generating === 'pdf' ? <Loader2 size={22} className="spin-animation" /> : <FileText size={22} />} 
-                                {generating === 'pdf' ? 'Processing...' : 'Download Invoice PDF'}
+                                <Share2 size={22} />
+                                Share Invoice Link
                             </button>
-                            <button 
-                                onClick={handleDownloadImage}
-                                disabled={!!generating}
-                                style={{ padding: '20px', background: 'white', color: 'var(--primary)', border: '2.5px solid var(--primary)', borderRadius: '20px', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', cursor: generating ? 'not-allowed' : 'pointer', opacity: generating ? 0.7 : 1 }}
-                            >
-                                {generating === 'image' ? <Loader2 size={22} className="spin-animation" /> : <ImageIcon size={22} />}
-                                {generating === 'image' ? 'Processing...' : 'Save as Image (Receipt)'}
-                            </button>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <button 
+                                    onClick={handleDownloadPDF}
+                                    disabled={!!generating}
+                                    style={{ padding: '20px', background: 'var(--primary)', color: 'white', borderRadius: '20px', fontWeight: 900, fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: generating ? 'not-allowed' : 'pointer', border: 'none', boxShadow: '0 10px 20px -5px var(--primary-glow)', opacity: generating ? 0.7 : 1 }}
+                                >
+                                    {generating === 'pdf' ? <Loader2 size={18} className="spin-animation" /> : <FileText size={18} />} 
+                                    {generating === 'pdf' ? '...' : 'PDF'}
+                                </button>
+                                <button 
+                                    onClick={handleDownloadImage}
+                                    disabled={!!generating}
+                                    style={{ padding: '20px', background: 'white', color: 'var(--primary)', border: '2.5px solid var(--primary)', borderRadius: '20px', fontWeight: 900, fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: generating ? 'not-allowed' : 'pointer', opacity: generating ? 0.7 : 1 }}
+                                >
+                                    {generating === 'image' ? <Loader2 size={18} className="spin-animation" /> : <ImageIcon size={18} />}
+                                    {generating === 'image' ? '...' : 'Image'}
+                                </button>
+                            </div>
                         </div>
                     </motion.div>
                 </motion.div>,
