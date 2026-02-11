@@ -876,8 +876,9 @@ const PublicInvoicePage = () => {
                                                 <ShieldCheck size={14} color="#10B981" />
                                                 <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Secure 256-bit SSL</span>
                                             </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <img src="https://assets.paystack.com/assets/img/logos/merchants/paystack.svg" style={{ height: '14px' }} alt="Paystack" />
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <span style={{ fontSize: '11px', fontWeight: 900, color: '#0F172A', letterSpacing: '0.02em' }}>Paystack</span>
+                                                <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#10B981' }} />
                                             </div>
                                         </div>
                                     </div>
