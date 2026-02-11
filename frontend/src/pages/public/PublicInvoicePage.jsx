@@ -23,28 +23,15 @@ import PaymentSuccessModal from "../../components/payment/PaymentSuccessModal";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
-// Modern Design Tokens
-const containerStyle = { 
-    minHeight: '100vh', 
-    background: '#FDFCFE', 
-    color: '#0F172A', 
-    fontFamily: "'Inter', sans-serif",
-    paddingBottom: '100px'
-};
-
-const maxW2xl = { 
-    maxWidth: '42rem', 
-    margin: '0 auto', 
-    width: '100%' 
-};
-
-const flexBtw = { 
-    display: 'flex', 
-    justifyContent: 'space-between', 
-    alignItems: 'center' 
-};
-
 const PublicInvoicePage = () => {
+    // Media Query Hook for mobile-first logic
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
     const { id } = useParams();
     const [sale, setSale] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -610,7 +597,7 @@ const PublicInvoicePage = () => {
                 </div>
             </nav>
 
-            <main className="invoice-main-content" style={{ ...maxW2xl, position: 'relative', zIndex: 10 }}>
+            <main className="invoice-main-content" style={{ maxWidth: '42rem', margin: '0 auto', position: 'relative', zIndex: 10 }}>
                 <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
                     
                     {/* Status Pill */}
@@ -739,45 +726,47 @@ const PublicInvoicePage = () => {
                         </div>
 
                         {/* Breakdown */}
-                        <div style={{ padding: '32px' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '32px', marginBottom: '32px' }}>
+                        <div style={{ padding: isMobile ? '24px' : '32px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: isMobile ? '16px' : '32px', marginBottom: '32px' }}>
                                 <div>
                                     <label style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Customer</label>
-                                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#334155' }}>{sale.customerName}</p>
+                                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#334155', margin: 0 }}>{sale.customerName}</p>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                     <label style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Ref Number</label>
-                                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#334155' }}>#{sale.invoiceNumber}</p>
+                                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#334155', margin: 0 }}>#{sale.invoiceNumber}</p>
                                 </div>
                             </div>
 
-                            <div style={{ background: '#F8FAFC', borderRadius: '16px', padding: '24px', border: '1px solid #F1F5F9', marginBottom: '32px' }}>
+                            <div style={{ background: '#F8FAFC', borderRadius: '20px', padding: isMobile ? '16px' : '24px', border: '1px solid #F1F5F9', marginBottom: '32px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                                     <FileText size={14} color="#94A3B8" />
                                     <span style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>Description</span>
                                 </div>
-                                <p style={{ fontSize: '15px', fontWeight: 600, color: '#475569', lineHeight: 1.6, fontStyle: 'italic' }}>"{sale.description}"</p>
+                                <p style={{ fontSize: isMobile ? '14px' : '15px', fontWeight: 600, color: '#475569', lineHeight: 1.6, fontStyle: 'italic', margin: 0 }}>"{sale.description}"</p>
                             </div>
 
-                            <div style={{ ...flexBtw, padding: '16px 0', borderTop: '1px solid #F8FAFC', borderBottom: '1px solid #F8FAFC', marginBottom: '32px' }}>
-                                     <div style={{ padding: '8px', background: 'var(--primary-glow)', borderRadius: '8px' }}><Calendar size={14} color="var(--primary)" /></div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderTop: '1px solid #F8FAFC', borderBottom: '1px solid #F8FAFC', marginBottom: '32px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                     <div style={{ padding: '8px', background: 'rgba(124, 58, 237, 0.08)', borderRadius: '8px' }}><Calendar size={14} color="#7C3AED" /></div>
                                     <div>
-                                        <p style={{ fontSize: '9px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>Issued</p>
-                                        <p style={{ fontSize: '11px', fontWeight: 700 }}>{sale.createdAt ? new Date(sale.createdAt).toLocaleDateString() : 'N/A'}</p>
+                                        <p style={{ fontSize: '9px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', margin: 0 }}>Issued</p>
+                                        <p style={{ fontSize: '11px', fontWeight: 700, margin: 0 }}>{sale.createdAt ? new Date(sale.createdAt).toLocaleDateString() : 'N/A'}</p>
                                     </div>
                                 </div>
                                 {sale.dueDate && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'right' }}>
                                         <div>
-                                            <p style={{ fontSize: '9px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>Due Date</p>
-                                            <p style={{ fontSize: '11px', fontWeight: 700 }}>{new Date(sale.dueDate).toLocaleDateString()}</p>
+                                            <p style={{ fontSize: '9px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', margin: 0 }}>Due Date</p>
+                                            <p style={{ fontSize: '11px', fontWeight: 700, margin: 0 }}>{new Date(sale.dueDate).toLocaleDateString()}</p>
                                         </div>
                                         <div style={{ padding: '8px', background: '#FEF2F2', borderRadius: '8px' }}><Clock size={14} color="#EF4444" /></div>
                                     </div>
                                 )}
                             </div>
+                        </div>
 
-                            {/* ACTION AREA */}
+                        {/* ACTION AREA */}
                             {!isPaid ? (
                                 <div>
                                     {/* Payment Mode Selector */}
@@ -830,23 +819,33 @@ const PublicInvoicePage = () => {
                                         disabled={verifying}
                                         style={{ 
                                             width: '100%', 
-                                            padding: '20px', 
-                                            background: isOverdue ? '#DC2626' : 'var(--primary)', 
+                                            padding: isMobile ? '18px' : '20px', 
+                                            background: isOverdue 
+                                                ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)' 
+                                                : 'linear-gradient(135deg, #7C3AED 0%, #6366F1 100%)', 
                                             color: 'white', 
                                             borderRadius: '16px', 
                                             border: 'none', 
                                             fontWeight: 900, 
-                                            fontSize: '18px', 
+                                            fontSize: isMobile ? '16px' : '18px', 
                                             cursor: verifying ? 'not-allowed' : 'pointer', 
                                             display: 'flex', 
                                             alignItems: 'center', 
                                             justifyContent: 'center', 
                                             gap: '12px', 
-                                            boxShadow: '0 10px 15px -3px var(--primary-glow)',
+                                            boxShadow: isOverdue 
+                                                ? '0 10px 15px -3px rgba(239, 68, 68, 0.25)' 
+                                                : '0 10px 15px -3px rgba(124, 58, 237, 0.25)',
                                             transition: 'all 0.3s ease'
                                         }}
-                                        onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
-                                        onMouseOut={(e) => e.currentTarget.style.filter = 'none'}
+                                        onMouseOver={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                            e.currentTarget.style.filter = 'brightness(1.1)';
+                                        }}
+                                        onMouseOut={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.filter = 'none';
+                                        }}
                                     >
                                         {verifying ? (
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -892,25 +891,37 @@ const PublicInvoicePage = () => {
                                     <div style={{ 
                                         background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)', 
                                         borderRadius: '24px', 
-                                        padding: '40px 24px', 
+                                        padding: isMobile ? '32px 16px' : '48px 24px', 
                                         border: '2px solid #10B981',
                                         marginBottom: '24px',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         alignItems: 'center',
-                                        gap: '16px',
-                                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+                                        gap: '20px',
+                                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+                                        width: '100%',
+                                        boxSizing: 'border-box'
                                     }}>
-                                        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}>
-                                            <CheckCircle2 size={36} />
+                                        <div style={{ 
+                                            width: isMobile ? '56px' : '72px', 
+                                            height: isMobile ? '56px' : '72px', 
+                                            borderRadius: '50%', 
+                                            background: '#10B981', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center', 
+                                            color: 'white', 
+                                            boxShadow: '0 8px 16px rgba(16, 185, 129, 0.25)' 
+                                        }}>
+                                            <CheckCircle2 size={isMobile ? 32 : 40} />
                                         </div>
-                                        <div>
-                                            <h4 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 950, color: '#065F46' }}>Invoice Fully Settled</h4>
-                                            <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#047857', opacity: 0.8 }}>No outstanding balance on this ledger.</p>
+                                        <div style={{ textAlign: 'center' }}>
+                                            <h4 style={{ margin: '0 0 6px 0', fontSize: isMobile ? '20px' : '24px', fontWeight: 950, color: '#065F46', letterSpacing: '-0.02em' }}>Invoice Fully Settled</h4>
+                                            <p style={{ margin: 0, fontSize: isMobile ? '13px' : '15px', fontWeight: 600, color: '#047857', opacity: 0.8, lineHeight: 1.5 }}>Payments have been verified and logged<br/>successfully on the Kredibly ledger.</p>
                                         </div>
                                         <div style={{ 
-                                            background: 'rgba(255,255,255,0.5)', 
-                                            padding: '8px 16px', 
+                                            background: 'rgba(255,255,255,0.6)', 
+                                            padding: '8px 20px', 
                                             borderRadius: '100px', 
                                             fontSize: '11px', 
                                             fontWeight: 900, 
@@ -918,9 +929,10 @@ const PublicInvoicePage = () => {
                                             color: '#065F46',
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: '6px'
+                                            gap: '8px',
+                                            border: '1px solid rgba(16, 185, 129, 0.2)'
                                         }}>
-                                            <ShieldCheck size={14} /> Verified on {new Date(sale.payments[sale.payments.length - 1]?.date || new Date()).toLocaleDateString()}
+                                            <ShieldCheck size={14} /> Verified Settlement
                                         </div>
                                     </div>
 
