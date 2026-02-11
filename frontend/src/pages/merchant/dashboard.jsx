@@ -419,10 +419,25 @@ const Dashboard = () => {
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <p style={{ fontWeight: 800, color: 'var(--text)', fontSize: '0.95rem', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sale.customerName || 'Standard Order'}</p>
                                                 {(() => {
-                                                    const isViewed = sale.lastOpenedAt && sale.lastLinkSentAt 
+                                                    const isViewed = (sale.viewCount > 0) || (sale.lastOpenedAt && sale.lastLinkSentAt 
                                                         ? new Date(sale.lastOpenedAt) > new Date(sale.lastLinkSentAt)
-                                                        : sale.viewed;
-                                                    return isViewed && <span title="Viewed by customer" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: 'var(--primary)', fontWeight: 800 }}><Sparkles size={10} fill="var(--primary)" /> VIEWED</span>;
+                                                        : sale.viewed);
+                                                    
+                                                    if (!isViewed) return null;
+
+                                                    const lastSeenText = sale.lastOpenedAt 
+                                                        ? `Last seen: ${new Date(sale.lastOpenedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}`
+                                                        : "Viewed by customer";
+
+                                                    return (
+                                                        <span 
+                                                            title={lastSeenText}
+                                                            style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: 'var(--primary)', fontWeight: 800 }}
+                                                        >
+                                                            <Sparkles size={10} fill="var(--primary)" /> 
+                                                            VIEWED {sale.viewCount > 1 ? `(${sale.viewCount})` : ""}
+                                                        </span>
+                                                    );
                                                 })()}
                                             </div>
                                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>#{sale.invoiceNumber} • {sale.description.slice(0, 30)}{sale.description.length > 30 ? '...' : ''}</p>

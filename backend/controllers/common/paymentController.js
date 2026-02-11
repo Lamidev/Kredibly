@@ -200,7 +200,7 @@ exports.verifyInvoicePayment = async (req, res) => {
             if (business.whatsappNumber) {
                 const totalPaid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
                 const balance = sale.totalAmount - totalPaid;
-                const receiptLink = `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/i/${sale.invoiceNumber}`;
+                const receiptLink = `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/r/${sale.invoiceNumber}`;
                 
                 let msg = `🔔 *Payment Verified!*\n\nChief, I've just verified an online payment of *₦${paidAmount.toLocaleString()}* for *Invoice #${sale.invoiceNumber}* (${sale.customerName}).\n\n`;
                 
@@ -210,7 +210,7 @@ exports.verifyInvoicePayment = async (req, res) => {
                     msg += `⏳ *Balance Remaining:* ₦${balance.toLocaleString()}\n*Action:* I've updated the invoice status to ${sale.status.toUpperCase()}.\n\n`;
                 }
 
-                msg += `📄 *View/Share Receipt:* ${receiptLink}\n\n_Kreddy - Your Digital Trust Assistant_`;
+                msg += `📄 *View Receipt:* ${receiptLink}\n\n_Kreddy - Your Digital Trust Assistant_`;
                 
                 await sendWhatsAppMessage(business.whatsappNumber, msg).catch(err => {
                     console.error(`❌ Failed to send WhatsApp notification for payment ${reference}:`, err.message);

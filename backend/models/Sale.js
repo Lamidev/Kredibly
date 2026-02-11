@@ -68,7 +68,11 @@ const SaleSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    lastOpenedAt: Date
+    lastOpenedAt: Date,
+    viewCount: {
+        type: Number,
+        default: 0
+    }
 }, {
     timestamps: true,
     toJSON: { virtuals: true },
