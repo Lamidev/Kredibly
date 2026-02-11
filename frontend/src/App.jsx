@@ -11,6 +11,7 @@ import ProductPage from "./pages/public/ProductPage";
 import SolutionPage from "./pages/public/SolutionPage";
 import PricingPage from "./pages/public/PricingPage";
 import PublicInvoicePage from "./pages/public/PublicInvoicePage";
+import PublicReceiptPage from "./pages/public/PublicReceiptPage";
 import AuthLayout from "./components/auth/layout";
 import Login from "./pages/auth/login";
 import Register from "./pages/auth/register";
@@ -65,6 +66,7 @@ const App = () => {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/invoice/:id" element={<PublicInvoicePage />} />
         <Route path="/i/:id" element={<PublicInvoicePage />} />
+        <Route path="/r/:id" element={<PublicReceiptPage />} />
 
         {/* Auth Routes Wrapped in AuthLayout */}
         <Route element={<AuthLayout />}>

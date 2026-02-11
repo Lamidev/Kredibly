@@ -25,6 +25,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { jsPDF } from "jspdf";
 import confetti from "canvas-confetti";
+import PaymentSuccessModal from "../../components/payment/PaymentSuccessModal";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
@@ -56,7 +57,11 @@ const PublicInvoicePage = () => {
     const [verifying, setVerifying] = useState(false);
     const [paymentMode, setPaymentMode] = useState("full"); // "full" or "partial"
     const [customAmount, setCustomAmount] = useState("");
+    const [customAmountDisplay, setCustomAmountDisplay] = useState("");
     const [generating, setGenerating] = useState(null);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [lastPaymentAmount, setLastPaymentAmount] = useState(0);
+    const [recentPaymentDate, setRecentPaymentDate] = useState(null);
 
     useEffect(() => {
         fetchInvoice();
@@ -318,8 +323,26 @@ const PublicInvoicePage = () => {
                             });
 
                             if (verifyRes.data.success) {
-                                setSale(verifyRes.data.data);
+                                const updatedSale = verifyRes.data.data;
+                                const newBalance = updatedSale.totalAmount - updatedSale.paidAmount;
+                                
+                                setSale(updatedSale);
                                 setVerifying(false);
+                                
+                                // Store payment info for modal
+                                setLastPaymentAmount(finalAmount);
+                                setRecentPaymentDate(new Date());
+                                
+                                // Clear custom amount fields
+                                setCustomAmount("");
+                                setCustomAmountDisplay("");
+                                setPaymentMode("full");
+                                
+                                // Show success modal
+                                setShowSuccessModal(true);
+                                
+                                // Scroll to top to show updated status
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
                                 
                                 confetti({
                                     particleCount: 150,
@@ -344,8 +367,26 @@ const PublicInvoicePage = () => {
                                 
                                 if (newBalance < balance || updatedSale.status === 'paid') {
                                     clearInterval(pollInterval);
+                                    const paymentDiff = balance - newBalance;
+                                    
                                     setSale(updatedSale);
                                     setVerifying(false);
+                                    
+                                    // Store payment info for modal
+                                    setLastPaymentAmount(paymentDiff);
+                                    setRecentPaymentDate(new Date());
+                                    
+                                    // Clear custom amount fields
+                                    setCustomAmount("");
+                                    setCustomAmountDisplay("");
+                                    setPaymentMode("full");
+                                    
+                                    // Show success modal
+                                    setShowSuccessModal(true);
+                                    
+                                    // Scroll to top to show updated status
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    
                                     confetti({
                                         particleCount: 150,
                                         spread: 70,
@@ -547,6 +588,72 @@ const PublicInvoicePage = () => {
                         </div>
                     </div>
 
+                    {/* Recent Payment Banner */}
+                    {!isPaid && recentPaymentDate && (() => {
+                        const daysSincePayment = Math.floor((new Date() - new Date(recentPaymentDate)) / (1000 * 60 * 60 * 24));
+                        const showBanner = daysSincePayment <= 7;
+                        
+                        // Also check if there are recent payments in the sale data
+                        const hasRecentPayments = sale.payments && sale.payments.length > 0;
+                        const lastPayment = hasRecentPayments ? sale.payments[sale.payments.length - 1] : null;
+                        const lastPaymentDays = lastPayment ? Math.floor((new Date() - new Date(lastPayment.date)) / (1000 * 60 * 60 * 24)) : null;
+                        
+                        if ((showBanner || (lastPaymentDays !== null && lastPaymentDays <= 7)) && balance > 0) {
+                            const displayAmount = lastPaymentAmount || (lastPayment ? lastPayment.amount : 0);
+                            const displayDate = recentPaymentDate || (lastPayment ? new Date(lastPayment.date) : new Date());
+                            
+                            return (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    style={{
+                                        background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
+                                        border: '2px solid #10B981',
+                                        borderRadius: '20px',
+                                        padding: '16px 24px',
+                                        marginBottom: '24px',
+                                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.15)'
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                                        <div style={{
+                                            width: '40px',
+                                            height: '40px',
+                                            borderRadius: '50%',
+                                            background: '#10B981',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            flexShrink: 0
+                                        }}>
+                                            <CheckCircle2 size={24} color="white" />
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: '200px' }}>
+                                            <p style={{
+                                                fontSize: '14px',
+                                                fontWeight: 900,
+                                                color: '#065F46',
+                                                margin: '0 0 4px 0',
+                                                letterSpacing: '-0.01em'
+                                            }}>
+                                                💚 Recent Payment Received
+                                            </p>
+                                            <p style={{
+                                                fontSize: '13px',
+                                                fontWeight: 700,
+                                                color: '#047857',
+                                                margin: 0
+                                            }}>
+                                                ₦{displayAmount.toLocaleString()} paid on {displayDate.toLocaleDateString()} • Balance: ₦{balance.toLocaleString()}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        }
+                        return null;
+                    })()}
+
                     {/* HERO SECTION */}
                     <header style={{ textAlign: 'center', marginBottom: '40px' }}>
                         <h1 style={{ fontSize: 'clamp(2.5rem, 10vw, 52px)', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -656,10 +763,14 @@ const PublicInvoicePage = () => {
                                                 <div style={{ background: '#F8FAFC', padding: '20px', borderRadius: '18px', border: '1.5px solid #E2E8F0' }}>
                                                     <label style={{ display: 'block', fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Enter Amount (₦)</label>
                                                     <input 
-                                                        type="number"
-                                                        value={customAmount}
-                                                        onChange={(e) => setCustomAmount(e.target.value)}
-                                                        placeholder="e.g. 20000"
+                                                        type="text"
+                                                        value={customAmountDisplay}
+                                                        onChange={(e) => {
+                                                            const value = e.target.value.replace(/[^0-9]/g, '');
+                                                            setCustomAmount(value);
+                                                            setCustomAmountDisplay(value ? `₦${parseInt(value).toLocaleString()}` : '');
+                                                        }}
+                                                        placeholder="₦20,000"
                                                         style={{ width: '100%', background: 'transparent', border: 'none', fontSize: '24px', fontWeight: 900, color: '#0F172A', outline: 'none' }}
                                                     />
                                                 </div>
@@ -837,6 +948,15 @@ const PublicInvoicePage = () => {
                 }
             `}</style>
             </div>
+
+            {/* Payment Success Modal */}
+            <PaymentSuccessModal
+                isOpen={showSuccessModal}
+                onClose={() => setShowSuccessModal(false)}
+                amountPaid={lastPaymentAmount}
+                balanceRemaining={sale ? sale.totalAmount - sale.paidAmount : 0}
+                onDownloadReceipt={handleDownloadPDF}
+            />
         </div>
     );
 };
