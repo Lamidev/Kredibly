@@ -4,7 +4,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Download, X, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const PaymentSuccessModal = ({ isOpen, onClose, amountPaid, balanceRemaining, onDownloadReceipt }) => {
+const PaymentSuccessModal = ({ 
+    isOpen, 
+    onClose, 
+    amountPaid, 
+    balanceRemaining, 
+    onDownloadReceipt,
+    shareUrl,
+    shareText 
+}) => {
     if (!isOpen) return null;
 
     const isFullyPaid = balanceRemaining <= 0;
@@ -238,8 +246,8 @@ const PaymentSuccessModal = ({ isOpen, onClose, amountPaid, balanceRemaining, on
                                 </button>
                                 <button
                                     onClick={async () => {
-                                        const text = `I've just made a payment of ₦${amountPaid.toLocaleString()}! You can view my verified receipt here:`;
-                                        const url = window.location.href;
+                                        const text = shareText || `I've just made a payment of ₦${amountPaid.toLocaleString()}! You can view my verified receipt here:`;
+                                        const url = shareUrl || window.location.href;
                                         if (navigator.share) {
                                             try {
                                                 await navigator.share({ title: 'Payment Receipt', text, url });

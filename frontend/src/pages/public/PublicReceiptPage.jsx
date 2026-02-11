@@ -76,6 +76,8 @@ const PublicReceiptPage = () => {
         }
     };
 
+
+
     const handleDownloadPDF = async () => {
         if (generating) return;
         const receiptElement = document.getElementById('receipt-download-target');
@@ -87,16 +89,21 @@ const PublicReceiptPage = () => {
         try {
             const html2canvas = (await import('html2canvas')).default;
             
+            const container = document.createElement('div');
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.style.top = '0';
+            container.style.width = '600px';
+            document.body.appendChild(container);
+
             const clone = receiptElement.cloneNode(true);
-            clone.style.position = 'fixed';
-            clone.style.left = '0';
-            clone.style.top = '0';
-            clone.style.zIndex = '-9999';
-            clone.style.visibility = 'visible';
+            clone.style.position = 'relative';
             clone.style.display = 'block';
-            clone.style.width = '600px';
+            clone.style.width = '600px'; 
+            clone.style.height = 'auto';
             clone.style.background = 'white';
-            document.body.appendChild(clone);
+            clone.style.overflow = 'visible';
+            container.appendChild(clone);
 
             const images = clone.getElementsByTagName('img');
             await Promise.all(Array.from(images).map(img => {
@@ -104,17 +111,20 @@ const PublicReceiptPage = () => {
                 return new Promise(r => { img.onload = r; img.onerror = r; });
             }));
             
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             const canvas = await html2canvas(clone, {
                 scale: 3,
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 logging: false,
-                allowTaint: true
+                allowTaint: true,
+                height: clone.scrollHeight,
+                windowHeight: clone.scrollHeight,
+                scrollY: 0
             });
 
-            document.body.removeChild(clone);
+            document.body.removeChild(container);
 
             const imgData = canvas.toDataURL('image/png');
             if (imgData === 'data:,') throw new Error("Blank canvas generated");
@@ -129,7 +139,24 @@ const PublicReceiptPage = () => {
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            if (pdfHeight > 297) {
+                let heightLeft = pdfHeight;
+                let position = 0;
+                let pageHeight = 297;
+
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                heightLeft -= pageHeight;
+
+                while (heightLeft >= 0) {
+                    position = heightLeft - pdfHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                    heightLeft -= pageHeight;
+                }
+            } else {
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            }
+
             pdf.save(`Receipt_${sale.invoiceNumber}.pdf`);
             
             toast.dismiss(toastId);
@@ -154,16 +181,21 @@ const PublicReceiptPage = () => {
         try {
             const html2canvas = (await import('html2canvas')).default;
 
+            const container = document.createElement('div');
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.style.top = '0';
+            container.style.width = '600px';
+            document.body.appendChild(container);
+
             const clone = receiptElement.cloneNode(true);
-            clone.style.position = 'fixed';
-            clone.style.left = '0';
-            clone.style.top = '0';
-            clone.style.zIndex = '-9999';
-            clone.style.visibility = 'visible';
+            clone.style.position = 'relative';
             clone.style.display = 'block';
-            clone.style.width = '600px';
+            clone.style.width = '600px'; 
+            clone.style.height = 'auto';
             clone.style.background = 'white';
-            document.body.appendChild(clone);
+            clone.style.overflow = 'visible';
+            container.appendChild(clone);
 
             const images = clone.getElementsByTagName('img');
             await Promise.all(Array.from(images).map(img => {
@@ -171,17 +203,20 @@ const PublicReceiptPage = () => {
                 return new Promise(r => { img.onload = r; img.onerror = r; });
             }));
             
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             const canvas = await html2canvas(clone, {
                 scale: 2,
                 backgroundColor: '#ffffff',
                 logging: false,
                 useCORS: true,
-                allowTaint: true
+                allowTaint: true,
+                height: clone.scrollHeight,
+                windowHeight: clone.scrollHeight,
+                scrollY: 0
             });
 
-            document.body.removeChild(clone);
+            document.body.removeChild(container);
 
             const image = canvas.toDataURL("image/png");
             if (image === 'data:,') throw new Error("Blank image generated");
@@ -419,7 +454,7 @@ const PublicReceiptPage = () => {
                                     </div>
                                     <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>{new Date(sale.createdAt).toLocaleDateString()}</span>
                                 </div>
-                                {sale.payments.map((p, idx) => (
+                                { (sale?.payments || []).map((p, idx) => (
                                     <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#ECFDF5', borderRadius: '12px', border: '1px solid #D1FAE5' }}>
                                         <div>
                                             <p style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', margin: '0 0 2px 0' }}>Payment Received</p>
