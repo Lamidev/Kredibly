@@ -44,6 +44,7 @@ const BusinessProfileSchema = new mongoose.Schema({
     },
     bankDetails: {
         bankName: { type: String, default: "" },
+        bankCode: { type: String, default: "" }, // Added for persistence
         accountNumber: { type: String, default: "" },
         accountName: { type: String, default: "" }
     },

@@ -4,7 +4,7 @@ const Notification = require("../../models/Notification");
 const { logActivity } = require("../../utils/activityLogger");
 const whatsappController = require("../whatsapp/whatsappController");
 
-const { sendNewTicketEmail } = require("../../emailLogic/emails"); // Assuming you'll add this next
+const { sendNewTicketEmail, sendSupportReplyEmail } = require("../../emailLogic/emails"); // Assuming you'll add this next
 
 exports.createTicket = async (req, res) => {
     try {
@@ -138,10 +138,30 @@ exports.replyToTicket = async (req, res) => {
                 });
 
                 // Also send WhatsApp notification via Kreddy
-                const biz = await BusinessProfile.findById(ticket.businessId);
-                if (biz && biz.whatsappNumber) {
-                    const text = `👋 Hi ${biz.displayName}, Admin just replied to your support ticket! \n\n" ${message} "\n\nCheck your dashboard Support Hub to continue the conversation. 🚀`;
-                    await whatsappController.sendWhatsAppMessage(biz.whatsappNumber, text);
+                const biz = await BusinessProfile.findById(ticket.businessId).populate('ownerId');
+                
+                if (biz) {
+                    // PLAN-BASED ROUTING
+                    const plan = biz.plan || 'hustler';
+                    const isHustler = plan === 'hustler';
+
+                    if (isHustler) {
+                         // Email Only for Hustlers
+                         if (biz.ownerId && biz.ownerId.email) {
+                             await sendSupportReplyEmail(
+                                 biz.ownerId.email, 
+                                 biz.displayName, 
+                                 message, 
+                                 ticket.message.substring(0, 30) + "..."
+                             );
+                         }
+                    } else {
+                         // WhatsApp for Oga/Chairman
+                         if (biz.whatsappNumber) {
+                             const text = `👋 Hi ${biz.displayName}, Admin just replied to your support ticket! \n\n" ${message} "\n\nCheck your dashboard Support Hub to continue the conversation. 🚀`;
+                             await whatsappController.sendWhatsAppMessage(biz.whatsappNumber, text);
+                         }
+                    }
                 }
             }
         } else {

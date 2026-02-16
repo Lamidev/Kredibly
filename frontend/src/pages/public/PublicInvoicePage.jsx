@@ -311,6 +311,7 @@ const PublicInvoicePage = () => {
                 amount: Math.round(finalAmount * 100), // in kobo
                 currency: 'NGN',
                 ref: `KRED_${sale.invoiceNumber}_${Date.now()}`,
+                ...(sale.businessId?.paystackSubaccountCode ? { subaccount: sale.businessId.paystackSubaccountCode } : {}),
                 metadata: {
                     invoiceNumber: sale.invoiceNumber,
                     customerName: sale.customerName,

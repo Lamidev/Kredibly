@@ -5,12 +5,39 @@ const WhatsAppSession = require("../../models/WhatsAppSession");
 const SupportTicket = require("../../models/SupportTicket");
 const axios = require("axios");
 const { logActivity } = require("../../utils/activityLogger");
-const { processMessageWithAI } = require("../../utils/aiService");
+const { processMessageWithAI, processAudioWithAI } = require("../../utils/aiService");
 const { logUsage } = require("../../utils/usageTracker");
 
 // Duplicate Shield: Store message IDs to prevent double-processing (cleared every 10 mins)
 const processedMessages = new Set();
 setInterval(() => processedMessages.clear(), 10 * 60 * 1000); // 10 minutes
+
+/**
+ * OGA MONITOR: Helper to calculate today's total revenue for a business.
+ * Sums all payments recorded across all sales for the current calendar day.
+ */
+const getTodayRevenue = async (businessId) => {
+    try {
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+
+        const sales = await Sale.find({
+            businessId,
+            "payments.date": { $gte: startOfToday }
+        });
+
+        let total = 0;
+        sales.forEach(sale => {
+            sale.payments.forEach(p => {
+                if (new Date(p.date) >= startOfToday) total += p.amount;
+            });
+        });
+        return total;
+    } catch (err) {
+        console.error("Revenue Aggregation Error:", err);
+        return 0;
+    }
+};
 
 const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
 const BACKEND_URL = process.env.BACKEND_URL || "https://api.usekredibly.com";
@@ -375,6 +402,35 @@ exports.verifyWebhook = (req, res) => {
     }
 };
 
+const downloadWhatsAppMedia = async (mediaId) => {
+    try {
+        const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN || process.env.ACCESS_TOKEN;
+        if (!accessToken || !mediaId) return null;
+
+        // 1. Get Media URL
+        const { data: mediaData } = await axios.get(
+            `https://graph.facebook.com/v21.0/${mediaId}`,
+            { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+
+        if (!mediaData.url) return null;
+
+        // 2. Download Media Content
+        const response = await axios.get(mediaData.url, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            responseType: 'arraybuffer'
+        });
+
+        return {
+            buffer: Buffer.from(response.data),
+            mimeType: mediaData.mime_type
+        };
+    } catch (error) {
+        console.error("Media Download Error:", error.response?.data || error.message);
+        return null;
+    }
+};
+
 exports.handleIncoming = async (req, res) => {
     res.sendStatus(200);
 
@@ -447,36 +503,24 @@ exports.handleIncoming = async (req, res) => {
             return;
         }
 
-        // HUSTLER LIMIT CHECK
+        // HUSTLER LIMIT CHECK (Trial Cap: 5 Invoices)
         if (isHustler && (text.toLowerCase().includes("sold") || text.toLowerCase().includes("selling") || text.toLowerCase().includes("sale") || text.toLowerCase().includes("record"))) {
-            const startOfMonth = new Date();
-            startOfMonth.setDate(1);
-            startOfMonth.setHours(0, 0, 0, 0);
-            
-            const saleCount = await Sale.countDocuments({
-                businessId: profile._id,
-                createdAt: { $gte: startOfMonth }
-            });
+            const invoiceCount = await Sale.countDocuments({ businessId: profile._id });
 
-            if (saleCount >= 20) {
-                return await sendReply(from, `Wow, Oga! 📈 That's 20 sales recorded this month! Your business is moving fast. 
+            if (invoiceCount >= 5) {
+                return await sendReply(from, `Wow, Chief! 📈 You've reached your free limit of 5 invoices on the *Hustler* plan! 
 
-To record this 21st sale and keep the momentum going, abeg upgrade to the *Oga Plan* now. No time to check time! 🚀 
+To record more sales and keep professionalizing your business, abeg upgrade to the *Oga Plan* now. No time to check time! 🚀 
 
 Upgrade here: ${APP_URL}/pricing`);
             }
         }
 
-        if (msgType === "audio" || msgType === "voice" || msgType !== "text") {
-            if (plan === "chairman") {
-                await sendReply(from, "Chairman, I catch the voice note! 💎 I'm still learning to hear, so for now, abeg type am so I no go make mistake for your ledger. ✍️");
-            } else {
-                await sendReply(from, "I can only process text commands for now! ✍️");
-            }
-            return;
+        if (msgType !== "text" && msgType !== "audio" && msgType !== "voice") {
+            return await sendReply(from, "I catch the message, but I only understand text and voice notes (for Chairmen) right now! 🛡️");
         }
 
-        const lowerText = text.toLowerCase();
+        const lowerText = text ? text.toLowerCase() : "";
 
         // Check for OPEN Support Ticket (Context Awareness)
         const openTicket = await SupportTicket.findOne({
@@ -561,9 +605,10 @@ Upgrade here: ${APP_URL}/pricing`);
                         saleId: newSale._id
                     });
 
-                    // Notify Oga
+                    // Notify Oga (Oga Monitor)
                     if (isStaff && profile.whatsappNumber) {
-                        const ogaMessage = `📢 *Staff Activity Report* \n\nA new sale was just recorded by your staff (*${cleanFrom}*):\n\n👤 Customer: ${newSale.customerName}\n💰 Amount: ₦${totalAmount.toLocaleString()}\n📑 Invoice: #${newSale.invoiceNumber}\n\n_Kredibly keeping your business secure!_ 🛡️`;
+                        const todayRev = await getTodayRevenue(profile._id);
+                        const ogaMessage = `📢 *Staff Activity Report* \n\nA new sale was just recorded by your staff (*${cleanFrom}*):\n\n👤 Customer: ${newSale.customerName}\n💰 Amount: ₦${totalAmount.toLocaleString()}\n📑 Invoice: #${newSale.invoiceNumber}\n\n📊 *Total Cash In Today:* ₦${todayRev.toLocaleString()}\n\n_Kredibly keeping your business secure!_ 🛡️`;
                         await sendReply(profile.whatsappNumber, ogaMessage);
                     }
 
@@ -595,6 +640,13 @@ Upgrade here: ${APP_URL}/pricing`);
                         if (dueDate) sale.dueDate = new Date(dueDate);
                         await sale.save();
                         
+                        // Notify Oga (Oga Monitor)
+                        if (isStaff && profile.whatsappNumber && (paidAmount > 0)) {
+                            const todayRev = await getTodayRevenue(profile._id);
+                            const ogaMessage = `💰 *Payment Alert (Staff)* \n\nYour staff (*${cleanFrom}*) just recorded a payment of *₦${paidAmount.toLocaleString()}* from *${sale.customerName}*.\n\n📊 *Total Cash In Today:* ₦${todayRev.toLocaleString()}\n📑 Invoice: #${sale.invoiceNumber}\n\n_Safe and secure!_ 🛡️`;
+                            await sendReply(profile.whatsappNumber, ogaMessage);
+                        }
+
                         const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                         let finalMsg = `✅ *Record Updated!* \n\nI've updated the ledger for *${sale.customerName}*.`;
                         if (paidAmount > 0) finalMsg += `\n💰 Payment: ₦${paidAmount.toLocaleString()}`;
@@ -619,6 +671,13 @@ Upgrade here: ${APP_URL}/pricing`);
                         
                         if (sale && sale.customerPhone) {
                             await sendReply(sale.customerPhone, debtorMsg);
+
+                            // Notify Oga (Oga Monitor)
+                            if (isStaff && profile.whatsappNumber) {
+                                const ogaMessage = `🔔 *Reminder Alert (Staff)* \n\nYour staff (*${cleanFrom}*) just sent a payment reminder to *${customerName}* for Invoice #${sale.invoiceNumber}. \n\n_Active recovery in progress!_ 🚀`;
+                                await sendReply(profile.whatsappNumber, ogaMessage);
+                            }
+
                             return await sendReply(from, `✅ *Sent!* \n\nI've forwarded the reminder link directly to *${customerName}* on WhatsApp. 🚀`);
                         } else if (sale) {
                             return await sendReply(from, `📋 *Copy & Forward this to ${customerName}:* \n\n_"${debtorMsg}"_\n\n(I couldn't send it automatically because I don't have their WhatsApp number in my records yet)`);
@@ -760,6 +819,13 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
                 sale.payments.push({ amount, method: "WhatsApp" });
                 await sale.save();
 
+                // Notify Oga (Oga Monitor)
+                if (isStaff && profile.whatsappNumber) {
+                    const todayRev = await getTodayRevenue(profile._id);
+                    const ogaMessage = `💰 *Payment Alert (Staff)* \n\nYour staff (*${cleanFrom}*) just recorded a manual payment of *₦${amount.toLocaleString()}* for *${sale.customerName}* (ID: ${ref}).\n\n📊 *Total Cash In Today:* ₦${todayRev.toLocaleString()}\n\n_Kredibly keeping your records straight!_ 🛡️`;
+                    await sendReply(profile.whatsappNumber, ogaMessage);
+                }
+
                 await logActivity({
                     businessId: profile._id,
                     action: "WHATSAPP_PAYMENT_RECORDED",
@@ -793,7 +859,29 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
 
             // 🧠 INTELLIGENCE SELECTION (Based on Plan)
             let aiResponse = null;
-            if (isHustler) {
+
+            if (msgType === "audio" || msgType === "voice") {
+                if (plan !== "chairman") {
+                    return await sendReply(from, "Oga! 🛡️ Only users on the *Chairman Plan* can record sales via voice notes. Upgrade now to unlock Voice Sync! 🦁");
+                }
+                
+                const mediaId = message.audio?.id || message.voice?.id;
+                if (!mediaId) return;
+
+                await sendReply(from, "Chairman, I catch the voice note! 💎 Analyzing it now... 🎧");
+                const media = await downloadWhatsAppMedia(mediaId);
+                
+                if (media) {
+                    aiResponse = await processAudioWithAI(media.buffer, media.mimeType, {
+                        merchantName: profile.displayName,
+                        debtors: debtorContext || "No active debtors yet."
+                    });
+                }
+
+                if (!aiResponse) {
+                    return await sendReply(from, "Chairman, my brain logic failed to hear that clearly. 😵‍ Please try again or type it for now.");
+                }
+            } else if (isHustler) {
                 console.log("⚡ Plan: Hustler (Using Regex/Robust Logic)");
                 aiResponse = extractInfoRobust(text, { 
                     merchantName: profile.displayName,

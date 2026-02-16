@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSales } from "../../context/SaleContext";
+import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 import { 
     User, FileText, Check, Loader2, Sparkles, 
     ArrowRight, Wallet, Calendar, AlertCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import PlanLimitModal from "../../components/payment/PlanLimitModal";
 
 const CreateSale = () => {
     const [formData, setFormData] = useState({
@@ -18,7 +20,9 @@ const CreateSale = () => {
         dueDate: ""
     });
     const [loading, setLoading] = useState(false);
+    const [showLimitModal, setShowLimitModal] = useState(false);
     const { createSale } = useSales();
+    const { profile } = useAuth();
     const navigate = useNavigate();
 
     const balance = (parseFloat(formData.totalAmount) || 0) - (parseFloat(formData.amountPaid) || 0);
@@ -37,9 +41,13 @@ const CreateSale = () => {
                 amountPaid: parseFloat(formData.amountPaid) || 0
             });
             toast.success("Transaction Secured! 🚀");
-            navigate(`/dashboard/invoice/${res.data.invoiceNumber}`, { state: { showSuccessModal: true } }); // Redirect with success modal trigger
+            navigate(`/dashboard/invoice/${res.data.invoiceNumber}`, { state: { showSuccessModal: true } }); 
         } catch (err) {
-            toast.error("Failed to commit transaction to ledger");
+            if (err.response?.data?.code === 'LIMIT_REACHED') {
+                setShowLimitModal(true);
+            } else {
+                toast.error(err.response?.data?.message || "Failed to commit transaction to ledger");
+            }
         } finally {
             setLoading(false);
         }
@@ -220,6 +228,12 @@ const CreateSale = () => {
                     </button>
                 </div>
             </form>
+
+            <PlanLimitModal 
+                isOpen={showLimitModal}
+                onClose={() => setShowLimitModal(false)}
+                onUpgrade={() => navigate('/settings')}
+            />
         </div>
     );
 };

@@ -1,23 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import CheckoutModal from '../../components/payment/CheckoutModal';
+import PasswordConfirmModal from '../../components/payment/PasswordConfirmModal';
 import { toast } from 'sonner';
 import {
     CreditCard,
     Shield,
-    User,
+    User as UserIcon,
     MessageCircle,
     Save,
     Smartphone,
     Upload,
     Zap,
-    Clock
+    Clock,
+    CheckCircle,
+    AlertCircle as AlertIcon,
+    Loader2,
+    Building2,
+    Search
 } from 'lucide-react';
 import axios from 'axios';
+import html2canvas from 'html2canvas';
 import { isValidNigerianPhone, formatPhoneForDB } from '../../utils/validation';
 
 const SettingsPage = () => {
-    const { profile, updateProfile } = useAuth();
+    const { user: currentUser, profile, updateProfile } = useAuth();
+    const isPro = profile?.plan === 'oga' || profile?.plan === 'chairman';
     const [saving, setSaving] = useState(false);
     const [showCheckout, setShowCheckout] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState('oga');
@@ -27,6 +35,7 @@ const SettingsPage = () => {
         enableReminders: profile?.assistantSettings?.enableReminders ?? true,
         reminderTemplate: profile?.assistantSettings?.reminderTemplate || "friendly",
         bankName: profile?.bankDetails?.bankName || "",
+        bankCode: "", // Added bankCode
         accountNumber: profile?.bankDetails?.accountNumber || "",
         accountName: profile?.bankDetails?.accountName || "",
         logoUrl: profile?.logoUrl || "",
@@ -34,7 +43,98 @@ const SettingsPage = () => {
     });
     const [newStaffPhone, setNewStaffPhone] = useState("");
     const [uploading, setUploading] = useState(false);
+    const [fetchingBanks, setFetchingBanks] = useState(false);
+    const [banks, setBanks] = useState([]);
+    const [resolving, setResolving] = useState(false);
+    const [isPayoutSaving, setIsPayoutSaving] = useState(false);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [isEditingPayout, setIsEditingPayout] = useState(!profile?.paystackSubaccountCode);
     const fileInputRef = React.useRef(null);
+    const staffLimit = profile?.plan === 'chairman' ? 'Unlimited' : (profile?.plan === 'oga' ? 'Up to 2 Staff' : 'Owner Only');
+
+
+    // Fetch Banks on load
+    useEffect(() => {
+        const fetchBanks = async () => {
+            setFetchingBanks(true);
+            try {
+                const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+                const res = await axios.get(`${API_URL}/business/banks`, { withCredentials: true });
+                if (res.data.success) {
+                    const bankList = res.data.data.sort((a, b) => a.name.localeCompare(b.name));
+                    setBanks(bankList);
+
+                    // Auto-match existing bank name to code if we have a name but no code
+                    if (form.bankName && !form.bankCode) {
+                        const matchedBank = bankList.find(b => b.name === form.bankName);
+                        if (matchedBank) {
+                            setForm(prev => ({ ...prev, bankCode: matchedBank.code }));
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch banks", err);
+            } finally {
+                setFetchingBanks(false);
+            }
+        };
+        fetchBanks();
+    }, []); // Run once on mount
+
+    // Resolve Account Name Automatically
+    useEffect(() => {
+        const resolve = async () => {
+            // Only resolve if we have both and we are in editing mode (or forcing a check)
+            if (isEditingPayout && form.accountNumber.length === 10 && form.bankCode) {
+                setResolving(true);
+                try {
+                    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+                    const res = await axios.get(`${API_URL}/business/resolve-account/${form.bankCode}/${form.accountNumber}`, { withCredentials: true });
+                    if (res.data.success) {
+                        setForm(prev => ({ ...prev, accountName: res.data.data.account_name }));
+                    } else {
+                        setForm(prev => ({ ...prev, accountName: "" }));
+                        toast.error(res.data.message || "Could not verify account name.");
+                    }
+                } catch (err) {
+                    console.error("Resolution failed", err);
+                    setForm(prev => ({ ...prev, accountName: "" }));
+                    toast.error(err.response?.data?.message || "Invalid account number for this bank.");
+                } finally {
+                    setResolving(false);
+                }
+            } else if (isEditingPayout && form.accountNumber.length > 0 && form.accountNumber.length < 10) {
+                // Only clear if the user is actively typing a non-complete number
+                if (form.accountName) setForm(prev => ({ ...prev, accountName: "" }));
+            }
+        };
+        resolve();
+    }, [form.accountNumber, form.bankCode, isEditingPayout]);
+
+    const handlePayoutSave = async (password) => {
+        setIsPayoutSaving(true);
+        try {
+            const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+            const res = await axios.post(`${API_URL}/business/payout-settings`, {
+                bankCode: form.bankCode,
+                accountNumber: form.accountNumber,
+                bankName: form.bankName,
+                password
+            }, { withCredentials: true });
+
+            if (res.data.success) {
+                setForm(prev => ({ ...prev, accountName: res.data.data.bankDetails.accountName }));
+                toast.success(res.data.message);
+                setShowPasswordModal(false);
+                setIsEditingPayout(false); // Switch back to view mode on success
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to save payout settings");
+            throw err;
+        } finally {
+            setIsPayoutSaving(false);
+        }
+    };
 
     const getInitials = (name) => {
         if (!name) return "K";
@@ -100,6 +200,13 @@ const SettingsPage = () => {
 
     const addStaff = () => {
         if (!newStaffPhone) return;
+        
+        // Plan Enforcement
+        const planLimit = profile?.plan === 'chairman' ? Infinity : (profile?.plan === 'oga' ? 2 : 0);
+        if (form.staffNumbers.length >= planLimit) {
+            return toast.error(`Plan Limit Reached: Your ${profile?.plan?.toUpperCase()} Plan allows only ${planLimit} staff member(s). Upgrade for more.`);
+        }
+
         if (!isValidNigerianPhone(newStaffPhone)) {
             return toast.error("Invalid staff phone number");
         }
@@ -127,7 +234,7 @@ const SettingsPage = () => {
                 <section className="glass-card" style={{ padding: '32px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
                         <div style={{ background: '#F0F9FF', color: '#0EA5E9', padding: '10px', borderRadius: '12px' }}>
-                            <User size={24} />
+                            <UserIcon size={24} />
                         </div>
                         <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Business Identity</h2>
                     </div>
@@ -176,6 +283,121 @@ const SettingsPage = () => {
                             </button>
                         </div>
                     </div>
+                </section>
+
+                {/* Merchant Trust Badge Section */}
+                <section className="glass-card" style={{ padding: '32px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                        <div style={{ background: '#F0FDF4', color: '#10B981', padding: '10px', borderRadius: '12px' }}>
+                            <CheckCircle size={24} />
+                        </div>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Official Trust Badge</h2>
+                    </div>
+
+                    {(() => {
+                        const isVerified = form.displayName && form.whatsappNumber && profile?.bankDetails?.accountNumber;
+                        
+                        if (!isVerified) {
+                            return (
+                                <div style={{ 
+                                    background: '#FFF7ED', 
+                                    padding: '24px', 
+                                    borderRadius: '20px', 
+                                    border: '1px solid #FED7AA',
+                                    textAlign: 'center'
+                                }}>
+                                    <div style={{ background: 'white', width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#EA580C' }}>
+                                        <Clock size={24} />
+                                    </div>
+                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#9A3412', marginBottom: '8px' }}>Unlock Your Verification Badge</h3>
+                                    <p style={{ color: '#C2410C', fontSize: '0.9rem', marginBottom: '0', fontWeight: 600 }}>
+                                        Complete your Business Identity and Payout Settings to receive your official merchant trust badge.
+                                    </p>
+                                </div>
+                            );
+                        }
+
+                        return (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.2fr)', gap: '32px', alignItems: 'center' }} className="grid-2-col-responsive">
+                                {/* Badge Preview */}
+                                <div style={{ overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
+                                    <div id="trust-badge-export" style={{ 
+                                        width: '320px', 
+                                        height: '320px', 
+                                        background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', 
+                                        borderRadius: '24px', 
+                                        position: 'relative', 
+                                        overflow: 'hidden',
+                                        padding: '32px',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        textAlign: 'center',
+                                        color: 'white',
+                                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+                                        flexShrink: 0
+                                    }}>
+                                        {/* Security Patterns */}
+                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #10B981, #3B82F6, #10B981)' }} />
+                                        <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                                        
+                                        <div style={{ 
+                                            background: 'rgba(16, 185, 129, 0.1)', 
+                                            border: '2px solid #10B981', 
+                                            padding: '12px', 
+                                            borderRadius: '20px',
+                                            marginBottom: '20px'
+                                        }}>
+                                            <CheckCircle size={40} color="#10B981" />
+                                        </div>
+                                        
+                                        <h3 style={{ fontSize: '1.6rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.02em', textTransform: 'uppercase', color: 'white' }}>
+                                            VERIFIED
+                                        </h3>
+                                        <p style={{ fontSize: '0.8rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '16px' }}>
+                                            MERCHANT 2026
+                                        </p>
+                                        
+                                        <div style={{ height: '2px', width: '40px', background: 'rgba(255,255,255,0.2)', marginBottom: '16px' }} />
+                                        
+                                        <p style={{ fontSize: '1.2rem', fontWeight: 800, maxWidth: '200px', color: 'white' }}>
+                                            {form.displayName}
+                                        </p>
+                                        
+                                        <div style={{ position: 'absolute', bottom: '24px', display: 'flex', alignItems: 'center', gap: '8px', opacity: 0.7 }}>
+                                            <Shield size={14} color="#10B981" />
+                                            <span style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Kredibly Secured</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Download CTA */}
+                                <div>
+                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 850, color: '#1E293B', marginBottom: '12px' }}>Boost Your Credibility</h3>
+                                    <p style={{ fontSize: '0.85rem', color: '#64748B', lineHeight: 1.6, marginBottom: '24px' }}>
+                                        Post this badge on your <b>WhatsApp Status</b> and set it as your <b>Profile Picture</b>. Verified merchants see 3x more payment speed from customers.
+                                    </p>
+                                    <button 
+                                        onClick={async () => {
+                                            const element = document.getElementById('trust-badge-export');
+                                            const canvas = await html2canvas(element, { backgroundColor: null, scale: 2 });
+                                            const url = canvas.toDataURL('image/png');
+                                            const link = document.createElement('a');
+                                            link.download = `${form.displayName.replace(/\s+/g, '_')}_Verified_Merchant.png`;
+                                            link.href = url;
+                                            link.click();
+                                            toast.success("Badge downloaded! Post it on your WhatsApp.");
+                                        }}
+                                        className="btn-primary" 
+                                        style={{ width: '100%', justifyContent: 'center' }}
+                                    >
+                                        Download for WhatsApp <Smartphone size={18} />
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })()}
                 </section>
 
                 {/* AI Assistant Section */}
@@ -249,13 +471,26 @@ const SettingsPage = () => {
 
                 {/* Staff Management Section */}
                 <section className="glass-card" style={{ padding: '32px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0', marginBottom: '32px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-                        <div style={{ background: '#FFF7ED', color: '#F97316', padding: '10px', borderRadius: '12px' }}>
-                            <Shield size={24} />
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ background: '#FFF7ED', color: '#F97316', padding: '10px', borderRadius: '12px' }}>
+                                <Shield size={24} />
+                            </div>
+                            <div>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Staff Management</h2>
+                                <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>Enables the "Oga Monitor" security feature.</p>
+                            </div>
                         </div>
-                        <div>
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Staff Management</h2>
-                            <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>Enables the "Oga Monitor" security feature.</p>
+                        <div style={{ 
+                            background: '#F1F5F9', 
+                            padding: '6px 14px', 
+                            borderRadius: '100px', 
+                            fontSize: '0.75rem', 
+                            fontWeight: 800, 
+                            color: '#475569',
+                            border: '1px solid #E2E8F0'
+                        }}>
+                            {staffLimit}
                         </div>
                     </div>
 
@@ -301,48 +536,199 @@ const SettingsPage = () => {
                     </div>
                 </section>
 
-                {/* Payment Bridge Section */}
-                <section className="glass-card" style={{ padding: '32px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-                        <div style={{ background: '#F0FDF4', color: '#10B981', padding: '10px', borderRadius: '12px' }}>
-                            <CreditCard size={24} />
+                {/* Payout Settings Section - THE PREMUM REDESIGN */}
+                <section className="glass-card" style={{ padding: '32px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0', overflow: 'hidden', position: 'relative' }}>
+                    <div style={{ position: 'absolute', top: 0, right: 0, width: '150px', height: '150px', background: 'radial-gradient(circle, rgba(76, 29, 149, 0.05) 0%, transparent 70%)', zIndex: 0 }} />
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', position: 'relative', zIndex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ background: '#F0FDF4', color: '#10B981', padding: '10px', borderRadius: '12px' }}>
+                                <CreditCard size={24} />
+                            </div>
+                            <div>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Payout Settings</h2>
+                                <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>Set where you receive money from debtors.</p>
+                            </div>
                         </div>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Payment Bridge</h2>
+                        {profile?.paystackSubaccountCode && (
+                            <div style={{ background: '#ECFDF5', color: '#059669', padding: '6px 12px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <CheckCircle size={12} /> AUTOMATED PAYOUTS ACTIVE
+                            </div>
+                        )}
                     </div>
 
-                    <div style={{ display: 'grid', gap: '24px' }}>
-                        <div className="input-group">
-                            <label className="input-label">Bank Name</label>
-                            <input
-                                className="input-field"
-                                value={form.bankName}
-                                onChange={(e) => setForm({ ...form, bankName: e.target.value })}
-                                placeholder="e.g. GTBank"
-                                style={{ background: '#F8FAFC' }}
-                            />
-                        </div>
-                        <div className="grid-2-col-responsive">
-                            <div className="input-group">
-                                <label className="input-label">Account Number</label>
-                                <input
-                                    className="input-field"
-                                    value={form.accountNumber}
-                                    onChange={(e) => setForm({ ...form, accountNumber: e.target.value })}
-                                    placeholder="10 digits"
-                                    style={{ background: '#F8FAFC' }}
-                                />
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                        {!isEditingPayout ? (
+                            /* READ ONLY VIEW */
+                            <div style={{ 
+                                background: '#F8FAFC', 
+                                padding: '24px', 
+                                borderRadius: '20px', 
+                                border: '1px solid #E2E8F0',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '16px'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Active Destination Account</p>
+                                        <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#1E293B', margin: 0 }}>{form.accountName || profile?.bankDetails?.accountName}</h3>
+                                        <p style={{ fontSize: '1rem', fontWeight: 700, color: '#64748B', margin: '4px 0 0 0' }}>
+                                            {form.bankName || profile?.bankDetails?.bankName} • {form.accountNumber || profile?.bankDetails?.accountNumber}
+                                        </p>
+                                    </div>
+                                    <div style={{ background: '#F0F9FF', color: '#0EA5E9', padding: '12px', borderRadius: '14px' }}>
+                                        <Building2 size={24} />
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setIsEditingPayout(true)}
+                                    style={{ 
+                                        marginTop: '8px',
+                                        background: 'white', 
+                                        border: '1px solid #E2E8F0', 
+                                        padding: '12px', 
+                                        borderRadius: '12px', 
+                                        fontWeight: 800, 
+                                        fontSize: '0.85rem', 
+                                        color: 'var(--primary)',
+                                        cursor: 'pointer'
+                                    }}
+                                    className="hover-scale"
+                                >
+                                    Change Payout Details
+                                </button>
                             </div>
-                            <div className="input-group">
-                                <label className="input-label">Account Name</label>
-                                <input
-                                    className="input-field"
-                                    value={form.accountName}
-                                    onChange={(e) => setForm({ ...form, accountName: e.target.value })}
-                                    placeholder="Full Name"
-                                    style={{ background: '#F8FAFC' }}
-                                />
+                        ) : (
+                            /* EDIT MODE FORM */
+                            <div style={{ display: 'grid', gap: '24px' }}>
+                                <div className="input-group">
+                                    <label className="input-label">Select Bank</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <select
+                                            className="input-field"
+                                            value={form.bankCode}
+                                            onChange={(e) => {
+                                                const selectedBank = banks.find(b => b.code === e.target.value);
+                                                setForm({ ...form, bankCode: e.target.value, bankName: selectedBank?.name || "" });
+                                            }}
+                                            style={{ background: '#F8FAFC', appearance: 'none', paddingRight: '40px' }}
+                                        >
+                                            <option value="">Choose a bank...</option>
+                                            {banks.map(bank => (
+                                                <option key={bank.code} value={bank.code}>{bank.name}</option>
+                                            ))}
+                                        </select>
+                                        <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748B' }}>
+                                            <Building2 size={18} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid-2-col-responsive" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.5fr)' }}>
+                                    <div className="input-group">
+                                        <label className="input-label">Account Number</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <input
+                                                className="input-field"
+                                                value={form.accountNumber}
+                                                maxLength={10}
+                                                onChange={(e) => setForm({ ...form, accountNumber: e.target.value.replace(/\D/g, '') })}
+                                                placeholder="10 Search digits"
+                                                style={{ background: '#F8FAFC', paddingRight: '40px' }}
+                                            />
+                                            <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }}>
+                                                {resolving ? <Loader2 size={18} className="spin-animation" /> : <Search size={18} />}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="input-label">Account Name</label>
+                                        <div style={{ 
+                                            padding: '14px', 
+                                            background: form.accountName ? '#F0FDF4' : '#F1F5F9', 
+                                            borderRadius: '12px', 
+                                            border: '1.5px solid',
+                                            borderColor: form.accountName ? '#BBF7D0' : '#E5E7EB',
+                                            height: '54px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            color: form.accountName ? '#166534' : '#94A3B8',
+                                            fontWeight: 700,
+                                            fontSize: '0.95rem',
+                                            transition: 'all 0.3s ease'
+                                        }}>
+                                            {form.accountName || "Type account number..."}
+                                            {form.accountName && <CheckCircle size={16} style={{ marginLeft: 'auto', color: '#22C55E' }} />}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style={{ marginTop: '8px' }}>
+                                    <div style={{ display: 'flex', gap: '12px' }}>
+                                        {profile?.paystackSubaccountCode && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsEditingPayout(false);
+                                                    // Reset form to what is in the profile
+                                                    setForm(prev => ({ 
+                                                        ...prev, 
+                                                        bankName: profile.bankDetails?.bankName || "",
+                                                        accountNumber: profile.bankDetails?.accountNumber || "",
+                                                        accountName: profile.bankDetails?.accountName || ""
+                                                    }));
+                                                }}
+                                                style={{ 
+                                                    flex: 1, 
+                                                    padding: '16px', 
+                                                    borderRadius: '14px', 
+                                                    border: '1.5px solid #E2E8F0', 
+                                                    background: 'white', 
+                                                    fontWeight: 700, 
+                                                    color: '#64748B', 
+                                                    cursor: 'pointer' 
+                                                }}
+                                            >
+                                                Cancel
+                                            </button>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPasswordModal(true)}
+                                            disabled={isPayoutSaving || !form.bankCode || form.accountNumber.length !== 10 || !form.accountName}
+                                            style={{
+                                                flex: 2,
+                                                padding: '16px',
+                                                borderRadius: '14px',
+                                                background: isPro ? 'linear-gradient(135deg, #10B981, #059669)' : 'var(--primary)',
+                                                color: 'white',
+                                                fontWeight: 800,
+                                                fontSize: '0.95rem',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '10px',
+                                                boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.2)',
+                                                transition: 'all 0.3s ease'
+                                            }}
+                                            className="hover-scale"
+                                        >
+                                            {isPayoutSaving ? (
+                                                <><Loader2 size={20} className="spin-animation" /> Verifying...</>
+                                            ) : (
+                                                <>{profile?.paystackSubaccountCode ? "Confirm New Details" : "Setup Secure Payouts"}</>
+                                            )}
+                                        </button>
+                                    </div>
+                                    <p style={{ marginTop: '12px', fontSize: '0.75rem', color: '#64748B', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                        <Shield size={12} /> {profile?.paystackSubaccountCode ? "Securely update your bank destination." : "Powered by Paystack Secure Split Settlements"}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </section>
 
@@ -488,7 +874,7 @@ const SettingsPage = () => {
                     <CheckoutModal 
                         plan={selectedPlan}
                         billingCycle="monthly"
-                        userEmail={profile?.email}
+                        userEmail={currentUser?.email}
                         onClose={() => setShowCheckout(false)}
                         onSuccess={async (reference, plan, billingCycle, couponCode) => {
                             try {
@@ -500,14 +886,21 @@ const SettingsPage = () => {
                                     couponCode
                                 }, { withCredentials: true });
                                 
-                                toast.success("Upgrade successful! Refeshing...");
-                                setTimeout(() => window.location.reload(), 2000);
+                                // Modal handles the success UI, we just trigger reload after delay
+                                setTimeout(() => window.location.reload(), 4500);
                             } catch (err) {
                                 toast.error("Payment verified but upgrade failed. Contact support.");
+                                throw err;
                             }
                         }}
                     />
                 )}
+                
+                <PasswordConfirmModal 
+                    isOpen={showPasswordModal}
+                    onClose={() => setShowPasswordModal(false)}
+                    onConfirm={handlePayoutSave}
+                />
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', paddingBottom: '40px' }}>
                     <button

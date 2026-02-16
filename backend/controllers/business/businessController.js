@@ -2,6 +2,7 @@ const BusinessProfile = require("../../models/BusinessProfile");
 const ActivityLog = require("../../models/ActivityLog");
 const Waitlist = require("../../models/Waitlist");
 const { logActivity } = require("../../utils/activityLogger");
+const { getBanks, resolveAccount, createSubaccount } = require("../../utils/paystack");
 
 const cleanPhone = (num) => {
     if (!num) return num;
@@ -35,6 +36,13 @@ exports.updateProfile = async (req, res) => {
             }
             if (bankDetails) profile.bankDetails = bankDetails;
             if (staffNumbers) {
+                const planLimit = profile.plan === 'chairman' ? Infinity : (profile.plan === 'oga' ? 2 : 0);
+                if (staffNumbers.length > planLimit) {
+                    return res.status(403).json({ 
+                        success: false, 
+                        message: `Staff limit exceeded for your ${profile.plan.toUpperCase()} plan. Upgrade to add more.` 
+                    });
+                }
                 profile.staffNumbers = staffNumbers.map(n => cleanPhone(n)).filter(n => n);
             }
             await profile.save();
@@ -107,5 +115,119 @@ exports.getActivityLogs = async (req, res) => {
         res.status(200).json({ success: true, data: logs });
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+// -----------------------------------------------------
+// PAYOUT SETTINGS (Just-in-Time Subaccounts)
+// -----------------------------------------------------
+
+/**
+ * Get List of Banks for Dropdown
+ */
+exports.getBankList = async (req, res) => {
+    try {
+        const banks = await getBanks();
+        res.status(200).json({ success: true, data: banks });
+    } catch (error) {
+        console.error("Bank List Error:", error);
+        res.status(500).json({ success: false, message: "Could not fetch banks" });
+    }
+};
+
+/**
+ * Resolve Account Number for UI Feedback
+ */
+exports.resolveAccountDetails = async (req, res) => {
+    try {
+        const { bankCode, accountNumber } = req.params;
+        const details = await resolveAccount(accountNumber, bankCode);
+        res.status(200).json({ success: true, data: details });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+/**
+ * Save Bank Details & Create Subaccount
+ */
+exports.saveBankDetails = async (req, res) => {
+    try {
+        const { bankCode, accountNumber, bankName, password } = req.body;
+        
+        if (!password) {
+             return res.status(400).json({ success: false, message: "Password is required to change bank details." });
+        }
+
+        // 1. Verify Password (Security Guard)
+        const User = require("../../models/User");
+        const user = await User.findById(req.user._id).select('+password');
+        
+        if (!user || !(await user.comparePassword(password))) {
+             return res.status(401).json({ success: false, message: "Incorrect password. Changes not saved." });
+        }
+        
+        const profile = await BusinessProfile.findOne({ ownerId: req.user._id });
+        if (!profile) return res.status(404).json({ message: "Business profile not found" });
+
+        // 2. Resolve Account (Verify Name)
+        let resolvedDetails;
+        try {
+            resolvedDetails = await resolveAccount(accountNumber, bankCode);
+        } catch (err) {
+            return res.status(400).json({ success: false, message: "Invalid account number. Please check and try again." });
+        }
+
+        // 3. Create Paystack Subaccount (ALWAYS New for Fresh Details)
+        // We create a new subaccount for every change to ensure the money goes to the right place immediately.
+        let subaccountCode;
+        try {
+            const subaccount = await createSubaccount(
+                profile.displayName, 
+                bankCode, 
+                accountNumber
+            );
+            
+            if (subaccount && subaccount.subaccount_code) {
+                subaccountCode = subaccount.subaccount_code;
+            } else {
+                 // Fallback if Paystack response is weird but no error thrown
+                 throw new Error("Invalid subaccount response");
+            }
+        } catch (err) {
+            console.error("Subaccount Creation Failed:", err);
+            return res.status(500).json({ success: false, message: "Could not set up automatic payouts. Please try again later." });
+        }
+
+        // 4. Save to Profile
+        profile.bankDetails = {
+            bankName: bankName, // e.g. "GTBank"
+            accountNumber: accountNumber,
+            accountName: resolvedDetails.account_name
+        };
+        profile.paystackSubaccountCode = subaccountCode; // Save NEW ACCT_xxxx
+        
+        await profile.save();
+
+        await logActivity({
+            userId: req.user._id,
+            businessId: profile._id,
+            action: "PAYOUT_UPDATED",
+            entityType: "SYSTEM",
+            details: `Updated payout account to ${resolvedDetails.account_name} (${bankName})`
+        });
+
+        res.status(200).json({ 
+            success: true, 
+            message: "Payout account active! Your money will now go directly to this bank.",
+            data: {
+                bankDetails: profile.bankDetails,
+                isSet: true
+            }
+        });
+
+    } catch (error) {
+        console.error("Save Bank Details Error:", error);
+        res.status(500).json({ success: false, message: error.message });
     }
 };

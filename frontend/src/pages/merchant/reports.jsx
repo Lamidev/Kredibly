@@ -1,15 +1,21 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSales } from '../../context/SaleContext';
 import { TrendingUp, Users, AlertCircle, Calendar, ArrowUpRight, ArrowDownRight, BarChart3, CheckCircle2, Copy } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 
+import { useNavigate } from 'react-router-dom';
+import PlanLimitModal from '../../components/payment/PlanLimitModal';
+
 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
 const ReportsPage = () => {
     const { profile } = useAuth();
+    const navigate = useNavigate();
     const { sales, stats } = useSales();
+    const isPro = profile?.plan === 'oga' || profile?.plan === 'chairman';
+    const [showLimitModal, setShowLimitModal] = useState(false);
 
     // 1. Calculate Top Customers
     const topCustomers = useMemo(() => {
@@ -44,6 +50,10 @@ const ReportsPage = () => {
 
     // 3. Handle Reminder Logic (Consistent with Invoice Page)
     const handleReminder = async (sale) => {
+        if (!isPro) {
+            setShowLimitModal(true);
+            return;
+        }
         try {
             await axios.post(`${API_URL}/sales/${sale._id}/remind`, {}, { withCredentials: true });
             
@@ -88,36 +98,55 @@ const ReportsPage = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '32px' }}>
                 
-                {/* VIP Customers */}
-                <div className="dashboard-glass" style={{ padding: '32px', background: 'white', borderRadius: '32px', border: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                        <h3 style={{ fontSize: '1.2rem', fontWeight: 900, margin: 0 }}>VIP Customers</h3>
-                        <div style={{ background: '#ECFDF5', color: '#059669', padding: '6px 12px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 800 }}>
-                            TOP 5 BY REVENUE
+
+
+                {/* VIP Customers - VELVET ROPE */}
+                <div className="dashboard-glass" style={{ padding: '32px', background: 'white', borderRadius: '32px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ filter: isPro ? 'none' : 'blur(8px)', pointerEvents: isPro ? 'auto' : 'none', opacity: isPro ? 1 : 0.6, transition: 'all 0.3s ease' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <h3 style={{ fontSize: '1.2rem', fontWeight: 900, margin: 0 }}>VIP Customers</h3>
+                            <div style={{ background: '#ECFDF5', color: '#059669', padding: '6px 12px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 800 }}>
+                                TOP 5 BY REVENUE
+                            </div>
                         </div>
+                        
+                        {topCustomers.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '40px 0', color: '#94A3B8' }}>No data available yet.</div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                {topCustomers.map((c, i) => (
+                                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: i === 0 ? 'var(--primary)' : '#F1F5F9', color: i === 0 ? 'white' : '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.9rem' }}>
+                                                {i + 1}
+                                            </div>
+                                            <div>
+                                                <p style={{ margin: 0, fontWeight: 800, color: 'var(--text)', fontSize: '0.95rem' }}>{c.name}</p>
+                                                <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>{c.count} purchases</p>
+                                            </div>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <p style={{ margin: 0, fontWeight: 900, color: 'var(--text)' }}>₦{c.total.toLocaleString()}</p>
+                                            <p style={{ margin: 0, fontSize: '0.7rem', color: '#10B981', fontWeight: 700 }}>HIGH VALUE</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                    
-                    {topCustomers.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '40px 0', color: '#94A3B8' }}>No data available yet.</div>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                            {topCustomers.map((c, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: i === 0 ? 'var(--primary)' : '#F1F5F9', color: i === 0 ? 'white' : '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.9rem' }}>
-                                            {i + 1}
-                                        </div>
-                                        <div>
-                                            <p style={{ margin: 0, fontWeight: 800, color: 'var(--text)', fontSize: '0.95rem' }}>{c.name}</p>
-                                            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>{c.count} purchases</p>
-                                        </div>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <p style={{ margin: 0, fontWeight: 900, color: 'var(--text)' }}>₦{c.total.toLocaleString()}</p>
-                                        <p style={{ margin: 0, fontSize: '0.7rem', color: '#10B981', fontWeight: 700 }}>HIGH VALUE</p>
-                                    </div>
+
+                    {!isPro && (
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(255, 255, 255, 0.4)', backdropFilter: 'blur(2px)', zIndex: 10 }}>
+                            <div style={{ background: 'rgba(15, 23, 42, 0.9)', padding: '24px', borderRadius: '24px', textAlign: 'center', maxWidth: '80%', color: 'white', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+                                <div style={{ width: '48px', height: '48px', background: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                    <TrendingUp size={24} color="#FACC15" />
                                 </div>
-                            ))}
+                                <h4 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', fontWeight: 900 }}>Who are your VIPs?</h4>
+                                <p style={{ margin: '0 0 20px 0', fontSize: '0.85rem', color: '#CBD5E1', lineHeight: 1.5 }}>Unlock advanced insights to see who buys the most.</p>
+                                <a href="/settings" style={{ display: 'inline-block', background: 'white', color: '#0F172A', padding: '12px 24px', borderRadius: '12px', fontWeight: 800, textDecoration: 'none', fontSize: '0.85rem' }}>
+                                    Upgrade to Oga Plan
+                                </a>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -193,6 +222,16 @@ const ReportsPage = () => {
                 </div>
 
             </div>
+            {showLimitModal && (
+                <PlanLimitModal 
+                    isOpen={showLimitModal} 
+                    onClose={() => setShowLimitModal(false)}
+                    onUpgrade={() => {
+                        setShowLimitModal(false);
+                        navigate('/settings');
+                    }}
+                />
+            )}
         </div>
     );
 };

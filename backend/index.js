@@ -29,11 +29,87 @@ const { startProactiveAssistant } = require("./utils/proactiveAssistant");
 const { startTicketCleanup } = require("./utils/ticketScheduler");
 const { startBackupScheduler } = require("./utils/backupService");
 const { setupSentryErrorHandler } = require("./utils/sentry");
+const { scheduleMorningSummary } = require("./utils/cronJobs");
+
+const rateLimit = require("express-rate-limit");
+const helmet = require("helmet");
+const xss = require("xss");
 
 const app = express();
 const PORT = process.env.PORT || 7050;
 
-// 2. Middleware
+// 1. Security Headers (Helmet)
+app.use(helmet());
+
+// 2. Security Middleware: Rate Limiting
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { message: "Too many requests from this IP, please try again after 15 minutes" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  message: { message: "Too many login/auth attempts. Please wait 15 minutes." },
+});
+
+// Apply rate limiting
+app.use("/api/", generalLimiter);
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/register", authLimiter);
+app.use("/api/business/payout-settings", authLimiter);
+
+// 3. Data Sanitization
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+    limit: "10kb",
+  })
+);
+
+// NoSQL & XSS Protection (Custom for Express 5/getter compatibility)
+const sanitizeAll = (obj) => {
+  if (typeof obj !== "object" || obj === null) return obj;
+  
+  Object.keys(obj).forEach((key) => {
+    // 1. NoSQL Injection Protection: Remove keys starting with $
+    if (key.startsWith("$")) {
+      delete obj[key];
+      return;
+    }
+
+    const value = obj[key];
+
+    // 2. XSS Protection: Sanitize strings
+    if (typeof value === "string") {
+      obj[key] = xss(value);
+    } 
+    // Recursive check for nested objects
+    else if (typeof value === "object" && value !== null) {
+      sanitizeAll(value);
+    }
+  });
+  return obj;
+};
+
+app.use((req, res, next) => {
+  // We sanitize body, query and params as much as Express 5 allows
+  // Body is usually a plain object we can modify
+  if (req.body) sanitizeAll(req.body);
+  
+  // For query/params, we sanitize values inside without re-assigning the whole object
+  if (req.query) sanitizeAll(req.query);
+  if (req.params) sanitizeAll(req.params);
+  
+  next();
+});
+
+// 4. CORS & Cookies
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -55,14 +131,6 @@ app.use(
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
     credentials: true,
-  })
-);
-
-app.use(
-  express.json({
-    verify: (req, res, buf) => {
-      req.rawBody = buf;
-    },
   })
 );
 
@@ -121,6 +189,7 @@ mongoose
     startProactiveAssistant();
     startTicketCleanup();
     startBackupScheduler();
+    scheduleMorningSummary();
   })
   .catch((error) => {
     console.error("❌ MongoDB connection failed:", error);

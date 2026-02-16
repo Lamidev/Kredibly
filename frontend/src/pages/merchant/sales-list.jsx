@@ -2,12 +2,15 @@ import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSales } from "../../context/SaleContext";
+import { useAuth } from "../../context/AuthContext";
+import PlanLimitModal from "../../components/payment/PlanLimitModal";
 import { 
     Search, Filter, CheckCircle, Clock, Plus, 
     FileText, Trash2, X, ArrowUpDown, ChevronRight 
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { AnimatePresence } from "framer-motion";
 
 const formatDate = (dateStr) => {
     return new Date(dateStr).toLocaleDateString('en-GB', {
@@ -18,12 +21,14 @@ const formatDate = (dateStr) => {
 };
 
 const SalesList = ({ initialFilter }) => {
-    const { sales, fetchSales, loading, deleteSale } = useSales();
+    const { sales, fetchSales, loading, deleteSale, stats } = useSales();
+    const { profile } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [searchTerm, setSearchTerm] = useState("");
     const [filterStatus, setFilterStatus] = useState(initialFilter || "all");
     const [deleteModal, setDeleteModal] = useState({ show: false, sale: null });
+    const [showLimitModal, setShowLimitModal] = useState(false);
 
     const confirmDelete = async () => {
         try {
@@ -96,11 +101,19 @@ const SalesList = ({ initialFilter }) => {
                             : 'See all your business transactions.'}
                     </p>
                 </div>
-                <Link to="/sales/new" style={{ textDecoration: 'none' }}>
-                    <button className="btn-primary" style={{ padding: '12px 24px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}>
-                        <Plus size={18} strokeWidth={3} /> New Record
-                    </button>
-                </Link>
+                <button 
+                    className="btn-primary" 
+                    style={{ padding: '12px 24px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}
+                    onClick={() => {
+                        if (profile?.plan === 'hustler' && (stats?.totalSales || 0) >= 5) {
+                            setShowLimitModal(true);
+                        } else {
+                            navigate('/sales/new');
+                        }
+                    }}
+                >
+                    <Plus size={18} strokeWidth={3} /> New Record
+                </button>
             </div>
 
             {/* Premium Filter & Search Bar */}
@@ -390,6 +403,12 @@ const SalesList = ({ initialFilter }) => {
                 </div>,
                 document.body
             )}
+
+            <PlanLimitModal 
+                isOpen={showLimitModal}
+                onClose={() => setShowLimitModal(false)}
+                onUpgrade={() => navigate('/settings')}
+            />
         </div>
     );
 };
