@@ -72,6 +72,11 @@ const SaleSchema = new mongoose.Schema({
     viewCount: {
         type: Number,
         default: 0
+    },
+    publicSlug: {
+        type: String,
+        unique: true,
+        index: true
     }
 }, {
     timestamps: true,
@@ -93,22 +98,47 @@ SaleSchema.pre("save", async function (next) {
     // Auto-generate invoice short code if not set
     if (!this.invoiceNumber) {
         const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude ambiguous chars like 1, I, 0, O
-        let code = '';
         const generateCode = () => {
-            let result = 'KR-';
+            let part1 = '';
+            let part2 = '';
             for (let i = 0; i < 4; i++) {
-                result += characters.charAt(Math.floor(Math.random() * characters.length));
+                part1 += characters.charAt(Math.floor(Math.random() * characters.length));
+                part2 += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return `KR-${part1}-${part2}`;
+        };
+
+        let isUnique = false;
+        let code = '';
+        let attempts = 0;
+        while (!isUnique && attempts < 10) {
+            code = generateCode();
+            const existing = await this.constructor.findOne({ invoiceNumber: code });
+            if (!existing) isUnique = true;
+            attempts++;
+        }
+        this.invoiceNumber = code;
+    }
+
+    // Auto-generate public slug for obfuscated links
+    if (!this.publicSlug) {
+        const chars = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let slug = '';
+        const generateSlug = () => {
+            let result = '';
+            for (let i = 0; i < 12; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
             }
             return result;
         };
 
         let isUnique = false;
         while (!isUnique) {
-            code = generateCode();
-            const existing = await this.constructor.findOne({ invoiceNumber: code });
+            slug = generateSlug();
+            const existing = await this.constructor.findOne({ publicSlug: slug });
             if (!existing) isUnique = true;
         }
-        this.invoiceNumber = code;
+        this.publicSlug = slug;
     }
 
     const paid = this.payments.reduce((sum, p) => sum + p.amount, 0);

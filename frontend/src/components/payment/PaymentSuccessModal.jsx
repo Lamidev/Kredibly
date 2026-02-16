@@ -199,7 +199,7 @@ const PaymentSuccessModal = ({
                             background: 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)',
                             borderRadius: '16px',
                             padding: '16px',
-                            marginBottom: '24px',
+                            marginBottom: '16px',
                             border: '1px solid #BAE6FD',
                             textAlign: 'center'
                         }}>
@@ -214,6 +214,35 @@ const PaymentSuccessModal = ({
                                 gap: '8px'
                             }}>
                                 📄 Your receipt is ready to download
+                            </p>
+                        </div>
+
+                         {/* Viral Loop - Immediate Hook */}
+                         <div style={{
+                            marginBottom: '24px',
+                            textAlign: 'center',
+                            cursor: 'pointer'
+                        }}
+                        onClick={() => window.open('/auth/register', '_blank')}
+                        >
+                            <p style={{
+                                fontSize: '11px',
+                                fontWeight: 900,
+                                color: '#EA580C',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                marginBottom: '4px'
+                            }}>
+                                Do people owe YOU money too?
+                            </p>
+                            <p style={{
+                                fontSize: '13px',
+                                fontWeight: 600,
+                                color: '#C2410C',
+                                textDecoration: 'underline',
+                                margin: 0
+                            }}>
+                                Create free Kredibly account to recover it &rarr;
                             </p>
                         </div>
 

@@ -22,7 +22,9 @@ import {
 import { useSales } from '../../context/SaleContext';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
+import { AnimatePresence } from 'framer-motion';
 import SupportHub from './SupportHub';
+import PlanLimitModal from '../payment/PlanLimitModal';
 
 const getInitials = (name) => {
     if (!name) return "K";
@@ -32,13 +34,14 @@ const getInitials = (name) => {
 const DashboardLayout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { profile, logout } = useAuth();
-    const { fetchSales, fetchStats } = useSales();
+    const { fetchSales, fetchStats, stats } = useSales();
     const navigate = useNavigate();
     const [isRefreshing, setIsRefreshing] = useState(false);
     const location = useLocation();
     const [notifications, setNotifications] = useState([]);
     const [showNotifications, setShowNotifications] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+    const [showLimitModal, setShowLimitModal] = useState(false);
 
     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
@@ -156,7 +159,11 @@ const DashboardLayout = () => {
                             boxShadow: '0 10px 20px -5px var(--primary-glow)'
                         }}
                         onClick={() => {
-                            navigate('/sales/new');
+                            if (profile?.plan === 'hustler' && (stats?.totalSales || 0) >= 5) {
+                                setShowLimitModal(true);
+                            } else {
+                                navigate('/sales/new');
+                            }
                             setIsSidebarOpen(false);
                         }}
                     >
@@ -416,6 +423,15 @@ const DashboardLayout = () => {
                 </div>,
                 document.body
             )}
+
+            <PlanLimitModal 
+                isOpen={showLimitModal}
+                onClose={() => setShowLimitModal(false)}
+                onUpgrade={() => {
+                    setShowLimitModal(false);
+                    navigate('/settings');
+                }}
+            />
         </div>
     );
 };

@@ -516,6 +516,42 @@ const PublicReceiptPage = () => {
                     </div>
                 </motion.div>
 
+                {/* Viral Loop Call-To-Action */}
+                <div style={{ marginTop: '32px', textAlign: 'center' }}>
+                    <div style={{ 
+                        background: 'linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)', 
+                        padding: '24px', 
+                        borderRadius: '24px', 
+                        border: '1px solid #FED7AA',
+                        boxShadow: '0 10px 15px -3px rgba(234, 88, 12, 0.1)'
+                    }}>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#9A3412', marginBottom: '8px' }}>
+                            Do people owe YOU money too?
+                        </h3>
+                        <p style={{ color: '#C2410C', fontSize: '0.9rem', marginBottom: '20px', lineHeight: 1.5, fontWeight: 600 }}>
+                            Stop fighting for payments. Let Kredibly chase your debts automatically.
+                        </p>
+                        <Link to="/auth/register" style={{ textDecoration: 'none' }}>
+                            <button className="hover-scale" style={{ 
+                                padding: '14px 28px', 
+                                background: '#EA580C', 
+                                color: 'white', 
+                                border: 'none', 
+                                borderRadius: '100px', 
+                                fontWeight: 800, 
+                                fontSize: '0.95rem',
+                                cursor: 'pointer',
+                                boxShadow: '0 4px 6px -1px rgba(234, 88, 12, 0.4)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}>
+                                Create Free Account <ShieldCheck size={18} />
+                            </button>
+                        </Link>
+                    </div>
+                </div>
+
                 {/* Footer */}
                 <div style={{ textAlign: 'center', marginTop: '40px', padding: '20px' }}>
                     <p style={{ fontSize: '12px', color: '#94A3B8', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>

@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const User = require("../../models/User");
 const BusinessProfile = require("../../models/BusinessProfile");
+const Waitlist = require("../../models/Waitlist");
 const {
   generateTokenAndSetCookie,
 } = require("../../utils/generateTokenAndSetCookies");
@@ -27,6 +28,15 @@ const register = async (req, res) => {
       return res.status(400).json({ success: false, message: "User with this email already exists" });
     }
 
+    // Waitlist Gatekeeper Check
+    const waitlisted = await Waitlist.findOne({ email: email.toLowerCase() });
+    if (!waitlisted) {
+        return res.status(403).json({ 
+            success: false, 
+            message: "This email hasn't been added to our pilot list yet. Please join the waitlist first!" 
+        });
+    }
+
     const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
 
     const newUser = new User({
@@ -38,6 +48,10 @@ const register = async (req, res) => {
     });
 
     await newUser.save();
+
+    // Mark waitlist as active
+    waitlisted.status = 'active';
+    await waitlisted.save().catch(err => console.error("Waitlist Update Error:", err));
 
     // Send verification email in background for speed
     sendVerificationEmail(newUser.email, verificationToken)
@@ -68,6 +82,7 @@ const login = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
+      console.warn(`🚨 Failed Login Attempt: User not found [${email}] from IP: ${req.ip || req.headers['x-forwarded-for']}`);
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
@@ -77,8 +92,14 @@ const login = async (req, res) => {
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      console.warn(`🚨 Failed Login Attempt: Incorrect Password [${email}] from IP: ${req.ip || req.headers['x-forwarded-for']}`);
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
+
+    // Update login audit Info
+    user.lastLoginAt = new Date();
+    user.lastLoginIp = req.ip || req.headers['x-forwarded-for'];
+    await user.save();
 
     const token = generateTokenAndSetCookie(res, user._id);
 
@@ -216,6 +237,23 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const verifyPassword = async (req, res) => {
+    try {
+        const { password } = req.body;
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: "Incorrect password" });
+        }
+
+        res.status(200).json({ success: true, message: "Password verified" });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 module.exports = {
   register,
   login,
@@ -223,5 +261,6 @@ module.exports = {
   logout,
   checkAuth,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  verifyPassword
 };

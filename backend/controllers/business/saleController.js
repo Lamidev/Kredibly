@@ -17,6 +17,16 @@ exports.createSale = async (req, res) => {
             return res.status(404).json({ message: "Business profile not found. Please complete onboarding." });
         }
 
+        // Plan Limit Enforcement
+        const invoiceCount = await Sale.countDocuments({ businessId: business._id });
+        if (business.plan === 'hustler' && invoiceCount >= 5) {
+            return res.status(403).json({ 
+                success: false, 
+                message: "Trial Limit Reached: You've reached the 5-invoice limit for the Hustler plan. Upgrade to 'Oga' to continue professionalizing your business!",
+                code: "LIMIT_REACHED"
+            });
+        }
+
         const saleData = {
             businessId: business._id,
             customerName,
@@ -73,16 +83,22 @@ exports.getSales = async (req, res) => {
 exports.getSale = async (req, res) => {
     try {
         const { id } = req.params;
+        const safeId = String(id);
         let sale;
 
         // Try searching by MongoDB ID if it follows the format
-        if (id.match(/^[0-9a-fA-F]{24}$/)) {
-            sale = await Sale.findById(id).populate("businessId");
+        if (safeId.match(/^[0-9a-fA-F]{24}$/)) {
+            sale = await Sale.findById(safeId).populate("businessId", "displayName logoUrl phoneNumber whatsappNumber bankDetails entityType address paystackSubaccountCode");
         }
 
-        // If not found by ID or not a valid ID format, try searching by invoiceNumber
+        // If not found by ID or not a valid ID format, try searching by invoiceNumber or publicSlug
         if (!sale) {
-            sale = await Sale.findOne({ invoiceNumber: id.toUpperCase() }).populate("businessId");
+            sale = await Sale.findOne({ 
+                $or: [
+                    { invoiceNumber: safeId.toUpperCase() },
+                    { publicSlug: safeId }
+                ]
+            }).populate("businessId", "displayName logoUrl phoneNumber whatsappNumber bankDetails entityType address paystackSubaccountCode");
         }
 
         if (!sale) return res.status(404).json({ message: "Sale record not found" });
@@ -540,23 +556,23 @@ exports.migrateInvoices = async (req, res) => {
         const business = await BusinessProfile.findOne({ ownerId: req.user._id });
         if (!business) return res.status(404).json({ message: "Business profile not found" });
 
-        // Find all sales for THIS business where invoiceNumber doesn't share the KR- format
+        // Find all sales for THIS business that don't match the new KR-XXXX-XXXX format
         const sales = await Sale.find({
             businessId: business._id,
             $or: [
-                { invoiceNumber: { $not: /^KR-/ } },
+                { invoiceNumber: { $not: /^KR-[A-Z0-9]{4}-[A-Z0-9]{4}$/ } },
                 { invoiceNumber: { $exists: false } }
             ]
         });
 
         let updatedCount = 0;
         for (const sale of sales) {
-            sale.invoiceNumber = undefined; // Trigger generator in pre-save
+            sale.invoiceNumber = undefined; // This will trigger the secure 8-char generator in the pre-save hook
             await sale.save();
             updatedCount++;
         }
 
-        res.status(200).json({ success: true, message: `${updatedCount} invoices migrated successfully.` });
+        res.status(200).json({ success: true, message: `${updatedCount} invoices migrated to secure format.` });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

@@ -5,7 +5,8 @@ const {
   WELCOME_EMAIL_TEMPLATE,
   NEW_TICKET_ALERT_TEMPLATE,
   WAITLIST_NOTIFICATION_TEMPLATE,
-  WAITLIST_CONFIRMATION_TEMPLATE
+  WAITLIST_CONFIRMATION_TEMPLATE,
+  SUPPORT_REPLY_TEMPLATE
 } = require("./emailTemplates.js");
 const { resendClient, sender } = require("./emailConfig.js");
 
@@ -124,6 +125,23 @@ exports.sendNewTicketEmail = async (adminEmail, userName, message, ticketId) => 
     if (process.env.NODE_ENV !== 'production') console.warn("Dev mode: Email simulation for support ticket.");
     // Do not throw, just log, so we don't block the ticket creation
     // handleEmailError(error, "Error sending new ticket alert");
+  }
+};
+
+exports.sendSupportReplyEmail = async (userEmail, userName, message, ticketSubject) => {
+  try {
+    await resendClient.emails.send({
+      from: `${sender.name} <${sender.email}>`,
+      to: userEmail,
+      subject: `Update on your support ticket: ${ticketSubject}`,
+      html: SUPPORT_REPLY_TEMPLATE
+        .replace("{name}", userName)
+        .replace("{ticketSubject}", ticketSubject)
+        .replace("{message}", message)
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV !== 'production') console.warn("Dev mode: Email simulation for support reply.");
+    // handleEmailError(error, "Error sending support reply email");
   }
 };
 

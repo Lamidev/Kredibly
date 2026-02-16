@@ -8,10 +8,13 @@ const crypto = require('crypto');
 const { logUsage } = require('../../utils/usageTracker');
 const { sendWhatsAppMessage } = require('../whatsapp/whatsappController');
 
+const { verifyPaystackReference } = require('../../utils/paystack');
+const { getPlanPrice } = require('../../config/pricing');
+
 exports.verifyPayment = async (req, res) => {
     try {
         const { reference, plan, billingCycle, couponCode } = req.body;
-        const profile = await BusinessProfile.findOne({ owner: req.user._id });
+        const profile = await BusinessProfile.findOne({ ownerId: req.user._id });
         if (!profile) return res.status(404).json({ message: "Business profile not found" });
 
         // 1. Handle Free Upgrade / 100% Discount Bypass
@@ -25,38 +28,67 @@ exports.verifyPayment = async (req, res) => {
             // Mock paystack data for verification skip
             paystackData = { amount: 0 };
         } else {
-            // Standard Paystack Verification
-            const https = require('https');
-            
-            const options = {
-                hostname: 'api.paystack.co',
-                port: 443,
-                path: `/transaction/verify/${reference}`,
-                method: 'GET',
-                headers: {
-                    Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
-                }
-            };
-
-            const verifyRequest = new Promise((resolve, reject) => {
-                const req = https.request(options, res => {
-                    let data = '';
-                    res.on('data', (chunk) => { data += chunk; });
-                    res.on('end', () => { resolve(JSON.parse(data)); });
-                });
-                req.on('error', (e) => { reject(e); });
-                req.end();
-            });
-
-            const paystackRes = await verifyRequest;
-
-            if (!paystackRes.status || paystackRes.data.status !== 'success') {
-                return res.status(400).json({ success: false, message: "Payment verification failed" });
+            // Use Centralized Utility
+            try {
+                paystackData = await verifyPaystackReference(reference);
+            } catch (err) {
+                return res.status(400).json({ success: false, message: err.message });
             }
-            paystackData = paystackRes.data;
         }
 
-        // 2. Add 'Oga' status logic
+        // 2. Validate Payment Amount (Anti-Fraud Check)
+        const basePrice = getPlanPrice(plan, billingCycle);
+        if (!basePrice) return res.status(400).json({ message: "Invalid plan or billing cycle" });
+
+        let expectedPrice = basePrice;
+        let coupon = null;
+
+        if (couponCode) {
+            coupon = await Coupon.findOne({ code: couponCode, isActive: true });
+            if (coupon) {
+                // Apply discount logic matching frontend
+                if (coupon.discountType === 'percentage') {
+                    expectedPrice = basePrice * (1 - coupon.discountValue / 100);
+                } else if (coupon.discountType === 'fixed') {
+                    expectedPrice = Math.max(0, basePrice - coupon.discountValue);
+                }
+            }
+        }
+
+        // Paystack returns amount in Kobo, convert to Naira
+        const paidAmount = paystackData.amount / 100;
+
+        // Verify Currency (Ensure it's NGN)
+        if (paystackData.currency !== 'NGN') {
+             return res.status(400).json({ 
+                success: false, 
+                message: "Invalid currency. Payment must be in NGN." 
+            });
+        }
+
+        // Allow 1 Naira margin for floating point errors
+        if (Math.abs(paidAmount - expectedPrice) > 1) {
+            console.error(`🚨 Payment Verification Failed: Paid ₦${paidAmount}, Expected ₦${expectedPrice}`);
+            return res.status(400).json({ 
+                success: false, 
+                message: "Payment amount does not match plan price. If initialized correctly, please contact support." 
+            });
+        }
+
+        // 3. Log Internal Payment Record FIRST (Audit Trail)
+        await Payment.create({
+            businessId: profile._id,
+            reference: reference,
+            amount: paidAmount, 
+            currency: 'NGN',
+            plan: plan,
+            billingCycle: billingCycle,
+            couponUsed: couponCode || null,
+            status: 'success',
+            paidAt: new Date()
+        });
+
+        // 4. Update Profile
         const updateData = {
             plan: plan, // 'oga' or 'chairman'
             planStatus: 'active',
@@ -66,36 +98,20 @@ exports.verifyPayment = async (req, res) => {
             trialExpiresAt: new Date(Date.now() + (billingCycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000)
         };
 
-        // 3. Handle Coupon Usage
-        if (couponCode) {
-            const coupon = await Coupon.findOne({ code: couponCode });
-            if (coupon) {
-                coupon.usedCount += 1;
-                await coupon.save();
-            }
-        }
-
-        // 4. Update Profile
         const updatedProfile = await BusinessProfile.findByIdAndUpdate(
             profile._id, 
             updateData, 
             { new: true }
         );
 
-        // 5. Log Internal Payment Record
-        await Payment.create({
-            businessId: profile._id,
-            reference: reference,
-            amount: paystackData.amount / 100, // Convert from kobo
-            plan: plan,
-            billingCycle: billingCycle,
-            couponUsed: couponCode || null,
-            status: 'success',
-            paidAt: new Date()
-        });
+        // 5. Update Coupon Usage
+        if (coupon) {
+            coupon.usedCount += 1;
+            await coupon.save();
+        }
 
         // LOG REVENUE (Async)
-        logUsage("revenue", { amount: paystackData.amount / 100 }).catch(e => console.error("Revenue log fail:", e));
+        logUsage("revenue", { amount: paidAmount }).catch(e => console.error("Revenue log fail:", e));
 
         res.status(200).json({ 
             success: true, 
@@ -105,6 +121,10 @@ exports.verifyPayment = async (req, res) => {
 
     } catch (error) {
         console.error("Payment Verification Error:", error);
+        // If it's a duplicate key error (payment reference already used), handle gracefully
+        if (error.code === 11000) {
+             return res.status(400).json({ message: "This payment reference has already been used." });
+        }
         res.status(500).json({ message: "Server error during upgrade" });
     }
 };
@@ -117,63 +137,56 @@ exports.verifyInvoicePayment = async (req, res) => {
         }
 
         // 1. Verify with Paystack
-        const https = require('https');
-        const options = {
-            hostname: 'api.paystack.co',
-            port: 443,
-            path: `/transaction/verify/${reference}`,
-            method: 'GET',
-            headers: {
-                Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
-            }
-        };
-
-        const verifyRequest = new Promise((resolve, reject) => {
-            const req = https.request(options, res => {
-                let data = '';
-                res.on('data', (chunk) => { data += chunk; });
-                res.on('end', () => { resolve(JSON.parse(data)); });
-            });
-            req.on('error', (e) => { reject(e); });
-            req.end();
-        });
-
-        const paystackRes = await verifyRequest;
-
-        if (!paystackRes.status || paystackRes.data.status !== 'success') {
-            return res.status(400).json({ success: false, message: "Payment verification failed with Paystack" });
+        let paystackData;
+        try {
+            paystackData = await verifyPaystackReference(reference);
+        } catch (err) {
+            return res.status(400).json({ success: false, message: err.message });
         }
 
-        const paystackData = paystackRes.data;
         const paidAmount = paystackData.amount / 100;
 
-        // 2. Find and Update Sale
-        let sale;
-        if (invoiceId.match(/^[0-9a-fA-F]{24}$/)) {
-            sale = await Sale.findById(invoiceId).populate('businessId');
-        } else {
-            sale = await Sale.findOne({ invoiceNumber: invoiceId.toUpperCase() }).populate('businessId');
-        }
+        // 2. Find and update Sale atomically
+        const sale = await Sale.findOneAndUpdate(
+            { 
+                $or: [
+                    { _id: invoiceId.match(/^[0-9a-fA-F]{24}$/) ? invoiceId : null },
+                    { invoiceNumber: invoiceId.toUpperCase() },
+                    { publicSlug: invoiceId }
+                ],
+                'payments.reference': { $ne: reference }
+            },
+            {
+                $push: {
+                    payments: {
+                        amount: paidAmount,
+                        method: 'Paystack',
+                        reference: reference,
+                        date: new Date()
+                    }
+                }
+            },
+            { new: true }
+        ).populate('businessId');
 
         if (!sale) {
-            return res.status(404).json({ success: false, message: "Sale record not found" });
+            // Check if it was already processed
+            const exists = await Sale.findOne({ 
+                $or: [
+                    { _id: invoiceId.match(/^[0-9a-fA-F]{24}$/) ? invoiceId : null },
+                    { invoiceNumber: invoiceId.toUpperCase() },
+                    { publicSlug: invoiceId }
+                ]
+            });
+
+            if (exists) {
+                const alreadyProcessed = exists.payments.some(p => p.reference === reference);
+                if (alreadyProcessed) {
+                    return res.status(200).json({ success: true, data: exists, message: "Payment already processed" });
+                }
+            }
+            return res.status(404).json({ success: false, message: "Sale record not found or update failed" });
         }
-
-        // 3. Idempotency Check
-        const alreadyProcessed = sale.payments.some(p => p.reference === reference);
-        if (alreadyProcessed) {
-            return res.status(200).json({ success: true, data: sale, message: "Payment already processed" });
-        }
-
-        // 4. Update the Sale
-        sale.payments.push({
-            amount: paidAmount,
-            method: 'Paystack',
-            reference: reference,
-            date: new Date()
-        });
-
-        await sale.save();
         
         // 5. Background Tasks (Notifications, etc)
         const business = sale.businessId;

@@ -11,12 +11,14 @@ import axios from "axios";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { KREDDY_CONFIG } from "../../config";
+import PlanLimitModal from "../../components/payment/PlanLimitModal";
 
 import { createPortal } from "react-dom";
 import { 
     AreaChart, Area, XAxis, YAxis, CartesianGrid, 
     Tooltip, ResponsiveContainer, BarChart, Bar, Legend 
 } from 'recharts';
+import StatusTicker from "../../components/dashboard/StatusTicker";
 
 const Dashboard = () => {
     const { stats, sales, analytics, fetchSales, fetchStats, fetchAnalytics, loading, deleteSale } = useSales();
@@ -28,6 +30,7 @@ const Dashboard = () => {
     const [loadingActivities, setLoadingActivities] = useState(false);
     const [visibleSales, setVisibleSales] = useState(5);
     const [deleteModal, setDeleteModal] = useState({ show: false, sale: null });
+    const [showLimitModal, setShowLimitModal] = useState(false);
 
     useEffect(() => {
         fetchSales();
@@ -105,6 +108,7 @@ const Dashboard = () => {
 
     return (
         <div className="animate-fade-in" style={{ paddingBottom: '40px', position: 'relative' }}>
+            <StatusTicker />
             {/* Floating WhatsApp Button */}
             <a 
                 href={KREDDY_CONFIG.getLink()}
@@ -461,11 +465,19 @@ const Dashboard = () => {
                                 </motion.div>
                             ))
                         )}
-                        <Link to="/sales/new" style={{ textDecoration: 'none' }}>
-                            <button className="dashboard-glass" style={{ width: '100%', padding: '16px', borderRadius: '18px', border: '2px dashed var(--border)', background: 'transparent', color: 'var(--text-muted)', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                                <Plus size={18} /> Record New Sale
-                            </button>
-                        </Link>
+                        <button 
+                            className="dashboard-glass" 
+                            style={{ width: '100%', padding: '16px', borderRadius: '18px', border: '2px dashed var(--border)', background: 'transparent', color: 'var(--text-muted)', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                            onClick={() => {
+                                if (profile?.plan === 'hustler' && (stats?.totalSales || 0) >= 5) {
+                                    setShowLimitModal(true);
+                                } else {
+                                    navigate('/sales/new');
+                                }
+                            }}
+                        >
+                            <Plus size={18} /> Record New Sale
+                        </button>
                     </div>
                 </div>
 
@@ -620,6 +632,12 @@ const Dashboard = () => {
                 </div>,
                 document.body
             )}
+
+            <PlanLimitModal 
+                isOpen={showLimitModal}
+                onClose={() => setShowLimitModal(false)}
+                onUpgrade={() => navigate('/settings')}
+            />
 
             <style>{`
                 @media (max-width: 1024px) {

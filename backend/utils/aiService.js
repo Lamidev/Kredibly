@@ -15,19 +15,7 @@ const refreshModel = (newModelName = "gemini-1.5-flash") => {
     model = genAI.getGenerativeModel({ model: modelName });
 };
 
-/**
- * Processes incoming WhatsApp messages using Gemini AI to extract business intents and data.
- * @param {string} text - The incoming message text.
- * @param {object} context - Additional context (e.g., merchant name).
- * @returns {object|null} - Extraction result or null on error.
- */
-const processMessageWithAI = async (text, context = {}) => {
-  if (!process.env.KREDDY_API_KEY) {
-    console.error("KREDDY_API_KEY is missing!");
-    return null;
-  }
-
-  const SYSTEM_INSTRUCTION = `
+const SYSTEM_INSTRUCTION = `
 You are Kreddy, the smart, street-savvy, and loyal AI business partner for Nigerian merchants. 
 You are NOT just a computer; you are like a trusted staff member who cares about the business's profit.
 
@@ -68,6 +56,18 @@ Rules:
 4. BE HUMAN: If a user says "Thank you", reply with warmth. If they say "Kreddy, I'm stressed", offer encouragement.
 5. ONLY RESPOND WITH VALID JSON. No extra commentary.
 `;
+
+/**
+ * Processes incoming WhatsApp messages using Gemini AI to extract business intents and data.
+ * @param {string} text - The incoming message text.
+ * @param {object} context - Additional context (e.g., merchant name).
+ * @returns {object|null} - Extraction result or null on error.
+ */
+const processMessageWithAI = async (text, context = {}) => {
+  if (!process.env.KREDDY_API_KEY) {
+    console.error("KREDDY_API_KEY is missing!");
+    return null;
+  }
 
   try {
     const now = new Date().toISOString();
@@ -134,4 +134,53 @@ Rules:
   }
 };
 
-module.exports = { processMessageWithAI };
+/**
+ * Processes incoming audio messages (voice notes) using Gemini AI.
+ * Part of the "Chairman Plan" Voice Sync feature.
+ * @param {Buffer} audioBuffer - The audio data.
+ * @param {string} mimeType - The mime type (e.g., audio/ogg; codecs=opus).
+ * @param {object} context - Additional context.
+ */
+const processAudioWithAI = async (audioBuffer, mimeType, context = {}) => {
+  if (!process.env.KREDDY_API_KEY) return null;
+
+  try {
+    const now = new Date().toISOString();
+    const prompt = `
+    --- MERCHANT CONTEXT ---
+    Current Time: ${now}
+    Merchant: ${context.merchantName || 'A user'}
+    Their Debtors: ${context.debtors || 'None.'}
+    -------------------------
+
+    System Instruction: ${SYSTEM_INSTRUCTION}
+
+    Task: Listen to the audio and extract the business details just like a text message.
+    `;
+
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          data: audioBuffer.toString("base64"),
+          mimeType: mimeType
+        }
+      }
+    ]);
+
+    const response = await result.response;
+    let textResponse = response.text();
+    textResponse = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
+
+    console.log("🤖 Kreddy Voice Brain Raw:", textResponse);
+    
+    let parsed = JSON.parse(textResponse);
+    logUsage("ai_multimodal").catch(e => console.error("Logger fail:", e));
+    return parsed;
+  } catch (error) {
+    console.error("Gemini Voice AI Error:", error);
+    return null;
+  }
+};
+
+module.exports = { processMessageWithAI, processAudioWithAI };
