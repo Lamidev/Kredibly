@@ -14,7 +14,8 @@ import {
     Building2,
     CheckCircle,
     Image as ImageIcon,
-    Download
+    Download,
+    ArrowRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { jsPDF } from "jspdf";
@@ -996,6 +997,42 @@ const PublicInvoicePage = () => {
                                     <p style={{ fontSize: '11px', fontWeight: 750, color: '#94A3B8', marginTop: '24px' }}>
                                         Verified Settlement • Reference KR-{sale.invoiceNumber}
                                     </p>
+
+                                    {/* Viral Loop Call-To-Action */}
+                                    <div style={{ marginTop: '48px', textAlign: 'center' }}>
+                                        <div style={{ 
+                                            background: 'linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)', 
+                                            padding: '32px 24px', 
+                                            borderRadius: '28px', 
+                                            border: '1px solid #DDD6FE',
+                                            boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.05)'
+                                        }}>
+                                            <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#4C1D95', marginBottom: '8px' }}>
+                                                Do people owe YOU money too?
+                                            </h3>
+                                            <p style={{ color: '#6D28D9', fontSize: '0.95rem', marginBottom: '24px', lineHeight: 1.5, fontWeight: 600 }}>
+                                                Stop fighting for payments. Let Kreddy chase your debts automatically while you focus on growth.
+                                            </p>
+                                            <Link to="/" style={{ textDecoration: 'none' }}>
+                                                <button className="hover-scale" style={{ 
+                                                    padding: '16px 36px', 
+                                                    background: '#4C1D95', 
+                                                    color: 'white', 
+                                                    border: 'none', 
+                                                    borderRadius: '100px', 
+                                                    fontWeight: 800, 
+                                                    fontSize: '1rem',
+                                                    cursor: 'pointer',
+                                                    boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.3)',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '10px'
+                                                }}>
+                                                    Learn How It Works <ArrowRight size={18} />
+                                                </button>
+                                            </Link>
+                                        </div>
+                                    </div>
                                 </motion.div>
                             )}
 
