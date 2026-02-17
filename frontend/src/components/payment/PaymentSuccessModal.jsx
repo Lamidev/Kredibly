@@ -223,12 +223,12 @@ const PaymentSuccessModal = ({
                             textAlign: 'center',
                             cursor: 'pointer'
                         }}
-                        onClick={() => window.open('/auth/register', '_blank')}
+                        onClick={() => window.open('/', '_blank')}
                         >
                             <p style={{
                                 fontSize: '11px',
                                 fontWeight: 900,
-                                color: '#EA580C',
+                                color: '#4C1D95',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.05em',
                                 marginBottom: '4px'
@@ -238,11 +238,11 @@ const PaymentSuccessModal = ({
                             <p style={{
                                 fontSize: '13px',
                                 fontWeight: 600,
-                                color: '#C2410C',
+                                color: '#6D28D9',
                                 textDecoration: 'underline',
                                 margin: 0
                             }}>
-                                Create free Kredibly account to recover it &rarr;
+                                Discover how Kreddy helps you recover it &rarr;
                             </p>
                         </div>
 
