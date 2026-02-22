@@ -799,10 +799,9 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
 
                 const sale = matches[0];
                 const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-                const link = `${BACKEND_URL}/api/payments/share/${sale.invoiceNumber}`;
-                const bankInfo = profile.bankDetails?.accountNumber ? `\n\nBank: ${profile.bankDetails.bankName}\nAcc: ${profile.bankDetails.accountNumber}` : '';
+                const link = `${APP_URL}/i/${sale.invoiceNumber}`;
 
-                let msg = `🤝 *Payment Link for ${sale.customerName}*\n💰 Balance: *₦${bal.toLocaleString()}*\n\n*Copy & Forward this to them:* \n------------------\n"Hi ${sale.customerName}, here is the secure update and payment link for your balance with ${profile.displayName}: ${link}${bankInfo ? '\n' + bankInfo : ''}"\n------------------`;
+                let msg = `🤝 *Payment Link for ${sale.customerName}*\n💰 Balance: *₦${bal.toLocaleString()}*\n\n*Copy & Forward this to them:* \n------------------\n"Hi ${sale.customerName}, here is the secure update and payment link for your balance with ${profile.displayName}: ${link}"\n------------------`;
                 await sendReply(from, msg);
             }
         } else if (lowerText.startsWith("pay ") || lowerText.startsWith("c ") || lowerText.startsWith("confirm ")) {
@@ -1008,7 +1007,7 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
                 });
 
                 const bal = totalAmount - (paidAmount || 0);
-                const link = `${FRONTEND_URL}/i/${newSale.invoiceNumber}`;
+                const link = `${APP_URL}/i/${newSale.invoiceNumber}`;
 
                 const celebration = totalAmount >= 50000 ? getRandom(HUMANIZE.celebration) + "\n\n" : "Great job! 🚀\n\n";
                 let reply = `✅ *Record Saved!* (#${newSale.invoiceNumber})\n\n${celebration}I've logged *₦${totalAmount.toLocaleString()}* for ${customerName}.\n`;
@@ -1061,7 +1060,7 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
                 if (matches.length === 1) {
                     const sale = matches[0];
                     const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-                    const link = `${FRONTEND_URL}/i/${sale.invoiceNumber}`;
+                    const link = `${APP_URL}/i/${sale.invoiceNumber}`;
                     const draft = `Hi ${sale.customerName}, this is a friendly reminder for your balance of ₦${bal.toLocaleString()} with ${profile.displayName}. You can view and pay here: ${link}`;
                     
                     return await sendReply(from, `📝 *Draft for ${sale.customerName}:* \n\n_"${draft}"_\n\n(You can copy and forward this to them! 🚀)`);
