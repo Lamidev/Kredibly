@@ -12,7 +12,8 @@ import {
     Building2,
     CheckCircle,
     Image as ImageIcon,
-    Download
+    Download,
+    ArrowRight
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { jsPDF } from "jspdf";
