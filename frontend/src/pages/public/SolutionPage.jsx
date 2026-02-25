@@ -17,9 +17,9 @@ const solutions = {
         statValue: 10,
         statSuffix: "+ Hours Saved/Week",
         points: [
-            "Track debt without awkward conversations",
-            "Send professional receipts in seconds",
-            "Separate business cash from personal spending"
+            "Never forget who owes you money",
+            "Professional invoices that accelerate payment",
+            "Get paid 3x faster without the awkward talks"
         ]
     },
     'retail': {

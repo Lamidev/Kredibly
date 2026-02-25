@@ -152,32 +152,54 @@ const extractInfoRobust = (text, context = {}) => {
 
     // 5. WITTY PIDGIN REPLIES
     const bal = result.data.totalAmount - result.data.paidAmount;
+    const tone = context.preferredTone || "friendly";
+    const plan = context.plan || "hustler";
+    const entity = context.entityType || "individual";
     
+    // Character Mapping based on context
+    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+    const bizSafeName = entity === "business" ? context.merchantName : bossTitle;
+
     if (result.intent === "update_record" && result.data.customerName !== "Customer") {
         if (result.data.dueDate) {
-            result.data.reply = `I catch am! 🗓️ Setting a reminder for *${result.data.customerName}* for today. I go update the ledger? (Reply Yes/No)`;
+            result.data.reply = tone === "friendly" 
+                ? `I catch am! 🗓️ Setting a reminder for *${result.data.customerName}* for today. I go update the ledger? (Reply Yes/No)`
+                : `Understood, ${bossTitle}. I have scheduled a collection reminder for ${result.data.customerName} for today. Proceed with update?`;
         } else {
-            result.data.reply = `Oshey! 🥳 I've spotted the *₦${amounts[0]?.toLocaleString()}* for *${result.data.customerName}*. Making I update the record sharp-sharp? (Reply Yes/No)`;
+            result.data.reply = tone === "friendly"
+                ? `Oshey! 🥳 I've spotted the *₦${amounts[0]?.toLocaleString()}* for *${result.data.customerName}*. Making I update the record sharp-sharp? (Reply Yes/No)`
+                : `Payment detected. I've noted ₦${amounts[0]?.toLocaleString()} from ${result.data.customerName}. Should I finalize this entry?`;
         }
+        
         if (result.data.item === "Item" || !result.data.item) {
-            result.data.item = "Purchase"; // Cleaner default
+            result.data.item = "Purchase"; 
         }
-        const lines = [
+
+        const lines = tone === "friendly" ? [
             `I catch the work! 🛡️ Recording *${result.data.item}* for *${result.data.customerName}*.`,
             `Total: *₦${result.data.totalAmount.toLocaleString()}*`,
             `Paid: *₦${result.data.paidAmount.toLocaleString()}*`,
             bal > 0 ? `Balance: *₦${bal.toLocaleString()}* ⏳` : `Status: *FULLY PAID!* 🥂`,
             `\nCorrect? (Type 'Yes' to confirm)`
+        ] : [
+            `Infrastructure Update: Recording *${result.data.item}* for ${result.data.customerName}.`,
+            `Transaction Value: ₦${result.data.totalAmount.toLocaleString()}`,
+            `Amount Cleared: ₦${result.data.paidAmount.toLocaleString()}`,
+            bal > 0 ? `Outstanding Receivable: ₦${bal.toLocaleString()}` : `Status: 100% COLLECTION SECURED!`,
+            `\nConfirm details? (Reply Yes)`
         ];
         result.data.reply = lines.join("\n");
     } else {
         result.intent = "general_chat";
-        // Context-aware fallback: if we have a recent customer in context, maybe they are talking about them?
         if (context.currentSession?.data?.customerName) {
             result.data.customerName = context.currentSession.data.customerName;
-            result.data.reply = `I'm with you, Chief! 🫡 Are we still talking about *${result.data.customerName}*? Tell me more, like: _'He just brought 5k'_ or _'Remind him tomorrow'_`;
+            result.data.reply = tone === "friendly"
+                ? `I'm with you, ${bossTitle}! 🫡 Are we still talking about *${result.data.customerName}*? Tell me more, like: _'He just brought 5k'_ or _'Remind him tomorrow'_`
+                : `Acknowledged, ${bizSafeName}. Continuing context for ${result.data.customerName}. How would you like to proceed with this receivable?`;
         } else {
-            result.data.reply = "I'm with you, Chief! 🫡 But I need small more info. Tell me like: _'Sold a watch for 20k to Kola'_ or _'Who is owing me?'_";
+            result.data.reply = tone === "friendly"
+                ? `I'm with you, ${bossTitle}! 🫡 But I need small more info. Tell me like: _'Sold a watch for 20k to Kola'_ or _'Who is owing me?'_`
+                : `I am standing by, ${bizSafeName}. Please provide transaction details (e.g., 'Sold inventory to Joy for 50k') to continue.`;
         }
     }
 
@@ -873,6 +895,9 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
                 if (media) {
                     aiResponse = await processAudioWithAI(media.buffer, media.mimeType, {
                         merchantName: profile.displayName,
+                        plan: plan,
+                        entityType: profile.entityType,
+                        preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
                         debtors: debtorContext || "No active debtors yet."
                     });
                 }
@@ -884,13 +909,18 @@ Just text me your problem (e.g., _"Kreddy, I have an issue with my bank details"
                 console.log("⚡ Plan: Hustler (Using Regex/Robust Logic)");
                 aiResponse = extractInfoRobust(text, { 
                     merchantName: profile.displayName,
+                    plan: plan,
+                    entityType: profile.entityType,
+                    preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
                     currentSession: session || null 
                 });
             } else {
                 console.log(`💎 Plan: ${plan.toUpperCase()} (Using Gemini AI)`);
                 aiResponse = await processMessageWithAI(text, { 
                     merchantName: profile.displayName,
+                    plan: plan,
                     entityType: profile.entityType,
+                    preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
                     debtors: debtorContext || "No active debtors yet.",
                     currentSession: session || null,
                     hasOpenTicket: !!openTicket

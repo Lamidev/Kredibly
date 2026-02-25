@@ -45,7 +45,7 @@ const PublicFooter = () => {
                     <div style={{ maxWidth: '380px' }}>
                         <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '36px', objectFit: 'contain', marginBottom: '24px' }} />
                         <p style={{ fontSize: '1.1rem', lineHeight: 1.6, color: '#334155', fontWeight: 500, marginBottom: '24px' }}>
-                            The Operating System for African Commerce. We help millions of vendors turn chat-based sales into financial credibility.
+                            Receivables Infrastructure & Operating System for African Commerce. We help millions of vendors automate sales, track debts, and build financial credibility.
                         </p>
                         <div style={{ display: 'flex', gap: '16px' }}>
                             {socialLinks.map((social) => {

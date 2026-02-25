@@ -144,12 +144,12 @@ const Waitlist = () => {
                     </div>
 
                     <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 7vw, 5.5rem)', fontWeight: 950, lineHeight: 0.95, letterSpacing: '-0.05em', marginBottom: '32px', color: '#0F172A' }}>
-                        The smart assistant <br />
-                        <span className="premium-gradient">for your business.</span>
+                        Stop losing money. <br />
+                        <span className="premium-gradient">Get paid faster.</span>
                     </h1>
 
                     <p className="hero-subtext" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.45rem)', color: '#334155', lineHeight: 1.5, marginBottom: '56px', maxWidth: '850px', margin: '0 auto 56px', fontWeight: 600 }}>
-                        No more notebooks. No more confusing math. We help you track sales and collect your money inside the WhatsApp you already use.
+                        Professional invoicing, automated debt reminders, and real-time sales tracking—all inside the WhatsApp you already use. Join the pioneers building the financial operating system for African commerce.
                     </p>
 
                     <div className="hero-button-group" style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '60px' }}>
@@ -262,10 +262,10 @@ const Waitlist = () => {
                         <BarChart3 color="var(--primary)" size={32} />
                     </div>
                     <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 950, marginBottom: '24px', letterSpacing: '-0.04em', color: '#0F172A' }}>
-                        <span style={{ color: 'var(--primary)' }}>Kredibly tracks for you.</span>
+                        <span style={{ color: 'var(--primary)' }}>Receivables Infrastructure.</span>
                     </h2>
                     <p style={{ fontSize: '1.2rem', color: '#334155', lineHeight: 1.6, marginBottom: '72px', maxWidth: '750px', margin: '0 auto 72px', fontWeight: 600 }}>
-                        Your premium command center. Get deep insights into your growth, reconcile accounts, and manage your entire empire in one place.
+                        We are building more than an app. We are building the automated backbone for trade, trust, and growth in informal markets.
                     </p>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '32px' }}>

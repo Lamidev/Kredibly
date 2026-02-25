@@ -100,7 +100,7 @@ const LandingPage = () => {
 
             {/* Hero Section - Executive Redesign */}
             <header style={{
-                padding: 'clamp(120px, 15vh, 180px) 20px 80px', // Reduced padding for mobile
+                padding: 'clamp(40px, 8vh, 80px) 20px 20px', // Tightened spacing
                 maxWidth: '1200px',
                 margin: '0 auto',
                 textAlign: 'center',
@@ -117,33 +117,38 @@ const LandingPage = () => {
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '10px',
-                        marginBottom: '40px',
+                        marginBottom: '24px', // Reduced from 40px
                         background: 'rgba(76, 29, 149, 0.05)',
-                        padding: '10px 24px',
+                        padding: '8px 20px',
                         borderRadius: '100px',
                         border: '1px solid rgba(76, 29, 149, 0.1)',
-                        whiteSpace: 'nowrap'
+                        display: 'inline-flex',
+                        maxWidth: '100%',
+                        overflow: 'hidden'
                     }}>
-                        <Sparkles size={16} color="var(--primary)" />
+                        {/* <Sparkles size={16} color="var(--primary)" /> */}
                         <span style={{ 
-                            fontSize: '0.9rem', 
+                            fontSize: 'clamp(0.65rem, 2.5vw, 0.9rem)', // Shrunk slightly for mobile
                             fontWeight: 700, 
                             color: 'var(--primary)',
                             letterSpacing: '0.05em',
-                            textTransform: 'uppercase'
-                        }}>Built for the Modern Enterprise</span>
+                            textTransform: 'uppercase',
+                            whiteSpace: 'nowrap' // Forced into one line
+                        }}>The Operating System for African Commerce</span>
                     </div>
 
                     <h1 style={{ 
-                        fontSize: 'clamp(2rem, 6vw, 5rem)', // Reduced min size for mobile
+                        fontSize: 'clamp(1.65rem, 6vw, 5rem)', // Reduced min size slightly more for long phrases
                         fontWeight: 950, 
                         lineHeight: 1.1, 
                         letterSpacing: '-0.05em',
-                        marginBottom: '40px',
+                        marginBottom: '16px', // Reduced from 24px
                         textAlign: 'center',
-                        marginTop: '20px'
+                        marginTop: '0px', // Reduced from 10px
+                        width: '100%',
+                        padding: '0 10px'
                     }}>
-                        <span style={{ display: 'block', marginBottom: '10px' }}>Stop guessing.</span>
+                        <span style={{ display: 'block', marginBottom: '10px' }}>Stop losing money.</span>
                         <div style={{ 
                             color: 'var(--primary)', 
                             position: 'relative', 
@@ -155,29 +160,28 @@ const LandingPage = () => {
                             width: '100%' 
                         }}>
                              <Typewriter phrases={[
-                                "Track money outside.",
                                 "Get paid 3x faster.",
-                                "Record sales smarter.",
-                                "Stay in control."
+                                "Global Invoices.",
+                                "Business on Autopilot."
                             ]} />
                         </div>
                     </h1>
 
                     <p style={{ 
-                        fontSize: 'clamp(1.2rem, 2vw, 1.5rem)', 
+                        fontSize: 'clamp(1.1rem, 2vw, 1.5rem)', 
                         color: 'var(--text-muted)', 
                         maxWidth: '850px', 
-                        margin: '0 auto clamp(32px, 5vw, 56px)', // Reduced margin-bottom
-                        lineHeight: 1.45,
+                        margin: '0 auto 24px', // Tighter margin from 32px
+                        lineHeight: 1.4,
                         fontWeight: 500,
                         opacity: 0.9
                     }}>
-                        From local commerce to global scale. Kredibly is the intelligent ledger that helps you 
+                        From local commerce to global scale. Kredibly is the intelligent receivables platform that helps you 
                         automate sales, track what you're owed, and monitor operations, all inside the 
                         WhatsApp you already use.
                     </p>
 
-                    <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '32px' }}>
                         <motion.button 
                             whileHover={{ scale: 1.02, translateY: -2 }}
                             whileTap={{ scale: 0.98 }}
@@ -201,7 +205,7 @@ const LandingPage = () => {
             </header>
 
             {/* Bento Grid - Redefined Features */}
-            <section id="features" style={{ padding: '40px 0 80px' }}> {/* Reduced bottom padding */}
+            <section id="features" style={{ padding: '60px 0' }}> {/* Reduced overall padding */}
                 <div className="bento-grid">
                     <motion.div 
                         className="bento-item bento-1"
@@ -248,7 +252,7 @@ const LandingPage = () => {
                     >
                         <CreditCard color="#F59E0B" size={32} style={{ marginBottom: '16px' }} />
                         <h4 style={{ fontSize: '1.3rem', fontWeight: 900 }}>Fast Payments</h4>
-                        <p style={{ fontSize: '0.95rem', color: '#1E293B', fontWeight: 600 }}>Premium invoices designed to get you paid 3x faster.</p>
+                        <p style={{ fontSize: '0.95rem', color: '#1E293B', fontWeight: 600 }}>Professional invoices designed to get you paid 3x faster and build trust.</p>
                     </motion.div>
 
                     <motion.div 
@@ -271,7 +275,7 @@ const LandingPage = () => {
                         <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
                             <div style={{ flex: 1 }}>
                                 <h4 style={{ fontSize: '1.6rem', fontWeight: 950, marginBottom: '10px' }}>Built for Scale</h4>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', fontWeight: 500 }}>From one stall to ten locations. Kredibly grows as you grow.</p>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', fontWeight: 500 }}>From one stall to ten locations. Infrastructure built to grow with you.</p>
                             </div>
                             <div style={{ background: 'var(--background)', padding: '24px', borderRadius: '24px', border: '1px solid var(--border)' }}>
                                 <TrendingUp size={36} color="#10B981" />
@@ -282,9 +286,9 @@ const LandingPage = () => {
             </section>
 
             {/* Simulated WhatsApp Flow - Clean Minimalist Redesign */}
-            <section id="how-it-works" className="adaptive-section" style={{ padding: '120px 20px', background: 'white' }}>
+            <section id="how-it-works" className="adaptive-section" style={{ padding: '60px 20px', background: 'white' }}>
                 <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '100px' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '60px' }}>
                         <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 950, letterSpacing: '-0.04em', marginBottom: '24px' }}>Business at the speed of thought.</h2>
                         <p style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: 500, maxWidth: '700px', margin: '0 auto' }}>Leverage Kreddy AI to manage your commerce without ever leaving WhatsApp.</p>
                     </div>

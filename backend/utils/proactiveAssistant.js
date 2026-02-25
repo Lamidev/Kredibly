@@ -70,26 +70,47 @@ const checkAndNotify = async () => {
                     const todaySales = sales.filter(s => new Date(s.dueDate).toDateString() === now.toDateString());
                     if (todaySales.length > 0) {
                         const totalDebt = todaySales.reduce((sum, s) => sum + (s.totalAmount - (s.payments?.reduce((pSum, p) => pSum + p.amount, 0) || 0)), 0);
-                        message = `🌞 *Good Morning Chief!* \n\nYou have *${todaySales.length}* payments due today totaling *₦${totalDebt.toLocaleString()}*. \n\nShall I draft the reminder messages for you? Replying "Yes" or "Draft All" gets them ready! 🛡️`;
-                        subject = "Kreddy Morning Briefing: Payments Due Today!";
+                        
+                        const tone = business.assistantSettings?.reminderTemplate || "friendly";
+                        const plan = business.plan || "hustler";
+                        const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+
+                        if (tone === "friendly") {
+                            message = `🌞 *Good Morning ${bossTitle}!* \n\nYou have *${todaySales.length}* outstanding receivables due today totaling *₦${totalDebt.toLocaleString()}*. \n\nI have the automated recovery links ready for your collection. Shall I initiate? 🛡️`;
+                        } else {
+                            message = `📋 *Executive Briefing: Receivables Report* \n\nGreetings, ${bossTitle}. We have *${todaySales.length}* outstanding receivables scheduled for collection today, totaling *₦${totalDebt.toLocaleString()}*. \n\nInfrastructure is ready for automated recovery. Should I initiate the process? 🛡️`;
+                        }
+                        subject = "Executive Briefing: Receivables Due Today!";
                     }
                 } 
                 
                 // If it's not morning or no morning briefing was prepared, handle standard nudges
                 if (!message) {
+                    const tone = business.assistantSettings?.reminderTemplate || "friendly";
+                    const plan = business.plan || "hustler";
+                    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+
                     if (sales.length === 1) {
                         const sale = sales[0];
                         const balance = sale.totalAmount - (sale.payments?.reduce((sum, p) => sum + p.amount, 0) || 0);
                         const isDueToday = new Date(sale.dueDate).toDateString() === now.toDateString();
 
-                        message = isDueToday
-                            ? `👀 *Friendly Nudge: ${sale.customerName} is due today!* \n💰 Balance: *₦${balance.toLocaleString()}* \n\nShall we send them a reminder link? 📲 \n\n_Type "D ${sale.customerName}" to get the link!_`
-                            : `👋 *Heads up!* \n\n*${sale.customerName}* is expected to pay *₦${balance.toLocaleString()}* tomorrow. I'll stay on watch! 🛡️`;
-                        subject = `Kreddy Nudge: ${sale.customerName} is due!`;
-                    } else {
+                        if (isDueToday) {
+                            message = tone === "friendly" 
+                                ? `👀 *Recovery Alert: ${sale.customerName} is due today!* \n💰 Balance: *₦${balance.toLocaleString()}* \n\nShall we initiate the automated recovery link? 📲 \n\n_Type "D ${sale.customerName}" to generate link!_`
+                                : `🛡️ *Infrastructure Alert: Collection Due* \n\n${sale.customerName} has an outstanding balance of *₦${balance.toLocaleString()}* due today. \n\nShall I initiate the automated recovery link for processing? \n\n_System Command: Type "D ${sale.customerName}"_`;
+                        } else {
+                            message = tone === "friendly"
+                                ? `👋 *Receivables Watch:* \n\n*${sale.customerName}* is expected to clear their *₦${balance.toLocaleString()}* balance tomorrow. I'm keeping the recovery link optimized! 🛡️`
+                                : `📡 *Receivables Monitoring:* \n\nReceivable from *${sale.customerName}* (*₦${balance.toLocaleString()}*) is reaching maturity tomorrow. Monitoring link for optimal recovery. 🛡️`;
+                        }
+                        subject = `Receivables Alert: ${sale.customerName} is due!`;
+                    } else if (sales.length > 1) {
                         const totalBal = sales.reduce((sum, s) => sum + (s.totalAmount - (s.payments?.reduce((pSum, p) => pSum + p.amount, 0) || 0)), 0);
-                        message = `📑 *Quick Summary for ${business.displayName}* \n\nYou have *${sales.length}* people to collect money from today/tomorrow (Total: *₦${totalBal.toLocaleString()}*). \n\nType "Summary" to see the full list or "Draft All" to notify them. 🛡️`;
-                        subject = `Kreddy Summary: ${sales.length} Debts Due`;
+                        message = tone === "friendly"
+                            ? `📑 *Quick Summary for ${business.displayName}* \n\nYou have *${sales.length}* receivables to recover today/tomorrow (Total: *₦${totalBal.toLocaleString()}*). \n\nType "Summary" to see the full list or "Draft All" to initiate recovery. 🛡️`
+                            : `🏢 *Operational Summary: ${business.displayName}* \n\nThere are *${sales.length}* active receivables in the collection pipeline for this period, totaling *₦${totalBal.toLocaleString()}*. \n\nInstruction required: Type "Summary" for audit or "Draft All" for batch recovery. 🛡️`;
+                        subject = `Receivables Summary: ${sales.length} Items Due`;
                     }
                 }
 
@@ -144,10 +165,20 @@ const checkAndNotify = async () => {
                 const business = sale.businessId;
                 if (!business || !business.whatsappNumber) continue;
 
+                const tone = business.assistantSettings?.reminderTemplate || "friendly";
+                const plan = business.plan || "hustler";
+                const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+
                 const balance = sale.totalAmount - (sale.payments?.reduce((sum, p) => sum + p.amount, 0) || 0);
                 const invoiceLink = `${process.env.FRONTEND_URL}/i/${sale.invoiceNumber}`;
-                const debtorMsg = `Hi ${sale.customerName}, this is a friendly reminder for your balance of ₦${balance.toLocaleString()} with ${business.displayName}. You can view and pay here: ${invoiceLink}`;
-                const alarmMsg = `⏰ *Kreddy Alarm: Time is up for ${sale.customerName}!* \n\nYou asked for a reminder for this *₦${balance.toLocaleString()}* payment now.\n\n🔗 *Invoice:* ${invoiceLink}\n\nShall I send the link to them for you? (Reply "Yes")`;
+                
+                const debtorMsg = tone === "friendly"
+                    ? `Hi ${sale.customerName}, this is a friendly reminder for your balance of ₦${balance.toLocaleString()} with ${business.displayName}. You can view and pay here: ${invoiceLink}`
+                    : `Official Notice: Your outstanding balance of ₦${balance.toLocaleString()} with ${business.displayName} is now due. Please review your invoice and settle via: ${invoiceLink}`;
+
+                const alarmMsg = tone === "friendly"
+                    ? `⏰ *Kreddy Alarm: Time is up for ${sale.customerName}!* \n\n${bossTitle}, you asked for a reminder for this *₦${balance.toLocaleString()}* payment now.\n\n🔗 *Invoice:* ${invoiceLink}\n\nShall I send it to them for you? (Reply "Yes")`
+                    : `🚨 *Operational Alert: Recovery Due* \n\n${bossTitle}, the reminder for ${sale.customerName} (*₦${balance.toLocaleString()}*) is now due for dispatch. \n\n🔗 *Invoice Details:* ${invoiceLink}\n\nInitiate automated delivery to customer? (Reply "Yes")`;
                 
                 await sendWhatsAppMessage(business.whatsappNumber, alarmMsg);
 

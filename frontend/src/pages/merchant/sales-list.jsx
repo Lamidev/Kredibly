@@ -93,11 +93,11 @@ const SalesList = ({ initialFilter }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', gap: '20px', flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: '200px' }}>
                     <h1 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text)', marginBottom: '4px', letterSpacing: '-0.04em' }}>
-                        {filterStatus === 'outstanding' ? 'Unpaid Bills' : 'All Sales'}
+                        {filterStatus === 'outstanding' ? 'Pending Collections' : 'All Ledger Entries'}
                     </h1>
                     <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.9rem' }}>
                         {filterStatus === 'outstanding' 
-                            ? 'Keep track of pending payments.' 
+                            ? 'Monitor your recovery queue.' 
                             : 'See all your business transactions.'}
                     </p>
                 </div>
@@ -158,7 +158,7 @@ const SalesList = ({ initialFilter }) => {
                             cursor: 'pointer',
                             whiteSpace: 'nowrap'
                         }}>
-                            All Sales
+                            All Entries
                         </button>
                         <button onClick={() => setFilterStatus("outstanding")} style={{ 
                             padding: '8px 20px', 
@@ -171,7 +171,7 @@ const SalesList = ({ initialFilter }) => {
                             cursor: 'pointer',
                             whiteSpace: 'nowrap'
                         }}>
-                            Unpaid
+                            Cash Outside
                         </button>
                     </div>
                 </div>

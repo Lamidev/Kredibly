@@ -14,10 +14,10 @@ const products = {
         color: "var(--primary)",
         bg: "rgba(76, 29, 149, 0.05)",
         features: [
-            "Natural Language Processing",
-            "Instant Sale Recording",
-            "Automated Debtor Reminders",
-            "Multi-staff Support"
+            "Natural Slang Understanding",
+            "Stop losing money recording",
+            "Never forget who owes you with Auto-Reminders",
+            "Infrastructure for your entire team"
         ]
     },
     'merchant-dashboard': {
@@ -37,7 +37,7 @@ const products = {
     'premium-invoices': {
         title: "Premium Invoices",
         subtitle: "Look Global, Sell Local",
-        description: "Generate world-class digital invoices that build trust. Customizable, verifiable, and designed to get you paid faster.",
+        description: "Professional digital portals for your clients that build deep trust. Designed to accelerate your cash flow and get you paid 3x faster.",
         icon: CreditCard,
         color: "#F59E0B",
         bg: "rgba(245, 158, 11, 0.05)",

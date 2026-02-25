@@ -228,7 +228,7 @@ const Dashboard = () => {
                         </div>
                         <ArrowUpRight size={18} color="var(--warning)" />
                     </div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Unpaid</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Cash Outside</p>
                     <h2 style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--warning)', letterSpacing: '-0.03em' }}>
                         ₦{stats?.outstanding?.toLocaleString() || 0}
                     </h2>
@@ -275,7 +275,7 @@ const Dashboard = () => {
                 <div className="weekly-battle-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
                     <div>
                         <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text)', margin: 0 }}>This Week's Battle</h3>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, marginTop: '4px' }}>Money In vs. Money Outside</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, marginTop: '4px' }}>Money In vs. Collection Pipeline</p>
                     </div>
                     
                     {analytics?.summary && (
@@ -285,7 +285,7 @@ const Dashboard = () => {
                                 <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#14532D' }}>₦{analytics.summary.moneyIn.toLocaleString()}</p>
                             </div>
                             <div style={{ padding: '12px 20px', background: '#FEF2F2', borderRadius: '16px', border: '1px solid #FEE2E2' }}>
-                                <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#991B1B', textTransform: 'uppercase', marginBottom: '4px' }}>Money Outside</p>
+                                <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#991B1B', textTransform: 'uppercase', marginBottom: '4px' }}>Collection Pipeline</p>
                                 <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#7F1D1D' }}>₦{analytics.summary.moneyOutside.toLocaleString()}</p>
                             </div>
                         </div>
@@ -309,10 +309,10 @@ const Dashboard = () => {
                         </div>
                         <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#475569', margin: 0 }}>
                             {analytics.summary.collectionRate >= 70 
-                                ? "Kreddy Says: Chief, your cash flow is strong! You've collected most of your money."
+                                ? "Kreddy Says: Chief, your cash flow is strong! You've successfully recovered most of your receivables."
                                 : analytics.summary.collectionRate >= 40
-                                ? "Kreddy Says: Good progress! Send a few reminders to bring more money in today."
-                                : "Kreddy Says: A lot of money is still outside. Let's send some reminders to your debtors."}
+                                ? "Kreddy Says: Good progress! Send a few recovery links to bring more money in today."
+                                : "Kreddy Says: A lot of cash is still outside. Let's start the automated recovery process."}
                         </p>
                     </div>
                 )}
@@ -352,7 +352,7 @@ const Dashboard = () => {
                                     wrapperStyle={{ paddingTop: '0', paddingBottom: '24px', fontSize: '11px', fontWeight: 700 }}
                                 />
                                 <Bar dataKey="Money In" fill="var(--success)" radius={[6, 6, 0, 0]} barSize={24} />
-                                <Bar dataKey="Money Outside" fill="#FCA5A5" radius={[6, 6, 0, 0]} barSize={24} />
+                                <Bar dataKey="Money Outside" name="Collection Pipeline" fill="#FCA5A5" radius={[6, 6, 0, 0]} barSize={24} />
                             </BarChart>
                         </ResponsiveContainer>
                     )}
@@ -370,7 +370,7 @@ const Dashboard = () => {
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px', paddingRight: '4px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text)', margin: 0 }}>Priority Collection</h3>
+                            <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text)', margin: 0 }}>Recovery Queue</h3>
                             <span style={{ padding: '4px 10px', background: '#FEF2F2', color: '#EF4444', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 800 }}>{sales.filter(s => s.status !== 'paid').length} PENDING</span>
                         </div>
                         <Link to="/debtors" style={{ padding: '8px 16px', background: 'var(--background)', color: 'var(--primary)', textDecoration: 'none', borderRadius: '100px', fontWeight: 800, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--border)' }}>
