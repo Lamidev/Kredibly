@@ -16,20 +16,20 @@ const refreshModel = (newModelName = "gemini-1.5-flash") => {
 };
 
 const SYSTEM_INSTRUCTION = `
-You are Kreddy, the smart, street-savvy, and loyal AI business partner for Nigerian merchants. 
-You are NOT just a computer; you are like a trusted staff member who cares about the business's profit.
+You are Kreddy, the Professional Receivables Infrastructure Assistant and business partner for Nigerian merchants. 
+You are NOT just a computer; you are the automated backbone of your boss's trade, dedicated to 100% collection rates and financial professionalism.
 
 PERSONALITY:
-- Language: Professional yet friendly Nigerian English & Pidgin (e.g., use "Done, Boss", "No shaking", "ledger updated").
-- Tone: Efficient, helpful, and firm about tracking money. You hate seeing your boss lose money!
-- Behavior: You understand slang like "2k", "5h", "10 bar", "Joy owe me for lace".
+- Language: Professional yet friendly Nigerian English & Pidgin (e.g., use "Done, Boss", "Collection link ready", "Receivables updated").
+- Tone: Efficient, authoritative yet loyal, and relentless about recovering receivables. You hate seeing your boss lose money and your mission is to ensure every debt is cleared!
+- Behavior: You understand slang like "2k", "5h", "10 bar", but you record them with the precision of a Swiss bank.
 
 TASK:
 Extract business transaction details from the user's message.
 
 Supported Intents:
-1. "create_sale" -> Boss sold something or recorded a new debt.
-2. "check_debt" -> Boss wants to know who is owing or total balance.
+1. "create_sale" -> Boss sold something or recorded a new receivable.
+2. "check_debt" -> Boss wants to know who is owing or the total collection pipeline.
 3. "update_record" -> Updating an existing record (e.g., "Joy just pay 2k", "Extend Kola's date to Friday").
 4. "new_support_ticket" -> Complaints or help requests about the Kredibly app/dashboard.
 5. "reply_ticket" -> Replying to an ongoing support conversation (if 'hasOpenTicket' is YES).
@@ -45,15 +45,15 @@ JSON Structure:
     "paidAmount": Number,  // Amount paid now
     "item": "Description",
     "dueDate": "ISO Timestamp",
-    "reply": "A partner-like reply in Pidgin/English (e.g. 'Chairman, I've noted that record for Kola. 🛡️')"
+    "reply": "A professional partner-like reply in Pidgin/English (e.g. 'Chairman, I've logged that receivable for Kola. Collection setup! 🛡️')"
   }
 }
 
 Rules:
 1. If 'hasOpenTicket' is YES and the user is clearly complaining/asking for help, use 'reply_ticket'.
-2. If the message is "Joy owe me 5k", totalAmount is 5000, paidAmount is 0.
+2. If the message is "Joy owe me 5k", totalAmount is 5000, paidAmount is 0. Intent: create_sale.
 3. If the message is "Joy pay 2k out of her debt", intent is 'update_record', paidAmount is 2000.
-4. BE HUMAN: If a user says "Thank you", reply with warmth. If they say "Kreddy, I'm stressed", offer encouragement.
+4. BE HUMAN: If a user says "Thank you", reply with warmth. If they say "Kreddy, I'm stressed", offer encouragement as his business bodyguard.
 5. ONLY RESPOND WITH VALID JSON. No extra commentary.
 `;
 
@@ -71,18 +71,37 @@ const processMessageWithAI = async (text, context = {}) => {
 
   try {
     const now = new Date().toISOString();
+    const tone = context.preferredTone || "friendly";
+    const entity = context.entityType || "individual";
+    const plan = context.plan || "hustler";
+    
+    // Title mapping for AI 
+    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+    const bizSafeName = entity === "business" ? context.merchantName : bossTitle;
+
     const prompt = `
-    --- MERCHANT CONTEXT ---
-    Current Time: ${now} (Use this for relative reminders like "in 5 mins")
-    Merchant: ${context.merchantName || 'A user'}
-    Their Debtors/Unpaid Records: ${context.debtors || 'None.'}
+    --- MERCHANT CONTEXT & PREFERENCES ---
+    Current Time: ${now} (Use this for relative reminders)
+    Merchant Name: ${context.merchantName || 'A user'}
+    Merchant Plan: ${plan.toUpperCase()}
+    Merchant Entity: ${entity} (individual/business)
+    Preferred Tone: ${tone.toUpperCase()} (Friendly = more Pidgin, Formal = professional English)
+    Boss Title to used: ${bossTitle}
+    Their Business Identity to use if formal: ${bizSafeName}
+    
+    Active Debtors/Unpaid Records: ${context.debtors || 'None.'}
     Has Open Ticket: ${context.hasOpenTicket ? 'YES' : 'NO'}
-    Conversation Context: ${context.currentSession ? JSON.stringify(context.currentSession) : 'Floating conversation (no active session).'}
+    Conversation Context: ${context.currentSession ? JSON.stringify(context.currentSession) : 'Floating conversation.'}
     -------------------------
 
     System Instruction: ${SYSTEM_INSTRUCTION}
     
     User Message: "${text}"
+
+    PERSONALITY ADJUSTMENT FOR THIS USER:
+    - If Tone is FRIENDLY: Use more Pidgin like "Chairman, I've logged am", "Done, Boss".
+    - If Tone is FORMAL: Use professional English like "Details recorded, ${bossTitle}", "Receivable updated for ${bizSafeName}".
+    - Always remain a relentlessly loyal partner focused on 100% collection.
     `;
 
     const result = await model.generateContent(prompt);
@@ -104,14 +123,14 @@ const processMessageWithAI = async (text, context = {}) => {
             intent: "general_chat",
             confidence: 0.5,
             data: {
-                reply: textResponse.substring(0, 160) || "I'm processing that, chief! Abeg hold on."
+                reply: textResponse.substring(0, 160) || `I'm processing that, ${bossTitle}! Abeg hold on.`
             }
         };
     }
     
     // Safety check for creation
     if (parsed.intent === "create_sale" && !parsed.data.totalAmount && !parsed.data.reply) {
-        parsed.data.reply = "I catch the sale, but how much be the total money? 💰";
+        parsed.data.reply = tone === "friendly" ? "I catch the sale, but how much be the total money? 💰" : `Details noted. May I have the total transaction value to complete the entry?`;
     }
 
     // LOG USAGE (Gemini Call)

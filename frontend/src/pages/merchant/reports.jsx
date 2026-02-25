@@ -154,7 +154,7 @@ const ReportsPage = () => {
                 {/* Debtors Watchlist */}
                 <div className="dashboard-glass" style={{ padding: '32px', background: 'white', borderRadius: '32px', border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                        <h3 style={{ fontSize: '1.2rem', fontWeight: 900, margin: 0 }}>Recovery Watchlist</h3>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 900, margin: 0 }}>Priority Recoveries</h3>
                          <div style={{ background: '#FEF2F2', color: '#DC2626', padding: '6px 12px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 800 }}>
                             ACTION NEEDED
                         </div>
@@ -193,7 +193,7 @@ const ReportsPage = () => {
                                             style={{ background: '#DC2626', color: 'white', padding: '8px 16px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', border: 'none' }}
                                             className="hover-scale"
                                         >
-                                            Remind
+                                            Recover Now
                                         </button>
                                     </div>
                                 </div>

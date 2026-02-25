@@ -457,7 +457,7 @@ const InvoicePage = () => {
                             ) : sale.confirmed ? (
                                 <><ShieldCheck size={14} /> VERIFIED</>
                             ) : (
-                                <><Zap size={14} /> WAITING FOR PAYMENT</>
+                                <><Zap size={14} /> PENDING COLLECTION</>
                             )}
                         </span>
                     </div>
@@ -502,7 +502,7 @@ const InvoicePage = () => {
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--success)', margin: 0 }}>₦{paidAmount.toLocaleString()}</h3>
                         </div>
                         <div className="dashboard-glass" style={{ padding: '20px', borderRadius: '24px', border: '1px solid var(--border)', background: 'white' }}>
-                            <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Balance</p>
+                            <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Cash Outside</p>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: balance > 0 ? 'var(--warning)' : 'var(--text-muted)', margin: 0 }}>₦{balance.toLocaleString()}</h3>
                         </div>
                     </div>
@@ -617,7 +617,7 @@ const InvoicePage = () => {
                                             className="btn-secondary"
                                             style={{ flex: 3, padding: '18px', borderRadius: '18px', border: '1px solid #25D366', color: '#25D366', fontWeight: 800, background: 'rgba(37, 211, 102, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
                                         >
-                                            <MessageCircle size={20} /> {reminding ? '...' : 'WhatsApp'}
+                                            <MessageCircle size={20} /> {reminding ? '...' : 'Recover now'}
                                         </button>
                                         <button
                                             onClick={() => {
