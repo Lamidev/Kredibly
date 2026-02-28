@@ -18,7 +18,6 @@ import {
     ArrowRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { jsPDF } from "jspdf";
 import confetti from "canvas-confetti";
 import PaymentSuccessModal from "../../components/payment/PaymentSuccessModal";
 
@@ -170,6 +169,7 @@ const PublicInvoicePage = () => {
             const imgData = canvas.toDataURL('image/png');
             if (imgData === 'data:,') throw new Error("Blank canvas generated");
 
+            const { jsPDF } = await import("jspdf");
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',

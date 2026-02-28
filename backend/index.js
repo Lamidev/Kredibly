@@ -33,13 +33,26 @@ const { scheduleMorningSummary } = require("./utils/cronJobs");
 
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
+const mongoSanitize = require("express-mongo-sanitize"); // Replaces custom loop
 const xss = require("xss");
 
 const app = express();
 const PORT = process.env.PORT || 7050;
 
-// 1. Security Headers (Helmet)
-app.use(helmet());
+// 1. Security Headers (Helmet) - Configured for External Assets (Cloudinary)
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      "default-src": ["'self'"],
+      "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      "style-src": ["'self'", "'unsafe-inline'"],
+      "img-src": ["'self'", "data:", "https://res.cloudinary.com", "https://*.cloudinary.com"],
+      "connect-src": ["'self'", "https://api.usekredibly.com", "https://*.usekredibly.com", "http://localhost:7050"],
+    },
+  },
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+}));
 
 // 2. Security Middleware: Rate Limiting
 const generalLimiter = rateLimit({
@@ -71,43 +84,23 @@ app.use(
     limit: "10kb",
   })
 );
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
-// NoSQL & XSS Protection (Custom for Express 5/getter compatibility)
-const sanitizeAll = (obj) => {
-  if (typeof obj !== "object" || obj === null) return obj;
-  
-  Object.keys(obj).forEach((key) => {
-    // 1. NoSQL Injection Protection: Remove keys starting with $
-    if (key.startsWith("$")) {
-      delete obj[key];
-      return;
-    }
-
-    const value = obj[key];
-
-    // 2. XSS Protection: Sanitize strings
-    if (typeof value === "string") {
-      obj[key] = xss(value);
-    } 
-    // Recursive check for nested objects
-    else if (typeof value === "object" && value !== null) {
-      sanitizeAll(value);
-    }
-  });
-  return obj;
-};
-
+// Fix for Express 4.x req.query getter issue with express-mongo-sanitize
 app.use((req, res, next) => {
-  // We sanitize body, query and params as much as Express 5 allows
-  // Body is usually a plain object we can modify
-  if (req.body) sanitizeAll(req.body);
-  
-  // For query/params, we sanitize values inside without re-assigning the whole object
-  if (req.query) sanitizeAll(req.query);
-  if (req.params) sanitizeAll(req.params);
-  
+  if (req.query) {
+    Object.defineProperty(req, 'query', {
+      value: req.query,
+      writable: true,
+      configurable: true,
+      enumerable: true
+    });
+  }
   next();
 });
+
+// NoSQL Injection Protection (Fast & Non-Blocking)
+app.use(mongoSanitize());
 
 // 4. CORS & Cookies
 app.use(

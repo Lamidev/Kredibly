@@ -10,7 +10,20 @@ const authMiddleware = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = await User.findById(decoded.userId).select("-password");
+        
+        // If modern stateless token, skip database
+        if (decoded.email && decoded.role) {
+            req.user = {
+                _id: decoded.userId,
+                name: decoded.name,
+                email: decoded.email,
+                role: decoded.role
+            };
+        } else {
+            // Fallback for old tokens (backward compatibility)
+            req.user = await User.findById(decoded.userId).select("-password");
+        }
+
         if (!req.user) {
             return res.status(401).json({ message: "Token is not valid" });
         }

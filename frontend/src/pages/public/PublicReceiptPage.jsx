@@ -16,7 +16,6 @@ import {
     ArrowRight
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { jsPDF } from "jspdf";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
@@ -130,6 +129,7 @@ const PublicReceiptPage = () => {
             const imgData = canvas.toDataURL('image/png');
             if (imgData === 'data:,') throw new Error("Blank canvas generated");
 
+            const { jsPDF } = await import("jspdf");
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',

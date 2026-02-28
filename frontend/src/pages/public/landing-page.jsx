@@ -122,7 +122,6 @@ const LandingPage = () => {
                         padding: '8px 20px',
                         borderRadius: '100px',
                         border: '1px solid rgba(76, 29, 149, 0.1)',
-                        display: 'inline-flex',
                         maxWidth: '100%',
                         overflow: 'hidden'
                     }}>

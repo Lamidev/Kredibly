@@ -64,10 +64,10 @@ exports.updateProfile = async (req, res) => {
                 bankDetails,
                 staffNumbers: staffNumbers ? staffNumbers.map(n => cleanPhone(n)).filter(n => n) : [],
                 // Founding Member Benefits
-                // Everyone starts with a 7-day trial of the OGA PLAN to see its power
-                plan: 'oga',
-                planStatus: 'trialing',
-                trialExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 
+                // Default Free Tier (Hustler Plan)
+                plan: 'hustler',
+                planStatus: 'active',
+                trialExpiresAt: null, 
                 isFoundingMember: isWaitlistUser,
                 discountActiveUntil: isWaitlistUser ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) : null
             });

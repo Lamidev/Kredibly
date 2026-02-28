@@ -20,7 +20,6 @@ import {
     Search
 } from 'lucide-react';
 import axios from 'axios';
-import html2canvas from 'html2canvas';
 import { isValidNigerianPhone, formatPhoneForDB } from '../../utils/validation';
 
 const SettingsPage = () => {
@@ -156,8 +155,12 @@ const SettingsPage = () => {
                 withCredentials: true,
             });
             if (res.data.success) {
-                setForm({ ...form, logoUrl: res.data.url });
-                toast.success("Logo uploaded!");
+                const newLogoUrl = res.data.url;
+                setForm(prev => ({ ...prev, logoUrl: newLogoUrl }));
+                
+                // Auto-save immediately to DB
+                await updateProfile({ logoUrl: newLogoUrl });
+                toast.success("Logo uploaded & saved successfully!");
             }
         } catch (err) {
             toast.error("Upload failed.");
@@ -181,11 +184,6 @@ const SettingsPage = () => {
                 assistantSettings: {
                     enableReminders: form.enableReminders,
                     reminderTemplate: form.reminderTemplate
-                },
-                bankDetails: {
-                    bankName: form.bankName,
-                    accountNumber: form.accountNumber,
-                    accountName: form.accountName
                 },
                 logoUrl: form.logoUrl,
                 staffNumbers: form.staffNumbers
@@ -381,6 +379,7 @@ const SettingsPage = () => {
                                     <button 
                                         onClick={async () => {
                                             const element = document.getElementById('trust-badge-export');
+                                            const html2canvas = (await import('html2canvas')).default;
                                             const canvas = await html2canvas(element, { backgroundColor: null, scale: 2 });
                                             const url = canvas.toDataURL('image/png');
                                             const link = document.createElement('a');

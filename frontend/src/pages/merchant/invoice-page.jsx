@@ -3,7 +3,6 @@ import { useRef } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import axios from "axios";
-import html2canvas from "html2canvas";
 import { toast } from "sonner";
 import {
     Share2,
@@ -31,7 +30,6 @@ import {
     Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { jsPDF } from "jspdf";
 import { useAuth } from "../../context/AuthContext";
 import { useSales } from "../../context/SaleContext";
 
@@ -286,6 +284,7 @@ const InvoicePage = () => {
             const imgData = canvas.toDataURL('image/png');
             if (imgData === 'data:,') throw new Error("Blank canvas generated");
 
+            const { jsPDF } = await import("jspdf");
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',
