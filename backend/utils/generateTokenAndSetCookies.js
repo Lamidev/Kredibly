@@ -1,8 +1,8 @@
 // utils/generateTokenAndSetCookies.js
 const jwt = require("jsonwebtoken");
 
-const generateTokenAndSetCookie = (res, userId) => {
-  const token = jwt.sign({ userId }, process.env.JWT_SECRET, {
+const generateTokenAndSetCookie = (res, userId, name, email, role) => {
+  const token = jwt.sign({ userId, name, email, role }, process.env.JWT_SECRET, {
     expiresIn: "5h",
   });
 

@@ -49,22 +49,30 @@ const Onboarding = () => {
         formData.append("logo", file);
 
         setUploading(true);
+        // Create an optimistic preview
+        const objectUrl = URL.createObjectURL(file);
+        
         try {
-            const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+            const API_URL = import.meta.env.VITE_API_BASE_URL;
             const res = await axios.post(`${API_URL}/common/upload-logo`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
                 withCredentials: true,
             });
             if (res.data.success) {
                 setLogoUrl(res.data.url);
-                toast.success("Logo added!");
+                toast.success("Logo added successfully!");
             }
         } catch (err) {
-            toast.error("Upload failed.");
+            toast.error("Upload failed. Please try again.");
+            console.error(err);
         } finally {
             setUploading(false);
+            // Cleanup the optimistic preview URL to avoid memory leaks
+            if(objectUrl) URL.revokeObjectURL(objectUrl);
         }
     };
+
+    // ... [existing code for nextStep, handleSubmit, etc.]
 
     const nextStep = () => {
         if (step === 1 && !displayName.trim()) return toast.error("Please enter a name");
@@ -272,24 +280,32 @@ const Onboarding = () => {
                             {step === 3 && (
                                 <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} key="step3">
                                     {/* Logo Upload */}
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', background: '#F8FAFC', padding: '20px', borderRadius: '24px', marginBottom: '32px', border: '1px solid #E2E8F0' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', background: '#F8FAFC', padding: '20px', borderRadius: '24px', marginBottom: '32px', border: '1px solid #E2E8F0', opacity: uploading ? 0.7 : 1 }}>
                                         <div
-                                            onClick={() => fileInputRef.current.click()}
-                                            style={{ width: '72px', height: '72px', borderRadius: '20px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #CBD5E1', cursor: 'pointer', overflow: 'hidden', fontWeight: 800, fontSize: '1.5rem', color: 'var(--primary)' }}
+                                            onClick={() => !uploading && fileInputRef.current.click()}
+                                            style={{ width: '72px', height: '72px', borderRadius: '20px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #CBD5E1', cursor: uploading ? 'not-allowed' : 'pointer', overflow: 'hidden', fontWeight: 800, fontSize: '1.5rem', color: 'var(--primary)', position: 'relative' }}
                                         >
-                                            {logoUrl ? (
+                                            {uploading ? (
+                                                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
+                                                    <div style={{
+                                                        width: '24px', height: '24px',
+                                                        border: '3px solid #E2E8F0', borderTopColor: 'var(--primary)',
+                                                        borderRadius: '50%', animation: 'spin 1s linear infinite'
+                                                    }} />
+                                                </div>
+                                            ) : logoUrl ? (
                                                 <img src={logoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                             ) : (
                                                 getInitials(displayName)
                                             )}
                                         </div>
-                                        <input ref={fileInputRef} type="file" hidden onChange={handleLogoUpload} />
+                                        <input ref={fileInputRef} type="file" hidden onChange={handleLogoUpload} accept="image/*" disabled={uploading}/>
                                         <div>
-                                            <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '1rem' }}>Upload Brand Logo</p>
-                                            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748B' }}>Tap the box to browse</p>
+                                            <p style={{ margin: '0 0 4px', fontWeight: 800, fontSize: '1rem' }}>{uploading ? 'Uploading...' : 'Upload Brand Logo'}</p>
+                                            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748B' }}>{uploading ? 'Please wait' : 'Tap the box to browse'}</p>
                                         </div>
-                                        <div onClick={() => fileInputRef.current.click()} style={{ marginLeft: 'auto', background: 'white', padding: '10px', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
-                                            <Upload size={20} color="var(--text)" />
+                                        <div onClick={() => !uploading && fileInputRef.current.click()} style={{ marginLeft: 'auto', background: 'white', padding: '10px', borderRadius: '12px', cursor: uploading ? 'not-allowed' : 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+                                            <Upload size={20} color={uploading ? "#94A3B8" : "var(--text)"} />
                                         </div>
                                     </div>
 

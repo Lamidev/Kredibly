@@ -101,7 +101,7 @@ const login = async (req, res) => {
     user.lastLoginIp = req.ip || req.headers['x-forwarded-for'];
     await user.save();
 
-    const token = generateTokenAndSetCookie(res, user._id);
+    const token = generateTokenAndSetCookie(res, user._id, user.name, user.email, user.role);
 
     // Get business profile if exists
     const profile = await BusinessProfile.findOne({ ownerId: user._id });
@@ -144,7 +144,7 @@ const verifyEmail = async (req, res) => {
       .catch(err => console.error("Background Email Error (Welcome):", err.message));
 
     // Generate token and set cookie so user is authenticated immediately
-    const token = generateTokenAndSetCookie(res, user._id);
+    const token = generateTokenAndSetCookie(res, user._id, user.name, user.email, user.role);
 
     res.status(200).json({
       success: true,

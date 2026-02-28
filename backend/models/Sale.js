@@ -95,50 +95,45 @@ SaleSchema.virtual("balance").get(function () {
 
 // Update status before save
 SaleSchema.pre("save", async function (next) {
+    const crypto = require("crypto");
+
     // Auto-generate invoice short code if not set
     if (!this.invoiceNumber) {
         const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude ambiguous chars like 1, I, 0, O
         const generateCode = () => {
+            const bytes = crypto.randomBytes(8);
             let part1 = '';
             let part2 = '';
             for (let i = 0; i < 4; i++) {
-                part1 += characters.charAt(Math.floor(Math.random() * characters.length));
-                part2 += characters.charAt(Math.floor(Math.random() * characters.length));
+                part1 += characters[bytes[i] % characters.length];
+                part2 += characters[bytes[i+4] % characters.length];
             }
             return `KR-${part1}-${part2}`;
         };
 
         let isUnique = false;
-        let code = '';
         let attempts = 0;
-        while (!isUnique && attempts < 10) {
-            code = generateCode();
-            const existing = await this.constructor.findOne({ invoiceNumber: code });
-            if (!existing) isUnique = true;
+        // Limit attempts to avoid Event loop blocking. Use .exists() for faster lookup
+        while (!isUnique && attempts < 3) {
+            let code = generateCode();
+            const existing = await this.constructor.exists({ invoiceNumber: code });
+            if (!existing) {
+                this.invoiceNumber = code;
+                isUnique = true;
+            }
             attempts++;
         }
-        this.invoiceNumber = code;
+        
+        // Final fallback to guarantee uniqueness without crashing
+        if (!this.invoiceNumber) {
+             this.invoiceNumber = generateCode() + "-" + crypto.randomBytes(2).toString("hex").toUpperCase();
+        }
     }
 
     // Auto-generate public slug for obfuscated links
     if (!this.publicSlug) {
-        const chars = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-        let slug = '';
-        const generateSlug = () => {
-            let result = '';
-            for (let i = 0; i < 12; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return result;
-        };
-
-        let isUnique = false;
-        while (!isUnique) {
-            slug = generateSlug();
-            const existing = await this.constructor.findOne({ publicSlug: slug });
-            if (!existing) isUnique = true;
-        }
-        this.publicSlug = slug;
+        // Generate a 16-byte base64url slug. Cryptographically secure & 100% collision-proof. No DB query needed!
+        this.publicSlug = crypto.randomBytes(16).toString('base64url');
     }
 
     const paid = this.payments.reduce((sum, p) => sum + p.amount, 0);

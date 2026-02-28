@@ -725,7 +725,10 @@ const Waitlist = () => {
                                     <button onClick={shareToWhatsApp} className="btn-secondary" style={{ flex: 1, background: '#25D366', color: 'white', border: 'none', height: '68px', borderRadius: '24px', fontSize: '1.1rem', minWidth: '240px' }}>
                                         <MessageCircle size={22} /> Share to WhatsApp Status
                                     </button>
-                                    <button onClick={() => scrollToSection('meet-kreddy')} className="btn-secondary" style={{ minWidth: '220px', height: '64px', fontSize: '1.1rem' }}>
+                                    <button onClick={() => {
+                                        const el = document.getElementById('meet-kreddy');
+                                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                                    }} className="btn-secondary" style={{ minWidth: '220px', height: '64px', fontSize: '1.1rem' }}>
                                         Explore Ecosystem
                                     </button>
                                 </div>
