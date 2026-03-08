@@ -55,7 +55,6 @@ const Onboarding = () => {
         try {
             const API_URL = import.meta.env.VITE_API_BASE_URL;
             const res = await axios.post(`${API_URL}/common/upload-logo`, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
                 withCredentials: true,
             });
             if (res.data.success) {
