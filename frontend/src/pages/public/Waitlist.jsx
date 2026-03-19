@@ -119,19 +119,20 @@ const Waitlist = () => {
             {/* Fixed Floating Header - Waitlist Custom Edition */}
             <div style={{ position: 'fixed', top: '24px', left: 0, right: 0, zIndex: 1000, padding: '0 24px', pointerEvents: 'none' }}>
                 <nav style={{ 
-                    maxWidth: '1200px', 
+                    maxWidth: '1600px', 
                     margin: '0 auto', 
                     background: 'rgba(255, 255, 255, 0.7)', 
                     backdropFilter: 'blur(20px)',
                     WebkitBackdropFilter: 'blur(20px)',
                     borderRadius: '100px',
-                    padding: '8px 12px 8px 32px',
+                    padding: '8px 12px 8px 16px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     border: '1px solid rgba(255, 255, 255, 0.3)',
                     boxShadow: '0 10px 30px rgba(0, 0, 0, 0.05)',
-                    pointerEvents: 'auto'
+                    pointerEvents: 'auto',
+                    WebkitTapHighlightColor: 'transparent'
                 }}>
                     <div onClick={() => navigate('/')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: 'clamp(24px, 5vw, 32px)' }} />
@@ -201,17 +202,30 @@ const Waitlist = () => {
                                 background: 'rgba(255, 255, 255, 0.7)', 
                                 backdropFilter: 'blur(30px)', 
                                 borderLeft: '1px solid rgba(255, 255, 255, 0.2)',
-                                padding: '40px 24px' 
+                                display: 'flex',
+                                flexDirection: 'column',
+                                WebkitTapHighlightColor: 'transparent'
                             }}
                         >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '48px' }}>
+                            <div style={{ padding: '40px 24px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '48px' }}>
                                 <img src="/krediblyrevamped.png" alt="Logo" style={{ height: '28px' }} />
                                 <button onClick={() => setIsMobileMenuOpen(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '12px', width: '40px', height: '40px', color: '#0F172A' }}><X size={20} /></button>
                             </div>
                             
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                <div onClick={() => { setIsMobileMenuOpen(false); navigate('/'); }} style={{ padding: '16px', fontSize: '1.1rem', fontWeight: 700, color: '#0F172A', cursor: 'pointer', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>Home</div>
-                                <div onClick={() => { setIsMobileMenuOpen(false); scrollToJoin(); }} style={{ padding: '16px', fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)', cursor: 'pointer' }}>Join the Waitlist</div>
+                            <div style={{ flex: 1, padding: '0 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                <div onClick={() => { setIsMobileMenuOpen(false); navigate('/'); }} style={{ padding: '16px', fontSize: '1.1rem', fontWeight: 600, color: '#0F172A', cursor: 'pointer', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>Home</div>
+                                <div onClick={() => { setIsMobileMenuOpen(false); scrollToJoin(); }} style={{ padding: '16px', fontSize: '1.1rem', fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>Join the Waitlist</div>
+                            </div>
+
+                            <div style={{ padding: '24px', borderTop: '1px solid rgba(0,0,0,0.05)', background: 'rgba(255,255,255,0.1)' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    <Link to="/auth/login" onClick={() => setIsMobileMenuOpen(false)} style={{ 
+                                        width: '100%', padding: '16px', borderRadius: '16px', background: 'white', border: '1px solid #E2E8F0', textAlign: 'center', textDecoration: 'none', color: '#0F172A', fontWeight: 700 
+                                    }}>Login</Link>
+                                    <button onClick={() => { setIsMobileMenuOpen(false); scrollToJoin(); }} style={{ 
+                                        width: '100%', padding: '16px', borderRadius: '16px', background: 'var(--primary)', textAlign: 'center', textDecoration: 'none', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 10px 20px -5px rgba(76, 29, 149, 0.3)' 
+                                    }}>Join Waitlist Free</button>
+                                </div>
                             </div>
                         </motion.div>
                     </div>

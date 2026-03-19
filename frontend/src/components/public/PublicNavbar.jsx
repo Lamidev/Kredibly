@@ -47,23 +47,24 @@ const PublicNavbar = () => {
                 left: 0, 
                 right: 0, 
                 zIndex: 1000, 
-                padding: '0 20px',
+                padding: '0 24px',
                 pointerEvents: 'none'
             }}>
                 <nav  style={{ 
-                    maxWidth: '1100px', 
+                    maxWidth: '1600px', 
                     margin: '0 auto', 
                     background: 'rgba(255, 255, 255, 0.7)', 
                     backdropFilter: 'blur(20px)',
                     WebkitBackdropFilter: 'blur(20px)',
                     borderRadius: '100px',
-                    padding: '8px 12px 8px 32px',
+                    padding: '8px 12px 8px 16px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     border: '1px solid rgba(255, 255, 255, 0.3)',
                     boxShadow: '0 10px 30px rgba(0, 0, 0, 0.05)',
-                    pointerEvents: 'auto'
+                    pointerEvents: 'auto',
+                    WebkitTapHighlightColor: 'transparent'
                 }}>
                     {/* Logo */}
                     <Link to="/" onClick={() => window.scrollTo(0, 0)} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
@@ -137,36 +138,47 @@ const PublicNavbar = () => {
                         <>
                              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsMobileMenuOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(10px)', zIndex: 9998 }} />
                             <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: "spring", damping: 25, stiffness: 200 }} style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: '85%', maxWidth: '320px', background: 'rgba(255, 255, 255, 0.7)', backdropFilter: 'blur(30px)', borderLeft: '1px solid rgba(255, 255, 255, 0.2)', zIndex: 9999, overflowY: 'auto' }}>
-                                <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ height: '100%', display: 'flex', flexDirection: 'column', WebkitTapHighlightColor: 'transparent' }}>
+                                    {/* Header Part */}
+                                    <div style={{ padding: '24px 24px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <img src="/krediblyrevamped.png" alt="Logo" style={{ height: '32px' }} />
                                         <button onClick={() => setIsMobileMenuOpen(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '12px', width: '40px', height: '40px', color: '#0F172A' }}><X size={20} /></button>
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                        {navLinks.map((link, i) => (
-                                            <div key={i}>
-                                                {link.type === 'dropdown' ? (
-                                                    <>
-                                                        <button onClick={() => toggleAccordion(link.name)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', padding: '16px', background: 'none', border: 'none', fontWeight: 600, fontSize: '1.05rem' }}>
-                                                            {link.name} <ChevronDown size={18} style={{ transform: expandedMenu === link.name ? 'rotate(180deg)' : 'rotate(0deg)' }} />
-                                                        </button>
-                                                        {expandedMenu === link.name && (
-                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingLeft: '16px' }}>
-                                                                {link.items.map((item, j) => (
-                                                                    <Link key={j} to={item.path} onClick={() => setIsMobileMenuOpen(false)} style={{ padding: '12px', textDecoration: 'none', color: '#1E293B', fontWeight: 500 }}>{item.name}</Link>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    <Link to={link.path} onClick={() => setIsMobileMenuOpen(false)} style={{ padding: '16px', display: 'block', textDecoration: 'none', color: '#0F172A', fontWeight: 600 }}>{link.name}</Link>
-                                                )}
-                                            </div>
-                                        ))}
 
-                                        <div style={{ padding: '16px', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {/* Scrollable Middle Part */}
+                                    <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            {navLinks.map((link, i) => (
+                                                <div key={i}>
+                                                    {link.type === 'dropdown' ? (
+                                                        <>
+                                                            <button onClick={() => toggleAccordion(link.name)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', padding: '16px', background: 'none', border: 'none', fontWeight: 600, fontSize: '1.05rem', color: '#0F172A', outline: 'none' }}>
+                                                                {link.name} <ChevronDown size={18} style={{ transform: expandedMenu === link.name ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                                                            </button>
+                                                            {expandedMenu === link.name && (
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingLeft: '16px' }}>
+                                                                    {link.items.map((item, j) => (
+                                                                        <Link key={j} to={item.path} onClick={() => setIsMobileMenuOpen(false)} style={{ padding: '12px', textDecoration: 'none', color: '#1E293B', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                                            <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(76, 29, 149, 0.05)', color: 'var(--primary)' }}><item.icon size={16} /></div>
+                                                                            {item.name}
+                                                                        </Link>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <Link to={link.path} onClick={() => setIsMobileMenuOpen(false)} style={{ padding: '16px', display: 'block', textDecoration: 'none', color: '#0F172A', fontWeight: 600 }}>{link.name}</Link>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Fixed Footer Part */}
+                                    <div style={{ padding: '24px', borderTop: '1px solid rgba(0,0,0,0.05)', background: 'rgba(255,255,255,0.1)' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                             <Link to="/auth/login" onClick={() => setIsMobileMenuOpen(false)} style={{ 
-                                                width: '100%', padding: '16px', borderRadius: '16px', background: 'rgba(0,0,0,0.05)', textAlign: 'center', textDecoration: 'none', color: '#0F172A', fontWeight: 700 
+                                                width: '100%', padding: '16px', borderRadius: '16px', background: 'white', border: '1px solid #E2E8F0', textAlign: 'center', textDecoration: 'none', color: '#0F172A', fontWeight: 700 
                                             }}>Login</Link>
                                             <Link to="/auth/register" onClick={() => setIsMobileMenuOpen(false)} style={{ 
                                                 width: '100%', padding: '16px', borderRadius: '16px', background: 'var(--primary)', textAlign: 'center', textDecoration: 'none', color: 'white', fontWeight: 700, boxShadow: '0 10px 20px -5px rgba(76, 29, 149, 0.3)' 
