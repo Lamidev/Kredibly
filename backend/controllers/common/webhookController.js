@@ -5,6 +5,7 @@ const ActivityLog = require('../../models/ActivityLog');
 const Notification = require('../../models/Notification');
 const Payment = require('../../models/Payment');
 const User = require('../../models/User');
+const VirtualAccount = require('../../models/VirtualAccount');
 const Coupon = require('../../models/Coupon');
 const { sendWhatsAppMessage } = require('../whatsapp/whatsappController');
 const { getPlanPrice } = require('../../config/pricing');
@@ -91,8 +92,8 @@ exports.handlePaystackWebhook = async (req, res) => {
                 profile.plan = plan;
                 profile.planStatus = 'active';
                 profile.billingCycle = billingCycle;
-                profile.subscriptionId = reference;
-                profile.trialExpiresAt = new Date(Date.now() + (billingCycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000);
+                profile.lastPaidAt = new Date();
+                profile.nextBillingDate = new Date(Date.now() + (billingCycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000);
                 await profile.save();
 
                 // 5. Update Coupon
@@ -127,16 +128,28 @@ exports.handlePaystackWebhook = async (req, res) => {
                 }
 
                 const paidAmount = amount / 100;
+                
+                // Try to find if this matches a Virtual Account reference
+                let vaQuery = { invoiceNumber: invoiceNumber.toUpperCase() };
+                if (reference.startsWith('KREDDY_VA_')) {
+                    const va = await VirtualAccount.findOne({ reference });
+                    if (va) {
+                        va.status = 'used';
+                        await va.save();
+                        vaQuery = { _id: va.saleId };
+                    }
+                }
+
                 const sale = await Sale.findOneAndUpdate(
                     { 
-                        invoiceNumber: invoiceNumber.toUpperCase(),
+                        ...vaQuery,
                         'payments.reference': { $ne: reference }
                     },
                     {
                         $push: {
                             payments: {
                                 amount: paidAmount,
-                                method: 'Paystack',
+                                method: 'Virtual Account Transfer',
                                 reference: reference,
                                 date: new Date()
                             }

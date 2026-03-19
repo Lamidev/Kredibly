@@ -29,7 +29,7 @@ const { startProactiveAssistant } = require("./utils/proactiveAssistant");
 const { startTicketCleanup } = require("./utils/ticketScheduler");
 const { startBackupScheduler } = require("./utils/backupService");
 const { setupSentryErrorHandler } = require("./utils/sentry");
-const { scheduleMorningSummary } = require("./utils/cronJobs");
+const { scheduleMorningSummary, scheduleRemindersWorker } = require("./utils/cronJobs");
 
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
@@ -183,6 +183,7 @@ mongoose
     startTicketCleanup();
     startBackupScheduler();
     scheduleMorningSummary();
+    scheduleRemindersWorker();
   })
   .catch((error) => {
     console.error("❌ MongoDB connection failed:", error);

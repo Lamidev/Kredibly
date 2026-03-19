@@ -80,10 +80,18 @@ const BusinessProfileSchema = new mongoose.Schema({
         type: Date,
         default: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days trial
     },
-    // Pilot Strategy: Usage & Success Tracking
-    usageCredits: {
-        type: Number,
-        default: 100 // Starting credits for trial
+    nextBillingDate: {
+        type: Date
+    },
+    lastPaidAt: {
+        type: Date
+    },
+    // Usage Tracking (Resets monthly)
+    monthlyUsage: {
+        reminders: { type: Number, default: 0 },
+        voiceNotes: { type: Number, default: 0 },
+        images: { type: Number, default: 0 },
+        lastReset: { type: Date, default: Date.now }
     },
     isSuccessBased: {
         type: Boolean,

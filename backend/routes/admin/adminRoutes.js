@@ -14,6 +14,7 @@ router.delete("/users/:id", adminController.deleteUser);
 router.get("/waitlist", adminController.getWaitlistEntries);
 router.delete("/waitlist/:id", adminController.deleteWaitlistEntry);
 router.get("/coupons", adminController.getCoupons);
+router.post("/coupons", adminController.createCoupon);
 router.delete("/coupons/:id", adminController.deleteCoupon);
 router.get("/payments", adminController.getPayments);
 

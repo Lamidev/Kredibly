@@ -18,7 +18,7 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, 
     Tooltip, ResponsiveContainer, BarChart, Bar, Legend 
 } from 'recharts';
-import StatusTicker from "../../components/dashboard/StatusTicker";
+
 
 const Dashboard = () => {
     const { stats, sales, analytics, fetchSales, fetchStats, fetchAnalytics, loading, deleteSale } = useSales();
@@ -108,7 +108,7 @@ const Dashboard = () => {
 
     return (
         <div className="animate-fade-in" style={{ paddingBottom: '40px', position: 'relative' }}>
-            <StatusTicker />
+
             {/* Floating WhatsApp Button */}
             <a 
                 href={KREDDY_CONFIG.getLink()}

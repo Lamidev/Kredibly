@@ -1,7 +1,74 @@
 const cron = require("node-cron");
 const BusinessProfile = require("../models/BusinessProfile");
 const Sale = require("../models/Sale");
+const Reminder = require("../models/Reminder");
 const { sendWhatsAppMessage } = require("../controllers/whatsapp/whatsappController");
+
+/**
+ * TASK REMINDERS WORKER (Runs every minute)
+ */
+const scheduleRemindersWorker = () => {
+    cron.schedule("* * * * *", async () => {
+        try {
+            const pendingReminders = await Reminder.find({
+                status: "pending",
+                triggerDate: { $lte: new Date() }
+            }).populate("businessId");
+
+            for (const reminder of pendingReminders) {
+                if (!reminder.businessId) {
+                    reminder.status = "delivered";
+                    reminder.deliveredAt = new Date();
+                    await reminder.save();
+                    continue;
+                }
+
+                const plan = reminder.businessId.plan || "hustler";
+                let title = "Boss";
+                if (plan === "oga") title = "Oga";
+                if (plan === "chairman") title = "Chairman";
+
+                const typeIcons = {
+                    debt: "⏳",
+                    task: "📝",
+                    meeting: "🤝",
+                    personal: "💡"
+                };
+                const icon = typeIcons[reminder.type] || "🔔";
+
+                const msg = `${icon} *Kreddy Reminder!* \n\n${title}, you asked me to remind you to:\n*"${reminder.description}"*\n\nLet's get it done! 🚀`;
+
+                await sendWhatsAppMessage(reminder.whatsappNumber, msg).catch(e => {
+                    console.error(`Failed to send reminder to ${reminder.whatsappNumber}:`, e.message);
+                });
+
+                reminder.status = "delivered";
+                reminder.deliveredAt = new Date();
+                await reminder.save();
+
+                // --- RECURRENCE LOGIC ---
+                if (reminder.recurrence && reminder.recurrence !== "none") {
+                    const nextDate = new Date(reminder.triggerDate);
+                    if (reminder.recurrence === "daily") nextDate.setDate(nextDate.getDate() + 1);
+                    else if (reminder.recurrence === "weekly") nextDate.setDate(nextDate.getDate() + 7);
+                    else if (reminder.recurrence === "monthly") nextDate.setMonth(nextDate.getMonth() + 1);
+
+                    await Reminder.create({
+                        businessId: reminder.businessId._id,
+                        whatsappNumber: reminder.whatsappNumber,
+                        description: reminder.description,
+                        type: reminder.type,
+                        recurrence: reminder.recurrence,
+                        triggerDate: nextDate,
+                        status: "pending"
+                    });
+                }
+            }
+        } catch (error) {
+            console.error("Cron Job Error (Reminders Worker):", error);
+        }
+    });
+};
 
 /**
  * MORNING CHIEF SUMMARY (8:00 AM Daily)
@@ -75,6 +142,26 @@ const scheduleMorningSummary = () => {
                         msg += `💡 *No new sales recorded yesterday. Remember to track every kobo today!* 🛡️\n\n`;
                     }
 
+                    // ADD AGENDA FOR CHAIRMEN
+                    if (profile.plan === 'chairman') {
+                        const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+                        const todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
+                        const todaysReminders = await Reminder.find({
+                            businessId: profile._id,
+                            triggerDate: { $gte: todayStart, $lte: todayEnd },
+                            status: "pending"
+                        });
+                        
+                        if (todaysReminders.length > 0) {
+                            msg += `📅 *Today's Agenda:*\n`;
+                            todaysReminders.forEach(r => {
+                                const timeStr = new Date(r.triggerDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                msg += `• ${timeStr}: ${r.description}\n`;
+                            });
+                            msg += `\n`;
+                        }
+                    }
+
                     msg += `Check details on your dashboard: https://usekredibly.com`;
 
                     await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => {
@@ -88,4 +175,4 @@ const scheduleMorningSummary = () => {
     });
 };
 
-module.exports = { scheduleMorningSummary };
+module.exports = { scheduleMorningSummary, scheduleRemindersWorker };
