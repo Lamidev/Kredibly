@@ -30,28 +30,57 @@ INTENTS:
 1. "create_sale": New transaction or debt record.
 2. "check_debt": Querying who owes or totals.
 3. "update_record": Updating an existing debt (payments, date changes).
-4. "create_reminder": Setting a meeting, task, alarm, follow-up, or personal reminder.
-5. "snooze_reminder": When a user asks to "wait", "delay", or "remind me later" regarding a previous notification.
-6. "support": Complaints or help requests.
-7. "upgrade": Asking how to upgrade, change plans, or get more limits.
-8. "general_chat": Greetings, math, or non-transactional talk.
+4. "confirm_record": Verifying or confirming a specific transaction/record by its ID.
+5. "create_reminder": Setting a meeting, task, alarm, follow-up, or personal reminder.
+6. "snooze_reminder": When a user asks to "wait", "delay", or "remind me later" regarding a previous notification.
+7. "support": Complaints or help requests.
+8. "upgrade": Asking how to upgrade, change plans, or get more limits.
+9. "general_chat": Greetings, math, or non-transactional talk.
 
 REQUIRED JSON OUTPUT:
 {
-  "intent": "create_sale" | "check_debt" | "update_record" | "create_reminder" | "snooze_reminder" | "support" | "upgrade" | "general_chat",
-  "confidence": 0.0 to 1.0,
+  "intent": "create_sale" | "check_debt" | "update_record" | "confirm_record" | "create_reminder" | "snooze_reminder" | "support" | "upgrade" | "general_chat",
+  "confidence": 1.0,
   "data": {
     "customerName": "Name",
-    "totalAmount": Number,
-    "paidAmount": Number,
+    "totalAmount": 0,
+    "paidAmount": 0,
     "item": "Description",
+    "invoiceNumber": "KR-XXXXX (The ID of the record mentioned)",
     "dueDate": "ISO Timestamp for debt/sale",
-    "reminderDate": "ISO Timestamp STRICTLY for the exact time of the alarm/task (e.g. '2026-03-19T11:00:00.000Z') - calculate this based on the Current Time. NEVER leave empty for create_reminder.",
+    "reminderDate": "ISO Timestamp STRICTLY for the exact time of the alarm/task (e.g. '2026-03-19T11:00:00.000Z') - calculate this based on the Current Time and specified timezone offset from merchant if known.",
     "reminderType": "debt" | "task" | "meeting" | "personal",
     "recurrence": "none" | "daily" | "weekly" | "monthly",
     "snoozeDuration": Number (minutes to delay the reminder, only for 'snooze_reminder'),
     "taskDescription": "What the user wants to be reminded of. MUST NOT BE EMPTY for create_reminder.",
     "reply": "Your brief partner-like response recognizing the task."
+  }
+}
+
+EXAMPLES:
+User: "I want to set a reminder for 2pm, I want to go to the gym"
+Current Time: 2026-03-19T11:00:00.321Z
+Output: {
+  "intent": "create_reminder",
+  "confidence": 1.0,
+  "data": {
+    "reminderDate": "2026-03-19T14:00:00.000Z",
+    "reminderType": "personal",
+    "taskDescription": "I want to go to the gym",
+    "reply": "No problem! I've set a reminder for 2 PM today so you can hit the gym. Let's get it! 💪"
+  }
+}
+
+User: "Remind me to call Kola by 11am"
+Current Time: 2026-03-19T09:30:00.000Z
+Output: {
+  "intent": "create_reminder",
+  "confidence": 1.0,
+  "data": {
+    "reminderDate": "2026-03-19T11:00:00.000Z",
+    "reminderType": "task",
+    "taskDescription": "Remind me to call Kola",
+    "reply": "I've noted that, Boss. I'll remind you to call Kola by 11 AM today. 📞"
   }
 }
 `;
