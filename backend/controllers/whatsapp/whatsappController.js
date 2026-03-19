@@ -747,149 +747,12 @@ Upgrade here: ${APP_URL}/pricing`);
             const title = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
             await sendReply(from, `You're very welcome, ${title}! 🫡 Always happy to keep your records straight. Let me know if you need anything else!`);
             return;
-        } else if (
-            lowerText.includes("mistake") || 
-            lowerText.includes("correct name") || 
-            lowerText.includes("change name") || 
-            lowerText.includes("buyer is") ||
-            lowerText.startsWith("actually") || 
-            lowerText.startsWith("his name is") || 
-            lowerText.startsWith("her name is")
-        ) {
-            console.log("🛠️ Name Correction Triggered:", lowerText);
-            // Extract the name from the end of the sentence
-            const nameParts = text.split(/is|for|to|it's|its|be/i);
-            const newName = nameParts.pop().trim().replace(/[.!?]$/, "");
-            const session = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
-            
-            let saleToUpdate = null;
-
-            // Priority 1: Use the last sale ID from session memory
-            if (session?.data?.lastSaleId) {
-                saleToUpdate = await Sale.findById(session.data.lastSaleId);
-            }
-
-            // Priority 2: If no session, find the MOST RECENT sale named "Customer" for this business
-            if (!saleToUpdate) {
-                saleToUpdate = await Sale.findOne({ 
-                    businessId: profile._id, 
-                    customerName: { $regex: /^Customer$/i } 
-                }).sort({ createdAt: -1 });
-            }
-
-            if (saleToUpdate) {
-                const oldName = saleToUpdate.customerName;
-                saleToUpdate.customerName = newName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-                await saleToUpdate.save();
-
-                await logActivity({
-                    businessId: profile._id,
-                    action: "WHATSAPP_NAME_UPDATED",
-                    details: `Changed name from ${oldName} to ${newName} via WhatsApp Correction`
-                });
-
-                return await sendReply(from, `✅ *Name Corrected!* \n\nI've updated the record. The name is now *${saleToUpdate.customerName}* instead of *${oldName}*. 🫡`);
-            }
-            
-            await sendReply(from, `I hear you, ${plan === 'chairman' ? 'Chairman' : 'Boss'}! I want to change the name to *${newName}*, but I couldn't find a recent record to update.`);
-        } else if (["help", "?"].includes(lowerText)) {
-            const title = plan === "chairman" ? "Chairman" : "Boss";
-            await sendReply(from, `💡 *Kreddy Quick Help Hub (${title} Edition)*\n\n1️⃣ *Record a sale:* Tell me _"Sold a bag to Funke for 20k"_\n2️⃣ *Trust Score:* Grow your reputation by verifying receipts. 🛡️\n3️⃣ *Invoices:* Type *D [Name]* for a private payment link. 🔗\n4️⃣ *Support:* Tell me your issue (e.g., _"Account issue"_) to open a ticket. 🚀\n\n*Quick Keys:* \n📊 *S*: Performance  |  ⏳ *D*: Debtors`);
-        } else if (["status", "s"].includes(lowerText)) {
-            const sales = await Sale.find({ businessId: profile._id });
-            let rev = 0, debt = 0, confirmed = 0, paidFull = 0;
-            sales.forEach(s => {
-                const paid = s.payments.reduce((sum, p) => sum + p.amount, 0);
-                rev += paid;
-                debt += (s.totalAmount - paid);
-                if (s.confirmed) confirmed++;
-                if (s.status === 'paid') paidFull++;
-            });
-
-            const trustScore = Math.min(99, 60 + (confirmed * 8) + (paidFull * 4) + (sales.length * 1));
-
-            await sendReply(from, `📊 *${entityLabel} Overview*\n\n💰 *Processed Revenue:* ₦${rev.toLocaleString()}\n⏳ *Total Owed to You:* ₦${debt.toLocaleString()}\n📑 *Total Records:* ${sales.length}\n\n🛡️ *Verifiable Trust Score:* ${trustScore}/100\n_(Your score grows as customers verify your receipts!)_`);
-        } else if (lowerText === "debt" || lowerText === "d" || lowerText.startsWith("debt ") || lowerText.startsWith("d ")) {
-            const parts = text.split(" ");
-            const searchName = parts.slice(1).join(" ").trim();
-
-            if (!searchName) {
-                const sales = await Sale.find({ businessId: profile._id });
-                let msg = `⏳ *Outstanding Balances:*\n\n`;
-                let count = 0;
-                sales.forEach(s => {
-                    const bal = s.totalAmount - s.payments.reduce((sum, p) => sum + p.amount, 0);
-                    if (bal > 0) {
-                        msg += `• *${s.customerName}*: ₦${bal.toLocaleString()} (#${s.invoiceNumber})\n`;
-                        count++;
-                    }
-                });
-                if (count === 0) msg = "🎉 Amazing! Nobody owes you any money right now.";
-                else msg += `\n_To get a payment link, type "D [Customer Name]"_`;
-                await sendReply(from, msg);
-            } else {
-                const matches = await Sale.find({ businessId: profile._id, customerName: { $regex: new RegExp(searchName, "i") }, status: { $ne: "paid" } });
-                if (matches.length === 0) return await sendReply(from, `🔍 I couldn't find an unpaid record for *${searchName}*.`);
-
-                const sale = matches[0];
-                const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-                const link = `${APP_URL}/i/${sale.invoiceNumber}`;
-
-                let msg1 = `🤝 *Payment Link for ${sale.customerName}*\n💰 Balance: *₦${bal.toLocaleString()}*\n\n*Just forward the message below directly to them:* 👇`;
-                let msg2 = `Hi ${sale.customerName}, here is the secure update and payment link for your outstanding balance of ₦${bal.toLocaleString()} with ${profile.displayName}: ${link}`;
-                await sendReply(from, msg1);
-                // A short delay (simulating human typing or network parsing) ensures they arrive perfectly in order
-                setTimeout(async () => {
-                    await sendReply(from, msg2);
-                }, 100);
-            }
-        } else if (lowerText.startsWith("pay ") || lowerText.startsWith("c ") || lowerText.startsWith("confirm ")) {
-            const parts = text.split(/\s+/);
-            const cmd = parts[0].toLowerCase();
-            const ref = parts[1]?.toUpperCase();
-
-            if (cmd === "pay") {
-                const amount = parseFloat(parts[2]);
-                if (!ref || isNaN(amount)) return await sendReply(from, "❌ Sorry, I need the format: *PAY [ID] [Amount]*");
-                const sale = await Sale.findOne({ businessId: profile._id, invoiceNumber: ref });
-                if (!sale) return await sendReply(from, `🔍 I couldn't find an invoice with ID *${ref}*.`);
-
-                sale.payments.push({ amount, method: "WhatsApp" });
-                await sale.save();
-
-                // Notify Oga (Oga Monitor)
-                if (isStaff && profile.whatsappNumber) {
-                    const todayRev = await getTodayRevenue(profile._id);
-                    const ogaMessage = `💰 *Payment Alert (Staff)* \n\nYour staff (*${cleanFrom}*) just recorded a manual payment of *₦${amount.toLocaleString()}* for *${sale.customerName}* (ID: ${ref}).\n\n📊 *Total Cash In Today:* ₦${todayRev.toLocaleString()}\n\n_Kredibly keeping your records straight!_ 🛡️`;
-                    await sendReply(profile.whatsappNumber, ogaMessage);
-                }
-
-                await logActivity({
-                    businessId: profile._id,
-                    action: "WHATSAPP_PAYMENT_RECORDED",
-                    entityType: "PAYMENT",
-                    entityId: sale._id,
-                    details: `Recorded payment of ₦${amount.toLocaleString()} for ${sale.customerName} via WhatsApp ID ${ref}`
-                });
-
-                const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-
-                return await sendReply(from, `✅ *Payment Recorded!* \n\nI've updated the ledger for ${sale.customerName}. Their new balance is *₦${bal.toLocaleString()}*.`);
-            } else {
-                const sale = await Sale.findOne({ businessId: profile._id, invoiceNumber: ref });
-                if (!sale) return await sendReply(from, `🔍 I couldn't find an invoice with ID *${ref}*.`);
-
-                sale.confirmed = true;
-                sale.confirmedAt = new Date();
-                await sale.save();
-                return await sendReply(from, `🛡️ *Record Verified!* \n\nInvoice *${ref}* has been officially confirmed. This boost your Trust Score! 🚀`);
-            }
         } else {
-            // PERSISTENT SESSION HANDLING (Fetch before AI)
+            // 🧠 100% AI-DRIVEN PIPELINE (No Regex)
             const session = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
 
             // Fetch some context about debtors to help the AI be "Brainy"
-            const unpaidSales = await Sale.find({ businessId: profile._id, status: { $ne: "paid" } }).limit(10);
+            const unpaidSales = await Sale.find({ businessId: profile._id, status: { $ne: "paid" } }).sort({ createdAt: -1 }).limit(10);
             const debtorContext = unpaidSales.map(s => {
                 const bal = s.totalAmount - s.payments.reduce((sum, p) => sum + p.amount, 0);
                 return `${s.customerName}: ₦${bal.toLocaleString()} (Invoice #${s.invoiceNumber})`;
@@ -1130,17 +993,56 @@ Upgrade here: ${APP_URL}/pricing`);
             // 3. OTHER INTENTS
             if (!isProcessed) {
                 if (aiResponse && aiResponse.intent === "check_debt") {
-                    const sales = await Sale.find({ businessId: profile._id });
-                    let msg = `Omo, debtors plenty for street! 😅 \n\n⏳ *Outstanding Balances:*\n\n`;
-                    let count = 0;
-                    sales.forEach(s => {
-                        const bal = s.totalAmount - s.payments.reduce((sum, p) => sum + p.amount, 0);
-                        if (bal > 0) {
-                            msg += `• *${s.customerName}*: ₦${bal.toLocaleString()} (#${s.invoiceNumber})\n`;
-                            count++;
+                    const searchName = (aiResponse.data.customerName || "").trim();
+                    
+                    if (!searchName || searchName.toLowerCase() === "customer") {
+                        const sales = await Sale.find({ businessId: profile._id });
+                        let msg = `Omo, debtors plenty for street! 😅 \n\n⏳ *Outstanding Balances:*\n\n`;
+                        let count = 0;
+                        sales.forEach(s => {
+                            const bal = s.totalAmount - s.payments.reduce((sum, p) => sum + p.amount, 0);
+                            if (bal > 0) {
+                                msg += `• *${s.customerName}*: ₦${bal.toLocaleString()} (#${s.invoiceNumber})\n`;
+                                count++;
+                            }
+                        });
+                        await sendReply(from, count === 0 ? "🎉 Amazing! Nobody owes you any money right now." : msg);
+                    } else {
+                        // AI identified a specific person we should check
+                        const matches = await Sale.find({ 
+                            businessId: profile._id, 
+                            customerName: { $regex: new RegExp(searchName, "i") }, 
+                            status: { $ne: "paid" } 
+                        });
+
+                        if (matches.length === 0) {
+                            await sendReply(from, `🔍 I couldn't find an unpaid record for *${searchName}*.`);
+                        } else {
+                            const sale = matches[0];
+                            const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
+                            const link = `${APP_URL}/i/${sale.invoiceNumber}`;
+
+                            let msg1 = `🤝 *Payment Link for ${sale.customerName}*\n💰 Balance: *₦${bal.toLocaleString()}*\n\n*Just forward the message below directly to them:* 👇`;
+                            let msg2 = `Hi ${sale.customerName}, here is the secure update and payment link for your outstanding balance of ₦${bal.toLocaleString()} with ${profile.displayName}: ${link}`;
+                            await sendReply(from, msg1);
+                            setTimeout(async () => { await sendReply(from, msg2); }, 100);
                         }
-                    });
-                    await sendReply(from, count === 0 ? "🎉 Amazing! Nobody owes you any money right now." : msg);
+                    }
+                } else if (aiResponse && aiResponse.intent === "confirm_record") {
+                    const ref = aiResponse.data.invoiceNumber || aiResponse.invoiceNumber;
+                    if (!ref) return await sendReply(from, "Boss, I catch that you want to verify a record, but I need the Invoice Number (like KR-XXXX).");
+
+                    // Sanitize the ref (ensure it starts with KR-)
+                    let invoiceId = ref.toUpperCase().trim();
+                    if (!invoiceId.startsWith("KR-")) invoiceId = "KR-" + invoiceId;
+
+                    const sale = await Sale.findOne({ businessId: profile._id, invoiceNumber: invoiceId });
+                    if (!sale) return await sendReply(from, `🔍 I couldn't find a record with ID *${invoiceId}*.`);
+
+                    sale.confirmed = true;
+                    sale.confirmedAt = new Date();
+                    await sale.save();
+                    await sendReply(from, `🛡️ *Record Verified!* \n\nInvoice *${invoiceId}* has been officially confirmed. This boosts your Trust Score! 🚀`);
                 } else if (aiResponse.intent === "draft_reminder") {
                     const searchName = (aiResponse.data.customerName || "").replace(/\s+/g, ' ').trim();
                     const matches = await Sale.find({
@@ -1181,12 +1083,15 @@ Upgrade here: ${APP_URL}/pricing`);
                     await sendReply(from, `${bossTitle}! 💎 You want to level up your hustle? \n\nYou can see all our plans and upgrade directly here: ${upgradeUrl}\n\nLet's get your business to the next level! 🚀`);
                     isProcessed = true;
                 } else if (aiResponse && aiResponse.intent === "create_reminder") {
-                    const reminderDateStr = aiResponse.data.reminderDate;
-                    const taskDescription = aiResponse.data.taskDescription;
-                    const reminderType = aiResponse.data.reminderType || "task";
-                    const recurrence = aiResponse.data.recurrence || "none";
+                    // 🔒 ROBUST PARSING: The AI might put these in data or top-level, or use alternate names
+                    const data = aiResponse.data || {};
+                    const reminderDateStr = data.reminderDate || aiResponse.reminderDate || data.dueDate || data.date;
+                    const taskDescription = data.taskDescription || aiResponse.taskDescription || data.item || data.description;
+                    const reminderType = data.reminderType || aiResponse.reminderType || "task";
+                    const recurrence = data.recurrence || aiResponse.recurrence || "none";
                     
                     if (!reminderDateStr || !taskDescription) {
+                        console.warn(`⚠️ Partial Reminder Captured: Date=${reminderDateStr}, Task=${taskDescription}`);
                         await sendReply(from, "I catch the task, but I'm not entirely sure *when* you want me to remind you. Try say: _'Remind me to call Kola by 4pm'_");
                     } else {
                         const triggerDate = new Date(reminderDateStr);
