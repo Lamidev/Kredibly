@@ -60,7 +60,7 @@ const Typewriter = ({ phrases }) => {
                 color: 'var(--primary)', 
                 marginLeft: '2px',
                 animation: 'blink 1s infinite',
-                fontWeight: 600
+                fontWeight: 500
             }}>|</span>
         </span>
     );
@@ -69,6 +69,8 @@ const Typewriter = ({ phrases }) => {
 const LandingPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const [scrolled, setScrolled] = useState(false);
+    const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' or 'yearly'
 
     const scrollToSection = (sectionId) => {
         const element = document.getElementById(sectionId);
@@ -207,7 +209,7 @@ const LandingPage = () => {
                             </div>
                             <h3 style={{ fontSize: '2.2rem', fontWeight: 900, marginBottom: '16px', letterSpacing: '-0.03em' }}>Business Overview</h3>
                             <p style={{ color: 'var(--text-muted)', fontSize: '1.15rem', lineHeight: 1.6, fontWeight: 500 }}>
-                                A powerful, bird's-eye view of your business. Real-time analytics, tracking money outside, and verifiable financial history—built for executive decision-making.
+                                A powerful, bird's-eye view of your business. Real-time analytics, tracking money outside, and verifiable financial history, built for executive decision-making.
                             </p>
                             <div style={{ marginTop: 'auto', paddingTop: '40px', display: 'flex', gap: '12px' }}>
                                 <span style={{ padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)' }}>Executive Dashboard</span>
@@ -230,10 +232,10 @@ const LandingPage = () => {
                         <p style={{ fontSize: '0.95rem', color: '#1E293B', fontWeight: 600 }}>Professional invoices designed to get you paid 3x faster and build trust.</p>
                     </motion.div>
 
-                    <motion.div className="bento-item bento-4" initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 0.98 }} viewport={{ once: false, amount: 0.1 }} style={{ border: '2px solid var(--primary-glow)' }}>
-                        <MessageCircle color="var(--primary)" size={32} style={{ marginBottom: '16px' }} />
-                        <h4 style={{ fontSize: '1.3rem', fontWeight: 900 }}>AI Voice Sync</h4>
-                        <p style={{ fontSize: '0.95rem', color: '#1E293B', fontWeight: 600 }}>Talk to Kreddy! Record sales and set reminders just by sending a voice note.</p>
+                    <motion.div className="bento-item bento-4" initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 0.98 }} viewport={{ once: false, amount: 0.1 }} style={{ border: '2px solid var(--primary-glow)', background: 'rgba(76, 29, 149, 0.02)' }}>
+                        <Zap color="var(--primary)" size={32} style={{ marginBottom: '16px' }} />
+                        <h4 style={{ fontSize: '1.3rem', fontWeight: 900 }}>AI Personal Assistant</h4>
+                        <p style={{ fontSize: '0.95rem', color: '#1E293B', fontWeight: 600 }}>Talk to Kreddy! Set daily tasks, snooze business deadlines, and organize your life with voice notes.</p>
                     </motion.div>
 
                     <motion.div className="bento-item bento-5" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.1 }}>
@@ -305,7 +307,7 @@ const LandingPage = () => {
                                 ].map((item, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '28px' }}>
                                         <div style={{ minWidth: '64px', height: '64px', borderRadius: '20px', background: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><item.icon color="var(--primary)" size={28} /></div>
-                                        <div><h4 style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '10px' }}>{item.title}</h4><p style={{ color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 500, fontSize: '1.05rem' }}>{item.desc}</p></div>
+                                        <div><h4 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '10px' }}>{item.title}</h4><p style={{ color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 400, fontSize: '1.05rem' }}>{item.desc}</p></div>
                                     </div>
                                 ))}
                             </div>
@@ -324,18 +326,18 @@ const LandingPage = () => {
                                 <motion.div style={{ position: 'relative', width: '100%', maxWidth: '300px' }} initial={{ rotateY: -15, rotateX: 10, y: 30, opacity: 0 }} whileInView={{ rotateY: 0, rotateX: 0, y: 0, opacity: 1 }} viewport={{ once: false, amount: 0.1 }} transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}>
                                     <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} style={{ position: 'absolute', top: '20%', left: '-40px', zIndex: 50, background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)', padding: '16px 20px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: '12px' }}>
                                         <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Zap size={16} color="white" /></div>
-                                        <div><p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, fontWeight: 700 }}>Payment Received</p><p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 900 }}>₦150,000</p></div>
+                                        <div><p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, fontWeight: 600 }}>Payment Received</p><p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800 }}>₦150,000</p></div>
                                     </motion.div>
                                     <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }} style={{ position: 'absolute', bottom: '15%', right: '-40px', zIndex: 50, background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)', padding: '16px 20px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: '12px' }}>
                                         <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Users size={16} color="white" /></div>
-                                        <div><p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, fontWeight: 700 }}>Staff Activity</p><p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 900 }}>New Sale Recorded</p></div>
+                                        <div><p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, fontWeight: 600 }}>Staff Activity</p><p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800 }}>New Sale Recorded</p></div>
                                     </motion.div>
                                     <div style={{ width: '100%', height: '620px', background: '#1E293B', borderRadius: '54px', padding: '12px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 50px 100px -20px rgba(0,0,0,0.5)', position: 'relative' }}>
                                         <div style={{ width: '100%', height: '100%', background: '#020617', borderRadius: '44px', overflow: 'hidden', position: 'relative' }}>
                                             <div style={{ position: 'absolute', top: '12px', left: '50%', transform: 'translateX(-50%)', width: '90px', height: '28px', background: '#000', borderRadius: '20px', zIndex: 5 }} />
                                             <div style={{ padding: '48px 24px' }}>
                                                 <div style={{ height: '160px', borderRadius: '28px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', padding: '24px', marginBottom: '24px' }}>
-                                                    <p style={{ margin: 0, opacity: 0.5, fontSize: '0.7rem', fontWeight: 700 }}>BUSINESS REVENUE</p><p style={{ margin: '8px 0', fontSize: '2rem', fontWeight: 900 }}>₦4.82M</p>
+                                                    <p style={{ margin: 0, opacity: 0.5, fontSize: '0.7rem', fontWeight: 600 }}>BUSINESS REVENUE</p><p style={{ margin: '8px 0', fontSize: '2rem', fontWeight: 800 }}>₦4.82M</p>
                                                     <div style={{ width: '40px', height: '4px', background: '#10B981', borderRadius: '2px' }} />
                                                 </div>
                                             </div>
@@ -349,8 +351,8 @@ const LandingPage = () => {
                             </div>
 
                             <div className="mobile-ecosystem-content">
-                                <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(124, 58, 237, 0.1)', borderRadius: '100px', marginBottom: '32px', color: '#A78BFA', fontWeight: 700, fontSize: '0.85rem' }}>THE ECOSYSTEM EXPANSION</div>
-                                <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 900, letterSpacing: '-0.05em', lineHeight: 1, marginBottom: '40px' }}>Pure Native. <br /><span style={{ color: 'var(--primary)' }}>Zero Compromise.</span></h2>
+                                <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(124, 58, 237, 0.1)', borderRadius: '100px', marginBottom: '32px', color: '#A78BFA', fontWeight: 600, fontSize: '0.85rem' }}>THE ECOSYSTEM EXPANSION</div>
+                                <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.05, marginBottom: '40px' }}>Pure Native. <br /><span style={{ color: 'var(--primary)' }}>Zero Compromise.</span></h2>
                                 <p style={{ fontSize: '1.25rem', color: '#CBD5E1', fontWeight: 500, lineHeight: 1.6, marginBottom: '48px', maxWidth: '600px' }}>We're not just building an app. We're launching the full Kredibly ecosystem for iOS and Android. Fast, biometrically secure, and fully offline-capable.</p>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '32px', marginBottom: '64px' }}>
                                     {[
@@ -359,7 +361,7 @@ const LandingPage = () => {
                                         { t: "Real-time Alerts", d: "Instant push notifications when customers view invoices." },
                                         { t: "Zero Connection", d: "Fully functional offline. Auto-syncs when you're back." }
                                     ].map((item, i) => (
-                                        <div key={i}><h4 style={{ fontSize: '1.1rem', fontWeight: 900, marginBottom: '8px', color: 'white' }}>{item.t}</h4><p style={{ fontSize: '0.85rem', color: '#94A3B8', fontWeight: 600, margin: 0, lineHeight: 1.5 }}>{item.d}</p></div>
+                                        <div key={i}><h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '8px', color: 'white' }}>{item.t}</h4><p style={{ fontSize: '0.85rem', color: '#94A3B8', fontWeight: 400, margin: 0, lineHeight: 1.5 }}>{item.d}</p></div>
                                     ))}
                                 </div>
                                 <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
@@ -383,8 +385,8 @@ const LandingPage = () => {
             <section className="adaptive-section" style={{ padding: '140px 24px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0', overflow: 'hidden' }}>
                 <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: false, amount: 0.1 }}>
                     <div style={{ textAlign: 'center', marginBottom: '60px', padding: '0 20px' }}>
-                        <h2 style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', fontWeight: 900, letterSpacing: '-0.03em' }}>From emerging vendors to established enterprises, Kredibly scales with you.</h2>
-                    </div>
+                                <h2 style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', fontWeight: 800, letterSpacing: '-0.03em' }}>From emerging vendors to established enterprises, Kredibly scales with you.</h2>
+                            </div>
                     
                     <div className="marquee-container" style={{ position: 'relative', width: '100%', overflow: 'hidden', maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}>
                         <div className="marquee-track" style={{ display: 'flex', gap: '24px', width: 'max-content' }}>
@@ -397,7 +399,7 @@ const LandingPage = () => {
                                         { name: "Adeola Williams", role: "Signature Tech Store", text: "Collecting payments used to be my biggest headache. Kreddy handles follow-ups while I focus on strategy." }
                                     ].map((review, j) => (
                                         <div key={j} style={{ padding: '32px', minWidth: '320px', maxWidth: '350px', background: 'white', borderRadius: '28px', border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                                            <p style={{ fontWeight: 600, fontSize: '1rem', lineHeight: 1.6, marginBottom: '24px', color: '#1E293B', fontStyle: 'italic' }}>"{review.text}"</p>
+                                            <p style={{ fontWeight: 400, fontSize: '1rem', lineHeight: 1.6, marginBottom: '24px', color: '#1E293B', fontStyle: 'italic' }}>"{review.text}"</p>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(76, 29, 149, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'var(--primary)', fontSize: '0.9rem' }}>{review.name.charAt(0)}</div>
                                                 <div><p style={{ fontWeight: 900, fontSize: '0.95rem', margin: 0 }}>{review.name}</p><p style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 700, textTransform: 'uppercase', margin: 0 }}>{review.role}</p></div>
@@ -416,14 +418,32 @@ const LandingPage = () => {
                 <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.1 }}>
                     <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
                         <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-                            <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 700, fontSize: '0.85rem' }}>TRANSPARENT PRICING</div>
-                            <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 3.5rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Start free. Scale endlessly.</h2>
-                            <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginTop: '20px', maxWidth: '600px', margin: '20px auto 0' }}>Join today and get <span style={{ color: 'var(--text)', fontWeight: 700 }}>7 Days of Oga Plan for FREE.</span></p>
+                            <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 600, fontSize: '0.85rem' }}>TRANSPARENT PRICING</div>
+                            <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 3.5rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Start free. Scale endlessly.</h2>
+                            <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginTop: '20px', maxWidth: '600px', margin: '20px auto 40px' }}>Join today and get <span style={{ color: 'var(--text)', fontWeight: 600 }}>7 Days of Oga Plan for FREE.</span></p>
+
+                            {/* Billing Cycle Toggle */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '40px' }}>
+                                <span style={{ fontSize: '1.1rem', fontWeight: billingCycle === 'monthly' ? 700 : 500, color: billingCycle === 'monthly' ? '#0F172A' : '#64748B' }}>Monthly</span>
+                                <button 
+                                    onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
+                                    style={{ 
+                                        width: '64px', height: '32px', borderRadius: '100px', background: 'var(--primary)', position: 'relative', border: 'none', cursor: 'pointer', transition: '0.3s' 
+                                    }}
+                                >
+                                    <div style={{ 
+                                        position: 'absolute', top: '4px', left: billingCycle === 'monthly' ? '4px' : '36px', width: '24px', height: '24px', background: 'white', borderRadius: '50%', transition: '0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' 
+                                    }} />
+                                </button>
+                                <span style={{ fontSize: '1.1rem', fontWeight: billingCycle === 'yearly' ? 700 : 500, color: billingCycle === 'yearly' ? '#0F172A' : '#64748B' }}>Yearly</span>
+                                <div style={{ padding: '4px 12px', background: '#DCFCE7', color: '#166534', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 800 }}>SAVE 10%</div>
+                            </div>
                         </div>
+
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '32px' }}>
-                            <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', border: '1px solid #E2E8F0' }}>
-                                <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>Hustler</h3><p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: 500 }}>The Entry-Level Ledger.</p>
-                                <div style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '16px' }}>Free</div>
+                            <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column' }}>
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>Hustler</h3><p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: 400 }}>The Entry-Level Ledger.</p>
+                                <div style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '40px' }}>Free</div>
                                 <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Start Hustling</button>
                                 <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                     {["Basic AI Assistant", "20 Sales Records / month", "5 Smart Reminders / month", "Personal & Debt Tracking", "WhatsApp Business Hub"].map((feat, i) => (
@@ -431,19 +451,37 @@ const LandingPage = () => {
                                     ))}
                                 </div>
                             </div>
-                            <div className="pricing-card highlight-card-landing" style={{ padding: '48px', borderRadius: '32px', background: 'var(--text)', color: 'white', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', zIndex: 2 }}>
-                                <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>Oga Plan</h3><p style={{ opacity: 0.7, marginBottom: '32px', fontWeight: 500 }}>Professional Productivity Engine.</p>
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '40px' }}><span style={{ fontSize: '3rem', fontWeight: 900 }}>₦5,000</span><span style={{ opacity: 0.7 }}>/mo</span></div>
+                            <div className="pricing-card highlight-card-landing" style={{ padding: '48px', borderRadius: '32px', background: 'var(--text)', color: 'white', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', zIndex: 2, display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ position: 'absolute', top: '24px', right: '24px', padding: '6px 12px', background: 'var(--primary)', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 800 }}>MOST POPULAR</div>
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>Oga Plan</h3><p style={{ opacity: 0.7, marginBottom: '32px', fontWeight: 400 }}>Professional Productivity Engine.</p>
+                                
+                                <div style={{ marginBottom: '40px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                                        <span style={{ fontSize: '3rem', fontWeight: 800 }}>₦{billingCycle === 'monthly' ? '5,000' : '4,500'}</span>
+                                        <span style={{ opacity: 0.7 }}>/mo</span>
+                                    </div>
+                                    {billingCycle === 'yearly' && <p style={{ margin: '8px 0 0', fontSize: '0.9rem', opacity: 0.6, fontWeight: 700 }}>₦54,000 billed annually</p>}
+                                </div>
+
                                 <button onClick={() => navigate('/auth/register')} className="btn-white" style={{ width: '100%' }}>Become an Oga</button>
                                 <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    {["Instant Cash Settlement", "AI Voice Actions & Snooze", "Recurring Task Scheduling", "60 Smart Reminders / month", "Staff Activity Monitoring"].map((feat, i) => (
+                                    {["Everything in Hustler", "AI Personal Assistant & Deadlines", "AI Voice Actions & Snooze", "Recurring Task Scheduling", "60 Smart Reminders / month", "Staff Activity Monitoring"].map((feat, i) => (
                                         <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500 }}><CheckCheck size={18} color="#4ade80" /> {feat}</div>
                                     ))}
                                 </div>
                             </div>
-                            <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', border: '1px solid #E2E8F0' }}>
-                                <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>Chairman</h3><p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: 500 }}>The Elite Command Center.</p>
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '40px' }}><span style={{ fontSize: '3rem', fontWeight: 900 }}>₦8,500</span><span style={{ opacity: 0.7 }}>/mo</span></div>
+
+                            <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column' }}>
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>Chairman</h3><p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: 400 }}>The Elite Command Center.</p>
+                                
+                                <div style={{ marginBottom: '40px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                                        <span style={{ fontSize: '3rem', fontWeight: 800 }}>₦{billingCycle === 'monthly' ? '8,500' : '7,650'}</span>
+                                        <span style={{ opacity: 0.7 }}>/mo</span>
+                                    </div>
+                                    {billingCycle === 'yearly' && <p style={{ margin: '8px 0 0', fontSize: '0.9rem', color: '#64748B', fontWeight: 700 }}>₦91,800 billed annually</p>}
+                                </div>
+
                                 <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Lead Empire</button>
                                 <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                     {["Everything in Oga Plan", "AI Productivity Planning", "Smart Receipt Scanning", "Morning Executive Briefing", "Bulk Debt Recovery Suite"].map((feat, i) => (
@@ -461,9 +499,9 @@ const LandingPage = () => {
                 <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: false, amount: 0.1 }}>
                     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                         <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-                            <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 700, fontSize: '0.85rem' }}>THE MISSION MAP</div>
-                            <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 3.5rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Our journey & commitment.</h2>
-                            <p style={{ fontSize: '1.25rem', color: '#334155', marginTop: '20px', maxWidth: '600px', margin: '20px auto 0', fontWeight: 600 }}>Transparent milestones from a simple idea to a global financial ecosystem.</p>
+                            <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 600, fontSize: '0.85rem' }}>THE MISSION MAP</div>
+                            <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 3.5rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Our journey & commitment.</h2>
+                            <p style={{ fontSize: '1.25rem', color: '#334155', marginTop: '20px', maxWidth: '600px', margin: '20px auto 0', fontWeight: 400 }}>Transparent milestones from a simple idea to a global financial ecosystem.</p>
                         </div>
                         <div style={{ position: 'relative', paddingLeft: '40px' }}>
                             <div style={{ position: 'absolute', left: '7px', top: '0', bottom: '0', width: '2px', background: 'linear-gradient(to bottom, #E2E8F0 0%, var(--primary) 30%, var(--primary) 70%, #E2E8F0 100%)' }} />
@@ -483,8 +521,8 @@ const LandingPage = () => {
                                             <span style={{ fontSize: '0.8rem', fontWeight: 900, color: m.status === 'active' ? 'var(--primary)' : 'var(--text-muted)', letterSpacing: '0.1em' }}>{m.date}</span>
                                             {m.status === 'active' && <span style={{ fontSize: '0.7rem', fontWeight: 900, background: 'rgba(76, 29, 149, 0.1)', color: 'var(--primary)', padding: '4px 12px', borderRadius: '100px' }}>LIVE NOW</span>}
                                         </div>
-                                        <h4 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text)', marginBottom: '10px' }}>{m.title}</h4>
-                                        <p style={{ color: '#334155', fontWeight: 600, lineHeight: 1.6, maxWidth: '650px', margin: 0, fontSize: '1.05rem' }}>{m.desc}</p>
+                                         <h4 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text)', marginBottom: '10px' }}>{m.title}</h4>
+                                        <p style={{ color: '#334155', fontWeight: 400, lineHeight: 1.6, maxWidth: '650px', margin: 0, fontSize: '1.05rem' }}>{m.desc}</p>
                                     </div>
                                 </motion.div>
                             ))}
@@ -497,8 +535,8 @@ const LandingPage = () => {
             <section className="adaptive-section" style={{ padding: '80px 20px' }}>
                 <motion.div initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: false, amount: 0.1 }} style={{ maxWidth: '1200px', margin: '0 auto', background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)', padding: '140px 40px', borderRadius: '60px', color: 'white', textAlign: 'center', position: 'relative', overflow: 'hidden', boxShadow: '0 60px 120px -30px rgba(15, 23, 42, 0.4)' }}>
                     <div style={{ position: 'relative', zIndex: 2 }}>
-                        <h2 style={{ fontSize: 'clamp(3rem, 7vw, 5rem)', fontWeight: 900, letterSpacing: '-0.05em', lineHeight: 0.9, marginBottom: '40px', color: 'white' }}>The smart assistant<br />for your business.</h2>
-                        <p style={{ fontSize: '1.35rem', opacity: 0.8, maxWidth: '650px', margin: '0 auto 64px', fontWeight: 500, lineHeight: 1.5, color: 'white' }}>No more notebooks. No more confusing math. We help you track sales and collect your money inside the WhatsApp you already use.</p>
+                        <h2 style={{ fontSize: 'clamp(3rem, 7vw, 5rem)', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 0.9, marginBottom: '40px', color: 'white' }}>The smart assistant<br />for your business.</h2>
+                        <p style={{ fontSize: '1.35rem', opacity: 0.8, maxWidth: '650px', margin: '0 auto 64px', fontWeight: 400, lineHeight: 1.5, color: 'white' }}>No more notebooks. No more confusing math. We help you track sales and collect your money inside the WhatsApp you already use.</p>
                         <button onClick={() => navigate('/auth/register')} className="btn-white" style={{ padding: '24px 56px', fontSize: '1.25rem', borderRadius: '24px' }}>Join the waitlist <ArrowRight size={22} /></button>
                     </div>
                 </motion.div>

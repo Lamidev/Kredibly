@@ -19,7 +19,7 @@ const EmailVerification = () => {
         <Mail size={40} color="#10B981" />
       </div>
 
-      <h2 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '12px', color: '#000', letterSpacing: '-0.02em' }}>Check Your Inbox</h2>
+      <h2 style={{ fontSize: '2.2rem', fontWeight: 700, marginBottom: '12px', color: '#000', letterSpacing: '-0.02em' }}>Check Your Inbox</h2>
       <p style={{ color: '#6B7280', fontWeight: 500, fontSize: '1.1rem', lineHeight: 1.6, marginBottom: '32px' }}>
         We've sent a verification link to your email address. Please click the link to activate your account.
       </p>

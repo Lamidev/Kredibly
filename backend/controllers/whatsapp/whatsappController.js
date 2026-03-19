@@ -835,8 +835,13 @@ Upgrade here: ${APP_URL}/pricing`);
                 const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                 const link = `${APP_URL}/i/${sale.invoiceNumber}`;
 
-                let msg = `🤝 *Payment Link for ${sale.customerName}*\n💰 Balance: *₦${bal.toLocaleString()}*\n\n*Copy & Forward this to them:* \n------------------\n"Hi ${sale.customerName}, here is the secure update and payment link for your balance with ${profile.displayName}: ${link}"\n------------------`;
-                await sendReply(from, msg);
+                let msg1 = `🤝 *Payment Link for ${sale.customerName}*\n💰 Balance: *₦${bal.toLocaleString()}*\n\n*Just forward the message below directly to them:* 👇`;
+                let msg2 = `Hi ${sale.customerName}, here is the secure update and payment link for your outstanding balance of ₦${bal.toLocaleString()} with ${profile.displayName}: ${link}`;
+                await sendReply(from, msg1);
+                // A short delay (simulating human typing or network parsing) ensures they arrive perfectly in order
+                setTimeout(async () => {
+                    await sendReply(from, msg2);
+                }, 100);
             }
         } else if (lowerText.startsWith("pay ") || lowerText.startsWith("c ") || lowerText.startsWith("confirm ")) {
             const parts = text.split(/\s+/);

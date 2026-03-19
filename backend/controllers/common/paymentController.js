@@ -5,6 +5,7 @@ const Sale = require('../../models/Sale');
 const ActivityLog = require('../../models/ActivityLog');
 const Notification = require('../../models/Notification');
 const VirtualAccount = require('../../models/VirtualAccount');
+const User = require('../../models/User');
 const crypto = require('crypto');
 const { logUsage } = require('../../utils/usageTracker');
 const { sendWhatsAppMessage } = require('../whatsapp/whatsappController');
@@ -142,6 +143,9 @@ exports.verifyPayment = async (req, res) => {
         const profile = await BusinessProfile.findOne({ ownerId: req.user._id });
         if (!profile) return res.status(404).json({ message: "Business profile not found" });
 
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
         // 1. Handle Free Upgrade / 100% Discount Bypass
         let paystackData = null;
         if (reference && reference.startsWith('FREE_')) {
@@ -159,6 +163,19 @@ exports.verifyPayment = async (req, res) => {
             } catch (err) {
                 return res.status(400).json({ success: false, message: err.message });
             }
+        }
+
+        // 🔒 SECURITY CHECK: Assert payment intent
+        if (reference && !reference.startsWith('FREE_') && paystackData) {
+             if (paystackData.metadata?.paymentType !== 'subscription') {
+                 return res.status(403).json({ success: false, message: "Invalid payment intent. Payment was not marked for a subscription." });
+             }
+             
+             // 🔒 SECURITY CHECK: Assert payment ownership (prevent replay/hijack)
+             if (paystackData.customer?.email !== user.email) {
+                 console.warn(`🚨 Fraud Attempt: Reference ${reference} paid by ${paystackData.customer?.email}, but verified by ${user.email}`);
+                 return res.status(403).json({ success: false, message: "Payment anomaly detected. Reference ownership mismatch." });
+             }
         }
 
         // 2. Validate Payment Amount (Anti-Fraud Check)
@@ -238,10 +255,15 @@ exports.verifyPayment = async (req, res) => {
             { new: true }
         );
 
-        // 5. Update Coupon Usage
+        // 5. Update Coupon Usage (Idempotent)
         if (coupon) {
-            coupon.usedCount += 1;
-            await coupon.save();
+            await Coupon.updateOne(
+                { _id: coupon._id, usedReferences: { $ne: reference } },
+                { 
+                  $inc: { usedCount: 1 }, 
+                  $push: { usedReferences: reference } 
+                }
+            );
         }
 
         // LOG REVENUE (Async)
@@ -280,14 +302,30 @@ exports.verifyInvoicePayment = async (req, res) => {
 
         const paidAmount = paystackData.amount / 100;
 
+        // 1b. Fetch the target Sale first to validate metadata
+        const targetSale = await Sale.findOne({ 
+            $or: [
+                { _id: invoiceId.match(/^[0-9a-fA-F]{24}$/) ? invoiceId : null },
+                { invoiceNumber: invoiceId.toUpperCase() },
+                { publicSlug: invoiceId }
+            ]
+        });
+
+        if (!targetSale) {
+            return res.status(404).json({ success: false, message: "Sale record not found" });
+        }
+
+        // 🔒 SECURITY CHECK: Contextual Validation (Prevent Cross-Ledger Corruption)
+        const paystackInvoiceNo = paystackData.metadata?.invoiceNumber;
+        if (!paystackInvoiceNo || paystackInvoiceNo.toUpperCase() !== targetSale.invoiceNumber.toUpperCase()) {
+            console.warn(`🚨 Fraud Attempt: Reference ${reference} belongs to Invoice ${paystackInvoiceNo}, but verified against ${targetSale.invoiceNumber}`);
+            return res.status(403).json({ success: false, message: "Payment anomaly detected. Reference does not match this invoice." });
+        }
+
         // 2. Find and update Sale atomically
         const sale = await Sale.findOneAndUpdate(
             { 
-                $or: [
-                    { _id: invoiceId.match(/^[0-9a-fA-F]{24}$/) ? invoiceId : null },
-                    { invoiceNumber: invoiceId.toUpperCase() },
-                    { publicSlug: invoiceId }
-                ],
+                _id: targetSale._id,
                 'payments.reference': { $ne: reference }
             },
             {

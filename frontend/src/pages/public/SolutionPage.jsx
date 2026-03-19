@@ -10,16 +10,16 @@ const solutions = {
     'solopreneurs': {
         title: "For Solopreneurs",
         subtitle: "The Army of One",
-        description: "You do everything yourself—marketing, sales, delivery. Kredibly acts as your finance manager so you can focus on your vision.",
+        description: "You do everything yourself—marketing, sales, delivery. Kredibly acts as your executive assistant so you can focus on your vision.",
         icon: User,
         color: "#2563EB",
         bg: "rgba(37, 99, 235, 0.05)",
         statValue: 10,
         statSuffix: "+ Hours Saved/Week",
         points: [
-            "Never forget who owes you money",
-            "Professional invoices that accelerate payment",
-            "Get paid 3x faster without the awkward talks"
+            "AI Assistant handles your daily tasks",
+            "Professional invoices that build reputation",
+            "Collect debts automatically via WhatsApp"
         ]
     },
     'retail': {

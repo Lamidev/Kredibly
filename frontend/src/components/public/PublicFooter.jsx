@@ -44,7 +44,7 @@ const PublicFooter = () => {
                 }}>
                     <div style={{ maxWidth: '380px' }}>
                         <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '36px', objectFit: 'contain', marginBottom: '24px' }} />
-                        <p style={{ fontSize: '1.1rem', lineHeight: 1.6, color: '#334155', fontWeight: 500, marginBottom: '24px' }}>
+                        <p style={{ fontSize: '1.1rem', lineHeight: 1.6, color: '#334155', fontWeight: 400, marginBottom: '24px' }}>
                             Receivables Infrastructure & Operating System for African Commerce. We help millions of vendors automate sales, track debts, and build financial credibility.
                         </p>
                         <div style={{ display: 'flex', gap: '16px' }}>
@@ -79,13 +79,13 @@ const PublicFooter = () => {
                     </div>
 
                     <div className="footer-links-container">
-                        <h4 style={{ fontSize: '0.9rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px', color: 'var(--text)' }}>Product</h4>
+                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px', color: 'var(--text)' }}>Product</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {['Features', 'How it Works', 'Pricing', 'Mission Map'].map(item => (
                                 <button 
                                     key={item}
                                     onClick={() => item === 'Pricing' ? navigate('/pricing') : scrollToSection(item.toLowerCase().replace(/ /g, '-'))}
-                                    style={{ background: 'none', border: 'none', textAlign: 'left', color: '#334155', fontWeight: 600, cursor: 'pointer', padding: 0, fontSize: '1rem', transition: 'color 0.3s' }}
+                                    style={{ background: 'none', border: 'none', textAlign: 'left', color: '#334155', fontWeight: 500, cursor: 'pointer', padding: 0, fontSize: '1rem', transition: 'color 0.3s' }}
                                     className="footer-link-hover"
                                 >
                                     {item}
@@ -95,16 +95,16 @@ const PublicFooter = () => {
                     </div>
 
                     <div>
-                        <h4 style={{ fontSize: '0.9rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px', color: 'var(--text)' }}>Company</h4>
+                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px', color: 'var(--text)' }}>Company</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <Link to="/about" style={{ textDecoration: 'none', color: '#334155', fontWeight: 600, transition: 'color 0.3s' }} className="footer-link-hover">About Us</Link>
-                            <Link to="/contact" style={{ textDecoration: 'none', color: '#334155', fontWeight: 600, transition: 'color 0.3s' }} className="footer-link-hover">Contact Support</Link>
-                            <Link to="/privacy" style={{ textDecoration: 'none', color: '#334155', fontWeight: 600, transition: 'color 0.3s' }} className="footer-link-hover">Privacy & Terms</Link>
+                            <Link to="/about" style={{ textDecoration: 'none', color: '#334155', fontWeight: 500, transition: 'color 0.3s' }} className="footer-link-hover">About Us</Link>
+                            <Link to="/contact" style={{ textDecoration: 'none', color: '#334155', fontWeight: 500, transition: 'color 0.3s' }} className="footer-link-hover">Contact Support</Link>
+                            <Link to="/privacy" style={{ textDecoration: 'none', color: '#334155', fontWeight: 500, transition: 'color 0.3s' }} className="footer-link-hover">Privacy & Terms</Link>
                         </div>
                     </div>
 
                     <div>
-                        <h4 style={{ fontSize: '0.9rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px', color: 'var(--text)' }}>Contact</h4>
+                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px', color: 'var(--text)' }}>Contact</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             <div style={{ display: 'flex', gap: '12px', color: '#334155' }}>
                                 <MapPin size={20} color="var(--primary)" />
@@ -127,11 +127,11 @@ const PublicFooter = () => {
                     flexWrap: 'wrap',
                     gap: '20px'
                 }}>
-                    <p style={{ fontWeight: 600, fontSize: '0.95rem', color: '#334155' }}>
+                    <p style={{ fontWeight: 400, fontSize: '0.95rem', color: '#334155' }}>
                         © 2026 Kredibly Technologies Inc. Made with ❤️ for Africa.
                     </p>
                     <div style={{ display: 'flex', gap: '32px' }}>
-                        <span style={{ color: '#334155', fontSize: '0.9rem', fontWeight: 700 }}>Built for Global Commerce</span>
+                        <span style={{ color: '#334155', fontSize: '0.9rem', fontWeight: 600 }}>Built for Global Commerce</span>
                     </div>
                 </div>
             </div>

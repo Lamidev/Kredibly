@@ -48,13 +48,13 @@ const Register = () => {
       boxShadow: 'var(--shadow-premium)' 
     }}>
       <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--text)', marginBottom: '8px', letterSpacing: '-0.03em' }}>Create Account</h2>
+        <h2 style={{ fontSize: '2.2rem', fontWeight: 700, color: 'var(--text)', marginBottom: '8px', letterSpacing: '-0.03em' }}>Create Account</h2>
         <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '1.05rem' }}>Join Kredibly and start growing your business today.</p>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 700 }}>Full Name</label>
+          <label className="input-label" style={{ fontWeight: 600 }}>Full Name</label>
           <div style={{ position: 'relative' }}>
              <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
              <input
@@ -70,7 +70,7 @@ const Register = () => {
         </div>
 
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 700 }}>Email Address</label>
+          <label className="input-label" style={{ fontWeight: 600 }}>Email Address</label>
           <div style={{ position: 'relative' }}>
              <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
              <input
@@ -86,7 +86,7 @@ const Register = () => {
         </div>
 
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 700 }}>Password</label>
+          <label className="input-label" style={{ fontWeight: 600 }}>Password</label>
           <div style={{ position: 'relative' }}>
             <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
             <input

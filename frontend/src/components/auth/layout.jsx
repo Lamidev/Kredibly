@@ -66,7 +66,7 @@ function AuthLayout() {
             textAlign: 'center', 
             color: '#000000', 
             fontSize: '0.85rem', 
-            fontWeight: 700,
+            fontWeight: 500,
             opacity: 1 
           }}>
             <p>© {new Date().getFullYear()} Kredibly. All records are safe and secure.</p>
@@ -84,16 +84,16 @@ function AuthLayout() {
         }
         @media (max-width: 640px) {
           .auth-main-container {
-            padding: 0 12px 40px !important; /* Removed top padding to pull up */
-            align-items: flex-start !important; /* Align to top instead of center */
+            padding: 0 12px 40px !important;
+            align-items: flex-start !important;
           }
           .dashboard-glass {
             padding: 24px 20px !important;
             border-radius: 24px !important;
-            margin-top: 10px; /* Slight margin from logo */
+            margin-top: 10px;
           }
           .auth-logo-header {
-            padding: 24px 20px 10px !important; /* Reduced bottom padding */
+            padding: 24px 20px 10px !important;
           }
         }
       `}</style>

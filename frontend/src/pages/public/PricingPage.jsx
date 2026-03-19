@@ -52,12 +52,12 @@ const PricingPage = () => {
             originalPrice: getPrice(5000),
             period: "/ month",
             features: [
-                "Instant Cash Settlement",
+                "Everything in Hustler",
+                "AI Personal Assistant & Deadlines",
                 "AI Voice Actions & Snooze",
-                "Unlimited Sales Records",
+                "Recurring Task Scheduling",
                 "60 Smart Reminders / month",
-                "Staff Activity Monitoring",
-                "Branded WhatsApp Invoices"
+                "Staff Activity Monitoring"
             ],
             cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade Now" : "Become an Oga",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -111,7 +111,7 @@ const PricingPage = () => {
                             <Zap size={16} fill="currentColor" />
                             SPECIAL PIONEER PRICING ENDS SOON
                         </div>
-                        <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', fontWeight: 950, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: '24px' }}>
+                        <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.05, marginBottom: '24px' }}>
                             The smart assistant <br />
                             <span style={{ color: 'var(--primary)' }}>for your empire.</span>
                         </h1>
@@ -193,7 +193,7 @@ const PricingPage = () => {
                                     RECOMMENDED
                                 </div>
                             )}
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>{plan.name}</h3>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>{plan.name}</h3>
                             <p style={{ opacity: 0.7, marginBottom: '32px', minHeight: '48px', fontWeight: 500 }}>{plan.description}</p>
                             
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '32px' }}>
@@ -209,9 +209,16 @@ const PricingPage = () => {
                                         </div>
                                     </>
                                 ) : (
-                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                                        <span style={{ fontSize: '3rem', fontWeight: 950, letterSpacing: '-0.05em' }}>{plan.price}</span>
-                                        <span style={{ opacity: 0.7, fontWeight: 500 }}>{plan.period}</span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                            <span style={{ fontSize: '3rem', fontWeight: 800, letterSpacing: '-0.05em' }}>{plan.price}</span>
+                                            <span style={{ opacity: 0.7, fontWeight: 500 }}>{plan.period}</span>
+                                        </div>
+                                        {billingCycle === 'yearly' && plan.slug !== 'hustler' && (
+                                            <div style={{ fontSize: '0.9rem', fontWeight: 700, opacity: 0.6, marginTop: '-4px' }}>
+                                                ₦{plan.slug === 'oga' ? '54,000' : '91,800'} billed annually
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -254,7 +261,7 @@ const PricingPage = () => {
             <section style={{ padding: '80px 20px', background: '#F8FAFC' }}>
                 <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-                        <h2 style={{ fontSize: '2.5rem', fontWeight: 900 }}>Compare Features</h2>
+                        <h2 style={{ fontSize: '2.5rem', fontWeight: 800 }}>Compare Features</h2>
                     </div>
 
                     <div style={{ overflowX: 'auto', borderRadius: '24px', background: 'white', border: '1px solid #E2E8F0', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)' }}>
@@ -291,7 +298,7 @@ const PricingPage = () => {
             {/* FAQ Area */}
             <section style={{ padding: '100px 20px' }}>
                 <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-                    <h2 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '48px', textAlign: 'center' }}>Frequently Asked Questions</h2>
+                    <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '48px', textAlign: 'center' }}>Frequently Asked Questions</h2>
                     <div style={{ display: 'grid', gap: '24px' }}>
                         {[
                             { q: "Do I need to pay to add staff?", a: "On the Hustler (Free) plan, you get 1 user. To add staff members who can record sales for you, you'll need the Oga plan which includes up to 2 staff members (3 total users)." },

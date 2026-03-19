@@ -46,13 +46,13 @@ const Login = () => {
       boxShadow: 'var(--shadow-premium)' 
     }}>
       <div style={{ marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--text)', marginBottom: '8px', letterSpacing: '-0.03em' }}>Welcome Back</h2>
+        <h2 style={{ fontSize: '2.2rem', fontWeight: 700, color: 'var(--text)', marginBottom: '8px', letterSpacing: '-0.03em' }}>Welcome Back</h2>
         <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '1.05rem' }}>Login to your account to manage your business.</p>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 700 }}>Email Address</label>
+          <label className="input-label" style={{ fontWeight: 600 }}>Email Address</label>
           <input
             type="email"
             className="input-field"
@@ -73,7 +73,7 @@ const Login = () => {
 
         <div className="input-group">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <label className="input-label" style={{ margin: 0, fontWeight: 700 }}>Password</label>
+            <label className="input-label" style={{ margin: 0, fontWeight: 600 }}>Password</label>
             <Link to="/auth/forgot-password" style={{ color: 'var(--primary)', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600 }}>Forgot password?</Link>
           </div>
           <div style={{ position: 'relative' }}>

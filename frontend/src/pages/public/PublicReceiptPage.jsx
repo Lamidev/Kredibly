@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
+import { useAuth } from "../../context/AuthContext";
 import {
     ShieldCheck,
     Calendar,
@@ -21,6 +22,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api
 
 const PublicReceiptPage = () => {
     const { id } = useParams();
+    const { profile } = useAuth();
     const [sale, setSale] = useState(null);
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(null);
@@ -376,7 +378,7 @@ const PublicReceiptPage = () => {
 
                 {/* Title */}
                 <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-                    <h1 style={{ fontSize: 'clamp(2rem, 8vw, 42px)', fontWeight: 900, marginBottom: '12px', color: '#0F172A' }}>
+                    <h1 style={{ fontSize: 'clamp(2rem, 8vw, 42px)', fontWeight: 800, marginBottom: '12px', color: '#0F172A' }}>
                         Payment Receipt
                     </h1>
                     <p style={{ color: '#64748B', fontSize: '14px', fontWeight: 600 }}>
@@ -423,13 +425,13 @@ const PublicReceiptPage = () => {
 
                             <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '20px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569' }}>Total Paid</span>
-                                    <span style={{ fontSize: '18px', fontWeight: 900, color: '#10B981' }}>₦{totalPaid.toLocaleString()}</span>
+                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#475569' }}>Total Paid</span>
+                                    <span style={{ fontSize: '18px', fontWeight: 800, color: '#10B981' }}>₦{totalPaid.toLocaleString()}</span>
                                 </div>
                                 {balance > 0 && (
                                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569' }}>Balance Due</span>
-                                        <span style={{ fontSize: '18px', fontWeight: 900, color: '#F59E0B' }}>₦{balance.toLocaleString()}</span>
+                                        <span style={{ fontSize: '14px', fontWeight: 600, color: '#475569' }}>Balance Due</span>
+                                        <span style={{ fontSize: '18px', fontWeight: 800, color: '#F59E0B' }}>₦{balance.toLocaleString()}</span>
                                     </div>
                                 )}
                             </div>
@@ -458,10 +460,10 @@ const PublicReceiptPage = () => {
                                 { (sale?.payments || []).map((p, idx) => (
                                     <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#ECFDF5', borderRadius: '12px', border: '1px solid #D1FAE5' }}>
                                         <div>
-                                            <p style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', margin: '0 0 2px 0' }}>Payment Received</p>
+                                            <p style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', margin: '0 0 2px 0' }}>Payment Received</p>
                                             <p style={{ fontSize: '11px', color: '#64748B', margin: 0 }}>{new Date(p.date).toLocaleDateString()} • {p.method}</p>
                                         </div>
-                                        <span style={{ fontSize: '15px', fontWeight: 900, color: '#10B981' }}>₦{p.amount.toLocaleString()}</span>
+                                        <span style={{ fontSize: '15px', fontWeight: 800, color: '#10B981' }}>₦{p.amount.toLocaleString()}</span>
                                     </div>
                                 ))}
                             </div>
@@ -478,7 +480,7 @@ const PublicReceiptPage = () => {
                                     color: '#0F172A',
                                     border: '1px solid #E2E8F0',
                                     borderRadius: '14px',
-                                    fontWeight: 900,
+                                    fontWeight: 700,
                                     cursor: generating ? 'not-allowed' : 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
@@ -500,7 +502,7 @@ const PublicReceiptPage = () => {
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '14px',
-                                    fontWeight: 900,
+                                    fontWeight: 700,
                                     cursor: generating ? 'not-allowed' : 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
@@ -517,41 +519,43 @@ const PublicReceiptPage = () => {
                     </div>
                 </motion.div>
 
-                {/* Viral Loop Call-To-Action */}
-                <div style={{ marginTop: '48px', textAlign: 'center' }}>
-                    <div style={{ 
-                        background: 'linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)', 
-                        padding: '32px 24px', 
-                        borderRadius: '28px', 
-                        border: '1px solid #DDD6FE',
-                        boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.05)'
-                    }}>
-                        <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#4C1D95', marginBottom: '8px' }}>
-                            Do people owe YOU money too?
-                        </h3>
-                        <p style={{ color: '#6D28D9', fontSize: '0.95rem', marginBottom: '24px', lineHeight: 1.5, fontWeight: 600 }}>
-                            Stop fighting for payments. Let Kreddy chase your debts automatically while you focus on growth.
-                        </p>
-                        <Link to="/" style={{ textDecoration: 'none' }}>
-                            <button className="hover-scale" style={{ 
-                                padding: '16px 36px', 
-                                background: '#4C1D95', 
-                                color: 'white', 
-                                border: 'none', 
-                                borderRadius: '100px', 
-                                fontWeight: 800, 
-                                fontSize: '1rem',
-                                cursor: 'pointer',
-                                boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.3)',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '10px'
-                            }}>
-                                Learn How It Works <ArrowRight size={18} />
-                            </button>
-                        </Link>
+                {/* Viral Loop Call-To-Action - Only show for potential customers (not logged in merchants) */}
+                {!profile && (
+                    <div style={{ marginTop: '48px', textAlign: 'center' }}>
+                        <div style={{ 
+                            background: 'linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)', 
+                            padding: '32px 24px', 
+                            borderRadius: '28px', 
+                            border: '1px solid #DDD6FE',
+                            boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.05)'
+                        }}>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#4C1D95', marginBottom: '8px' }}>
+                                Do people owe YOU money too?
+                            </h3>
+                            <p style={{ color: '#6D28D9', fontSize: '0.95rem', marginBottom: '24px', lineHeight: 1.5, fontWeight: 600 }}>
+                                Stop fighting for payments. Let Kreddy chase your debts automatically while you focus on growth.
+                            </p>
+                            <Link to="/" style={{ textDecoration: 'none' }}>
+                                <button className="hover-scale" style={{ 
+                                    padding: '16px 36px', 
+                                    background: '#4C1D95', 
+                                    color: 'white', 
+                                    border: 'none', 
+                                    borderRadius: '100px', 
+                                    fontWeight: 800, 
+                                    fontSize: '1rem',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.3)',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '10px'
+                                }}>
+                                    Learn How It Works <ArrowRight size={18} />
+                                </button>
+                            </Link>
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Footer */}
                 <div style={{ textAlign: 'center', marginTop: '40px', padding: '20px' }}>
