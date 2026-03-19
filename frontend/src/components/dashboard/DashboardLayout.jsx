@@ -154,7 +154,7 @@ const DashboardLayout = () => {
                             alignItems: 'center', 
                             justifyContent: 'center', 
                             gap: '10px',
-                            fontWeight: 800,
+                            fontWeight: 700,
                             letterSpacing: '-0.01em',
                             boxShadow: '0 10px 20px -5px var(--primary-glow)'
                         }}
@@ -204,7 +204,7 @@ const DashboardLayout = () => {
                                 return (
                                     <>
                                         <item.icon size={20} strokeWidth={isMatched ? 2.5 : 2} />
-                                        <span style={{ fontWeight: 700 }}>{item.label}</span>
+                                        <span style={{ fontWeight: 600 }}>{item.label}</span>
                                     </>
                                 );
                             }}
@@ -219,7 +219,7 @@ const DashboardLayout = () => {
                         onClick={() => setIsSidebarOpen(false)}
                         style={{ margin: '4px 16px' }}
                     >
-                        <Settings size={20} /> <span style={{ fontWeight: 700 }}>Settings</span>
+                        <Settings size={20} /> <span style={{ fontWeight: 600 }}>Settings</span>
                     </NavLink>
                     <button
                         onClick={() => setShowLogoutConfirm(true)}
@@ -235,7 +235,7 @@ const DashboardLayout = () => {
                             justifyContent: 'flex-start'
                         }}
                     >
-                        <LogOut size={20} /> <span style={{ fontWeight: 700 }}>Logout</span>
+                        <LogOut size={20} /> <span style={{ fontWeight: 600 }}>Logout</span>
                     </button>
                 </div>
             </aside>
@@ -293,7 +293,7 @@ const DashboardLayout = () => {
                                     />
                                     <div className="glass-card notification-dropdown">
                                         <div style={{ padding: '20px', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900 }}>Alerts</h4>
+                                            <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700 }}>Alerts</h4>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                 <button onClick={markAllRead} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}>Clear All</button>
                                                 <button 
@@ -326,7 +326,7 @@ const DashboardLayout = () => {
                                                 >
                                                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)', marginTop: '6px', opacity: n.isRead ? 0 : 1 }} />
                                                     <div style={{ flex: 1 }}>
-                                                        <p style={{ margin: 0, fontWeight: 800, fontSize: '0.85rem', color: '#1E293B' }}>{n.title}</p>
+                                                        <p style={{ margin: 0, fontWeight: 600, fontSize: '0.85rem', color: '#1E293B' }}>{n.title}</p>
                                                         <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#64748B', lineHeight: 1.5 }}>{n.message}</p>
                                                     </div>
                                                     <button 
@@ -346,10 +346,10 @@ const DashboardLayout = () => {
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeft: '1px solid #E2E8F0', paddingLeft: '20px' }}>
                             <div style={{ textAlign: 'right' }} className="hidden sm:block">
-                                <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1E293B' }}>{profile?.displayName || 'User'}</p>
-                                <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>{profile?.entityType === 'business' ? 'Merchant' : 'Hustler'}</p>
+                                <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1E293B' }}>{profile?.displayName || 'User'}</p>
+                                <p style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748B' }}>{profile?.entityType === 'business' ? 'Merchant' : 'Hustler'}</p>
                             </div>
-                            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', fontWeight: 800, fontSize: '0.9rem' }}>
+                            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', fontWeight: 700, fontSize: '0.9rem' }}>
                                 {profile?.logoUrl ? (
                                     <img src={profile.logoUrl} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 ) : (
@@ -402,18 +402,18 @@ const DashboardLayout = () => {
                         <div style={{ background: '#FEF2F2', color: '#EF4444', width: '72px', height: '72px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
                             <LogOut size={32} />
                         </div>
-                        <h3 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#0F172A', marginBottom: '12px', letterSpacing: '-0.02em' }}>Ready to Leave?</h3>
-                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>You are about to sign out of your dashboard. Any unsaved changes might be lost.</p>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0F172A', marginBottom: '12px', letterSpacing: '-0.02em' }}>Ready to Leave?</h3>
+                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 400, fontSize: '0.95rem' }}>You are about to sign out of your dashboard. Any unsaved changes might be lost.</p>
                         <div style={{ display: 'flex', gap: '12px' }}>
                             <button 
                                 className="btn-secondary" 
-                                style={{ flex: 1, padding: '16px', borderRadius: '16px', fontWeight: 800, fontSize: '0.95rem', border: '1px solid #E2E8F0' }} 
+                                style={{ flex: 1, padding: '16px', borderRadius: '16px', fontWeight: 700, fontSize: '0.95rem', border: '1px solid #E2E8F0' }} 
                                 onClick={() => setShowLogoutConfirm(false)}
                             >
                                 Stay Here
                             </button>
                             <button 
-                                style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '16px', borderRadius: '16px', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} 
+                                style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '16px', borderRadius: '16px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} 
                                 onClick={logout}
                             >
                                 Log Out

@@ -29,7 +29,7 @@ const VerifyEmail = () => {
     return (
         <div className="glass-card auth-form-card w-full shadow-2xl" style={{ background: 'white', borderRadius: '32px' }}>
             <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-                <h2 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '8px', color: '#000', letterSpacing: '-0.02em' }}>Verify Account</h2>
+                <h2 style={{ fontSize: '2.2rem', fontWeight: 700, marginBottom: '8px', color: '#000', letterSpacing: '-0.02em' }}>Verify Account</h2>
                 <p style={{ color: '#6B7280', fontWeight: 500, fontSize: '1.05rem' }}>Enter the 6-digit code we sent you</p>
                 <p style={{ fontSize: '0.85rem', color: '#EF4444', marginTop: '8px', fontWeight: 600 }}>
                     ⚠️ Not seeing it? Check your Spam or Promotions folder.

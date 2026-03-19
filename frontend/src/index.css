@@ -26,7 +26,7 @@
   padding: 0;
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 
 h1, h2, h3, h4, .premium-font {
@@ -304,11 +304,11 @@ body.lock-scroll {
 
 .hero-title {
   font-size: clamp(2.5rem, 8vw, 4.5rem);
-  font-weight: 300;
-  line-height: 1.1;
+  font-weight: 400;
+  line-height: 1.05;
   margin-bottom: 24px;
   color: #111827;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.045em;
 }
 
 .hero-description {
@@ -809,8 +809,36 @@ body.lock-scroll {
   }
 }
 
-.desktop-only-sticky {
-  position: static;
+@media (max-width: 1100px) {
+  .desktop-only-sticky {
+    position: static;
+  }
+}
+
+/* Global Mobile Typography Optimization - "The Lightness Update" */
+@media (max-width: 768px) {
+  h1, h2, h3, h4, 
+  .hero-title, 
+  .section-title, 
+  .premium-font {
+    font-weight: 600 !important; /* Reduced from 700/800 for a less "heavy" feel */
+    letter-spacing: -0.015em !important;
+    line-height: 1.2 !important;
+  }
+  
+  .hero-description, 
+  .bento-item p, 
+  .adaptive-section p,
+  p, span, div {
+    font-weight: 400 !important; /* Lean towards regular weight for better legibility on mobile */
+    line-height: 1.6 !important;
+    letter-spacing: 0 !important;
+  }
+
+  /* Specific override for prices to keep them clear but non-aggressive */
+  .price-text, .amount-text {
+    font-weight: 700 !important;
+  }
 }
 
 @media (min-width: 1100px) {

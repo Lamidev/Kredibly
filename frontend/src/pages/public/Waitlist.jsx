@@ -241,13 +241,13 @@ const Waitlist = () => {
                         JOIN THE FUTURE OF AFRICAN COMMERCE
                     </div>
 
-                    <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 7vw, 5.5rem)', fontWeight: 900, lineHeight: 0.95, letterSpacing: '-0.05em', marginBottom: '32px', color: '#0F172A' }}>
+                    <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 7vw, 5.5rem)', fontWeight: 800, lineHeight: 0.95, letterSpacing: '-0.05em', marginBottom: '32px', color: '#0F172A' }}>
                         Stop losing money. <br />
-                        <span className="premium-gradient">Get paid faster.</span>
+                        <span className="premium-gradient">Stay organized.</span>
                     </h1>
 
-                    <p className="hero-subtext" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.45rem)', color: '#334155', lineHeight: 1.4, marginBottom: '56px', maxWidth: '850px', margin: '0 auto 56px', fontWeight: 600 }}>
-                        Professional invoicing, **Instant Cash Settlement**, and AI-powered bookkeeping—all inside the WhatsApp you already use. Join the pioneers building the financial operating system for African commerce.
+                    <p className="hero-subtext" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.45rem)', color: '#334155', lineHeight: 1.4, marginBottom: '56px', maxWidth: '850px', margin: '0 auto 56px', fontWeight: 400 }}>
+                        The sales ledger & **AI personal assistant** designed uniquely for the Nigerian merchant. Track sales, collect debts, and manage your daily tasks—all inside WhatsApp.
                     </p>
 
                     <div className="hero-button-group" style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '60px' }}>
@@ -260,7 +260,7 @@ const Waitlist = () => {
                                     <div key={i} style={{ width: '28px', height: '28px', borderRadius: '50%', border: '2px solid white', background: '#F1F5F9', marginLeft: '-10px', fontSize: '0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'var(--primary)' }}>{i}</div>
                                 ))}
                             </div>
-                            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#334155' }}>Join <span style={{ color: '#0F172A', fontWeight: 900 }}>{stats + 480}+</span> innovative merchants</span>
+                            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155' }}>Join <span style={{ color: '#0F172A', fontWeight: 700 }}>{stats + 480}+</span> innovative merchants</span>
                         </div>
                     </div>
 
@@ -269,21 +269,21 @@ const Waitlist = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 20px', background: 'rgba(0,0,0,0.03)', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
                             <Smartphone size={16} color="#64748B" />
                             <div style={{ textAlign: 'left' }}>
-                                <p style={{ margin: 0, fontSize: '0.6rem', opacity: 0.6, fontWeight: 900, textTransform: 'uppercase' }}>Available soon on</p>
-                                <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 900 }}>App Store</p>
+                                <p style={{ margin: 0, fontSize: '0.6rem', opacity: 0.6, fontWeight: 700, textTransform: 'uppercase' }}>Available soon on</p>
+                                <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700 }}>App Store</p>
                             </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 20px', background: 'rgba(0,0,0,0.03)', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
                             <Zap size={16} color="#64748B" />
                             <div style={{ textAlign: 'left' }}>
-                                <p style={{ margin: 0, fontSize: '0.6rem', opacity: 0.6, fontWeight: 900, textTransform: 'uppercase' }}>Available soon on</p>
-                                <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 900 }}>Play Store</p>
+                                <p style={{ margin: 0, fontSize: '0.6rem', opacity: 0.6, fontWeight: 700, textTransform: 'uppercase' }}>Available soon on</p>
+                                <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700 }}>Play Store</p>
                             </div>
                         </div>
                     </div>
 
                     <div className="scroll-indicator" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', opacity: 0.4 }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.15em', color: '#0F172A' }}>EXPLORE EXPERIENCE</span>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.15em', color: '#0F172A' }}>EXPLORE EXPERIENCE</span>
                         <ArrowDown size={20} className="bounce" color="#0F172A" />
                     </div>
                 </motion.div>
@@ -296,10 +296,10 @@ const Waitlist = () => {
                         <div style={{ background: 'rgba(76, 29, 149, 0.1)', width: '64px', height: '64px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '32px' }}>
                             <Smartphone color="var(--primary)" size={32} />
                         </div>
-                        <h2 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '24px', letterSpacing: '-0.03em', color: '#0F172A' }}>
+                        <h2 style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '24px', letterSpacing: '-0.03em', color: '#0F172A' }}>
                             <span style={{ color: 'var(--primary)' }}>Kreddy talks to you.</span>
                         </h2>
-                        <p style={{ fontSize: '1.2rem', color: '#334155', lineHeight: 1.6, marginBottom: '40px', fontWeight: 600 }}>
+                        <p style={{ fontSize: '1.2rem', color: '#334155', lineHeight: 1.6, marginBottom: '40px', fontWeight: 400 }}>
                             Talk to Kreddy AI on WhatsApp like you're talking to a partner. Record transactions, check inventory, and let him handle your bookkeeping while you sleep.
                         </p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -313,8 +313,8 @@ const Waitlist = () => {
                                         <CheckCircle size={18} color="var(--primary)" />
                                     </div>
                                     <div>
-                                        <span style={{ fontWeight: 700, fontSize: '1.1rem', color: '#1E293B', display: 'block', marginBottom: '4px' }}>{item.t}</span>
-                                        <span style={{ color: '#334155', fontWeight: 600 }}>{item.d}</span>
+                                        <span style={{ fontWeight: 600, fontSize: '1.1rem', color: '#1E293B', display: 'block', marginBottom: '4px' }}>{item.t}</span>
+                                        <span style={{ color: '#334155', fontWeight: 400 }}>{item.d}</span>
                                     </div>
                                 </div>
                             ))}
@@ -360,10 +360,10 @@ const Waitlist = () => {
                     <div style={{ background: 'rgba(76, 29, 149, 0.05)', width: '64px', height: '64px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 32px' }}>
                         <BarChart3 color="var(--primary)" size={32} />
                     </div>
-                    <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 900, marginBottom: '24px', letterSpacing: '-0.04em', color: '#0F172A' }}>
+                    <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 800, marginBottom: '24px', letterSpacing: '-0.04em', color: '#0F172A' }}>
                         <span style={{ color: 'var(--primary)' }}>Receivables Infrastructure.</span>
                     </h2>
-                    <p style={{ fontSize: '1.2rem', color: '#334155', lineHeight: 1.6, marginBottom: '72px', maxWidth: '750px', margin: '0 auto 72px', fontWeight: 600 }}>
+                    <p style={{ fontSize: '1.2rem', color: '#334155', lineHeight: 1.6, marginBottom: '72px', maxWidth: '750px', margin: '0 auto 72px', fontWeight: 400 }}>
                         We are building more than an app. We are building the automated backbone for trade, trust, and growth in informal markets.
                     </p>
 
@@ -372,12 +372,13 @@ const Waitlist = () => {
                             { icon: Users, t: "Staff Monitoring", d: "See exactly what your staff are selling from anywhere. Keep your money safe." },
                             { icon: FileText, t: "Beautiful Receipts", d: "Send professional receipts to customers on WhatsApp. Build trust instantly." },
                             { icon: Lock, t: "Get Paid Faster", d: "Friendly automatic reminders that help you collect your money without stress." },
+                            { icon: Zap, t: "Intelligent Assistant", d: "Business deadlines to personal daily tasks. Set them via voice and Kreddy follows up." },
                             { icon: TrendingUp, t: "Daily Reports", d: "See how much you made today with simple, clear numbers. No accounting needed." }
                         ].map((item, i) => (
                             <div key={i} style={{ padding: '48px 40px', borderRadius: '32px', background: '#FFFFFF', border: '1px solid #F1F5F9', textAlign: 'left', transition: 'all 0.4s cubic-bezier(0.23, 1, 0.32, 1)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }} className="hover-card-light">
                                 <div style={{ color: 'var(--primary)', marginBottom: '24px', background: 'rgba(76, 29, 149, 0.05)', width: '56px', height: '56px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><item.icon size={28} /></div>
-                                <h4 style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '12px', color: '#0F172A' }}>{item.t}</h4>
-                                <p style={{ color: '#334155', lineHeight: 1.6, fontSize: '1rem', fontWeight: 600 }}>{item.d}</p>
+                                <h4 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '12px', color: '#0F172A' }}>{item.t}</h4>
+                                <p style={{ color: '#334155', lineHeight: 1.6, fontSize: '1rem', fontWeight: 400 }}>{item.d}</p>
                             </div>
                         ))}
                     </div>
@@ -388,8 +389,8 @@ const Waitlist = () => {
             <section className="adaptive-section" style={{ padding: '80px 24px', background: '#F8FAFC' }}>
                 <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center', padding: '64px 48px', borderRadius: '40px', border: '1.5px dashed #E2E8F0', background: 'white' }}>
                     <div style={{ color: '#10B981', marginBottom: '24px', display: 'flex', justifyContent: 'center' }}><Lock size={36} /></div>
-                    <h3 style={{ fontSize: '1.75rem', fontWeight: 900, marginBottom: '16px', color: '#0F172A' }}>Bank-Grade Security for Every Business.</h3>
-                    <p style={{ color: '#334155', lineHeight: 1.6, fontWeight: 600, fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
+                    <h3 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '16px', color: '#0F172A' }}>Bank-Grade Security for Every Business.</h3>
+                    <p style={{ color: '#334155', lineHeight: 1.6, fontWeight: 400, fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
                         Your data is encrypted and private. We use industry-standard security to ensure your financial records stay yours.
                     </p>
                     <div style={{ display: 'flex', gap: '32px', justifyContent: 'center', marginTop: '40px' }}>
@@ -454,8 +455,8 @@ const Waitlist = () => {
                                 >
                                     <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Zap size={16} color="white" /></div>
                                     <div>
-                                        <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, fontWeight: 700 }}>Payment Received</p>
-                                        <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 900 }}>₦150,000</p>
+                                        <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, fontWeight: 600 }}>Payment Received</p>
+                                        <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700 }}>₦150,000</p>
                                     </div>
                                 </motion.div>
 
@@ -481,8 +482,8 @@ const Waitlist = () => {
                                 >
                                     <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Users size={16} color="white" /></div>
                                     <div>
-                                        <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, fontWeight: 700 }}>Staff Activity</p>
-                                        <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 900 }}>Verified Sale</p>
+                                        <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, fontWeight: 600 }}>Staff Activity</p>
+                                        <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700 }}>Verified Sale</p>
                                     </div>
                                 </motion.div>
 
@@ -558,7 +559,7 @@ const Waitlist = () => {
                             <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(124, 58, 237, 0.1)', borderRadius: '100px', marginBottom: '32px', color: '#A78BFA', fontWeight: 700, fontSize: '0.85rem' }}>
                                 THE MOBILE OS FOR MERCHANTS
                             </div>
-                            <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: '32px' }}>
+                            <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: '32px' }}>
                                 Native. Powerful. <br />
                                 <span style={{ color: 'var(--primary)' }}>Zero Compromise.</span>
                             </h2>
@@ -573,7 +574,7 @@ const Waitlist = () => {
                                     { t: "Offline Mode", d: "Record sales even without internet." }
                                 ].map((item, i) => (
                                     <div key={i}>
-                                        <h4 style={{ fontSize: '1.1rem', fontWeight: 900, marginBottom: '8px', color: 'white' }}>{item.t}</h4>
+                                        <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: 'white' }}>{item.t}</h4>
                                         <p style={{ fontSize: '0.9rem', color: '#94A3B8', lineHeight: 1.4, margin: 0 }}>{item.d}</p>
                                     </div>
                                 ))}
@@ -593,8 +594,8 @@ const Waitlist = () => {
                                  }}>
                                      <Smartphone size={20} color="white" style={{ opacity: 0.6 }} />
                                      <div>
-                                         <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.5, fontWeight: 900, textTransform: 'uppercase' }}>Available soon on</p>
-                                         <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: 'white' }}>App Store</p>
+                                         <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.5, fontWeight: 700, textTransform: 'uppercase' }}>Available soon on</p>
+                                         <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'white' }}>App Store</p>
                                      </div>
                                  </div>
                                  <div style={{ 
@@ -609,8 +610,8 @@ const Waitlist = () => {
                                  }}>
                                      <Zap size={20} color="white" style={{ opacity: 0.6 }} />
                                      <div>
-                                         <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.5, fontWeight: 900, textTransform: 'uppercase' }}>Available soon on</p>
-                                         <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: 'white' }}>Play Store</p>
+                                         <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.5, fontWeight: 700, textTransform: 'uppercase' }}>Available soon on</p>
+                                         <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'white' }}>Play Store</p>
                                      </div>
                                  </div>
                              </div>
@@ -624,11 +625,11 @@ const Waitlist = () => {
             <section className="adaptive-section" style={{ padding: '120px 24px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0' }}>
                 <div className="container" style={{ maxWidth: '900px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-                        <div style={{ display: 'inline-flex', padding: '8px 20px', borderRadius: '100px', background: 'rgba(76, 29, 149, 0.05)', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 900, marginBottom: '24px', letterSpacing: '0.1em' }}>
+                        <div style={{ display: 'inline-flex', padding: '8px 20px', borderRadius: '100px', background: 'rgba(76, 29, 149, 0.05)', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '24px', letterSpacing: '0.1em' }}>
                             OUR JOURNEY & VISION
                         </div>
-                        <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 900, letterSpacing: '-0.04em', color: '#0F172A' }}>The Mission Map.</h2>
-                        <p style={{ fontSize: '1.2rem', color: '#334155', fontWeight: 600, marginTop: '16px' }}>Transparent milestones from a simple idea to a global financial ecosystem.</p>
+                        <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 800, letterSpacing: '-0.04em', color: '#0F172A' }}>The Mission Map.</h2>
+                        <p style={{ fontSize: '1.2rem', color: '#334155', fontWeight: 400, marginTop: '16px' }}>Transparent milestones from a simple idea to a global financial ecosystem.</p>
                     </div>
 
                     <div className="mission-timeline-container" style={{ position: 'relative', paddingLeft: '40px' }}>
@@ -687,8 +688,8 @@ const Waitlist = () => {
                                             <span style={{ fontSize: '0.65rem', fontWeight: 900, background: '#EFF6FF', color: '#3B82F6', padding: '4px 12px', borderRadius: '100px' }}>IN BUILD</span>
                                         )}
                                     </div>
-                                    <h4 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#1E293B', marginBottom: '12px' }}>{m.title}</h4>
-                                    <p style={{ color: '#334155', fontWeight: 600, lineHeight: 1.6, maxWidth: '600px', margin: 0 }}>{m.desc}</p>
+                                    <h4 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1E293B', marginBottom: '12px' }}>{m.title}</h4>
+                                    <p style={{ color: '#334155', fontWeight: 400, lineHeight: 1.6, maxWidth: '600px', margin: 0 }}>{m.desc}</p>
                                     
                                     {m.isMobile && (
                                         <div style={{ marginTop: '24px', padding: '20px', background: 'rgba(0,0,0,0.02)', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -726,12 +727,12 @@ const Waitlist = () => {
                                     textAlign: 'center'
                                 }}
                             >
-                                <div style={{ display: 'inline-flex', padding: '8px 20px', borderRadius: '100px', background: 'rgba(244, 114, 182, 0.1)', color: '#F472B6', fontSize: '0.8rem', fontWeight: 900, marginBottom: '24px', letterSpacing: '0.05em' }}>
+                                <div style={{ display: 'inline-flex', padding: '8px 20px', borderRadius: '100px', background: 'rgba(244, 114, 182, 0.1)', color: '#F472B6', fontSize: '0.8rem', fontWeight: 700, marginBottom: '24px', letterSpacing: '0.05em' }}>
                                     LIMITED FOUNDING SPOTS
                                 </div>
-                                <h3 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '12px', letterSpacing: '-0.03em', color: '#0F172A' }}>The "Pioneer Council"</h3>
-                                <p style={{ color: '#64748B', marginBottom: '48px', fontWeight: 500, fontSize: '1.2rem', lineHeight: 1.5 }}>
-                                    Join the inner circle. Founding members get an exclusive <span style={{ color: '#0F172A', fontWeight: 700 }}>Lifetime Pioneer Badge</span> + <span style={{ color: '#0F172A', fontWeight: 700 }}>Exclusive Lifetime Pricing</span> for being part of the journey.
+                                <h3 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '12px', letterSpacing: '-0.03em', color: '#0F172A' }}>The "Pioneer Council"</h3>
+                                <p style={{ color: '#64748B', marginBottom: '48px', fontWeight: 400, fontSize: '1.2rem', lineHeight: 1.5 }}>
+                                    Join the inner circle. Founding members get an exclusive <span style={{ color: '#0F172A', fontWeight: 600 }}>Lifetime Pioneer Badge</span> + <span style={{ color: '#0F172A', fontWeight: 600 }}>Exclusive Lifetime Pricing</span> for being part of the journey.
                                 </p>
 
                                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -809,8 +810,8 @@ const Waitlist = () => {
                                 <div style={{ width: '84px', height: '84px', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 32px' }}>
                                     <CheckCircle2 size={48} color="#22C55E" />
                                 </div>
-                                <h3 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '16px', letterSpacing: '-0.02em', color: '#0F172A' }}>Welcome, {referralData?.name.split(" ")[0]}!</h3>
-                                <p style={{ color: '#64748B', marginBottom: '48px', fontWeight: 600, fontSize: '1.2rem', lineHeight: 1.6 }}>
+                                <h3 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '16px', letterSpacing: '-0.02em', color: '#0F172A' }}>Welcome, {referralData?.name.split(" ")[0]}!</h3>
+                                <p style={{ color: '#64748B', marginBottom: '48px', fontWeight: 400, fontSize: '1.2rem', lineHeight: 1.6 }}>
                                     You are officially a **Kredibly Founder.** <br />
                                     <span style={{ color: '#0F172A' }}>Want to jump the queue?</span> Refer 3 fellow business owners to move to the top batch instantly.
                                 </p>

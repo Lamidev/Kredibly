@@ -44,13 +44,13 @@ const ResetPassword = () => {
       boxShadow: 'var(--shadow-premium)' 
     }}>
       <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--text)', marginBottom: '8px', letterSpacing: '-0.03em' }}>New Password</h2>
+        <h2 style={{ fontSize: '2.2rem', fontWeight: 700, color: 'var(--text)', marginBottom: '8px', letterSpacing: '-0.03em' }}>New Password</h2>
         <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '1.05rem' }}>Enter the 6-digit code we sent you and set a new password.</p>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 700 }}>Security Code</label>
+          <label className="input-label" style={{ fontWeight: 600 }}>Security Code</label>
           <div style={{ position: 'relative' }}>
              <Key size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
              <input
@@ -66,7 +66,7 @@ const ResetPassword = () => {
         </div>
 
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 700 }}>New Password</label>
+          <label className="input-label" style={{ fontWeight: 600 }}>New Password</label>
           <div style={{ position: 'relative' }}>
             <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
             <input
@@ -89,7 +89,7 @@ const ResetPassword = () => {
         </div>
 
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 700 }}>Confirm Password</label>
+          <label className="input-label" style={{ fontWeight: 600 }}>Confirm Password</label>
           <input
             type="password"
             className="input-field"

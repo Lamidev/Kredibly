@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
+import { useAuth } from "../../context/AuthContext";
 import {
     ShieldCheck,
     Clock,
@@ -33,6 +34,7 @@ const PublicInvoicePage = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
     const { id } = useParams();
+    const { profile } = useAuth();
     const [sale, setSale] = useState(null);
     const [loading, setLoading] = useState(true);
     const [verifying, setVerifying] = useState(false);
@@ -477,7 +479,7 @@ const PublicInvoicePage = () => {
             <div style={{ width: '80px', height: '80px', background: '#FEF2F2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
                 <AlertCircle size={32} color="#EF4444" />
             </div>
-            <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#0F172A', marginBottom: '8px' }}>Invoice Unavailable</h1>
+            <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', marginBottom: '8px' }}>Invoice Unavailable</h1>
             <p style={{ color: '#64748B', maxWidth: '320px', margin: '0 auto', lineHeight: 1.6 }}>This invoice might have been settled, archived, or the link is simply incorrect.</p>
             <Link to="/home" style={{ marginTop: '32px', padding: '12px 32px', background: '#0F172A', color: 'white', borderRadius: '100px', fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>Return Home</Link>
         </div>
@@ -503,7 +505,7 @@ const PublicInvoicePage = () => {
                             {sale?.businessId?.logoUrl ? (
                                 <img src={sale.businessId.logoUrl} alt="Merchant Logo" style={{ height: '48px', objectFit: 'contain', marginBottom: '8px' }} />
                             ) : (
-                                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: '#0F172A', marginBottom: '4px' }}>{sale?.businessId?.displayName}</h3>
+                                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#0F172A', marginBottom: '4px' }}>{sale?.businessId?.displayName}</h3>
                             )}
                             <p style={{ margin: 0, fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Invoice #{sale?.invoiceNumber}</p>
                         </div>
@@ -528,8 +530,8 @@ const PublicInvoicePage = () => {
                                 <span style={{ fontSize: '13px', fontWeight: 800, color: '#10B981' }}>₦{sale?.paidAmount.toLocaleString()}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '15px', fontWeight: 900, color: '#0F172A' }}>Balance Due</span>
-                                <span style={{ fontSize: '18px', fontWeight: 950, color: balance > 0 ? '#EF4444' : '#10B981' }}>₦{balance.toLocaleString()}</span>
+                                <span style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>Balance Due</span>
+                                <span style={{ fontSize: '18px', fontWeight: 800, color: balance > 0 ? '#EF4444' : '#10B981' }}>₦{balance.toLocaleString()}</span>
                             </div>
                         </div>
                     </div>
@@ -545,7 +547,7 @@ const PublicInvoicePage = () => {
                             {(sale?.payments || []).map((p, idx) => (
                                 <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px dashed #E2E8F0' }}>
                                     <div>
-                                        <p style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Payment Received</p>
+                                        <p style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', margin: 0 }}>Payment Received</p>
                                         <p style={{ fontSize: '11px', color: '#94A3B8', margin: 0 }}>{new Date(p.date).toLocaleDateString()} ({p.method})</p>
                                     </div>
                                     <span style={{ fontSize: '14px', fontWeight: 800, color: '#10B981' }}>+ ₦{p.amount.toLocaleString()}</span>
@@ -605,7 +607,7 @@ const PublicInvoicePage = () => {
                     {/* Status Pill */}
                     <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
                         <div style={{ 
-                            padding: '6px 16px', borderRadius: '100px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', border: '1px solid',
+                            padding: '6px 16px', borderRadius: '100px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', border: '1px solid',
                             backgroundColor: isPaid ? '#ECFDF5' : 'white',
                             color: isPaid ? '#059669' : '#4C1D95',
                             borderColor: isPaid ? '#D1FAE5' : '#F3E8FF'
@@ -658,7 +660,7 @@ const PublicInvoicePage = () => {
                                         <div style={{ flex: 1, minWidth: '200px' }}>
                                             <p style={{
                                                 fontSize: '14px',
-                                                fontWeight: 900,
+                                                fontWeight: 800,
                                                 color: '#065F46',
                                                 margin: '0 0 4px 0',
                                                 letterSpacing: '-0.01em'
@@ -681,10 +683,9 @@ const PublicInvoicePage = () => {
                         return null;
                     })()}
 
-                    {/* HERO SECTION */}
                     <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-                        <h1 style={{ fontSize: 'clamp(2.5rem, 10vw, 52px)', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <span style={{ color: '#94A3B8', fontSize: '14px', fontWeight: 700, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                        <h1 style={{ fontSize: 'clamp(2.5rem, 10vw, 52px)', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <span style={{ color: '#94A3B8', fontSize: '14px', fontWeight: 600, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                                 {isPaid ? 'Settled on Ledger' : isDebtRecovery ? 'Outstanding Balance' : 'Amount Due'}
                             </span>
                             <span style={{ 
@@ -717,7 +718,7 @@ const PublicInvoicePage = () => {
                              </div>
                              <div style={{ flex: 1 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-                                    <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A' }}>{sale.businessId?.displayName}</h3>
+                                    <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A' }}>{sale.businessId?.displayName}</h3>
                                     <CheckCircle size={10} color="#3B82F6" style={{ fill: '#3B82F6' }} />
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -828,7 +829,7 @@ const PublicInvoicePage = () => {
                                             color: 'white', 
                                             borderRadius: '16px', 
                                             border: 'none', 
-                                            fontWeight: 900, 
+                                            fontWeight: 700, 
                                             fontSize: isMobile ? '16px' : '18px', 
                                             cursor: verifying ? 'not-allowed' : 'pointer', 
                                             display: 'flex', 
@@ -918,8 +919,8 @@ const PublicInvoicePage = () => {
                                             <CheckCircle2 size={isMobile ? 32 : 40} />
                                         </div>
                                         <div style={{ textAlign: 'center' }}>
-                                            <h4 style={{ margin: '0 0 6px 0', fontSize: isMobile ? '20px' : '24px', fontWeight: 950, color: '#065F46', letterSpacing: '-0.02em' }}>Invoice Fully Settled</h4>
-                                            <p style={{ margin: 0, fontSize: isMobile ? '13px' : '15px', fontWeight: 600, color: '#047857', opacity: 0.8, lineHeight: 1.5 }}>Payments have been verified and logged<br/>successfully on the Kredibly ledger.</p>
+                                            <h4 style={{ margin: '0 0 6px 0', fontSize: isMobile ? '20px' : '24px', fontWeight: 800, color: '#065F46', letterSpacing: '-0.02em' }}>Invoice Fully Settled</h4>
+                                            <p style={{ margin: 0, fontSize: isMobile ? '13px' : '15px', fontWeight: 500, color: '#047857', opacity: 0.8, lineHeight: 1.5 }}>Payments have been verified and logged<br/>successfully on the Kredibly ledger.</p>
                                         </div>
                                         <div style={{ 
                                             background: 'rgba(255,255,255,0.6)', 
@@ -998,41 +999,43 @@ const PublicInvoicePage = () => {
                                         Verified Settlement • Reference KR-{sale.invoiceNumber}
                                     </p>
 
-                                    {/* Viral Loop Call-To-Action */}
-                                    <div style={{ marginTop: '48px', textAlign: 'center' }}>
-                                        <div style={{ 
-                                            background: 'linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)', 
-                                            padding: '32px 24px', 
-                                            borderRadius: '28px', 
-                                            border: '1px solid #DDD6FE',
-                                            boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.05)'
-                                        }}>
-                                            <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#4C1D95', marginBottom: '8px' }}>
-                                                Do people owe YOU money too?
-                                            </h3>
-                                            <p style={{ color: '#6D28D9', fontSize: '0.95rem', marginBottom: '24px', lineHeight: 1.5, fontWeight: 600 }}>
-                                                Stop fighting for payments. Let Kreddy chase your debts automatically while you focus on growth.
-                                            </p>
-                                            <Link to="/" style={{ textDecoration: 'none' }}>
-                                                <button className="hover-scale" style={{ 
-                                                    padding: '16px 36px', 
-                                                    background: '#4C1D95', 
-                                                    color: 'white', 
-                                                    border: 'none', 
-                                                    borderRadius: '100px', 
-                                                    fontWeight: 800, 
-                                                    fontSize: '1rem',
-                                                    cursor: 'pointer',
-                                                    boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.3)',
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '10px'
-                                                }}>
-                                                    Learn How It Works <ArrowRight size={18} />
-                                                </button>
-                                            </Link>
+                                    {/* Viral Loop Call-To-Action - Hidden for Merchants */}
+                                    {!profile && (
+                                        <div style={{ marginTop: '48px', textAlign: 'center' }}>
+                                            <div style={{ 
+                                                background: 'linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)', 
+                                                padding: '32px 24px', 
+                                                borderRadius: '28px', 
+                                                border: '1px solid #DDD6FE',
+                                                boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.05)'
+                                            }}>
+                                                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#4C1D95', marginBottom: '8px' }}>
+                                                    Do people owe YOU money too?
+                                                </h3>
+                                                <p style={{ color: '#6D28D9', fontSize: '0.95rem', marginBottom: '24px', lineHeight: 1.5, fontWeight: 600 }}>
+                                                    Stop fighting for payments. Let Kreddy chase your debts automatically while you focus on growth.
+                                                </p>
+                                                <Link to="/" style={{ textDecoration: 'none' }}>
+                                                    <button className="hover-scale" style={{ 
+                                                        padding: '16px 36px', 
+                                                        background: '#4C1D95', 
+                                                        color: 'white', 
+                                                        border: 'none', 
+                                                        borderRadius: '100px', 
+                                                        fontWeight: 800, 
+                                                        fontSize: '1rem',
+                                                        cursor: 'pointer',
+                                                        boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.3)',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '10px'
+                                                    }}>
+                                                        Learn How It Works <ArrowRight size={18} />
+                                                    </button>
+                                                </Link>
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </motion.div>
                             )}
 

@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Download, X, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { useAuth } from '../../context/AuthContext';
+
 const PaymentSuccessModal = ({ 
     isOpen, 
     onClose, 
@@ -13,6 +15,7 @@ const PaymentSuccessModal = ({
     shareUrl,
     shareText 
 }) => {
+    const { profile } = useAuth();
     if (!isOpen) return null;
 
     const isFullyPaid = balanceRemaining <= 0;
@@ -217,34 +220,36 @@ const PaymentSuccessModal = ({
                             </p>
                         </div>
 
-                         {/* Viral Loop - Immediate Hook */}
-                         <div style={{
-                            marginBottom: '24px',
-                            textAlign: 'center',
-                            cursor: 'pointer'
-                        }}
-                        onClick={() => window.open('/', '_blank')}
-                        >
-                            <p style={{
-                                fontSize: '11px',
-                                fontWeight: 900,
-                                color: '#4C1D95',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                marginBottom: '4px'
-                            }}>
-                                Do people owe YOU money too?
-                            </p>
-                            <p style={{
-                                fontSize: '13px',
-                                fontWeight: 600,
-                                color: '#6D28D9',
-                                textDecoration: 'underline',
-                                margin: 0
-                            }}>
-                                Discover how Kreddy helps you recover it &rarr;
-                            </p>
-                        </div>
+                         {/* Viral Loop - Immediate Hook (Not for merchants) */}
+                         {!profile && (
+                            <div style={{
+                                marginBottom: '24px',
+                                textAlign: 'center',
+                                cursor: 'pointer'
+                            }}
+                                onClick={() => window.open('/', '_blank')}
+                            >
+                                <p style={{
+                                    fontSize: '11px',
+                                    fontWeight: 900,
+                                    color: '#4C1D95',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    marginBottom: '4px'
+                                }}>
+                                    Do people owe YOU money too?
+                                </p>
+                                <p style={{
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                    color: '#6D28D9',
+                                    textDecoration: 'underline',
+                                    margin: 0
+                                }}>
+                                    Discover how Kreddy helps you recover it &rarr;
+                                </p>
+                            </div>
+                         )}
 
                         {/* Action Buttons */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

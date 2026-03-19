@@ -96,9 +96,15 @@ exports.handlePaystackWebhook = async (req, res) => {
                 profile.nextBillingDate = new Date(Date.now() + (billingCycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000);
                 await profile.save();
 
-                // 5. Update Coupon
+                // 5. Update Coupon (Idempotent)
                 if (coupon) {
-                    await Coupon.updateOne({ _id: coupon._id }, { $inc: { usedCount: 1 } });
+                    await Coupon.updateOne(
+                        { _id: coupon._id, usedReferences: { $ne: reference } },
+                        { 
+                          $inc: { usedCount: 1 }, 
+                          $push: { usedReferences: reference } 
+                        }
+                    );
                 }
 
                 // 4. Record Payment

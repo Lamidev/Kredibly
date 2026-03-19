@@ -25,6 +25,9 @@ const CouponSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    usedReferences: [{
+        type: String
+    }],
     requiresWaitlist: {
         type: Boolean,
         default: false

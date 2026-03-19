@@ -14,10 +14,10 @@ const products = {
         color: "var(--primary)",
         bg: "rgba(76, 29, 149, 0.05)",
         features: [
-            "Natural Slang Understanding",
-            "Stop losing money recording",
-            "Never forget who owes you with Auto-Reminders",
-            "Infrastructure for your entire team"
+            "AI Executive Assistant (Natural Slang)",
+            "Automated Debt Tracking & Reminders",
+            "Daily Task & Deadline Management",
+            "Voice-Activated Snooze & Rescheduling"
         ]
     },
     'merchant-dashboard': {
@@ -28,10 +28,10 @@ const products = {
         color: "#4F46E5",
         bg: "rgba(79, 70, 229, 0.05)",
         features: [
-            "Real-time Analytics",
-            "Staff Activity Logs",
-            "Inventory Management",
-            "Financial Reports"
+            "Proactive Business Reports",
+            "Remote Staff Monitoring",
+            "Inventory & Stock Tracking",
+            "One-Click Financial Export"
         ]
     },
     'premium-invoices': {
@@ -42,10 +42,10 @@ const products = {
         color: "#F59E0B",
         bg: "rgba(245, 158, 11, 0.05)",
         features: [
-            "Custom Logo Branding",
-            "Payment Links Integration",
-            "PDF Export & Sharing",
-            "Automated Receipts"
+            "Branded Client Portals",
+            "Instant Payment Links",
+            "Automatic Digital Receipts",
+            "Financial Trust Infrastructure"
         ]
     }
 };
@@ -91,16 +91,7 @@ const ProductPage = () => {
                         </div>
                     </motion.div>
                     
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        style={{ position: 'relative' }}
-                    >
-                        <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '48px', background: product.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', border: `1px solid ${product.color}20` }}>
-                            {/* Abstract Visual Representation */}
-                            <Icon size={250} color={product.color} style={{ opacity: 0.1 }} />
-                        </div>
-                    </motion.div>
+
                 </div>
             </section>
 

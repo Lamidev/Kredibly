@@ -46,12 +46,12 @@ REQUIRED JSON OUTPUT:
     "paidAmount": Number,
     "item": "Description",
     "dueDate": "ISO Timestamp for debt/sale",
-    "reminderDate": "ISO Timestamp strictly for the exact time of the alarm/meeting",
+    "reminderDate": "ISO Timestamp STRICTLY for the exact time of the alarm/task (e.g. '2026-03-19T11:00:00.000Z') - calculate this based on the Current Time. NEVER leave empty for create_reminder.",
     "reminderType": "debt" | "task" | "meeting" | "personal",
     "recurrence": "none" | "daily" | "weekly" | "monthly",
     "snoozeDuration": Number (minutes to delay the reminder, only for 'snooze_reminder'),
-    "taskDescription": "What to remind the user about",
-    "reply": "Your brief partner-like response"
+    "taskDescription": "What the user wants to be reminded of. MUST NOT BE EMPTY for create_reminder.",
+    "reply": "Your brief partner-like response recognizing the task."
   }
 }
 `;
