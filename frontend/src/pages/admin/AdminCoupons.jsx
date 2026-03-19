@@ -76,12 +76,12 @@ const AdminCoupons = () => {
                             <Tag size={24} />
                         </div>
                         <h4 style={{ margin: '0 0 4px', fontWeight: 950, fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c.code}</h4>
-                        <p style={{ margin: '0 0 16px', color: 'var(--primary)', fontWeight: 800 }}>{c.discountType === 'percentage' ? `${c.discountAmount}% OFF` : `₦${c.discountAmount} OFF`}</p>
+                        <p style={{ margin: '0 0 16px', color: 'var(--primary)', fontWeight: 800 }}>{c.discountType === 'percentage' ? `${c.discountValue}% OFF` : `₦${c.discountValue} OFF`}</p>
                         
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #F1F5F9', paddingTop: '16px', marginTop: '16px' }}>
                             <div>
                                 <p style={{ margin: 0, fontSize: '0.65rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>USAGES</p>
-                                <p style={{ margin: 0, fontWeight: 900, fontSize: '0.9rem' }}>{c.usageCount} / {c.usageLimit || '∞'}</p>
+                                <p style={{ margin: 0, fontWeight: 900, fontSize: '0.9rem' }}>{c.usedCount} / {c.maxUses || '∞'}</p>
                             </div>
                             <button onClick={() => { setItemToDelete(c._id); setShowDeleteConfirm(true); }} style={{ padding: '8px', borderRadius: '10px', background: '#FEF2F2', color: '#EF4444', border: 'none', cursor: 'pointer' }}><Trash2 size={18} /></button>
                         </div>

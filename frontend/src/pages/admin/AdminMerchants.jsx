@@ -95,11 +95,11 @@ const AdminMerchants = () => {
                                     <td style={{ padding: '16px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
                                         <span style={{ 
                                             padding: '4px 12px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 900,
-                                            background: u.businessProfile?.plan === 'hustler' ? '#F1F5F9' : u.businessProfile?.plan === 'oga' ? '#ECFDF5' : '#EEF2FF',
-                                            color: u.businessProfile?.plan === 'hustler' ? '#64748B' : u.businessProfile?.plan === 'oga' ? '#10B981' : '#6366F1',
+                                            background: u.business?.plan === 'hustler' ? '#F1F5F9' : u.business?.plan === 'oga' ? '#ECFDF5' : '#EEF2FF',
+                                            color: u.business?.plan === 'hustler' ? '#64748B' : u.business?.plan === 'oga' ? '#10B981' : '#6366F1',
                                             textTransform: 'uppercase', letterSpacing: '0.05em'
                                         }}>
-                                            {u.businessProfile?.plan || 'UNRANKED'}
+                                            {u.business?.plan || 'UNRANKED'}
                                         </span>
                                     </td>
                                     <td style={{ padding: '16px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9', fontSize: '0.85rem', fontWeight: 700, color: '#64748B' }}>

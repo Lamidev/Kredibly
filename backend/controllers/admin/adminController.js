@@ -147,3 +147,25 @@ exports.getPayments = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+exports.createCoupon = async (req, res) => {
+    try {
+        const Coupon = require("../../models/Coupon");
+        const { code, discountType, discountAmount, usageLimit, expiryDate } = req.body;
+        
+        const existing = await Coupon.findOne({ code: code.toUpperCase() });
+        if (existing) return res.status(400).json({ message: "Coupon code already exists" });
+
+        const coupon = new Coupon({
+            code: code.toUpperCase(),
+            discountType,
+            discountValue: Number(discountAmount),
+            maxUses: usageLimit ? Number(usageLimit) : null,
+            expiresAt: expiryDate ? new Date(expiryDate) : null
+        });
+
+        await coupon.save();
+        res.status(201).json({ success: true, data: coupon });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

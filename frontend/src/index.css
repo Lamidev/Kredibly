@@ -154,6 +154,29 @@ body.lock-scroll {
   box-shadow: var(--shadow-md);
 }
 
+.btn-white {
+  background: white !important;
+  color: #0F172A !important;
+  border: 1px solid #E2E8F0 !important;
+  padding: 14px 28px;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-decoration: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.btn-white:hover {
+  background: #F8FAFC !important;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+}
+
 
 .premium-gradient {
   background: linear-gradient(135deg, var(--primary), #1E1B4B);

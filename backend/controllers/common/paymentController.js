@@ -4,12 +4,137 @@ const Payment = require('../../models/Payment');
 const Sale = require('../../models/Sale');
 const ActivityLog = require('../../models/ActivityLog');
 const Notification = require('../../models/Notification');
+const VirtualAccount = require('../../models/VirtualAccount');
 const crypto = require('crypto');
 const { logUsage } = require('../../utils/usageTracker');
 const { sendWhatsAppMessage } = require('../whatsapp/whatsappController');
 
 const { verifyPaystackReference } = require('../../utils/paystack');
-const { getPlanPrice } = require('../../config/pricing');
+const { getPlanPrice, PRICING_PLANS } = require('../../config/pricing');
+
+exports.getUpgradeQuote = async (req, res) => {
+    try {
+        const { targetPlan, billingCycle = 'monthly' } = req.query; // 'oga' or 'chairman'
+        const profile = await BusinessProfile.findOne({ ownerId: req.user._id });
+        if (!profile) return res.status(404).json({ message: "Business profile not found" });
+
+        const currentPlan = profile.plan;
+        
+        // If they are already on the target plan or higher
+        if (currentPlan === 'chairman' || (currentPlan === 'oga' && targetPlan === 'oga')) {
+            return res.status(400).json({ message: "You are already on this plan or higher." });
+        }
+
+        const targetPrice = getPlanPrice(targetPlan, billingCycle);
+        if (!targetPrice) return res.status(400).json({ message: "Invalid target plan or cycle" });
+
+        // If currently Hustler, no credit
+        if (currentPlan === 'hustler' || profile.planStatus === 'trialing') {
+            return res.status(200).json({ 
+                currentPlan, 
+                targetPlan, 
+                upgradePrice: targetPrice, 
+                unusedCredit: 0,
+                message: `Upgrade to ${targetPlan} for ₦${targetPrice.toLocaleString()}`
+            });
+        }
+
+        // Pro-rated Logic for Oga -> Chairman (Monthly only for now)
+        if (billingCycle === 'monthly' && currentPlan === 'oga') {
+            const now = new Date();
+            const expiry = profile.nextBillingDate ? new Date(profile.nextBillingDate) : (profile.lastPaidAt ? new Date(new Date(profile.lastPaidAt).getTime() + 30*24*60*60*1000) : now);
+            
+            const remainingMs = expiry - now;
+            const remainingDays = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
+            
+            const ogaPrice = 5000;
+            const dailyRate = ogaPrice / 30;
+            const unusedCredit = Math.floor(remainingDays * dailyRate);
+            
+            const upgradePrice = Math.max(1000, targetPrice - unusedCredit); // Minimum ₦1000 to upgrade
+
+            return res.status(200).json({
+                currentPlan,
+                targetPlan,
+                remainingDays,
+                unusedCredit,
+                upgradePrice,
+                message: `Upgrade to ${targetPlan} for ₦${upgradePrice.toLocaleString()} (₦${unusedCredit.toLocaleString()} current credit applied)`
+            });
+        }
+
+        // Yearly or other complex merges skip pro-rate for now
+        res.status(200).json({
+            currentPlan,
+            targetPlan,
+            upgradePrice: targetPrice,
+            unusedCredit: 0,
+            message: `Upgrade to ${targetPlan} for ₦${targetPrice.toLocaleString()}`
+        });
+
+    } catch (error) {
+        console.error("Upgrade Quote Error:", error);
+        res.status(500).json({ message: "Error calculating upgrade price" });
+    }
+};
+
+exports.initializeVirtualAccountPayment = async (req, res) => {
+    try {
+        const { invoiceId, amount } = req.body;
+        // 1. Find the sale
+        const sale = await Sale.findOne({ 
+             $or: [
+                 { _id: invoiceId.match(/^[0-9a-fA-F]{24}$/) ? invoiceId : null },
+                 { invoiceNumber: invoiceId.toUpperCase() },
+                 { publicSlug: invoiceId }
+             ]
+        }).populate('businessId');
+
+        if (!sale) return res.status(404).json({ message: "Invoice not found" });
+
+        const business = sale.businessId;
+        
+        // 2. Check if a Virtual Account already exists and is active for this sale
+        const existing = await VirtualAccount.findOne({ saleId: sale._id, status: 'active' });
+        if (existing) {
+             return res.status(200).json({ success: true, data: existing });
+        }
+
+        // 3. GENERATE VIRTUAL ACCOUNT (VIA PROVIDER)
+        // PLACEHOLDER for Monnify/Paystack Integration
+        console.log(`💎 Initializing Instant Cash VA for ${business.displayName}`);
+        
+        const reference = `KREDDY_VA_${Date.now()}`;
+        const accountNumber = `90${Math.floor(Math.random() * 100000000)}`; 
+        
+        const vaRecord = await VirtualAccount.create({
+            businessId: business._id,
+            saleId: sale._id,
+            invoiceNumber: sale.invoiceNumber,
+            accountNumber: accountNumber,
+            bankName: "Wema Bank",
+            reference: reference,
+            amount: amount || (sale.totalAmount - sale.payments.reduce((s,p) => s + p.amount, 0)),
+            status: "active"
+        });
+
+        res.status(201).json({
+            success: true,
+            data: {
+                accountNumber: vaRecord.accountNumber,
+                bankName: vaRecord.bankName,
+                accountName: `Kredibly / ${business.displayName.substring(0, 15)}`,
+                amount: vaRecord.amount,
+                reference: vaRecord.reference,
+                expiresIn: "60 minutes"
+            }
+        });
+
+    } catch (error) {
+        console.error("Initialize VA Error:", error);
+        res.status(500).json({ message: "Failed to load transfer details" });
+    }
+};
 
 exports.verifyPayment = async (req, res) => {
     try {
@@ -37,8 +162,18 @@ exports.verifyPayment = async (req, res) => {
         }
 
         // 2. Validate Payment Amount (Anti-Fraud Check)
-        const basePrice = getPlanPrice(plan, billingCycle);
+        let basePrice = getPlanPrice(plan, billingCycle);
         if (!basePrice) return res.status(400).json({ message: "Invalid plan or billing cycle" });
+
+        // If it's an UPGRADE from Oga to Chairman
+        if (profile.plan === 'oga' && plan === 'chairman' && billingCycle === 'monthly') {
+             const now = new Date();
+             const expiry = profile.nextBillingDate ? new Date(profile.nextBillingDate) : (profile.lastPaidAt ? new Date(new Date(profile.lastPaidAt).getTime() + 30*24*60*60*1000) : now);
+             const remainingMs = expiry - now;
+             const remainingDays = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
+             const unusedCredit = Math.floor(remainingDays * (5000 / 30));
+             basePrice = Math.max(1000, 8500 - unusedCredit);
+        }
 
         let expectedPrice = basePrice;
         let coupon = null;
@@ -93,9 +228,8 @@ exports.verifyPayment = async (req, res) => {
             plan: plan, // 'oga' or 'chairman'
             planStatus: 'active',
             billingCycle: billingCycle, // 'monthly' or 'yearly'
-            subscriptionId: reference, // Using reference as ID for now
-            // Extend expiry based on duration (Monthly = 30 days, Yearly = 365)
-            trialExpiresAt: new Date(Date.now() + (billingCycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000)
+            lastPaidAt: new Date(),
+            nextBillingDate: new Date(Date.now() + (billingCycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000)
         };
 
         const updatedProfile = await BusinessProfile.findByIdAndUpdate(

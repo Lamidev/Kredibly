@@ -34,7 +34,7 @@ const PricingPage = () => {
             features: [
                 "Basic AI Assistant",
                 "20 Sales Records / month",
-                "Basic WhatsApp Hub",
+                "5 Smart Reminders / month",
                 "Standard Debt Tracking",
                 "Web Dashboard Access"
             ],
@@ -47,18 +47,16 @@ const PricingPage = () => {
             name: "Oga Plan",
             slug: "oga",
             tagline: "Most Popular",
-            description: "Your business partner that never forgets.",
-            price: getPrice(7000),
-            originalPrice: getPrice(7000),
-            discountPrice: null,
-            isFoundingMember: false,
+            description: "Step up to professional business management.",
+            price: getPrice(5000),
+            originalPrice: getPrice(5000),
             period: "/ month",
             features: [
-                "Super Smart AI",
-                "2,000 WhatsApp Msgs / mo",
-                "Add up to 2 Staff Members",
-                "Unlimited Smart Recording",
-                "Automated Debt Reminders",
+                "Instant Cash Settlement",
+                "AI Voice Actions & Snooze",
+                "Unlimited Sales Records",
+                "60 Smart Reminders / month",
+                "Staff Activity Monitoring",
                 "Branded WhatsApp Invoices"
             ],
             cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade Now" : "Become an Oga",
@@ -69,20 +67,18 @@ const PricingPage = () => {
         {
             name: "Chairman",
             slug: "chairman",
-            tagline: "Run multiple shops without stress.",
-            description: "Let Kreddy handle the chaos. Pure peace for the empire.",
-            price: getPrice(30000),
-            originalPrice: getPrice(30000),
-            discountPrice: null,
-            isFoundingMember: false,
+            tagline: "The Elite Suite",
+            description: "Run multiple shops without stress. Lead your empire.",
+            price: getPrice(8500),
+            originalPrice: getPrice(8500),
             period: "/ month",
             features: [
                 "Everything in Oga Plan",
-                "10,000 WhatsApp Msgs / mo",
-                "Voice Note Recording",
-                "Multi-Staff / Multi-Shop",
-                "Weekly Business Insights",
-                "Dedicated Digital Manager"
+                "AI Productivity Planning",
+                "Smart Receipt Scanning",
+                "Morning Executive Briefing",
+                "Bulk Debt Recovery AI",
+                "Lowest Transaction Fees"
             ],
             cta: profile?.plan === "chairman" ? "Current Plan" : profile ? "Upgrade Now" : "Lead Your Empire",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -93,11 +89,13 @@ const PricingPage = () => {
 
     const comparisonFeatures = [
         { name: "Sales Recording", free: "20/mo", pro: "Unlimited", ent: "Unlimited" },
-        { name: "Staff Members", free: "1 (You)", pro: "Up to 3 (You + 2)", ent: "Unlimited" },
-        { name: "WhatsApp Messages", free: "Standard", pro: "2,000 included", ent: "10,000 included" },
-        { name: "Assistant Type", free: "Basic AI", pro: "Super Smart AI", ent: "Super Smart AI" },
-        { name: "Voice Notes", free: false, pro: false, ent: true },
-        { name: "Data Export", free: false, pro: true, ent: true },
+        { name: "Smart Reminders", free: "5/mo", pro: "60/mo", ent: "Unlimited" },
+        { name: "Instant Cash Sweep", free: false, pro: true, ent: true },
+        { name: "Voice Actions (Snooze)", free: false, pro: true, ent: true },
+        { name: "Recurring Task AI", free: false, pro: true, ent: true },
+        { name: "Receipt Image Scan", free: false, pro: false, ent: true },
+        { name: "Executive Briefing", free: false, pro: false, ent: true },
+        { name: "Staff Account Management", free: "1 User", pro: "3 Users", ent: "Unlimited" },
     ];
 
     return (

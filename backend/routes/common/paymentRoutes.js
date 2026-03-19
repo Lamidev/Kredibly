@@ -1,16 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../../utils/authMiddleware');
-const { verifyPayment } = require('../../controllers/common/paymentController');
+const { 
+    verifyPayment, 
+    getUpgradeQuote, 
+    initializeVirtualAccountPayment, 
+    verifyInvoicePayment 
+} = require('../../controllers/common/paymentController');
 const { handlePaystackWebhook } = require('../../controllers/common/webhookController');
 const saleController = require('../../controllers/business/saleController');
 
 // Verify payment and upgrade plan
 router.post('/verify', protect, verifyPayment);
+router.get('/upgrade-quote', protect, getUpgradeQuote);
 
 // Verify invoice payment (Public)
-const { verifyInvoicePayment } = require('../../controllers/common/paymentController');
 router.post('/verify-invoice', verifyInvoicePayment);
+router.post('/initialize-transfer', initializeVirtualAccountPayment);
 
 // Webhook for invoice payments and other Paystack events
 router.post('/webhook', handlePaystackWebhook);

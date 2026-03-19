@@ -1,11 +1,11 @@
 const PRICING_PLANS = {
     oga: {
-        monthly: 7000,
-        yearly: 75600 // 7000 * 12 * 0.9
+        monthly: 5000,
+        yearly: 54000 // 5000 * 12 * 0.9 (10% off)
     },
     chairman: {
-        monthly: 30000,
-        yearly: 324000 // 30000 * 12 * 0.9
+        monthly: 8500,
+        yearly: 91800 // 8500 * 12 * 0.9 (10% off)
     }
 };
 
