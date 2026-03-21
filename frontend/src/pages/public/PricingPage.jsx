@@ -32,10 +32,10 @@ const PricingPage = () => {
             price: "Free",
             period: "",
             features: [
-                "Basic AI Assistant",
-                "20 Sales Records / month",
-                "5 Smart Reminders / month",
-                "Standard Debt Tracking",
+                "Unlimited Sales & Debt Recording",
+                "Basic Text AI Assistant",
+                "50 Smart AI Actions / month",
+                "5 Automated Reminders / month",
                 "Web Dashboard Access"
             ],
             cta: profile?.plan === "hustler" ? "Current Plan" : "Get Started",
@@ -52,12 +52,12 @@ const PricingPage = () => {
             originalPrice: getPrice(5000),
             period: "/ month",
             features: [
-                "Everything in Hustler",
-                "AI Personal Assistant & Deadlines",
-                "AI Voice Actions & Snooze",
-                "Recurring Task Scheduling",
-                "60 Smart Reminders / month",
-                "Staff Activity Monitoring"
+                "Everything in Hustler, plus:",
+                "Unlimited AI Brain Power",
+                "Instant Online Payments 💳",
+                "WhatsApp Voice Note Sync 🎙️",
+                "Proactive 'Did They Pay?' AI",
+                "Staff Management (Add 2 Staff)"
             ],
             cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade Now" : "Become an Oga",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -73,12 +73,12 @@ const PricingPage = () => {
             originalPrice: getPrice(8500),
             period: "/ month",
             features: [
-                "Everything in Oga Plan",
-                "AI Productivity Planning",
-                "Smart Receipt Scanning",
-                "Morning Executive Briefing",
-                "Bulk Debt Recovery AI",
-                "Lowest Transaction Fees"
+                "Everything in Oga, plus:",
+                "The 8 AM 'Chief Summary' (WhatsApp)",
+                "White-Label Invoices (No Branding)",
+                "Unlimited Staff/Branches",
+                "Smart Receipt Image Scanning",
+                "Priority AI Processing Speed"
             ],
             cta: profile?.plan === "chairman" ? "Current Plan" : profile ? "Upgrade Now" : "Lead Your Empire",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -88,14 +88,15 @@ const PricingPage = () => {
     ];
 
     const comparisonFeatures = [
-        { name: "Sales Recording", free: "20/mo", pro: "Unlimited", ent: "Unlimited" },
+        { name: "Sales & Debt Tracking", free: "Unlimited", pro: "Unlimited", ent: "Unlimited" },
+        { name: "Smart AI Interactions", free: "50/mo", pro: "Unlimited ⚡", ent: "Unlimited ⚡" },
         { name: "Smart Reminders", free: "5/mo", pro: "60/mo", ent: "Unlimited" },
-        { name: "Instant Cash Sweep", free: false, pro: true, ent: true },
-        { name: "Voice Actions (Snooze)", free: false, pro: true, ent: true },
-        { name: "Recurring Task AI", free: false, pro: true, ent: true },
+        { name: "Instant Online Payments", free: "Manual Transfer", pro: "Direct to Bank 💳", ent: "Direct to Bank 💳" },
+        { name: "WhatsApp Voice Notes", free: false, pro: true, ent: true },
+        { name: "Proactive Follow-ups", free: false, pro: true, ent: true },
         { name: "Receipt Image Scan", free: false, pro: false, ent: true },
-        { name: "Executive Briefing", free: false, pro: false, ent: true },
-        { name: "Staff Account Management", free: "1 User", pro: "3 Users", ent: "Unlimited" },
+        { name: "Morning Chief Summary", free: false, pro: false, ent: true },
+        { name: "Staff Account Management", free: "0 Staff", pro: "Up to 2 Staff", ent: "Unlimited Staff" },
     ];
 
     return (
@@ -301,7 +302,8 @@ const PricingPage = () => {
                     <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '48px', textAlign: 'center' }}>Frequently Asked Questions</h2>
                     <div style={{ display: 'grid', gap: '24px' }}>
                         {[
-                            { q: "Do I need to pay to add staff?", a: "On the Hustler (Free) plan, you get 1 user. To add staff members who can record sales for you, you'll need the Oga plan which includes up to 2 staff members (3 total users)." },
+                            { q: "How do Instant Online Payments work?", a: "With the Oga or Chairman plan, Kredibly generates a secure 'Pay Now' link on your invoices. When customers pay via card or bank transfer, the money is routed directly into your settlement bank account!" },
+                            { q: "Do I need to pay to add staff?", a: "On the Hustler (Free) plan, you are the only user. To add staff members who can record sales for you via WhatsApp, you'll need the Oga plan (allows 2 staff members) or Chairman plan (unlimited staff)." },
                             { q: "Can I cancel anytime?", a: "Absolutely. There are no contracts. You can switch back to the Free plan whenever you like." },
                             { q: "Is my data safe?", a: "Yes. We use bank-grade AES-256 encryption. Your business data is visible only to you and your authorized staff." }
                         ].map((faq, i) => (

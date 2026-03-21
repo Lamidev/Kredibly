@@ -4,10 +4,16 @@ const Notification = require("../../models/Notification");
 const WhatsAppSession = require("../../models/WhatsAppSession");
 const SupportTicket = require("../../models/SupportTicket");
 const Reminder = require("../../models/Reminder");
+const User = require("../../models/User");
 const axios = require("axios");
 const { logActivity } = require("../../utils/activityLogger");
 const { processMessageWithAI, processAudioWithAI, processImageWithAI } = require("../../utils/aiService");
 const { logUsage } = require("../../utils/usageTracker");
+const { initializePayment } = require("../../utils/paystack");
+const { getPlanPrice } = require("../../config/pricing");
+const { sendWhatsAppMessage } = require("./whatsappController"); // For recursive calls if needed, though we are in the file. Wait. 
+// Note: sendWhatsAppMessage is exported below, but for internal use, we use it directly.
+
 
 // Duplicate Shield: Store message IDs to prevent double-processing (cleared every 10 mins)
 const processedMessages = new Set();
@@ -63,33 +69,73 @@ const extractInfoRobust = (text, context = {}) => {
         }
     };
 
+    // Helper: Extract specific clock time ("by 7pm", "at 3pm", "for 1pm") from text
+    const extractClockTime = (txt) => {
+        const timeMatch = txt.match(/(?:by|at|for|around)\s*(\d{1,2})\s*[:.]?\s*(\d{2})?\s*(am|pm)/i);
+        if (timeMatch) {
+            let hours = parseInt(timeMatch[1]);
+            const minutes = parseInt(timeMatch[2] || '0');
+            const ampm = timeMatch[3].toLowerCase();
+            if (ampm === 'pm' && hours !== 12) hours += 12;
+            if (ampm === 'am' && hours === 12) hours = 0;
+            const date = new Date();
+            date.setHours(hours, minutes, 0, 0);
+            // If time is in the past, assume tomorrow
+            if (date <= new Date()) date.setDate(date.getDate() + 1);
+            return date;
+        }
+        return null;
+    };
+
     // 1. Intent Detection
     if (lower.includes("who owe") || lower.includes("who is owing") || lower.includes("list my debtor") || lower.includes("total debt") || lower.includes("show me who owe")) {
         result.intent = "check_debt";
-        // result.data.reply will be handled by the main controller to fetch actual debts
+        return result;
+    }
+
+    // CHECK SCHEDULE: "what are my plans", "my schedule", "what's on today", "do I have anything"
+    if (lower.includes("my plan") || lower.includes("my schedule") || lower.includes("what's on") || lower.includes("do i have") || lower.includes("my tasks") || lower.includes("my reminders") || lower.includes("what do i have")) {
+        result.intent = "check_schedule";
+        const bossTitle = (context.plan || "hustler") === "chairman" ? "Chairman" : ((context.plan || "hustler") === "oga" ? "Oga" : "Boss");
+        result.data.reply = `Let me check your schedule, ${bossTitle}! 📋`;
         return result;
     }
 
     if (lower.includes("draft") || lower.includes("message for")) {
         result.intent = "draft_reminder";
         result.data.reply = "I'm on it, Chief! 🫡 Let me draft a sharp message you can send to your customer...";
-    } else if (lower.includes("remind") || lower.includes("reminder") || lower.includes("due")) {
-        // Default to a productivity task if no customer name or debt context is clear
+    } else if (lower.includes("remind") || lower.includes("reminder") || lower.includes("due") || 
+               (lower.includes("i have") && (lower.includes("meeting") || lower.includes("session") || lower.includes("appointment") || lower.includes("call")))) {
+        // Detect reminders: explicit ("remind me") OR implicit ("I have a meeting by 7pm")
         result.intent = lower.includes("debt") || lower.includes("owe") ? "update_record" : "create_reminder";
-        result.data.reminderType = lower.includes("meet") ? "meeting" : "task";
+        result.data.reminderType = lower.includes("meet") ? "meeting" : (lower.includes("gym") || lower.includes("session") ? "personal" : "task");
         
-        if (lower.includes("today")) result.data.reminderDate = new Date();
-        else if (lower.includes("tomorrow")) result.data.reminderDate = new Date(Date.now() + 86400000);
-        
-        // Handle durations: "5 mins", "2 hours"
-        const durationMatch = text.match(/(\d+)\s*(min|hour)/i);
-        if (durationMatch) {
-            const val = parseInt(durationMatch[1]);
-            const unit = durationMatch[2].toLowerCase();
-            const date = new Date();
-            if (unit.startsWith("min")) date.setMinutes(date.getMinutes() + val);
-            if (unit.startsWith("hour")) date.setHours(date.getHours() + val);
-            result.data.reminderDate = date;
+        // Extract task description from the message
+        const taskMatch = text.match(/(?:remind(?:er)?(?:\s+me)?\s+(?:to|about|for)\s+)(.+?)(?:\s+(?:by|at|on|for|tomorrow|today|next)\s|$)/i);
+        const implicitMatch = text.match(/(?:i have|i've got|there'?s)\s+(?:a\s+)?(.+?)(?:\s+(?:by|at|on)\s|$)/i);
+        if (taskMatch) result.data.taskDescription = taskMatch[1].trim();
+        else if (implicitMatch) result.data.taskDescription = implicitMatch[1].trim();
+        else result.data.taskDescription = text.replace(/remind(?:er)?|set|help|me|to|please/gi, '').trim() || "Task";
+
+        // Extract time: clock time first, then durations, then relative dates
+        const clockTime = extractClockTime(lower);
+        if (clockTime) {
+            result.data.reminderDate = clockTime;
+        } else if (lower.includes("today")) {
+            result.data.reminderDate = new Date();
+        } else if (lower.includes("tomorrow")) {
+            result.data.reminderDate = new Date(Date.now() + 86400000);
+        } else {
+            // Handle durations: "5 mins", "2 hours"
+            const durationMatch = text.match(/(\d+)\s*(min|hour)/i);
+            if (durationMatch) {
+                const val = parseInt(durationMatch[1]);
+                const unit = durationMatch[2].toLowerCase();
+                const date = new Date();
+                if (unit.startsWith("min")) date.setMinutes(date.getMinutes() + val);
+                if (unit.startsWith("hour")) date.setHours(date.getHours() + val);
+                result.data.reminderDate = date;
+            }
         }
     } else if (lower.includes("snooze") || lower.includes("wait") || lower.includes("later")) {
         result.intent = "snooze_reminder";
@@ -582,13 +628,15 @@ Upgrade here: ${APP_URL}/pricing`);
                 if (session.type === 'payment_disambiguation') {
                     const sale = await Sale.findById(selected.id);
                     if (sale) {
-                        sale.payments.push({ amount: selected.amount, method: "WhatsApp Quick Select" });
+                        if (session.data.paidAmount > 0) sale.payments.push({ amount: session.data.paidAmount, method: "WhatsApp Quick Select" });
+                        if (session.data.dueDate) sale.dueDate = new Date(session.data.dueDate);
                         await sale.save();
                         const balance = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
+                        const paidAmount = session.data.paidAmount || 0;
                         await Notification.create({
                             businessId: profile._id,
                             title: "Quick Payment ✅",
-                            message: `₦${selected.amount.toLocaleString()} recorded for ${sale.customerName}.`,
+                            message: `₦${paidAmount.toLocaleString()} recorded for ${sale.customerName}.`,
                             type: "system",
                             saleId: sale._id
                         });
@@ -612,11 +660,20 @@ Upgrade here: ${APP_URL}/pricing`);
                 } else if (session.type === 'draft_disambiguation') {
                     const sale = await Sale.findById(selected.id);
                     if (sale) {
+                        const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
                         const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-                        const link = `${BACKEND_URL}/api/payments/share/${sale.invoiceNumber}`;
-                        const draft = `Hi ${sale.customerName}, this is a friendly reminder for your balance of ₦${bal.toLocaleString()} with ${profile.displayName}. You can view and pay here: ${link}`;
+                        const link = `${APP_URL}/i/${sale.invoiceNumber}`;
+                        let draft = "";
+
+                        if (session.data && session.data.isReminder) {
+                            draft = `Hi ${sale.customerName}, this is a friendly reminder to settle your balance of ₦${bal.toLocaleString()} with ${profile.displayName}. You can view your invoice and pay here: ${link}`;
+                        } else {
+                            draft = `Hi ${sale.customerName}, here is your secure invoice and payment link from ${profile.displayName} for ₦${bal.toLocaleString()}: ${link}`;
+                        }
+                        
                         await WhatsAppSession.deleteOne({ _id: session._id });
-                        return await sendReply(from, `📝 *Draft for ${sale.customerName}:* \n\n_"${draft}"_\n\n(You can copy and forward this to them! 🚀)`);
+                        await sendReply(from, `📝 *Draft for ${sale.customerName}* (Copy the message below):`);
+                        return await sendReply(from, draft);
                     }
                 }
             }
@@ -758,6 +815,19 @@ Upgrade here: ${APP_URL}/pricing`);
                 return `${s.customerName}: ₦${bal.toLocaleString()} (Invoice #${s.invoiceNumber})`;
             }).join(", ");
 
+            // Fetch active reminders for schedule context
+            const activeReminders = await Reminder.find({ 
+                businessId: profile._id, 
+                status: "pending",
+                triggerDate: { $gte: new Date() }
+            }).sort({ triggerDate: 1 }).limit(10);
+            const reminderContext = activeReminders.length > 0 
+                ? activeReminders.map(r => {
+                    const time = r.triggerDate.toLocaleString('en-NG', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    return `"${r.description}" at ${time} (${r.type})`;
+                }).join(", ")
+                : "No active reminders";
+
             // 🧠 INTELLIGENCE SELECTION (Based on Plan)
             let aiResponse = null;
 
@@ -822,14 +892,54 @@ Upgrade here: ${APP_URL}/pricing`);
                     return await sendReply(from, "Chairman, my brain logic failed to read that image clearly. 😵‍ Please try again or type it for now.");
                 }
             } else if (isHustler) {
-                console.log("⚡ Plan: Hustler (Using Regex/Robust Logic)");
-                aiResponse = extractInfoRobust(text, { 
-                    merchantName: profile.displayName,
-                    plan: plan,
-                    entityType: profile.entityType,
-                    preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
-                    currentSession: session || null 
-                });
+                const aiUsed = profile.monthlyUsage?.aiRequests || 0;
+                
+                if (aiUsed < 50) {
+                    console.log(`⚡ Plan: Hustler (Using AI - ${aiUsed}/50 used)`);
+                    aiResponse = await processMessageWithAI(text, { 
+                        merchantName: profile.displayName,
+                        plan: plan,
+                        entityType: profile.entityType,
+                        preferredTone: preferredTone,
+                        debtors: debtorContext || "No active debtors yet.",
+                        activeReminders: reminderContext,
+                        currentSession: session || null,
+                        hasOpenTicket: !!openTicket
+                    });
+                    
+                    if (aiResponse && !aiResponse.isFallback && !Array.isArray(aiResponse)) {
+                        // Support multi-intent array too
+                        const isArrayOfFallbacks = Array.isArray(aiResponse) ? aiResponse.some(a => a.isFallback) : false;
+                        if(!isArrayOfFallbacks) {
+                            if (!profile.monthlyUsage) profile.monthlyUsage = {};
+                            profile.monthlyUsage.aiRequests = aiUsed + 1;
+                            await profile.save();
+                            
+                            if (profile.monthlyUsage.aiRequests === 50) {
+                                await sendReply(from, "⚠️ *AI Limit Reached*\n\nYou just used your 50th Smart AI action for the month! \n\nFrom now on, Kreddy will switch to 'dumb mode' (she will only understand strict formats like 'Record: Kola 5k'). \n\nTo get Kreddy's brain back, simply type _'Pay for Oga'_! 🚀");
+                            } else if (profile.monthlyUsage.aiRequests === 45) {
+                                await sendReply(from, "⚠️ *AI Limit Warning*\n\nYou have 5 Smart AI actions left for this month on the Hustler plan. Upgrade to Oga soon to keep Kreddy smart!");
+                            }
+                        }
+                    } else {
+                        aiResponse = extractInfoRobust(text, { 
+                            merchantName: profile.displayName,
+                            plan: plan,
+                            entityType: profile.entityType,
+                            preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
+                            currentSession: session || null 
+                        });
+                    }
+                } else {
+                    console.log("⚡ Plan: Hustler (Out of Limit - Using Regex/Robust Logic)");
+                    aiResponse = extractInfoRobust(text, { 
+                        merchantName: profile.displayName,
+                        plan: plan,
+                        entityType: profile.entityType,
+                        preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
+                        currentSession: session || null 
+                    });
+                }
             } else {
                 console.log(`💎 Plan: ${plan.toUpperCase()} (Using Gemini AI)`);
                 aiResponse = await processMessageWithAI(text, { 
@@ -838,6 +948,7 @@ Upgrade here: ${APP_URL}/pricing`);
                     entityType: profile.entityType,
                     preferredTone: preferredTone,
                     debtors: debtorContext || "No active debtors yet.",
+                    activeReminders: reminderContext,
                     currentSession: session || null,
                     hasOpenTicket: !!openTicket
                 });
@@ -865,43 +976,52 @@ Upgrade here: ${APP_URL}/pricing`);
             }
 
             // -------------------------------------------------------------------------
-            // 🧠 INTENT PROCESSING PIPELINE
+            // 🧠 MULTI-INTENT HANDLING: AI may return an array of intents
             // -------------------------------------------------------------------------
+            let intentQueue = [];
+            if (Array.isArray(aiResponse)) {
+                console.log(`🧠 Multi-intent detected: ${aiResponse.length} intents`);
+                intentQueue = aiResponse;
+            } else if (aiResponse) {
+                intentQueue = [aiResponse];
+            }
+
+            // Process each intent in the queue
+            for (const currentIntent of intentQueue) {
+            const aiResponseItem = currentIntent;
             let isProcessed = false;
 
-            // 1. UPDATE RECORD (Check this first so we can re-route if no record found)
-            if (!isProcessed && aiResponse && aiResponse.intent === "update_record") {
+            // 1. UPDATE RECORD
+            if (!isProcessed && aiResponseItem && aiResponseItem.intent === "update_record") {
                  console.log("📝 Handling update_record intent...");
                  
-                 // Look for match using last session context if available
-                 if (session?.data?.lastSaleId && (aiResponse.data.paidAmount > 0 || aiResponse.data.dueDate)) {
+                 if (session?.data?.lastSaleId && (aiResponseItem.data.paidAmount > 0 || aiResponseItem.data.dueDate)) {
                      const sale = await Sale.findById(session.data.lastSaleId);
                      if (sale && sale.status !== 'paid') {
-                         if (aiResponse.data.paidAmount > 0) sale.payments.push({ amount: aiResponse.data.paidAmount, method: "WhatsApp Context Update" });
-                         if (aiResponse.data.dueDate) sale.dueDate = new Date(aiResponse.data.dueDate);
+                         if (aiResponseItem.data.paidAmount > 0) sale.payments.push({ amount: aiResponseItem.data.paidAmount, method: "WhatsApp Context Update" });
+                         if (aiResponseItem.data.dueDate) sale.dueDate = new Date(aiResponseItem.data.dueDate);
                          await sale.save();
                          await sendReply(from, `✅ *Record Updated!* \n\nI've updated the ledger for *${sale.customerName}*.`);
                          isProcessed = true;
                      }
                  } 
                  
-                 // Global search if not processed
-                 if (!isProcessed && aiResponse.data.customerName && aiResponse.data.customerName !== "Customer") {
+                 if (!isProcessed && aiResponseItem.data.customerName && aiResponseItem.data.customerName !== "Customer") {
                      const matches = await Sale.find({ 
                         businessId: profile._id, 
-                        customerName: { $regex: new RegExp(`^${aiResponse.data.customerName.replace(/\s+/g, '\\s+')}$`, "i") },
+                        customerName: { $regex: new RegExp(`^${aiResponseItem.data.customerName.replace(/\s+/g, '\\s+')}$`, "i") },
                         status: { $ne: "paid" }
                      });
 
                      if (matches.length === 1) {
                         const sale = matches[0];
-                        if (aiResponse.data.paidAmount > 0) sale.payments.push({ amount: aiResponse.data.paidAmount, method: "WhatsApp Global Update" });
-                        if (aiResponse.data.dueDate) sale.dueDate = new Date(aiResponse.data.dueDate);
+                        if (aiResponseItem.data.paidAmount > 0) sale.payments.push({ amount: aiResponseItem.data.paidAmount, method: "WhatsApp Global Update" });
+                        if (aiResponseItem.data.dueDate) sale.dueDate = new Date(aiResponseItem.data.dueDate);
                         await sale.save();
                         await sendReply(from, `✅ *Update Successful!* \n\nRecorded for *${sale.customerName}*. Receipt updated. 🛡️`);
                         isProcessed = true;
                      } else if (matches.length > 1) {
-                        let disambigMsg = `🤔 I found *${matches.length}* people named *${aiResponse.data.customerName}* with unpaid debts. Which one should I update?\n\n`;
+                        let disambigMsg = `🤔 I found *${matches.length}* people named *${aiResponseItem.data.customerName}* with unpaid debts. Which one should I update?\n\n`;
                         matches.forEach((opt, i) => {
                             const bal = opt.totalAmount - opt.payments.reduce((s,p)=>s+p.amount, 0);
                             disambigMsg += `${i + 1}. *${opt.customerName}* (Owes ₦${bal.toLocaleString()})\n`;
@@ -914,8 +1034,8 @@ Upgrade here: ${APP_URL}/pricing`);
                                 type: 'payment_disambiguation',
                                 data: { 
                                     options: matches.map(m => ({ id: m._id, name: m.customerName })),
-                                    dueDate: aiResponse.data.dueDate,
-                                    paidAmount: aiResponse.data.paidAmount
+                                    dueDate: aiResponseItem.data.dueDate,
+                                    paidAmount: aiResponseItem.data.paidAmount
                                 },
                                 expiresAt: new Date(Date.now() + 5 * 60 * 1000)
                             },
@@ -926,17 +1046,15 @@ Upgrade here: ${APP_URL}/pricing`);
                      }
                  }
 
-                 // RE-ROUTE: If intent was update but it failed to find a record & we have transaction data, switch to CREATE
-                 if (!isProcessed && (aiResponse.data.totalAmount > 0 || (aiResponse.data.paidAmount && aiResponse.data.paidAmount > 0))) {
+                 if (!isProcessed && (aiResponseItem.data.totalAmount > 0 || (aiResponseItem.data.paidAmount && aiResponseItem.data.paidAmount > 0))) {
                      console.log("🔄 Re-routing: No record found to update, switching to create_sale...");
-                     aiResponse.intent = "create_sale";
-                     // We DON'T set isProcessed = true, so the next block (Create Sale) picks it up.
+                     aiResponseItem.intent = "create_sale";
                  }
             }
 
             // 2. CREATE SALE
-            if (!isProcessed && aiResponse && aiResponse.intent === "create_sale" && aiResponse.data.totalAmount) {
-                const { customerName, totalAmount, paidAmount, item, dueDate } = aiResponse.data;
+            if (!isProcessed && aiResponseItem && aiResponseItem.intent === "create_sale" && aiResponseItem.data.totalAmount) {
+                const { customerName, totalAmount, paidAmount, item, dueDate } = aiResponseItem.data;
                 const newSale = new Sale({
                     businessId: profile._id,
                     customerName: customerName || (session?.data?.customerName) || "Customer",
@@ -982,8 +1100,15 @@ Upgrade here: ${APP_URL}/pricing`);
                 if (bal > 0) reply += `⏳ They still owe you *₦${bal.toLocaleString()}*`;
                 else reply += `✅ *Fully Paid!*`;
                 
-                await sendReply(from, reply + `\n\n🔗 *Invoice Link:* ${APP_URL}/i/${newSale.invoiceNumber}`);
+                await sendReply(from, reply);
                 
+                // Immediately provide a copy-paste draft for the merchant
+                const draftLink = `${APP_URL}/i/${newSale.invoiceNumber}`;
+                const draftMsg = `Hi ${newSale.customerName}, here is your secure receipt/invoice from ${profile.displayName} for ₦${totalAmount.toLocaleString()}: ${draftLink}`;
+                
+                await sendReply(from, `📝 *Forward this to ${newSale.customerName}* (Copy the message below):`);
+                await sendReply(from, draftMsg);
+
                 if (isStaff && profile.whatsappNumber) {
                     await sendReply(profile.whatsappNumber, `📢 *Staff Activity Report* \n\nA new sale was just recorded by your staff (*${cleanFrom}*):\n\n👤 Customer: ${newSale.customerName}\n💰 Amount: ₦${totalAmount.toLocaleString()}\n📑 Invoice: #${newSale.invoiceNumber}`);
                 }
@@ -992,8 +1117,8 @@ Upgrade here: ${APP_URL}/pricing`);
 
             // 3. OTHER INTENTS
             if (!isProcessed) {
-                if (aiResponse && aiResponse.intent === "check_debt") {
-                    const searchName = (aiResponse.data.customerName || "").trim();
+                if (aiResponseItem && aiResponseItem.intent === "check_debt") {
+                    const searchName = (aiResponseItem.data.customerName || "").trim();
                     
                     if (!searchName || searchName.toLowerCase() === "customer") {
                         const sales = await Sale.find({ businessId: profile._id });
@@ -1008,7 +1133,6 @@ Upgrade here: ${APP_URL}/pricing`);
                         });
                         await sendReply(from, count === 0 ? "🎉 Amazing! Nobody owes you any money right now." : msg);
                     } else {
-                        // AI identified a specific person we should check
                         const matches = await Sale.find({ 
                             businessId: profile._id, 
                             customerName: { $regex: new RegExp(searchName, "i") }, 
@@ -1028,23 +1152,25 @@ Upgrade here: ${APP_URL}/pricing`);
                             setTimeout(async () => { await sendReply(from, msg2); }, 100);
                         }
                     }
-                } else if (aiResponse && aiResponse.intent === "confirm_record") {
-                    const ref = aiResponse.data.invoiceNumber || aiResponse.invoiceNumber;
-                    if (!ref) return await sendReply(from, "Boss, I catch that you want to verify a record, but I need the Invoice Number (like KR-XXXX).");
-
-                    // Sanitize the ref (ensure it starts with KR-)
-                    let invoiceId = ref.toUpperCase().trim();
-                    if (!invoiceId.startsWith("KR-")) invoiceId = "KR-" + invoiceId;
-
-                    const sale = await Sale.findOne({ businessId: profile._id, invoiceNumber: invoiceId });
-                    if (!sale) return await sendReply(from, `🔍 I couldn't find a record with ID *${invoiceId}*.`);
-
-                    sale.confirmed = true;
-                    sale.confirmedAt = new Date();
-                    await sale.save();
-                    await sendReply(from, `🛡️ *Record Verified!* \n\nInvoice *${invoiceId}* has been officially confirmed. This boosts your Trust Score! 🚀`);
-                } else if (aiResponse.intent === "draft_reminder") {
-                    const searchName = (aiResponse.data.customerName || "").replace(/\s+/g, ' ').trim();
+                    isProcessed = true;
+                } else if (aiResponseItem && aiResponseItem.intent === "confirm_record") {
+                    const ref = aiResponseItem.data.invoiceNumber || aiResponseItem.invoiceNumber;
+                    if (!ref) { await sendReply(from, "Boss, I catch that you want to verify a record, but I need the Invoice Number (like KR-XXXX)."); }
+                    else {
+                        let invoiceId = ref.toUpperCase().trim();
+                        if (!invoiceId.startsWith("KR-")) invoiceId = "KR-" + invoiceId;
+                        const sale = await Sale.findOne({ businessId: profile._id, invoiceNumber: invoiceId });
+                        if (!sale) { await sendReply(from, `🔍 I couldn't find a record with ID *${invoiceId}*.`); }
+                        else {
+                            sale.confirmed = true;
+                            sale.confirmedAt = new Date();
+                            await sale.save();
+                            await sendReply(from, `🛡️ *Record Verified!* \n\nInvoice *${invoiceId}* has been officially confirmed. This boosts your Trust Score! 🚀`);
+                        }
+                    }
+                    isProcessed = true;
+                } else if (aiResponseItem && aiResponseItem.intent === "draft_reminder") {
+                    const searchName = (aiResponseItem.data.customerName || "").replace(/\s+/g, ' ').trim();
                     const matches = await Sale.find({
                         businessId: profile._id,
                         customerName: { $regex: new RegExp(searchName.replace(/\s+/g, '\\s+'), "i") },
@@ -1077,18 +1203,17 @@ Upgrade here: ${APP_URL}/pricing`);
                         await sendReply(from, reply);
                     }
                     isProcessed = true;
-                } else if (aiResponse && aiResponse.intent === "upgrade") {
+                } else if (aiResponseItem && aiResponseItem.intent === "upgrade") {
                     const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
                     const upgradeUrl = `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/pricing`;
                     await sendReply(from, `${bossTitle}! 💎 You want to level up your hustle? \n\nYou can see all our plans and upgrade directly here: ${upgradeUrl}\n\nLet's get your business to the next level! 🚀`);
                     isProcessed = true;
-                } else if (aiResponse && aiResponse.intent === "create_reminder") {
-                    // 🔒 ROBUST PARSING: The AI might put these in data or top-level, or use alternate names
-                    const data = aiResponse.data || {};
-                    const reminderDateStr = data.reminderDate || aiResponse.reminderDate || data.dueDate || data.date;
-                    const taskDescription = data.taskDescription || aiResponse.taskDescription || data.item || data.description;
-                    const reminderType = data.reminderType || aiResponse.reminderType || "task";
-                    const recurrence = data.recurrence || aiResponse.recurrence || "none";
+                } else if (aiResponseItem && aiResponseItem.intent === "create_reminder") {
+                    const data = aiResponseItem.data || {};
+                    const reminderDateStr = data.reminderDate || aiResponseItem.reminderDate || data.dueDate || data.date;
+                    const taskDescription = data.taskDescription || aiResponseItem.taskDescription || data.item || data.description;
+                    const reminderType = data.reminderType || aiResponseItem.reminderType || "task";
+                    const recurrence = data.recurrence || aiResponseItem.recurrence || "none";
                     
                     if (!reminderDateStr || !taskDescription) {
                         console.warn(`⚠️ Partial Reminder Captured: Date=${reminderDateStr}, Task=${taskDescription}`);
@@ -1102,7 +1227,6 @@ Upgrade here: ${APP_URL}/pricing`);
                         } else if ((triggerDate.getTime() - new Date().getTime()) < 5 * 60 * 1000) {
                             await sendReply(from, "Boss, give me at least 5 minutes notice! 😂 Try a time slightly further ahead.");
                         } else {
-                            // Check limits
                             let canSet = true;
                             const usedReminders = (profile.monthlyUsage?.reminders) || 0;
 
@@ -1119,16 +1243,28 @@ Upgrade here: ${APP_URL}/pricing`);
                             }
 
                             if (canSet) {
+                                let linkedSaleId = null;
+                                const searchName = data.customerName || aiResponseItem.customerName;
+                                
+                                if (searchName && searchName.toLowerCase() !== "customer") {
+                                    const sale = await Sale.findOne({ 
+                                        businessId: profile._id, 
+                                        customerName: { $regex: new RegExp(searchName.replace(/\s+/g, '\\s+'), "i") }, 
+                                        status: { $ne: "paid" } 
+                                    }).sort({ createdAt: -1 });
+                                    if (sale) linkedSaleId = sale._id;
+                                }
+
                                 await Reminder.create({
                                     businessId: profile._id,
                                     whatsappNumber: cleanFrom,
                                     description: taskDescription,
                                     triggerDate: triggerDate,
                                     type: reminderType,
-                                    recurrence: recurrence
+                                    recurrence: recurrence,
+                                    saleId: linkedSaleId
                                 });
 
-                                // Increment usage
                                 if (!profile.monthlyUsage) profile.monthlyUsage = { reminders: 0, voiceNotes: 0, images: 0, lastReset: new Date() };
                                 profile.monthlyUsage.reminders = usedReminders + 1;
                                 await profile.save();
@@ -1140,25 +1276,267 @@ Upgrade here: ${APP_URL}/pricing`);
                         }
                     }
                     isProcessed = true;
-                } else if (aiResponse && aiResponse.intent === "snooze_reminder") {
-                    const snoozeMins = aiResponse.data.snoozeDuration || 30;
-                    const lastReminder = await Reminder.findOne({
-                        whatsappNumber: cleanFrom,
-                        status: "delivered"
-                    }).sort({ updatedAt: -1 });
+                } else if (aiResponseItem && aiResponseItem.intent === "snooze_reminder") {
+                    const data = aiResponseItem.data || {};
+                    const reminderDateStr = data.reminderDate || aiResponseItem.reminderDate;
+                    const snoozeMins = data.snoozeDuration || 30;
+                    const snoozeAll = data.snoozeAll || false;
+                    
+                    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
 
-                    if (lastReminder) {
-                        lastReminder.triggerDate = new Date(Date.now() + snoozeMins * 60000);
-                        lastReminder.status = "pending";
-                        lastReminder.snoozeCount += 1;
-                        await lastReminder.save();
-                        await sendReply(from, `Understood, ${plan === 'chairman' ? 'Chairman' : 'Boss'}! 😴 I've snoozed that for ${snoozeMins} minutes. Talk soon!`);
+                    if (snoozeAll) {
+                        // Find all pending reminders for today and snooze them
+                        const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+                        const todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
+                        
+                        const remindersToSnooze = await Reminder.find({
+                            businessId: profile._id,
+                            status: { $in: ["pending", "delivered"] },
+                            triggerDate: { $gte: todayStart, $lte: todayEnd }
+                        });
+
+                        if (remindersToSnooze.length > 0) {
+                            let newTriggerDate;
+                            if (reminderDateStr) {
+                                newTriggerDate = new Date(reminderDateStr);
+                            } else {
+                                newTriggerDate = new Date(Date.now() + snoozeMins * 60000);
+                            }
+
+                            for (const r of remindersToSnooze) {
+                                r.triggerDate = newTriggerDate;
+                                r.status = "pending";
+                                r.snoozeCount += 1;
+                                await r.save();
+                            }
+
+                            const friendly = newTriggerDate.toLocaleString('en-NG', { hour: '2-digit', minute: '2-digit' });
+                            await sendReply(from, `Understood, ${bossTitle}! 😴 I've snoozed ALL *${remindersToSnooze.length}* tasks until *${friendly}*. talk soon!`);
+                        } else {
+                            await sendReply(from, `I don't see any active tasks to snooze right now, ${bossTitle}.`);
+                        }
                     } else {
-                        await sendReply(from, "I'm not sure which reminder you want to snooze, Chief. I don't see any recent alerts.");
+                        const lastReminder = await Reminder.findOne({
+                            whatsappNumber: cleanFrom,
+                            status: "delivered"
+                        }).sort({ updatedAt: -1 });
+
+                        if (lastReminder) {
+                            let newTriggerDate;
+                            let displayMsg;
+
+                            if (reminderDateStr) {
+                                newTriggerDate = new Date(reminderDateStr);
+                                if (isNaN(newTriggerDate.getTime())) {
+                                    newTriggerDate = new Date(Date.now() + 30 * 60000);
+                                    displayMsg = "I couldn't catch the exact time, so I've snoozed it for 30 minutes. 😴";
+                                } else {
+                                    const friendly = newTriggerDate.toLocaleString('en-NG', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                    displayMsg = `I've snoozed that until *${friendly}*. 🫡`;
+                                }
+                            } else {
+                                newTriggerDate = new Date(Date.now() + snoozeMins * 60000);
+                                displayMsg = `I've snoozed that for ${snoozeMins} minutes. 🫡`;
+                            }
+
+                            lastReminder.triggerDate = newTriggerDate;
+                            lastReminder.status = "pending";
+                            lastReminder.snoozeCount += 1;
+                            await lastReminder.save();
+                            await sendReply(from, `Understood, ${bossTitle}! 😴 ${displayMsg}`);
+                        } else {
+                            await sendReply(from, `I'm not sure which reminder you want to snooze, ${bossTitle}. I don't see any recent alerts.`);
+                        }
                     }
                     isProcessed = true;
-                } else if (aiResponse && (aiResponse.intent === "reply_ticket" || aiResponse.intent === "support" || (aiResponse.intent === "general_chat" && (text.toLowerCase().includes("problem") || text.toLowerCase().includes("issue"))))) {
-                    if (openTicket && aiResponse.intent !== "new_support_ticket") {
+                } else if (aiResponseItem && aiResponseItem.intent === "check_schedule") {
+                    // 📋 NEW: CHECK SCHEDULE - Show user their pending reminders/tasks
+                    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+                    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+                    const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
+                    
+                    const todayReminders = await Reminder.find({
+                        businessId: profile._id,
+                        status: "pending",
+                        triggerDate: { $gte: todayStart, $lte: todayEnd }
+                    }).sort({ triggerDate: 1 });
+
+                    const upcomingReminders = await Reminder.find({
+                        businessId: profile._id,
+                        status: "pending",
+                        triggerDate: { $gt: todayEnd }
+                    }).sort({ triggerDate: 1 }).limit(5);
+
+                    let scheduleMsg = `📋 *Your Schedule, ${bossTitle}!*\n\n`;
+                    
+                    if (todayReminders.length > 0) {
+                        scheduleMsg += `🗓️ *Today:*\n`;
+                        todayReminders.forEach(r => {
+                            const time = r.triggerDate.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' });
+                            const typeIcon = r.type === 'meeting' ? '📅' : (r.type === 'personal' ? '🏋️' : (r.type === 'debt' ? '💰' : '📌'));
+                            scheduleMsg += `${typeIcon} *${time}* — ${r.description}\n`;
+                        });
+                    } else {
+                        scheduleMsg += `🗓️ *Today:* Nothing scheduled yet!\n`;
+                    }
+
+                    if (upcomingReminders.length > 0) {
+                        scheduleMsg += `\n📆 *Coming Up:*\n`;
+                        upcomingReminders.forEach(r => {
+                            const date = r.triggerDate.toLocaleString('en-NG', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                            scheduleMsg += `• ${r.description} — ${date}\n`;
+                        });
+                    }
+
+                    scheduleMsg += `\n_To add a task, say: "Remind me to [task] by [time]"_ 💡`;
+                    await sendReply(from, scheduleMsg);
+                    isProcessed = true;
+                } else if (aiResponseItem && aiResponseItem.intent === "pay_subscription") {
+                    const targetPlan = (aiResponseItem.data.plan || "oga").toLowerCase();
+                    const cycle = (aiResponseItem.data.billingCycle || "monthly").toLowerCase();
+                    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+
+                    const user = await User.findById(profile.ownerId);
+                    if (!user) {
+                        await sendReply(from, `Sorry ${bossTitle}, I couldn't find your account details to generate a payment link. Please contact support!`);
+                    } else {
+                        const price = getPlanPrice(targetPlan, cycle);
+                        if (!price) {
+                            await sendReply(from, `I’m sorry ${bossTitle}, I couldn't fetch the price for the ${targetPlan} plan. Try the dashboard!`);
+                        } else {
+                            const reference = `KREDDY_SUB_${Date.now()}`;
+                            const metadata = { 
+                                paymentType: 'subscription', 
+                                plan: targetPlan, 
+                                billingCycle: cycle, 
+                                businessId: profile._id.toString(),
+                                email: user.email 
+                            };
+                            
+                            try {
+                                const paystackData = await initializePayment(user.email, price, reference, metadata);
+                                await sendReply(from, `🚀 *${bossTitle}, your upgrade is ready!* \n\nI've generated a secure payment link for the *${targetPlan.toUpperCase()}* (${cycle}) plan.\n\n💰 Amount: *₦${price.toLocaleString()}*\n🔗 Pay here: ${paystackData.authorization_url}\n\nOnce you pay, I'll instantly unlock your new powers! 🛡️`);
+                            } catch (e) {
+                                console.error("Paystack Init Error:", e.message);
+                                await sendReply(from, `Ouch! I had trouble generating that payment link. Please try again or use the website dashboard!`);
+                            }
+                        }
+                    }
+                    isProcessed = true;
+                } else if (aiResponseItem && aiResponseItem.intent === "check_billing") {
+                    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+                    const nextDate = profile.nextBillingDate ? new Date(profile.nextBillingDate).toLocaleDateString() : (profile.trialExpiresAt ? new Date(profile.trialExpiresAt).toLocaleDateString() + " (Trial)" : "Not set");
+                    const lastPaid = profile.lastPaidAt ? new Date(profile.lastPaidAt).toLocaleDateString() : "No record";
+                    
+                    let msg = `💳 *Billing Details for ${profile.displayName}*\n\n`;
+                    msg += `⭐ *Current Plan:* ${plan.toUpperCase()}\n`;
+                    msg += `⏳ *Next Payment:* ${nextDate}\n`;
+                    msg += `📑 *Last Payment:* ${lastPaid}\n\n`;
+                    msg += `Need to upgrade or renew? Just say _"I want to pay for Oga"_! 🚀`;
+                    
+                    await sendReply(from, msg);
+                    isProcessed = true;
+                } else if (aiResponseItem && aiResponseItem.intent === "add_staff") {
+                    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+                    
+                    if (plan === "hustler" || !plan) {
+                        await sendReply(from, `${bossTitle}! 🛑 Adding staff via WhatsApp is a premium feature. \n\nUpgrade to the *Oga Plan* to add up to 2 staff, or the *Chairman Plan* for unlimited branch tracking! 🚀`);
+                    } else {
+                        const newPhoneRaw = aiResponseItem.data.phoneNumber || "";
+                        const newPhone = newPhoneRaw.replace(/\D/g, "");
+                        
+                        if (!newPhone || newPhone.length < 10) {
+                            await sendReply(from, `I couldn't catch the exact phone number for the new staff, ${bossTitle}. Please tell me their number clearly, like "Add 08123456789".`);
+                        } else {
+                            if (!profile.staffNumbers) profile.staffNumbers = [];
+                            
+                            const staffLimit = plan === "oga" ? 2 : (plan === "chairman" ? 9999 : 0);
+                            
+                            if (profile.staffNumbers.length >= staffLimit) {
+                                if (plan === "oga") {
+                                    await sendReply(from, `${bossTitle}! You've reached your limit of ${staffLimit} staff members on the Oga plan. Upgrade to the *Chairman Plan* to add an unlimited number of staff! 🚀`);
+                                } else {
+                                    await sendReply(from, `You've reached your maximum staff limit, ${bossTitle}!`);
+                                }
+                            } else {
+                                let formattedNewPhone = newPhone;
+                                if (formattedNewPhone.startsWith("0")) formattedNewPhone = "234" + formattedNewPhone.substring(1);
+                                else if (!formattedNewPhone.startsWith("234") && formattedNewPhone.length === 10) formattedNewPhone = "234" + formattedNewPhone;
+                                
+                                if (profile.staffNumbers.includes(formattedNewPhone) || profile.whatsappNumber === formattedNewPhone) {
+                                    await sendReply(from, `That number is already registered to your business, ${bossTitle}!`);
+                                } else {
+                                    profile.staffNumbers.push(formattedNewPhone);
+                                    await profile.save();
+                                    
+                                    const staffName = aiResponseItem.data.staffName || "your team member";
+                                    await sendReply(from, `✅ *Staff Added!* \n\nI've successfully added ${staffName} (${formattedNewPhone}) to your team. They can now record sales and update receipts by chatting with me directly! 🤝`);
+                                    
+                                    // Send welcome message to new staff
+                                    await sendWhatsAppMessage(formattedNewPhone, `👋 Hello! Your boss (${profile.displayName}) has added you to their Kredibly team.\n\nYou can now chat with me (Kreddy AI) here to record sales and check records on their behalf!\n\n_Try saying: "I just sold a pair of shoes to David for 20k"_`);
+                                }
+                            }
+                        }
+                    }
+                    isProcessed = true;
+                } else if (aiResponseItem && (aiResponseItem.intent === "draft_invoice" || aiResponseItem.intent === "draft_reminder" || aiResponseItem.intent === "send_invoice" || aiResponseItem.intent === "send_reminder")) {
+                    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+                    
+                    const searchName = (aiResponseItem.data.customerName || aiResponseItem.customerName || "").replace(/\s+/g, ' ').trim();
+                    if (!searchName || searchName.toLowerCase() === "customer") {
+                        await sendReply(from, `Who do you want to draft this for, ${bossTitle}? Please mention the customer's name.`);
+                        isProcessed = true;
+                        continue;
+                    }
+
+                    const matches = await Sale.find({ 
+                        businessId: profile._id, 
+                        customerName: { $regex: new RegExp(searchName.replace(/\s+/g, '\\s+'), "i") },
+                        status: { $ne: "paid" }
+                    }).sort({ createdAt: -1 });
+
+                    if (matches.length === 0) {
+                        await sendReply(from, `I couldn't find an active debt for *${searchName}*, ${bossTitle}.`);
+                    } else if (matches.length > 1) {
+                        let disambigMsg = `🤔 I found *${matches.length}* people named *${searchName}*. Which one should I draft this for?\n\n`;
+                        matches.forEach((opt, i) => {
+                            const bal = opt.totalAmount - opt.payments.reduce((s,p)=>s+p.amount, 0);
+                            disambigMsg += `${i + 1}. *${opt.customerName}* (Owes ₦${bal.toLocaleString()})\n`;
+                        });
+                        disambigMsg += `\n_Type the number to pick one!_`;
+                        
+                        await WhatsAppSession.findOneAndUpdate(
+                            { whatsappNumber: cleanFrom },
+                            {
+                                type: 'draft_disambiguation',
+                                data: { 
+                                    options: matches.map(m => ({ id: m._id, name: m.customerName })),
+                                    isReminder: aiResponseItem.intent.includes("reminder")
+                                },
+                                expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+                            },
+                            { upsert: true }
+                        );
+                        await sendReply(from, disambigMsg);
+                    } else {
+                        const sale = matches[0];
+                        const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
+                        const bal = sale.totalAmount - sale.payments.reduce((s,p)=>s+p.amount, 0);
+                        const link = `${APP_URL}/i/${sale.invoiceNumber}`;
+                        
+                        let targetMsg = "";
+                        if (aiResponseItem.intent.includes("reminder")) {
+                            targetMsg = `Hi ${sale.customerName}, this is a friendly reminder to settle your balance of ₦${bal.toLocaleString()} with ${profile.displayName}. You can view your invoice and pay here: ${link}`;
+                        } else {
+                            targetMsg = `Hi ${sale.customerName}, here is your secure invoice and payment link from ${profile.displayName} for ₦${bal.toLocaleString()}: ${link}`;
+                        }
+                        
+                        await sendReply(from, `📝 *Draft ready for ${sale.customerName}* (Copy the message below to forward it):`);
+                        await sendReply(from, targetMsg);
+                    }
+                    isProcessed = true;
+                } else if (aiResponseItem && (aiResponseItem.intent === "reply_ticket" || aiResponseItem.intent === "support" || (aiResponseItem.intent === "general_chat" && (text.toLowerCase().includes("problem") || text.toLowerCase().includes("issue"))))) {
+                    if (openTicket && aiResponseItem.intent !== "new_support_ticket") {
                          openTicket.replies.push({ message: text, sender: "user" });
                          openTicket.status = "open";
                          await openTicket.save();
@@ -1188,33 +1566,22 @@ Upgrade here: ${APP_URL}/pricing`);
                         await sendReply(from, "🛡️ *Support Ticket Opened*\n\nI'll have the team look into this for you! 🚀 (Ticket #" + newTicket._id.toString().slice(-6) + ")");
                     }
                     isProcessed = true;
-                } else if (aiResponse.intent === "general_chat") {
-                    await sendReply(from, aiResponse.data.reply || "I'm here, Chief! What's happening? 🚀");
+                } else if (aiResponseItem && aiResponseItem.intent === "general_chat") {
+                    // Clear stale session context so follow-up messages don't get stuck
+                    if (session) {
+                        await WhatsAppSession.deleteOne({ _id: session._id });
+                    }
+                    await sendReply(from, aiResponseItem.data.reply || "I'm here, Chief! What's happening? 🚀");
                     isProcessed = true;
                 } else {
-                    // FALLBACK
-                    const sessionData = {
-                        description: aiResponse?.data?.item || text,
-                        customerName: aiResponse?.data?.customerName || session?.data?.customerName || "Customer",
-                        totalAmount: aiResponse?.data?.totalAmount || session?.data?.totalAmount || null
-                    };
-
-                    await WhatsAppSession.findOneAndUpdate(
-                        { whatsappNumber: cleanFrom },
-                        { type: 'collect_sale_info', data: sessionData, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
-                        { upsert: true }
-                    );
-
-                    let fallbackMsg = aiResponse?.data?.reply || "I'm listening, Chief! 🫡 ";
-                    if (session?.data?.customerName && !text.includes(session.data.customerName)) {
-                        fallbackMsg += `Are we still talking about *${session.data.customerName}*? \n(Type 'Yes' or tell me something new!)`;
-                    } else {
-                        fallbackMsg += "I didn't quite catch the specifics. Try like: _'Sold a bag to Funke for 10k'_ 💰";
-                    }
+                    // FALLBACK — Don't blindly reference old session context
+                    let fallbackMsg = aiResponseItem?.data?.reply || "I'm listening, Chief! 🫡 ";
+                    fallbackMsg += "I didn't quite catch the specifics. Try like: _'Sold a bag to Funke for 10k'_ or _'Remind me to call Kola by 4pm'_ 💰";
                     await sendReply(from, fallbackMsg);
                     isProcessed = true;
                 }
             }
+            } // END of for loop (multi-intent)
         }
     } catch (err) {
         console.error("WhatsApp Assistant Error:", err);

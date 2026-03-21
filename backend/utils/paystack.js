@@ -102,9 +102,24 @@ const createSubaccount = async (businessName, bankCode, accountNumber, percentag
     return paystackRequest('/subaccount', 'POST', payload);
 };
 
+/**
+ * 4. Initialize Payment (Generate Checkout Link)
+ */
+const initializePayment = async (email, amount, reference, metadata = {}) => {
+    const payload = {
+        email,
+        amount: Math.round(amount * 100), // Convert to Kobo
+        reference,
+        metadata,
+        callback_url: `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/dashboard/payment/success`
+    };
+    return paystackRequest('/transaction/initialize', 'POST', payload);
+};
+
 module.exports = {
     verifyPaystackReference,
     getBanks,
     resolveAccount,
-    createSubaccount
+    createSubaccount,
+    initializePayment
 };
