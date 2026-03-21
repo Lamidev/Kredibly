@@ -88,7 +88,7 @@ exports.getSale = async (req, res) => {
 
         // Try searching by MongoDB ID if it follows the format
         if (safeId.match(/^[0-9a-fA-F]{24}$/)) {
-            sale = await Sale.findById(safeId).populate("businessId", "displayName logoUrl phoneNumber whatsappNumber bankDetails entityType address paystackSubaccountCode");
+            sale = await Sale.findById(safeId).populate("businessId", "displayName logoUrl phoneNumber whatsappNumber bankDetails entityType address paystackSubaccountCode plan");
         }
 
         // If not found by ID or not a valid ID format, try searching by invoiceNumber or publicSlug
@@ -98,7 +98,7 @@ exports.getSale = async (req, res) => {
                     { invoiceNumber: safeId.toUpperCase() },
                     { publicSlug: safeId }
                 ]
-            }).populate("businessId", "displayName logoUrl phoneNumber whatsappNumber bankDetails entityType address paystackSubaccountCode");
+            }).populate("businessId", "displayName logoUrl phoneNumber whatsappNumber bankDetails entityType address paystackSubaccountCode plan");
         }
 
         if (!sale) return res.status(404).json({ message: "Sale record not found" });
@@ -474,6 +474,14 @@ exports.sendReminder = async (req, res) => {
         const business = sale.businessId;
         if (!business) return res.status(404).json({ message: "Business data missing" });
 
+        // HUDDLE/LIMIT ENFORCEMENT
+        if (business.plan === 'hustler' && business.monthlyUsage && business.monthlyUsage.reminders >= 5) {
+            return res.status(403).json({
+                success: false,
+                message: "You have reached your free limit of 5 Reminders for this month. Upgrade to Oga to unlock unlimited automated reminders."
+            });
+        }
+
         // Generate the payment link
         const frontendUrl = process.env.FRONTEND_URL || 'https://usekredibly.com';
         const paymentLink = `${frontendUrl}/i/${sale.invoiceNumber}`;
@@ -509,6 +517,11 @@ exports.sendReminder = async (req, res) => {
         sale.lastLinkSentAt = new Date();
         await sale.save();
         
+        if (business.monthlyUsage) {
+            business.monthlyUsage.reminders = (business.monthlyUsage.reminders || 0) + 1;
+            await business.save();
+        }
+
         await logActivity({
             businessId: business._id,
             action: "REMINDER_SENT",

@@ -40,6 +40,11 @@ const ReminderSchema = new mongoose.Schema({
         default: "pending",
         index: true
     },
+    saleId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Sale",
+        required: false
+    },
     deliveredAt: {
         type: Date,
         index: { expires: '14d' } // Extended to 14 days for better tracking

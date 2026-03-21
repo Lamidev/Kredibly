@@ -446,7 +446,7 @@ const LandingPage = () => {
                                 <div style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '40px' }}>Free</div>
                                 <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Start Hustling</button>
                                 <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    {["Basic AI Assistant", "20 Sales Records / month", "5 Smart Reminders / month", "Personal & Debt Tracking", "WhatsApp Business Hub"].map((feat, i) => (
+                                    {["Unlimited Sales & Debt Recording", "Basic Text AI Assistant", "50 Smart AI Actions / month", "5 Automated Reminders / month", "Web Dashboard Access"].map((feat, i) => (
                                         <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500, color: '#334155' }}><CheckCheck size={18} color="var(--primary)" /> {feat}</div>
                                     ))}
                                 </div>
@@ -465,7 +465,7 @@ const LandingPage = () => {
 
                                 <button onClick={() => navigate('/auth/register')} className="btn-white" style={{ width: '100%' }}>Become an Oga</button>
                                 <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    {["Everything in Hustler", "AI Personal Assistant & Deadlines", "AI Voice Actions & Snooze", "Recurring Task Scheduling", "60 Smart Reminders / month", "Staff Activity Monitoring"].map((feat, i) => (
+                                    {["Everything in Hustler, plus:", "Unlimited AI Brain Power", "WhatsApp Voice Note Sync 🎙️", "Proactive 'Did They Pay?' AI", "1-Click Invoice & Reminder Drafts", "Staff Activity Logs (Up to 3 Users)"].map((feat, i) => (
                                         <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500 }}><CheckCheck size={18} color="#4ade80" /> {feat}</div>
                                     ))}
                                 </div>
@@ -484,7 +484,7 @@ const LandingPage = () => {
 
                                 <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Lead Empire</button>
                                 <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    {["Everything in Oga Plan", "AI Productivity Planning", "Smart Receipt Scanning", "Morning Executive Briefing", "Bulk Debt Recovery Suite"].map((feat, i) => (
+                                    {["Everything in Oga, plus:", "The 8 AM 'Chief Summary' (WhatsApp)", "White-Label Invoices (No Branding)", "Unlimited Staff/Branch Tracking", "Smart Receipt Image Scanning", "Priority AI Processing Speed"].map((feat, i) => (
                                         <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500, color: '#334155' }}><CheckCheck size={18} color="var(--primary)" /> {feat}</div>
                                     ))}
                                 </div>

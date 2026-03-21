@@ -771,6 +771,19 @@ const PublicInvoicePage = () => {
 
                         {/* ACTION AREA */}
                             {!isPaid ? (
+                                sale.businessId?.plan === 'hustler' ? (
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        style={{ textAlign: 'center', padding: '32px 24px', background: '#F8FAFC', borderRadius: '24px', border: '1px solid #E2E8F0', marginTop: '16px' }}
+                                    >
+                                        <div style={{ width: '56px', height: '56px', background: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                                            <Clock size={28} color="#64748B" />
+                                        </div>
+                                        <h4 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', marginBottom: '8px' }}>Payment Pending</h4>
+                                        <p style={{ fontSize: '14px', color: '#64748B', lineHeight: 1.6, margin: 0 }}>Please contact <strong>{sale.businessId?.displayName}</strong> directly to arrange payment. Online instant payments are currently disabled for this merchant.</p>
+                                    </motion.div>
+                                ) : (
                                 <div>
                                     {/* Payment Mode Selector */}
                                     <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
@@ -885,6 +898,7 @@ const PublicInvoicePage = () => {
                                         </div>
                                     </div>
                                 </div>
+                                )
                             ) : (
                                 <motion.div 
                                     initial={{ opacity: 0, y: 10 }}
