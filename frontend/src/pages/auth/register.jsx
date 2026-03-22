@@ -48,7 +48,7 @@ const Register = () => {
       boxShadow: 'var(--shadow-premium)' 
     }}>
       <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '2.2rem', fontWeight: 700, color: 'var(--text)', marginBottom: '8px', letterSpacing: '-0.03em' }}>Create Account</h2>
+        <h2 className="premium-gradient" style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em' }}>Create Account</h2>
         <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '1.05rem' }}>Join Kredibly and start growing your business today.</p>
       </div>
 

@@ -147,9 +147,10 @@ const extractInfoRobust = (text, context = {}) => {
         result.intent = "create_sale";
     }
 
-    // 2. Extract Amounts (handle 10k, 10000, 245k)
+    // 2. Extract Amounts (handle 10k, 10000, 245k) ignoring time/durations
+    let safeTextForAmounts = text.replace(/\b\d+(?:\.\d+)?\s*(am|pm|hrs|hours|mins|minutes|days|weeks|months)\b/gi, '');
     const amountRegex = /(\d+(?:\.\d+)?)\s*(k|thousand|million|m|naira|ngn)?/gi;
-    const matches = [...text.matchAll(amountRegex)];
+    const matches = [...safeTextForAmounts.matchAll(amountRegex)];
     const amounts = matches.map(m => {
         let val = parseFloat(m[1].replace(/,/g, ''));
         const unit = m[2]?.toLowerCase();
@@ -1435,6 +1436,18 @@ Upgrade here: ${APP_URL}/pricing`);
                     msg += `Need to upgrade or renew? Just say _"I want to pay for Oga"_! 🚀`;
                     
                     await sendReply(from, msg);
+                    isProcessed = true;
+                } else if (aiResponseItem && aiResponseItem.intent === "check_staff") {
+                    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+                    if (!profile.staffNumbers || profile.staffNumbers.length === 0) {
+                        await sendReply(from, `${bossTitle}, you currently have no staff members registered to your account.`);
+                    } else {
+                        let msg = `📋 *Your Registered Staff:*\n\n`;
+                        profile.staffNumbers.forEach((num, i) => {
+                            msg += `${i+1}. ${num}\n`;
+                        });
+                        await sendReply(from, msg);
+                    }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "add_staff") {
                     const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");

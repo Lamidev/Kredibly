@@ -359,9 +359,25 @@ exports.verifyInvoicePayment = async (req, res) => {
             }
             return res.status(404).json({ success: false, message: "Sale record not found or update failed" });
         }
+
+        // 🛡️ SECURITY ESCROW TRACKER
+        // If the bank was recently changed, we log this payment specifically for release after 24h.
+        const business = sale.businessId;
+        const lockUntil = business?.bankDetails?.bankDetailsLockUntil;
+        if (lockUntil && new Date() < lockUntil) {
+            const EscrowPayment = require("../../models/EscrowPayment");
+            await EscrowPayment.create({
+                businessId: business._id,
+                saleId: sale._id,
+                amount: paidAmount,
+                reference: reference,
+                releaseDate: lockUntil,
+                status: "pending"
+            });
+            console.log(`🛡️ Escrowed ₦${paidAmount} for ${business.displayName}. Payout Hold active.`);
+        }
         
         // 5. Background Tasks (Notifications, etc)
-        const business = sale.businessId;
         if (business) {
              // Log Activity
              await ActivityLog.create({
@@ -389,6 +405,11 @@ exports.verifyInvoicePayment = async (req, res) => {
                 
                 let msg = `🔔 *Payment Verified!*\n\nChief, I've just verified an online payment of *₦${paidAmount.toLocaleString()}* for *Invoice #${sale.invoiceNumber}* (${sale.customerName}).\n\n`;
                 
+                // 🛡️ SECURITY ADD-ON: Inform them if it's escrowed
+                if (lockUntil && new Date() < lockUntil) {
+                    msg += `🛡️ *Security Hold:* Since you recently updated your bank details, this money is being held in our *Secure Escrow* for 24 hours to prevent theft. It will be released automatically once the lock expires.\n\n`;
+                }
+
                 if (balance <= 0) {
                     msg += `✅ *Fully Paid!* This debt is now cleared. I've updated your ledger records accordingly.\n\n`;
                 } else {

@@ -55,7 +55,7 @@ const AdminMerchants = () => {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <div className="dashboard-glass admin-card-padding" style={{ background: 'white', border: '1px solid var(--border)', borderRadius: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
-                    <h3 style={{ fontWeight: 950, fontSize: '1.4rem', margin: 0 }}>Merchant Directory</h3>
+                    <h3 className="premium-gradient" style={{ fontWeight: 950, fontSize: '1.4rem', margin: 0 }}>Merchant Directory</h3>
                     <div style={{ position: 'relative', flex: 1, minWidth: '260px' }}>
                         <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
                         <input 

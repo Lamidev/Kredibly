@@ -62,7 +62,7 @@ const AdminWaitlist = () => {
             <div className="dashboard-glass admin-card-padding" style={{ background: 'white', borderRadius: '32px', border: '1px solid var(--border)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }}>
                     <div>
-                        <h3 style={{ fontWeight: 950, fontSize: '1.5rem', margin: 0 }}>Verified Waitlist</h3>
+                        <h3 className="premium-gradient" style={{ fontWeight: 950, fontSize: '1.5rem', margin: 0 }}>Verified Waitlist</h3>
                         <p style={{ color: '#64748B', fontWeight: 600, fontSize: '0.9rem', marginTop: '4px' }}>Managing early birds and growth pipeline.</p>
                     </div>
                     <div style={{ position: 'relative', flex: '1', maxWidth: '400px', minWidth: '280px' }}>

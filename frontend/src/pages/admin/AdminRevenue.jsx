@@ -86,7 +86,7 @@ const AdminRevenue = () => {
 
              <div className="dashboard-glass" style={{ background: 'white', border: '1px solid var(--border)', borderRadius: '32px', overflow: 'hidden' }}>
                 <div className="admin-card-padding" style={{ borderBottom: '1px solid #F1F5F9' }}>
-                    <h3 style={{ fontWeight: 950, fontSize: '1.4rem', margin: 0 }}>Global Settlement Log</h3>
+                    <h3 className="premium-gradient" style={{ fontWeight: 950, fontSize: '1.4rem', margin: 0 }}>Global Settlement Log</h3>
                     <p style={{ color: '#64748B', fontWeight: 600, fontSize: '0.9rem', marginTop: '4px' }}>Real-time verification of subscription events.</p>
                 </div>
                 

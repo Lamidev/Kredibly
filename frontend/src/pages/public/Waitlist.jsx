@@ -163,7 +163,7 @@ const Waitlist = () => {
                             style={{ 
                                 background: 'none', 
                                 border: 'none', 
-                                color: '#0F172A', 
+                                color: '#000000', 
                                 padding: '8px',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -213,14 +213,14 @@ const Waitlist = () => {
                             </div>
                             
                             <div style={{ flex: 1, padding: '0 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                <div onClick={() => { setIsMobileMenuOpen(false); navigate('/'); }} style={{ padding: '16px', fontSize: '1.1rem', fontWeight: 600, color: '#0F172A', cursor: 'pointer', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>Home</div>
+                                <div onClick={() => { setIsMobileMenuOpen(false); navigate('/'); }} style={{ padding: '16px', fontSize: '1.1rem', fontWeight: 800, color: '#000000', cursor: 'pointer', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>Home</div>
                                 <div onClick={() => { setIsMobileMenuOpen(false); scrollToJoin(); }} style={{ padding: '16px', fontSize: '1.1rem', fontWeight: 600, color: 'var(--primary)', cursor: 'pointer' }}>Join the Waitlist</div>
                             </div>
 
                             <div style={{ padding: '24px', borderTop: '1px solid rgba(0,0,0,0.05)', background: 'rgba(255,255,255,0.1)' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     <Link to="/auth/login" onClick={() => setIsMobileMenuOpen(false)} style={{ 
-                                        width: '100%', padding: '16px', borderRadius: '16px', background: 'white', border: '1px solid #E2E8F0', textAlign: 'center', textDecoration: 'none', color: '#0F172A', fontWeight: 700 
+                                        width: '100%', padding: '16px', borderRadius: '16px', background: 'white', border: '1px solid #E2E8F0', textAlign: 'center', textDecoration: 'none', color: '#000000', fontWeight: 800 
                                     }}>Login</Link>
                                     <button onClick={() => { setIsMobileMenuOpen(false); scrollToJoin(); }} style={{ 
                                         width: '100%', padding: '16px', borderRadius: '16px', background: 'var(--primary)', textAlign: 'center', textDecoration: 'none', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 10px 20px -5px rgba(76, 29, 149, 0.3)' 
@@ -232,22 +232,58 @@ const Waitlist = () => {
                 )}
             </AnimatePresence>
 
-            {/* Subtle Premium Background Gradients */}
+            {/* 1. Hero Section with Premium Mesh Background */}
+            <section style={{ position: 'relative', overflow: 'hidden', backgroundColor: 'white', borderBottom: '1px solid #F1F5F9' }}>
+                {/* Mesh Gradient Overlay */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '100%',
+                    background: `
+                        radial-gradient(circle at 0% 0%, rgba(76, 29, 149, 0.12) 0%, transparent 40%),
+                        radial-gradient(circle at 100% 0%, rgba(76, 29, 149, 0.08) 0%, transparent 40%),
+                        radial-gradient(circle at 50% 100%, rgba(76, 29, 149, 0.05) 0%, transparent 60%)
+                    `,
+                    pointerEvents: 'none',
+                    zIndex: 1
+                }} />
 
-            {/* 1. Hero Section */}
-            <section className="hero-section" style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto', padding: '160px 24px 120px', textAlign: 'center' }}>
+                {/* Floating Mesh Circles */}
+                <motion.div 
+                    animate={{ 
+                        x: [0, 40, 0], 
+                        y: [0, -20, 0],
+                        scale: [1, 1.1, 1]
+                    }} 
+                    transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
+                    style={{
+                        position: 'absolute',
+                        top: '15%',
+                        left: '5%',
+                        width: '350px',
+                        height: '350px',
+                        background: 'radial-gradient(circle, rgba(76, 29, 149, 0.05) 0%, transparent 70%)',
+                        filter: 'blur(50px)',
+                        borderRadius: '50%',
+                        zIndex: 1
+                    }} 
+                />
+
+                <div className="hero-section" style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto', padding: 'clamp(80px, 15vw, 160px) 24px clamp(2rem, 10vw, 80px)', textAlign: 'center' }}>
                 <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.1 }} transition={{ duration: 0.8 }}>
-                    <div className="hero-badge" style={{ display: 'inline-flex', alignItems: 'center', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', border: '1px solid rgba(76, 29, 149, 0.1)', borderRadius: '100px', color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 700, marginBottom: '40px' }}>
-                        JOIN THE FUTURE OF AFRICAN COMMERCE
+                    <div className="hero-badge" style={{ display: 'inline-flex', alignItems: 'center', padding: '10px 24px', background: 'white', border: '1px solid rgba(76, 29, 149, 0.15)', borderRadius: '100px', color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 800, marginBottom: '40px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                        JOIN THE REVOLUTION
                     </div>
 
-                    <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 7vw, 5.5rem)', fontWeight: 800, lineHeight: 0.95, letterSpacing: '-0.05em', marginBottom: '32px', color: '#0F172A' }}>
-                        Stop losing money. <br />
+                    <h1 className="hero-title" style={{ fontSize: 'clamp(2.1rem, 8vw, 5.5rem)', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.04em', marginBottom: '32px', color: '#0F172A' }}>
+                        <span style={{ display: 'block', marginBottom: '16px', whiteSpace: 'nowrap' }}>Stop losing money.</span>
                         <span className="premium-gradient">Stay organized.</span>
                     </h1>
 
-                    <p className="hero-subtext" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.45rem)', color: '#334155', lineHeight: 1.4, marginBottom: '56px', maxWidth: '850px', margin: '0 auto 56px', fontWeight: 400 }}>
-                        The sales ledger & **AI personal assistant** designed uniquely for the Nigerian merchant. Track sales, collect debts, and manage your daily tasks—all inside WhatsApp.
+                    <p className="hero-subtext" style={{ fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)', color: '#334155', lineHeight: 1.6, marginBottom: '56px', maxWidth: '850px', margin: '0 auto 56px', fontWeight: 400 }}>
+                        The sales ledger & **Digital Chief of Staff** designed uniquely for the Nigerian merchant. Track sales, manage your daily agenda, and collect debts—all inside WhatsApp.
                     </p>
 
                     <div className="hero-button-group" style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '60px' }}>
@@ -287,20 +323,21 @@ const Waitlist = () => {
                         <ArrowDown size={20} className="bounce" color="#0F172A" />
                     </div>
                 </motion.div>
+                </div>
             </section>
 
             {/* 2. Meet Kreddy Section */}
-            <section className="adaptive-section" style={{ padding: '120px 24px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0', borderBottom: '1px solid #E2E8F0' }}>
-                <div className="container waitlist-adaptive-grid" style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '80px', alignItems: 'center' }}>
+            <section className="adaptive-section" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0', borderBottom: '1px solid #E2E8F0' }}>
+                <div className="container waitlist-adaptive-grid" style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'clamp(2rem, 8vw, 5rem)', alignItems: 'center' }}>
                     <div style={{ textAlign: 'left' }}>
                         <div style={{ background: 'rgba(76, 29, 149, 0.1)', width: '64px', height: '64px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '32px' }}>
                             <Smartphone color="var(--primary)" size={32} />
                         </div>
-                        <h2 style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '24px', letterSpacing: '-0.03em', color: '#0F172A' }}>
+                        <h2 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 800, marginBottom: '24px', letterSpacing: '-0.03em', color: '#0F172A' }}>
                             <span style={{ color: 'var(--primary)' }}>Kreddy talks to you.</span>
                         </h2>
                         <p style={{ fontSize: '1.2rem', color: '#334155', lineHeight: 1.6, marginBottom: '40px', fontWeight: 400 }}>
-                            Talk to Kreddy AI on WhatsApp like you're talking to a partner. Record transactions, check inventory, and let him handle your bookkeeping while you sleep.
+                            Talk to Kreddy AI on WhatsApp like you're talking to a partner. Record transactions, manage your daily schedule, and let him handle the follow-ups while you focus on growth.
                         </p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             {[
@@ -336,13 +373,13 @@ const Waitlist = () => {
                             </div>
                             <div style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 <div style={{ alignSelf: 'flex-end', background: '#DCF8C6', padding: '12px 18px', borderRadius: '16px 0 16px 16px', fontSize: '0.85rem', color: '#111', fontWeight: 500, maxWidth: '85%', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
-                                    Kreddy, sold 5 bags to Sarah for 50k. She's paid 20k deposit.
+                                    Record 50k from Sarah for balance, and remind me to call my supplier by 4pm.
                                 </div>
                                 <div style={{ alignSelf: 'flex-start', background: 'white', padding: '16px', borderRadius: '0 16px 16px 16px', fontSize: '0.85rem', color: '#111', maxWidth: '85%', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
                                     <p style={{ margin: 0, fontWeight: 900, color: '#075E54', fontSize: '0.7rem', marginBottom: '6px' }}>Kreddy AI</p>
-                                    <p style={{ fontWeight: 600, margin: 0 }}>Done! ✅ I've recorded the 50k sale.</p>
-                                    <p style={{ fontWeight: 600, margin: '8px 0' }}>💰 Owed: 30k</p>
-                                    <p style={{ fontWeight: 600, margin: 0 }}>I've sent Sarah her branded invoice link.</p>
+                                    <p style={{ fontWeight: 600, margin: 0 }}>Done, Boss! ✅ Updated Sarah's balance.</p>
+                                    <p style={{ fontWeight: 600, margin: '8px 0' }}>📂 <b>Also:</b> I've set a reminder for your supplier call at 4 PM today. 📞</p>
+                                    <p style={{ fontWeight: 600, margin: 0 }}>Anything else, Chief?</p>
                                 </div>
                             </div>
                             <div style={{ padding: '15px', background: '#f0f0f0', display: 'flex', gap: '10px' }}>
@@ -355,12 +392,12 @@ const Waitlist = () => {
             </section>
 
             {/* 3. The Pillars Section */}
-            <section className="adaptive-section" style={{ padding: '120px 24px', background: 'white' }}>
+            <section className="adaptive-section" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: 'white' }}>
                 <div className="container" style={{ maxWidth: '1100px', margin: '0 auto', textAlign: 'center' }}>
                     <div style={{ background: 'rgba(76, 29, 149, 0.05)', width: '64px', height: '64px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 32px' }}>
                         <BarChart3 color="var(--primary)" size={32} />
                     </div>
-                    <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 800, marginBottom: '24px', letterSpacing: '-0.04em', color: '#0F172A' }}>
+                    <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 900, marginBottom: '24px', letterSpacing: '-0.04em', color: '#0F172A' }}>
                         <span style={{ color: 'var(--primary)' }}>Receivables Infrastructure.</span>
                     </h2>
                     <p style={{ fontSize: '1.2rem', color: '#334155', lineHeight: 1.6, marginBottom: '72px', maxWidth: '750px', margin: '0 auto 72px', fontWeight: 400 }}>
@@ -371,9 +408,9 @@ const Waitlist = () => {
                         {[
                             { icon: Users, t: "Staff Monitoring", d: "See exactly what your staff are selling from anywhere. Keep your money safe." },
                             { icon: FileText, t: "Beautiful Receipts", d: "Send professional receipts to customers on WhatsApp. Build trust instantly." },
-                            { icon: Lock, t: "Get Paid Faster", d: "Friendly automatic reminders that help you collect your money without stress." },
-                            { icon: Zap, t: "Intelligent Assistant", d: "Business deadlines to personal daily tasks. Set them via voice and Kreddy follows up." },
-                            { icon: TrendingUp, t: "Daily Reports", d: "See how much you made today with simple, clear numbers. No accounting needed." }
+                            { icon: Lock, t: "Get Paid Faster", d: "Professional recovery logic. Kreddy pro-actively asks YOU if a debt was paid, so nothing slips through the cracks." },
+                            { icon: Zap, t: "8 AM Executive Briefing", d: "Waking up to a summary of your sales, cash collected, and top debtors. Pure intelligence, no fluff." },
+                            { icon: TrendingUp, t: "Voice-First Productivity", d: "Driving or in the market? Just send a voice note. Kreddy handles the logging and the follow-ups." }
                         ].map((item, i) => (
                             <div key={i} style={{ padding: '48px 40px', borderRadius: '32px', background: '#FFFFFF', border: '1px solid #F1F5F9', textAlign: 'left', transition: 'all 0.4s cubic-bezier(0.23, 1, 0.32, 1)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }} className="hover-card-light">
                                 <div style={{ color: 'var(--primary)', marginBottom: '24px', background: 'rgba(76, 29, 149, 0.05)', width: '56px', height: '56px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><item.icon size={28} /></div>
@@ -386,10 +423,10 @@ const Waitlist = () => {
             </section>
 
             {/* 4. Security & Trust Section */}
-            <section className="adaptive-section" style={{ padding: '80px 24px', background: '#F8FAFC' }}>
+            <section className="adaptive-section" style={{ padding: 'clamp(3rem, 8vw, 6rem) 24px', background: '#F8FAFC' }}>
                 <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center', padding: '64px 48px', borderRadius: '40px', border: '1.5px dashed #E2E8F0', background: 'white' }}>
                     <div style={{ color: '#10B981', marginBottom: '24px', display: 'flex', justifyContent: 'center' }}><Lock size={36} /></div>
-                    <h3 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '16px', color: '#0F172A' }}>Bank-Grade Security for Every Business.</h3>
+                    <h3 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 900, marginBottom: '16px', color: '#0F172A', lineHeight: 1 }}>Bank-Grade Security for Every Business.</h3>
                     <p style={{ color: '#334155', lineHeight: 1.6, fontWeight: 400, fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
                         Your data is encrypted and private. We use industry-standard security to ensure your financial records stay yours.
                     </p>
@@ -406,7 +443,7 @@ const Waitlist = () => {
 
             {/* Premium Mobile Ecosystem Preview */}
             <section className="adaptive-section" style={{ 
-                padding: '120px 0',
+                padding: 'clamp(4rem, 12vw, 8rem) 0',
                 background: '#020617', 
                 color: 'white',
                 position: 'relative',
@@ -421,7 +458,7 @@ const Waitlist = () => {
                 <div style={{ position: 'absolute', top: '20%', right: '-10%', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(124, 58, 237, 0.1) 0%, transparent 70%)', filter: 'blur(120px)', zIndex: 0 }} />
 
                 <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1, padding: '0 24px' }}>
-                    <div className="mobile-ecosystem-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '80px', alignItems: 'center' }}>
+                    <div className="mobile-ecosystem-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'clamp(2rem, 8vw, 5rem)', alignItems: 'center' }}>
                         
                         {/* 3D iPhone Mockup */}
                         <div style={{ perspective: '2000px', display: 'flex', justifyContent: 'center' }}>
@@ -456,7 +493,7 @@ const Waitlist = () => {
                                     <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Zap size={16} color="white" /></div>
                                     <div>
                                         <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, fontWeight: 600 }}>Payment Received</p>
-                                        <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700 }}>₦150,000</p>
+                                        <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800 }}>₦150,000</p>
                                     </div>
                                 </motion.div>
 
@@ -483,7 +520,7 @@ const Waitlist = () => {
                                     <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Users size={16} color="white" /></div>
                                     <div>
                                         <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, fontWeight: 600 }}>Staff Activity</p>
-                                        <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700 }}>Verified Sale</p>
+                                        <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800 }}>Verified Sale</p>
                                     </div>
                                 </motion.div>
 
@@ -622,7 +659,7 @@ const Waitlist = () => {
             </section>
 
             {/* 5. The Mission Map (Roadmap) */}
-            <section className="adaptive-section" style={{ padding: '120px 24px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0' }}>
+            <section className="adaptive-section" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0' }}>
                 <div className="container" style={{ maxWidth: '900px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '80px' }}>
                         <div style={{ display: 'inline-flex', padding: '8px 20px', borderRadius: '100px', background: 'rgba(76, 29, 149, 0.05)', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '24px', letterSpacing: '0.1em' }}>
@@ -708,7 +745,7 @@ const Waitlist = () => {
             </section>
 
             {/* 6. Join the Waitlist Form */}
-            <section id="join-form" className="adaptive-section" style={{ padding: '140px 24px', background: 'white' }}>
+            <section id="join-form" className="adaptive-section" style={{ padding: 'clamp(2rem, 10vw, 100px) 24px', background: 'white' }}>
                 <div className="container" style={{ maxWidth: '640px', margin: '0 auto' }}>
                     <AnimatePresence mode="wait">
                         {!joined ? (
@@ -810,10 +847,11 @@ const Waitlist = () => {
                                 <div style={{ width: '84px', height: '84px', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 32px' }}>
                                     <CheckCircle2 size={48} color="#22C55E" />
                                 </div>
-                                <h3 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '16px', letterSpacing: '-0.02em', color: '#0F172A' }}>Welcome, {referralData?.name.split(" ")[0]}!</h3>
+                                <h3 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '16px', letterSpacing: '-0.02em', color: '#0F172A' }}>Welcome to the Council, {referralData?.name.split(" ")[0]}!</h3>
                                 <p style={{ color: '#64748B', marginBottom: '48px', fontWeight: 400, fontSize: '1.2rem', lineHeight: 1.6 }}>
-                                    You are officially a **Kredibly Founder.** <br />
-                                    <span style={{ color: '#0F172A' }}>Want to jump the queue?</span> Refer 3 fellow business owners to move to the top batch instantly.
+                                    You are officially a **Kredibly Pioneer.** <br />
+                                    <span style={{ color: '#0F172A', fontWeight: 700 }}>Your Lifetime Pioneer Badge & Exclusive Pricing is locked in.</span> <br />
+                                     Refer 3 fellow business owners to move to the very top of the **Q2 Launch Batch**.
                                 </p>
 
                                 <div style={{ background: '#F8FAFC', padding: '24px', borderRadius: '24px', border: '1px solid #E2E8F0', marginBottom: '40px' }}>
@@ -921,8 +959,8 @@ const Waitlist = () => {
                     .timeline-line { left: 1px !important; }
                     .timeline-dot { left: -7px !important; width: 14px !important; height: 14px !important; }
                     .adaptive-section {
-                        padding-top: 60px !important;
-                        padding-bottom: 60px !important;
+                        padding-top: 40px !important;
+                        padding-bottom: 40px !important;
                     }
                     .hero-store-buttons > div {
                         padding: 8px 16px !important;
