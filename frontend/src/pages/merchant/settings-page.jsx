@@ -140,6 +140,36 @@ const SettingsPage = () => {
         return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
     };
 
+    const [lockCountdown, setLockCountdown] = useState("");
+    
+    // Update Vault Lock Countdown
+    useEffect(() => {
+        const lockUntil = profile?.bankDetails?.bankDetailsLockUntil;
+        if (!lockUntil || new Date(lockUntil) <= new Date()) {
+            setLockCountdown("");
+            return;
+        }
+
+        const timer = setInterval(() => {
+            const now = new Date();
+            const end = new Date(lockUntil);
+            const diff = end - now;
+
+            if (diff <= 0) {
+                setLockCountdown("");
+                clearInterval(timer);
+                return;
+            }
+
+            const h = Math.floor(diff / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((diff % (1000 * 60)) / 1000);
+            setLockCountdown(`${h}h ${m}m ${s}s`);
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [profile?.bankDetails?.bankDetailsLockUntil]);
+
     const handleLogoUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -282,121 +312,6 @@ const SettingsPage = () => {
                     </div>
                 </section>
 
-                {/* Merchant Trust Badge Section */}
-                <section className="glass-card" style={{ padding: '32px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                        <div style={{ background: '#F0FDF4', color: '#10B981', padding: '10px', borderRadius: '12px' }}>
-                            <CheckCircle size={24} />
-                        </div>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Official Trust Badge</h2>
-                    </div>
-
-                    {(() => {
-                        const isVerified = form.displayName && form.whatsappNumber && profile?.bankDetails?.accountNumber;
-                        
-                        if (!isVerified) {
-                            return (
-                                <div style={{ 
-                                    background: '#FFF7ED', 
-                                    padding: '24px', 
-                                    borderRadius: '20px', 
-                                    border: '1px solid #FED7AA',
-                                    textAlign: 'center'
-                                }}>
-                                    <div style={{ background: 'white', width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#EA580C' }}>
-                                        <Clock size={24} />
-                                    </div>
-                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#9A3412', marginBottom: '8px' }}>Unlock Your Verification Badge</h3>
-                                    <p style={{ color: '#C2410C', fontSize: '0.9rem', marginBottom: '0', fontWeight: 600 }}>
-                                        Complete your Business Identity and Payout Settings to receive your official merchant trust badge.
-                                    </p>
-                                </div>
-                            );
-                        }
-
-                        return (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.2fr)', gap: '32px', alignItems: 'center' }} className="grid-2-col-responsive">
-                                {/* Badge Preview */}
-                                <div style={{ overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
-                                    <div id="trust-badge-export" style={{ 
-                                        width: '320px', 
-                                        height: '320px', 
-                                        background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', 
-                                        borderRadius: '24px', 
-                                        position: 'relative', 
-                                        overflow: 'hidden',
-                                        padding: '32px',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        textAlign: 'center',
-                                        color: 'white',
-                                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-                                        flexShrink: 0
-                                    }}>
-                                        {/* Security Patterns */}
-                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #10B981, #3B82F6, #10B981)' }} />
-                                        <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-                                        
-                                        <div style={{ 
-                                            background: 'rgba(16, 185, 129, 0.1)', 
-                                            border: '2px solid #10B981', 
-                                            padding: '12px', 
-                                            borderRadius: '20px',
-                                            marginBottom: '20px'
-                                        }}>
-                                            <CheckCircle size={40} color="#10B981" />
-                                        </div>
-                                        
-                                        <h3 style={{ fontSize: '1.6rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.02em', textTransform: 'uppercase', color: 'white' }}>
-                                            VERIFIED
-                                        </h3>
-                                        <p style={{ fontSize: '0.8rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '16px' }}>
-                                            MERCHANT 2026
-                                        </p>
-                                        
-                                        <div style={{ height: '2px', width: '40px', background: 'rgba(255,255,255,0.2)', marginBottom: '16px' }} />
-                                        
-                                        <p style={{ fontSize: '1.2rem', fontWeight: 800, maxWidth: '200px', color: 'white' }}>
-                                            {form.displayName}
-                                        </p>
-                                        
-                                        <div style={{ position: 'absolute', bottom: '24px', display: 'flex', alignItems: 'center', gap: '8px', opacity: 0.7 }}>
-                                            <Shield size={14} color="#10B981" />
-                                            <span style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Kredibly Secured</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Download CTA */}
-                                <div>
-                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 850, color: '#1E293B', marginBottom: '12px' }}>Boost Your Credibility</h3>
-                                    <p style={{ fontSize: '0.85rem', color: '#64748B', lineHeight: 1.6, marginBottom: '24px' }}>
-                                        Post this badge on your <b>WhatsApp Status</b> and set it as your <b>Profile Picture</b>. Verified merchants see 3x more payment speed from customers.
-                                    </p>
-                                    <button 
-                                        onClick={async () => {
-                                            const element = document.getElementById('trust-badge-export');
-                                            const html2canvas = (await import('html2canvas')).default;
-                                            const canvas = await html2canvas(element, { backgroundColor: null, scale: 2 });
-                                            const url = canvas.toDataURL('image/png');
-                                            const link = document.createElement('a');
-                                            link.download = `${form.displayName.replace(/\s+/g, '_')}_Verified_Merchant.png`;
-                                            link.href = url;
-                                            link.click();
-                                            toast.success("Badge downloaded! Post it on your WhatsApp.");
-                                        }}
-                                        className="btn-primary" 
-                                        style={{ width: '100%', justifyContent: 'center' }}
-                                    >
-                                        Download for WhatsApp <Smartphone size={18} />
-                                    </button>
-                                </div>
-                            </div>
-                        );
-                    })()}
-                </section>
 
                 {/* AI Assistant Section */}
                 <section className="glass-card" style={{ padding: '32px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
@@ -554,6 +469,29 @@ const SettingsPage = () => {
                             </div>
                         )}
                     </div>
+
+                    {/* VAULT SECURITY LOCK STATUS */}
+                    {lockCountdown && (
+                        <div style={{ 
+                            background: '#FFF1F2', 
+                            border: '1px solid #FFE4E6', 
+                            padding: '16px 20px', 
+                            borderRadius: '16px', 
+                            marginBottom: '24px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '16px',
+                            animation: 'pulse 2s infinite'
+                        }}>
+                            <div style={{ background: '#FECDD3', color: '#E11D48', padding: '10px', borderRadius: '12px' }}>
+                                <Shield size={20} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 900, color: '#9F1239' }}>Security Vault Lock Active</h4>
+                                <p style={{ margin: 0, fontSize: '0.75rem', color: '#BE123C', fontWeight: 600 }}>Payments are held in Escrow for your safety. Releases in: <b style={{ fontSize: '0.9rem' }}>{lockCountdown}</b></p>
+                            </div>
+                        </div>
+                    )}
 
                     <div style={{ position: 'relative', zIndex: 1 }}>
                         {!isEditingPayout ? (

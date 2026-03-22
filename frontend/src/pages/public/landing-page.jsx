@@ -55,9 +55,9 @@ const Typewriter = ({ phrases }) => {
 
     return (
         <span style={{ display: 'inline-block', minWidth: '1px', whiteSpace: 'nowrap' }}>
-            {displayText}
+            <span className="premium-gradient">{displayText}</span>
             <span style={{ 
-                color: 'var(--primary)', 
+                color: '#F472B6', 
                 marginLeft: '2px',
                 animation: 'blink 1s infinite',
                 fontWeight: 500
@@ -96,15 +96,78 @@ const LandingPage = () => {
         }}>
             <PublicNavbar />
 
-            {/* 1. Hero Section */}
-            <header style={{
-                padding: '160px 24px 80px',
-                maxWidth: '1400px',
-                margin: '0 auto',
-                textAlign: 'center',
-                position: 'relative',
-                zIndex: 2
-			}}>
+            {/* 1. Hero Section with Premium Purple Mesh */}
+            <section style={{ 
+                position: 'relative', 
+                backgroundColor: 'white', 
+                overflow: 'hidden',
+                borderBottom: '1px solid #F1F5F9'
+            }}>
+                {/* Unique Purple Mesh Background */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '100%',
+                    background: `
+                        radial-gradient(circle at 0% 0%, rgba(76, 29, 149, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 100% 0%, rgba(76, 29, 149, 0.12) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 100%, rgba(76, 29, 149, 0.05) 0%, transparent 60%)
+                    `,
+                    pointerEvents: 'none',
+                    zIndex: 1
+                }} />
+
+                {/* Floating Mesh Circles */}
+                <motion.div 
+                    animate={{ 
+                        x: [0, 50, 0], 
+                        y: [0, -30, 0],
+                        scale: [1, 1.1, 1]
+                    }} 
+                    transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                    style={{
+                        position: 'absolute',
+                        top: '10%',
+                        left: '10%',
+                        width: '400px',
+                        height: '400px',
+                        background: 'radial-gradient(circle, rgba(76, 29, 149, 0.06) 0%, transparent 75%)',
+                        filter: 'blur(60px)',
+                        borderRadius: '50%',
+                        zIndex: 1
+                    }} 
+                />
+                
+                <motion.div 
+                    animate={{ 
+                        x: [0, -40, 0], 
+                        y: [0, 60, 0],
+                        scale: [1, 1.2, 1]
+                    }} 
+                    transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+                    style={{
+                        position: 'absolute',
+                        bottom: '20%',
+                        right: '5%',
+                        width: '500px',
+                        height: '500px',
+                        background: 'radial-gradient(circle, rgba(76, 29, 149, 0.03) 0%, transparent 70%)',
+                        filter: 'blur(80px)',
+                        borderRadius: '50%',
+                        zIndex: 1
+                    }} 
+                />
+
+                <header style={{
+                    padding: 'clamp(100px, 12vw, 140px) 24px clamp(2rem, 8vw, 100px)',
+                    maxWidth: '1400px',
+                    margin: '0 auto',
+                    textAlign: 'center',
+                    position: 'relative',
+                    zIndex: 2
+                }}>
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -115,14 +178,15 @@ const LandingPage = () => {
                         alignItems: 'center',
                         gap: '10px',
                         marginBottom: '24px',
-                        background: 'rgba(76, 29, 149, 0.05)',
-                        padding: '8px 20px',
+                        background: 'white',
+                        padding: '10px 24px',
                         borderRadius: '100px',
-                        border: '1px solid rgba(76, 29, 149, 0.1)'
+                        border: '1px solid rgba(76, 29, 149, 0.15)',
+                        boxShadow: '0 8px 16px rgba(76, 29, 149, 0.08)'
                     }}>
                         <span style={{ 
                             fontSize: 'clamp(0.6rem, 2.5vw, 0.85rem)',
-                            fontWeight: 700, 
+                            fontWeight: 800, 
                             color: 'var(--primary)',
                             letterSpacing: '0.08em',
                             textTransform: 'uppercase',
@@ -131,13 +195,13 @@ const LandingPage = () => {
                     </div>
 
                     <h1 style={{ 
-                        fontSize: 'clamp(1.65rem, 6vw, 5rem)',
+                        fontSize: 'clamp(2.1rem, 8vw, 5.5rem)',
                         fontWeight: 900, 
-                        lineHeight: 1.1, 
-                        letterSpacing: '-0.05em',
-                        marginBottom: '16px'
+                        lineHeight: 1, 
+                        letterSpacing: '-0.04em',
+                        marginBottom: '32px'
                     }}>
-                        <span style={{ display: 'block', marginBottom: '10px' }}>Stop losing money.</span>
+                        <span style={{ display: 'block', marginBottom: '16px', whiteSpace: 'nowrap' }}>Stop losing money.</span>
                         <div style={{ 
                             color: 'var(--primary)', 
                             position: 'relative', 
@@ -148,25 +212,24 @@ const LandingPage = () => {
                             width: '100%' 
                         }}>
                              <Typewriter phrases={[
-                                "Get paid Instantly.",
                                 "Get paid 3x faster.",
+                                "Delegate your day.",
                                 "Business on Autopilot."
                             ]} />
                         </div>
                     </h1>
 
                     <p style={{ 
-                        fontSize: 'clamp(1.1rem, 2vw, 1.5rem)', 
+                        fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)', 
                         color: 'var(--text-muted)', 
                         maxWidth: '850px', 
-                        margin: '0 auto 24px',
-                        lineHeight: 1.4,
-                        fontWeight: 500,
-                        opacity: 0.9
+                        margin: '0 auto 48px',
+                        lineHeight: 1.6,
+                        fontWeight: 400,
+                        opacity: 0.8
                     }}>
                         From local commerce to global scale. Kredibly is the intelligent receivables platform that helps you 
-                        automate sales, track what you're owed, and monitor operations, all inside the 
-                        WhatsApp you already use.
+                        automate sales, track what you're owed, and monitor operations—all inside WhatsApp.
                     </p>
 
                     <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '32px' }}>
@@ -192,8 +255,10 @@ const LandingPage = () => {
                 </motion.div>
             </header>
 
+            </section>
+
             {/* 2. Bento Grid Section */}
-            <section id="features" style={{ padding: '80px 24px' }}>
+            <section id="features" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px' }}>
                 <motion.div 
                     initial={{ opacity: 0, y: 40 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -234,8 +299,8 @@ const LandingPage = () => {
 
                     <motion.div className="bento-item bento-4" initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 0.98 }} viewport={{ once: false, amount: 0.1 }} style={{ border: '2px solid var(--primary-glow)', background: 'rgba(76, 29, 149, 0.02)' }}>
                         <Zap color="var(--primary)" size={32} style={{ marginBottom: '16px' }} />
-                        <h4 style={{ fontSize: '1.3rem', fontWeight: 900 }}>AI Personal Assistant</h4>
-                        <p style={{ fontSize: '0.95rem', color: '#1E293B', fontWeight: 600 }}>Talk to Kreddy! Set daily tasks, snooze business deadlines, and organize your life with voice notes.</p>
+                        <h4 style={{ fontSize: '1.3rem', fontWeight: 900 }}>Executive Productivity</h4>
+                        <p style={{ fontSize: '0.95rem', color: '#1E293B', fontWeight: 600 }}>Delegated power! Set tasks, get morning market briefings, and manage your entire business life via voice notes.</p>
                     </motion.div>
 
                     <motion.div className="bento-item bento-5" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.1 }}>
@@ -251,7 +316,7 @@ const LandingPage = () => {
             </section>
 
             {/* 3. Simulated WhatsApp Flow */}
-            <section id="how-it-works" className="adaptive-section" style={{ padding: '60px 20px', background: 'white' }}>
+            <section id="how-it-works" className="adaptive-section" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: 'white' }}>
                 <motion.div 
                     initial={{ opacity: 0, y: 40 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -264,7 +329,7 @@ const LandingPage = () => {
                         <p style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: 500, maxWidth: '700px', margin: '0 auto' }}>Leverage Kreddy AI to manage your commerce without ever leaving WhatsApp.</p>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '80px', alignItems: 'center' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'clamp(2rem, 8vw, 5rem)', alignItems: 'center' }}>
                         <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
                             <div className="phone-mockup" style={{ width: '100%', maxWidth: '360px', height: '680px', background: '#111', borderRadius: '48px', padding: '12px', position: 'relative', boxShadow: '0 60px 120px -20px rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
                                 <div style={{ width: '100%', height: '100%', background: '#E5DDD5', borderRadius: '40px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -273,17 +338,19 @@ const LandingPage = () => {
                                         <div><p style={{ fontSize: '0.95rem', fontWeight: 900 }}>Kreddy AI</p><p style={{ fontSize: '0.65rem', opacity: 0.8 }}>Business Assistant</p></div>
                                     </div>
                                     <div style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                        <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }} style={{ alignSelf: 'flex-end', background: '#DCF8C6', padding: '12px 16px', borderRadius: '16px 0 16px 16px', fontSize: '0.85rem' }}>Hi Kreddy, sold 3 designer bags to Sarah for ₦120,000. She paid ₦50k to balance up in two weeks.</motion.div>
+                                        <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }} style={{ alignSelf: 'flex-end', background: '#DCF8C6', padding: '12px 16px', borderRadius: '16px 0 16px 16px', fontSize: '0.85rem' }}>
+                                            Kreddy, Sarah just paid 50k out of 120k for the bags. Remind me to call her next Friday morning to collect the rest. Also, set a reminder for my gym session by 6pm!
+                                        </motion.div>
                                         <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: 1.5 }} style={{ alignSelf: 'flex-start', background: 'white', padding: '16px', borderRadius: '0 16px 16px 16px', fontSize: '0.85rem' }}>
                                             <p style={{ color: 'var(--primary)', fontWeight: 900, fontSize: '0.75rem', marginBottom: '6px' }}>Kreddy AI</p>
                                             <p style={{ fontWeight: 600, lineHeight: 1.5 }}>
-                                                Sale recorded! ✅<br /><br />
-                                                📁 <b>Order #KR-829</b><br />
-                                                💰 Total: ₦120,000<br />
-                                                📥 Received: ₦50,000<br />
-                                                ⏳ Balance: ₦70,000<br /><br />
-                                                🔔 <b>Reminder set: 14 days</b><br /><br />
-                                                Premium invoice sent to Sarah.
+                                                Done, Chairman! 🫡<br /><br />
+                                                ✅ <b>Recorded:</b> ₦50k from Sarah James.<br />
+                                                ⏳ <b>New Balance:</b> ₦70k.<br /><br />
+                                                📋 <b>2 Reminders Set:</b><br />
+                                                1. Next Friday (Friday morning) to call Sarah.<br />
+                                                2. Today (5:45pm) for your gym session. 💪<br /><br />
+                                                <i>I'm on it! Anything else?</i>
                                             </p>
                                         </motion.div>
                                     </div>
@@ -297,17 +364,17 @@ const LandingPage = () => {
 
                         <div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '56px' }}>
-                                {[
-                                    { icon: MessageCircle, title: "One Chat, One Record.", desc: "Talk to Kreddy like you would a human partner. It understands inventory, owed money, and payments without forcing you into complex apps." },
-                                    { icon: Zap, title: "World-Class Impressions", desc: "Every transaction generates a professional digital portal for your clients, building trust and accelerating your growth." },
-                                    { icon: Users, title: "Staff Monitoring", desc: "Track what your staff are doing from anywhere. Protect your money." },
-                                    { icon: FileText, title: "Professional Invoices", desc: "Send beautiful receipts to customers via WhatsApp. Look like a big brand." },
-                                    { icon: Lock, title: "Collect Money Faster", desc: "Friendly automatic reminders that help you get paid without any stress." },
-                                    { icon: TrendingUp, title: "Sales Reports", desc: "See how your business is growing daily with simple, clear reports." }
-                                ].map((item, i) => (
+                                    { [
+                                        { icon: MessageCircle, title: "One Chat, One Record.", desc: "Talk to Kreddy like you would a human partner. It understands inventory, owed money, and payments without forcing you into complex apps." },
+                                        { icon: Sparkles, title: "Your Digital Chief of Staff", desc: "Set gym reminders, meeting alarms, or personal tasks via voice. Kreddy tracks your entire day, not just your sales." },
+                                        { icon: Zap, title: "Proactive Follow-ups", desc: "Kreddy doesn't just wait for you. If a debt was due yesterday, he'll ask you about it this morning: 'Did they pay or should I snooze?'" },
+                                        { icon: Users, title: "Staff & Team Monitoring", desc: "Track what your sales boys are doing in real-time. Protect your money while you focus on vision." },
+                                        { icon: FileText, title: "8 AM Intelligence Briefing", desc: "Start every day with a high-level summary of cash collected, new sales, and top debtors—sent directly to your WhatsApp." },
+                                        { icon: Lock, title: "Biometric Security Vault", desc: "Professional-grade security that protects your records and your payouts. Scale with total peace of mind." }
+                                    ].map((item, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '28px' }}>
                                         <div style={{ minWidth: '64px', height: '64px', borderRadius: '20px', background: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><item.icon color="var(--primary)" size={28} /></div>
-                                        <div><h4 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '10px' }}>{item.title}</h4><p style={{ color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 400, fontSize: '1.05rem' }}>{item.desc}</p></div>
+                                        <div><h4 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '8px', color: '#0F172A' }}>{item.title}</h4><p style={{ color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 400, fontSize: '1.05rem' }}>{item.desc}</p></div>
                                     </div>
                                 ))}
                             </div>
@@ -317,7 +384,7 @@ const LandingPage = () => {
             </section>
 
             {/* 4. Ultra-Premium Mobile Ecosystem */}
-            <section className="adaptive-section" style={{ padding: '160px 0', background: '#020617', color: 'white', position: 'relative', overflow: 'visible' }}>
+            <section className="adaptive-section" style={{ padding: 'clamp(4rem, 15vw, 10rem) 24px', background: '#020617', color: 'white', position: 'relative', overflow: 'visible' }}>
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: false, amount: 0.1 }} transition={{ duration: 1 }}>
                     <div style={{ position: 'absolute', top: '20%', right: '-10%', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(124, 58, 237, 0.1) 0%, transparent 70%)', filter: 'blur(120px)' }} />
                     <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1, padding: '0 40px' }}>
@@ -352,7 +419,7 @@ const LandingPage = () => {
 
                             <div className="mobile-ecosystem-content">
                                 <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(124, 58, 237, 0.1)', borderRadius: '100px', marginBottom: '32px', color: '#A78BFA', fontWeight: 600, fontSize: '0.85rem' }}>THE ECOSYSTEM EXPANSION</div>
-                                <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.05, marginBottom: '40px' }}>Pure Native. <br /><span style={{ color: 'var(--primary)' }}>Zero Compromise.</span></h2>
+                                <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 900, letterSpacing: '-0.045em', lineHeight: 1, marginBottom: '40px' }}>Pure Native. <br /><span style={{ color: 'var(--primary)' }}>Zero Compromise.</span></h2>
                                 <p style={{ fontSize: '1.25rem', color: '#CBD5E1', fontWeight: 500, lineHeight: 1.6, marginBottom: '48px', maxWidth: '600px' }}>We're not just building an app. We're launching the full Kredibly ecosystem for iOS and Android. Fast, biometrically secure, and fully offline-capable.</p>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '32px', marginBottom: '64px' }}>
                                     {[
@@ -382,10 +449,10 @@ const LandingPage = () => {
             </section>
 
             {/* 5. Testimonials Section */}
-            <section className="adaptive-section" style={{ padding: '140px 24px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0', overflow: 'hidden' }}>
+            <section className="adaptive-section" style={{ padding: 'clamp(2rem, 10vw, 10rem) 24px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0', overflow: 'hidden' }}>
                 <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: false, amount: 0.1 }}>
                     <div style={{ textAlign: 'center', marginBottom: '60px', padding: '0 20px' }}>
-                                <h2 style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)', fontWeight: 800, letterSpacing: '-0.03em' }}>From emerging vendors to established enterprises, Kredibly scales with you.</h2>
+                                <h2 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1 }}>From emerging vendors to established enterprises, Kredibly scales with you.</h2>
                             </div>
                     
                     <div className="marquee-container" style={{ position: 'relative', width: '100%', overflow: 'hidden', maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}>
@@ -414,12 +481,12 @@ const LandingPage = () => {
             </section>
 
             {/* 6. Pricing Section */}
-            <section id="pricing" className="adaptive-section" style={{ padding: '120px 24px', background: 'white' }}>
+            <section id="pricing" className="adaptive-section" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: 'white' }}>
                 <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.1 }}>
                     <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
                         <div style={{ textAlign: 'center', marginBottom: '80px' }}>
                             <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 600, fontSize: '0.85rem' }}>TRANSPARENT PRICING</div>
-                            <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 3.5rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Start free. Scale endlessly.</h2>
+                            <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1 }}>Start free. Scale endlessly.</h2>
                             <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginTop: '20px', maxWidth: '600px', margin: '20px auto 40px' }}>Join today and get <span style={{ color: 'var(--text)', fontWeight: 600 }}>7 Days of Oga Plan for FREE.</span></p>
 
                             {/* Billing Cycle Toggle */}
@@ -446,7 +513,13 @@ const LandingPage = () => {
                                 <div style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '40px' }}>Free</div>
                                 <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Start Hustling</button>
                                 <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    {["Unlimited Sales & Debt Recording", "Basic Text AI Assistant", "50 Smart AI Actions / month", "5 Automated Reminders / month", "Web Dashboard Access"].map((feat, i) => (
+                                    {[
+                                        "8% AI Debt Recovery Fee",
+                                        "Basic Productivity Assistant",
+                                        "Standard Security Vault",
+                                        "Unlimited Sales Recording",
+                                        "5 Automated Reminders / month"
+                                    ].map((feat, i) => (
                                         <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500, color: '#334155' }}><CheckCheck size={18} color="var(--primary)" /> {feat}</div>
                                     ))}
                                 </div>
@@ -465,7 +538,15 @@ const LandingPage = () => {
 
                                 <button onClick={() => navigate('/auth/register')} className="btn-white" style={{ width: '100%' }}>Become an Oga</button>
                                 <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    {["Everything in Hustler, plus:", "Unlimited AI Brain Power", "WhatsApp Voice Note Sync 🎙️", "Proactive 'Did They Pay?' AI", "1-Click Invoice & Reminder Drafts", "Staff Activity Logs (Up to 3 Users)"].map((feat, i) => (
+                                    {[
+                                        "4% AI Debt Recovery Fee",
+                                        "Proactive 'Did They Pay?' Nudges",
+                                        "Advanced Digital Chief of Staff",
+                                        "8 AM Business Briefing (Morning)",
+                                        "WhatsApp Voice Note Sync",
+                                        "Staff Management (Add 2 Staff)",
+                                        "Standard Security Vault"
+                                    ].map((feat, i) => (
                                         <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500 }}><CheckCheck size={18} color="#4ade80" /> {feat}</div>
                                     ))}
                                 </div>
@@ -484,7 +565,14 @@ const LandingPage = () => {
 
                                 <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Lead Empire</button>
                                 <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    {["Everything in Oga, plus:", "The 8 AM 'Chief Summary' (WhatsApp)", "White-Label Invoices (No Branding)", "Unlimited Staff/Branch Tracking", "Smart Receipt Image Scanning", "Priority AI Processing Speed"].map((feat, i) => (
+                                    {[
+                                        "1.5% AI Debt Recovery Fee (Elite)",
+                                        "Elite Digital Chief of Staff",
+                                        "8 AM Executive Summary (Advanced)",
+                                        "Voice Note & Image Sync (Receipts)",
+                                        "Priority Vault Release",
+                                        "Unlimited Staff & Branches Tracking"
+                                    ].map((feat, i) => (
                                         <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500, color: '#334155' }}><CheckCheck size={18} color="var(--primary)" /> {feat}</div>
                                     ))}
                                 </div>
@@ -495,12 +583,12 @@ const LandingPage = () => {
             </section>
 
             {/* 7. Mission Map Section */}
-            <section className="adaptive-section" style={{ padding: '120px 24px', background: 'var(--background)' }}>
+            <section className="adaptive-section" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: 'var(--background)' }}>
                 <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: false, amount: 0.1 }}>
                     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                         <div style={{ textAlign: 'center', marginBottom: '80px' }}>
                             <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 600, fontSize: '0.85rem' }}>THE MISSION MAP</div>
-                            <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 3.5rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Our journey & commitment.</h2>
+                            <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1 }}>Our journey & commitment.</h2>
                             <p style={{ fontSize: '1.25rem', color: '#334155', marginTop: '20px', maxWidth: '600px', margin: '20px auto 0', fontWeight: 400 }}>Transparent milestones from a simple idea to a global financial ecosystem.</p>
                         </div>
                         <div style={{ position: 'relative', paddingLeft: '40px' }}>
@@ -553,6 +641,12 @@ const LandingPage = () => {
                     .mobile-reverse { display: flex !important; flex-direction: column !important; gap: 40px !important; }
                     .mobile-reverse > div:first-child { order: 2 !important; width: 100% !important; }
                     .mobile-reverse > div:last-child { order: 1 !important; width: 100% !important; }
+                }
+                .premium-gradient {
+                    background: linear-gradient(135deg, var(--primary) 0%, #F472B6 100%);
+                    -webkit-background-clip: text;
+                    background-clip: text;
+                    -webkit-text-fill-color: transparent;
                 }
                 .pulse-dot-landing { position: absolute; inset: -6px; border-radius: 50%; background: var(--primary); opacity: 0.3; animation: pulse-ring-landing 2s infinite; }
                 @keyframes pulse-ring-landing { 0% { transform: scale(1); opacity: 0.3; } 100% { transform: scale(2.5); opacity: 0; } }

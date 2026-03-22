@@ -103,7 +103,7 @@ const AdminDashboard = () => {
                             <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#F97316', background: '#FFF7ED', padding: '4px 10px', borderRadius: '100px' }}>REVENUE</span>
                         </div>
                         <p style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem' }}>Premium Liquidity</p>
-                        <h3 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', fontWeight: 950, color: 'var(--text)', letterSpacing: '-0.04em', margin: '4px 0' }}>₦{stats?.totalRevenue?.toLocaleString() || 0}</h3>
+                        <h3 className="premium-gradient" style={{ fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', fontWeight: 950, letterSpacing: '-0.04em', margin: '4px 0' }}>₦{stats?.totalRevenue?.toLocaleString() || 0}</h3>
                         <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Lifetime Subscriptions</p>
                     </div>
 

@@ -32,11 +32,11 @@ const PricingPage = () => {
             price: "Free",
             period: "",
             features: [
-                "Unlimited Sales & Debt Recording",
-                "Basic Text AI Assistant",
+                "8% AI Debt Recovery Fee",
+                "Basic Productivity Assistant",
+                "Standard Security Vault",
                 "50 Smart AI Actions / month",
-                "5 Automated Reminders / month",
-                "Web Dashboard Access"
+                "5 Automated Reminders / month"
             ],
             cta: profile?.plan === "hustler" ? "Current Plan" : "Get Started",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -46,18 +46,19 @@ const PricingPage = () => {
         {
             name: "Oga Plan",
             slug: "oga",
-            tagline: "Most Popular",
+            tagline: "The Business Leader",
             description: "Step up to professional business management.",
             price: getPrice(5000),
             originalPrice: getPrice(5000),
             period: "/ month",
             features: [
-                "Everything in Hustler, plus:",
-                "Unlimited AI Brain Power",
-                "Instant Online Payments 💳",
-                "WhatsApp Voice Note Sync 🎙️",
-                "Proactive 'Did They Pay?' AI",
-                "Staff Management (Add 2 Staff)"
+                "4% AI Debt Recovery Fee",
+                "Proactive 'Did They Pay?' Nudges",
+                "Advanced Digital Chief of Staff",
+                "8 AM Business Briefing (Morning)",
+                "WhatsApp Voice Note Sync",
+                "Staff Management (Add 2 Staff)",
+                "Standard Security Vault"
             ],
             cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade Now" : "Become an Oga",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -73,12 +74,12 @@ const PricingPage = () => {
             originalPrice: getPrice(8500),
             period: "/ month",
             features: [
-                "Everything in Oga, plus:",
-                "The 8 AM 'Chief Summary' (WhatsApp)",
-                "White-Label Invoices (No Branding)",
-                "Unlimited Staff/Branches",
-                "Smart Receipt Image Scanning",
-                "Priority AI Processing Speed"
+                "1.5% AI Debt Recovery Fee (Elite)",
+                "Elite Digital Chief of Staff",
+                "Unlimited Staff & Branches Tracking",
+                "Voice Note & Image Sync (Receipts)",
+                "8 AM Executive Summary (Advanced)",
+                "Priority Vault Release"
             ],
             cta: profile?.plan === "chairman" ? "Current Plan" : profile ? "Upgrade Now" : "Lead Your Empire",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -88,15 +89,15 @@ const PricingPage = () => {
     ];
 
     const comparisonFeatures = [
-        { name: "Sales & Debt Tracking", free: "Unlimited", pro: "Unlimited", ent: "Unlimited" },
-        { name: "Smart AI Interactions", free: "50/mo", pro: "Unlimited ⚡", ent: "Unlimited ⚡" },
-        { name: "Smart Reminders", free: "5/mo", pro: "60/mo", ent: "Unlimited" },
-        { name: "Instant Online Payments", free: "Manual Transfer", pro: "Direct to Bank 💳", ent: "Direct to Bank 💳" },
+        { name: "Debt Recovery Success Fee", free: "8%", pro: "4%", ent: "1.5% (Elite)" },
+        { name: "AI Productivity Assistant", free: "Basic", pro: "Advanced", ent: "Genius" },
+        { name: "Proactive Debt Follow-ups", free: false, pro: "1-Day Nudges", ent: "1-Day Nudges" },
+        { name: "Morning Business Summary", free: false, pro: "8 AM (Standard)", ent: "8 AM (Executive)" },
+        { name: "24-Hour Security Vault", free: "Standard", pro: "Standard", ent: "Priority" },
         { name: "WhatsApp Voice Notes", free: false, pro: true, ent: true },
-        { name: "Proactive Follow-ups", free: false, pro: true, ent: true },
-        { name: "Receipt Image Scan", free: false, pro: false, ent: true },
-        { name: "Morning Chief Summary", free: false, pro: false, ent: true },
-        { name: "Staff Account Management", free: "0 Staff", pro: "Up to 2 Staff", ent: "Unlimited Staff" },
+        { name: "Staff Management", free: "0 Staff", pro: "Up to 2 Staff", ent: "Unlimited Staff" },
+        { name: "Image/Receipt Processing", free: false, pro: false, ent: true },
+        { name: "Assistant Brain Actions", free: "50/mo", pro: "Unlimited", ent: "Unlimited" },
     ];
 
     return (
@@ -104,17 +105,17 @@ const PricingPage = () => {
             <PublicNavbar />
             
             {/* Header */}
-            <section className="pricing-header" style={{ paddingBottom: '80px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+            <section className="pricing-header" style={{ padding: 'clamp(80px, 12vw, 120px) 20px clamp(40px, 8vw, 80px)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
                 <div className="pattern-dots" />
-                <div style={{ position: 'relative', zIndex: 10, padding: '0 20px' }}>
+                <div style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto' }}>
                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px', background: 'var(--primary-glow)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.9rem', border: '1px solid rgba(59, 18, 138, 0.1)' }}>
                             <Zap size={16} fill="currentColor" />
                             SPECIAL PIONEER PRICING ENDS SOON
                         </div>
-                        <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.05, marginBottom: '24px' }}>
+                        <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', fontWeight: 900, letterSpacing: '-0.045em', lineHeight: 1.05, marginBottom: '24px', color: '#0F172A' }}>
                             The smart assistant <br />
-                            <span style={{ color: 'var(--primary)' }}>for your empire.</span>
+                            <span className="premium-gradient">for your empire.</span>
                         </h1>
                         <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', marginBottom: '48px', maxWidth: '600px', margin: '0 auto 48px' }}>
                             Join today and get <span style={{ color: 'var(--text)', fontWeight: 700 }}>7 Days of Oga Plan for FREE.</span> <br />
@@ -355,6 +356,19 @@ const PricingPage = () => {
                     h1 {
                         font-size: 2.2rem !important;
                     }
+                }
+                .premium-gradient {
+                    background: linear-gradient(135deg, var(--primary) 0%, #F472B6 100%);
+                    -webkit-background-clip: text;
+                    background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }
+                .pricing-grid {
+                    gap: clamp(1.5rem, 5vw, 2.5rem) !important;
+                }
+                @media (max-width: 640px) {
+                    .pricing-header { padding-top: 100px !important; }
+                    .pricing-card { padding: 32px 24px !important; border-radius: 24px !important; }
                 }
             `}</style>
         </div>

@@ -40,6 +40,13 @@ h1, h2, h3, h4, .premium-font {
   -webkit-text-fill-color: transparent;
 }
 
+.premium-gradient {
+  background: linear-gradient(135deg, var(--primary) 0%, #F472B6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

@@ -24,7 +24,6 @@ import CreateSale from "./pages/merchant/create-sale";
 import InvoicePage from "./pages/merchant/invoice-page";
 import SalesList from "./pages/merchant/sales-list";
 import SettingsPage from "./pages/merchant/settings-page";
-import ProofsPage from "./pages/merchant/proofs";
 import ReportsPage from "./pages/merchant/reports";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminMerchants from "./pages/admin/AdminMerchants";
@@ -87,7 +86,6 @@ const App = () => {
           <Route path="/debtors" element={<SalesList initialFilter="outstanding" />} />
           <Route path="/pending-balances" element={<SalesList initialFilter="outstanding" />} />
           <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/proofs" element={<ProofsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/dashboard/invoice/:id" element={<InvoicePage />} />
         </Route>

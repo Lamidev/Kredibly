@@ -11,6 +11,15 @@ const PublicNavbar = () => {
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [expandedMenu, setExpandedMenu] = useState(null);
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    React.useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 20);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const toggleAccordion = (menu) => {
         setExpandedMenu(expandedMenu === menu ? null : menu);
@@ -61,8 +70,9 @@ const PublicNavbar = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    boxShadow: '0 10px 30px rgba(0, 0, 0, 0.05)',
+                    border: isScrolled ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
+                    boxShadow: isScrolled ? '0 10px 30px rgba(0, 0, 0, 0.05)' : 'none',
+                    transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
                     pointerEvents: 'auto',
                     WebkitTapHighlightColor: 'transparent'
                 }}>
@@ -77,7 +87,7 @@ const PublicNavbar = () => {
                             <div key={i} className="dropdown-parent" style={{ position: 'relative' }}>
                                 {link.type === 'dropdown' ? (
                                     <>
-                                        <div className="nav-link" style={{ color: '#0F172A', opacity: 0.8, fontSize: '0.9rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', padding: '12px 0' }}>
+                                        <div className="nav-link" style={{ color: '#0F172A', opacity: 1, fontSize: '0.92rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', padding: '12px 0' }}>
                                             {link.name} <ChevronDown size={14} />
                                         </div>
                                         <div className="dropdown-menu" style={{ 
@@ -101,8 +111,8 @@ const PublicNavbar = () => {
                                         </div>
                                     </>
                                 ) : (
-                                    <Link to={link.path} style={{ color: '#0F172A', opacity: 0.8, fontSize: '0.9rem', fontWeight: 600, textDecoration: 'none' }}>
-                                        {link.name}
+                                    <Link to={link.path} style={{ color: '#0F172A', opacity: 1, fontSize: '0.92rem', fontWeight: 700, textDecoration: 'none' }}>
+                                         {link.name}
                                     </Link>
                                 )}
                             </div>
@@ -113,7 +123,7 @@ const PublicNavbar = () => {
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                         <Link to="/auth/login" className="hidden md:flex" style={{ 
                             padding: '12px 24px', borderRadius: '100px',
-                            color: '#0F172A', fontSize: '0.9rem', fontWeight: 700, textDecoration: 'none', transition: '0.2s'
+                            color: '#0F172A', fontSize: '0.92rem', fontWeight: 800, textDecoration: 'none', transition: '0.2s'
                         }}>
                             Login
                         </Link>

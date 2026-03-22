@@ -44,9 +44,11 @@ const BusinessProfileSchema = new mongoose.Schema({
     },
     bankDetails: {
         bankName: { type: String, default: "" },
-        bankCode: { type: String, default: "" }, // Added for persistence
+        bankCode: { type: String, default: "" }, 
         accountNumber: { type: String, default: "" },
-        accountName: { type: String, default: "" }
+        accountName: { type: String, default: "" },
+        bankDetailsLockUntil: { type: Date, default: null }, // Security lock after change
+        lastBankChangeAt: { type: Date, default: null }
     },
     address: String,
     isKreddyConnected: {
@@ -99,7 +101,11 @@ const BusinessProfileSchema = new mongoose.Schema({
     },
     successFeePercentage: {
         type: Number,
-        default: 5 // Default 5% success fee
+        default: 5 
+    },
+    isCompromised: {
+        type: Boolean,
+        default: false // Set to true if merchant reports a hack (stops all auto-releases)
     },
     createdAt: {
         type: Date,

@@ -106,6 +106,11 @@ const Dashboard = () => {
         );
     }
 
+    const aiRecovered = sales?.reduce((total, sale) => {
+        const onlinePayments = sale.payments?.filter(p => p.method !== 'Cash' && p.method !== 'Transfer') || [];
+        return total + onlinePayments.reduce((sum, p) => sum + p.amount, 0);
+    }, 0) || 0;
+
     return (
         <div className="animate-fade-in" style={{ paddingBottom: '40px', position: 'relative' }}>
 
@@ -141,8 +146,8 @@ const Dashboard = () => {
             {/* Executive Header */}
             <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                    <h1 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text)', marginBottom: '4px', letterSpacing: '-0.04em' }}>
-                        {greeting()}, {profile?.displayName?.split(' ')[0] || 'Founder'}.
+                    <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.04em', lineHeight: 1 }}>
+                        {greeting()}, <span className="premium-gradient">{profile?.displayName?.split(' ')[0] || 'Founder'}</span>.
                     </h1>
                     <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.95rem' }}>
                         Here's your business overview.
@@ -154,16 +159,16 @@ const Dashboard = () => {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     style={{ 
-                        padding: '10px 20px', 
-                        borderRadius: '16px', 
-                        background: profile?.plan === 'chairman' ? 'linear-gradient(135deg, #0F172A 0%, #334155 100%)' : 
-                                    profile?.plan === 'oga' ? 'linear-gradient(135deg, #B45309 0%, #D97706 100%)' : 
-                                    '#F1F5F9',
+                        padding: '12px 24px', 
+                        borderRadius: '20px', 
+                        background: profile?.plan === 'chairman' ? 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)' : 
+                                    profile?.plan === 'oga' ? 'linear-gradient(135deg, var(--primary) 0%, #7C3AED 100%)' : 
+                                    '#FFFFFF',
                         color: profile?.plan === 'hustler' ? '#64748B' : 'white',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '10px',
-                        boxShadow: '0 10px 20px -5px rgba(0,0,0,0.1)',
+                        gap: '12px',
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
                         border: '1px solid rgba(0,0,0,0.05)'
                     }}
                 >
@@ -236,25 +241,19 @@ const Dashboard = () => {
 
                 <motion.div 
                     whileHover={{ y: -5 }}
-                    className="stat-card-premium" 
-                    style={{ 
-                        padding: '24px', 
-                        borderRadius: '28px', 
-                        background: 'linear-gradient(135deg, var(--primary) 0%, #6D28D9 100%)',
-                        color: 'white',
-                        boxShadow: '0 20px 40px -10px var(--primary-glow)'
-                    }}
+                    className="dashboard-glass stat-card-premium" 
+                    style={{ padding: '24px', borderRadius: '28px', border: '1px solid var(--border)', background: 'white', cursor: 'pointer' }}
+                    onClick={() => navigate("/sales?method=paystack")}
                 >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                        <div style={{ background: 'rgba(255,255,255,0.2)', padding: '10px', borderRadius: '14px' }}>
-                            <Shield size={20} strokeWidth={2.5} />
+                        <div style={{ background: 'rgba(76, 29, 149, 0.1)', color: 'var(--primary)', padding: '10px', borderRadius: '14px' }}>
+                            <Zap size={20} strokeWidth={2.5} fill="currentColor" />
                         </div>
-                        <Zap size={18} color="white" fill="white" />
+                        <Sparkles size={18} color="var(--primary)" />
                     </div>
-                    <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', fontWeight: 700, marginBottom: '4px' }}>Trust Score</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Recovered by AI</p>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-                        <h2 style={{ fontSize: '2rem', fontWeight: 950, letterSpacing: '-0.03em' }}>{stats?.trustScore || 85}%</h2>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 800, background: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: '100px' }}>Good</span>
+                        <h2 className="premium-gradient" style={{ fontSize: '2.5rem', fontWeight: 950, letterSpacing: '-0.03em' }}>₦{aiRecovered.toLocaleString()}</h2>
                     </div>
                 </motion.div>
             </div>
@@ -267,8 +266,8 @@ const Dashboard = () => {
                     background: 'white', 
                     padding: '32px', 
                     borderRadius: '32px', 
-                    border: '1px solid var(--border)', 
-                    marginBottom: '40px',
+                    border: '1px solid #E2E8F0', 
+                    marginBottom: 'clamp(2rem, 5vw, 40px)',
                     boxShadow: 'var(--shadow-premium)'
                 }}
             >
@@ -586,25 +585,20 @@ const Dashboard = () => {
 
                     <div style={{ 
                         padding: '24px', 
-                        background: '#0F172A', 
+                        background: '#F1F5F9', 
                         borderRadius: '28px', 
-                        color: 'white',
+                        border: '1px solid #E2E8F0',
                         position: 'relative',
                         overflow: 'hidden'
                     }}>
                         <div style={{ position: 'relative', zIndex: 2 }}>
-                            <h4 style={{ fontWeight: 900, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <Shield size={20} color="var(--primary)" /> Security Guard
+                            <h4 style={{ fontWeight: 900, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px', color: '#0F172A' }}>
+                                <TrendingUp size={20} color="var(--primary)" /> Growth Metric
                             </h4>
-                            <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5, marginBottom: '20px' }}>
-                                Your business records are safe and guarded. Every sale you record helps your business grow.
+                            <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.5, marginBottom: '0' }}>
+                                Your business is growing. Keep recording 100% of your sales to maintain a healthy credit history.
                             </p>
-                            <div style={{ padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <p style={{ fontSize: '0.75rem', fontWeight: 800, color: 'rgba(255,255,255,0.5)', marginBottom: '4px', textTransform: 'uppercase' }}>Security Key</p>
-                                <p style={{ fontSize: '0.8rem', fontFamily: 'monospace', fontWeight: 600 }}>KR-SEC-***-{profile?._id?.slice(-4)}</p>
-                            </div>
                         </div>
-                        <Shield size={120} style={{ position: 'absolute', bottom: '-20px', right: '-20px', opacity: 0.05, color: 'white' }} />
                     </div>
                 </div>
             </div>
@@ -640,6 +634,12 @@ const Dashboard = () => {
             />
 
             <style>{`
+                .premium-gradient {
+                    background: linear-gradient(135deg, var(--primary) 0%, #F472B6 100%);
+                    -webkit-background-clip: text;
+                    background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }
                 @media (max-width: 1024px) {
                     .dashboard-main-grid {
                         grid-template-columns: 1fr !important;

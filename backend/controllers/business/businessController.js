@@ -94,10 +94,26 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
+const getSuccessFeeByPlan = (plan) => {
+    switch (plan) {
+        case "chairman": return 1.5; // 1.5%
+        case "oga": return 4;        // 4%
+        default: return 8;           // 8% (Hustler)
+    }
+};
+
 exports.getProfile = async (req, res) => {
     try {
         const profile = await BusinessProfile.findOne({ ownerId: req.user._id });
         if (!profile) return res.status(404).json({ message: "Profile not found" });
+
+        // Ensure successFee is synced with current plan
+        const expectedFee = getSuccessFeeByPlan(profile.plan);
+        if (profile.successFeePercentage !== expectedFee) {
+            profile.successFeePercentage = expectedFee;
+            await profile.save();
+        }
+
         res.status(200).json({ success: true, data: profile });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -174,6 +190,20 @@ exports.saveBankDetails = async (req, res) => {
         let resolvedDetails;
         try {
             resolvedDetails = await resolveAccount(accountNumber, bankCode);
+            
+            // SECURITY: Basic Name Match Check
+            // We ensure at least one word from the business OR user's legal name exists in the bank account name
+            const bizWords = profile.displayName.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+            const userWords = user.name.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+            const allWords = [...new Set([...bizWords, ...userWords])];
+            
+            const bankNameLower = resolvedDetails.account_name.toLowerCase();
+            const isMatch = allWords.some(w => bankNameLower.includes(w));
+            
+            if (!isMatch && !profile.isFoundingMember) { 
+                 console.warn(`💳 Bank Name Mismatch: Business "${profile.displayName}", User "${user.name}" vs Bank "${resolvedDetails.account_name}"`);
+                 return res.status(400).json({ success: false, message: `Bank account name (${resolvedDetails.account_name}) does not seem to match your business name (${profile.displayName}) or legal name (${user.name}).` });
+            }
         } catch (err) {
             return res.status(400).json({ success: false, message: "Invalid account number. Please check and try again." });
         }
@@ -185,29 +215,37 @@ exports.saveBankDetails = async (req, res) => {
             const subaccount = await createSubaccount(
                 profile.displayName, 
                 bankCode, 
-                accountNumber
+                accountNumber,
+                profile.successFeePercentage || 10
             );
-            
-            if (subaccount && subaccount.subaccount_code) {
-                subaccountCode = subaccount.subaccount_code;
-            } else {
-                 // Fallback if Paystack response is weird but no error thrown
-                 throw new Error("Invalid subaccount response");
-            }
+            subaccountCode = subaccount.subaccount_code;
         } catch (err) {
-            console.error("Subaccount Creation Failed:", err);
+            console.error("Paystack Subacct Create Error:", err.message);
             return res.status(500).json({ success: false, message: "Could not set up automatic payouts. Please try again later." });
         }
 
-        // 4. Save to Profile
+        // 4. Save to Profile + SECURITY LOCK (24 hours)
         profile.bankDetails = {
-            bankName: bankName, // e.g. "GTBank"
+            bankName: bankName,
             accountNumber: accountNumber,
-            accountName: resolvedDetails.account_name
+            accountName: resolvedDetails.account_name,
+            bankCode: bankCode,
+            lastBankChangeAt: new Date(),
+            bankDetailsLockUntil: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24hr Payout Hold
         };
-        profile.paystackSubaccountCode = subaccountCode; // Save NEW ACCT_xxxx
+        profile.paystackSubaccountCode = subaccountCode;
         
         await profile.save();
+
+        // 5. SEND SECURITY NOTIFICATION
+        const bossTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
+        const securityMsg = `⚠️ *SECURITY ALERT: Bank Details Changed*\n\n${bossTitle}, your payout bank account was just updated to *${resolvedDetails.account_name}* (${bankName}).\n\n🛡️ *Safety Lock:* For your security, instant payouts are paused for 24 hours. They will resume automatically tomorrow.\n\n_If you did not make this change, please contact support immediately!_`;
+        
+        const { sendWhatsAppMessage } = require("../whatsapp/whatsappController");
+        await sendWhatsAppMessage(profile.whatsappNumber, securityMsg).catch(e => console.error("Security WA Fail:", e.message));
+
+        const { sendSecurityAlertEmail } = require("../../emailLogic/emails");
+        await sendSecurityAlertEmail(user.email, user.name, `${resolvedDetails.account_name} (${bankName})`).catch(e => console.error("Security Email Fail:", e.message));
 
         await logActivity({
             userId: req.user._id,

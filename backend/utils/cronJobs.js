@@ -298,4 +298,122 @@ const scheduleProactiveFollowUps = () => {
     });
 };
 
-module.exports = { scheduleMorningSummary, scheduleRemindersWorker, schedulePlanExpiryReminders, scheduleProactiveFollowUps };
+/**
+ * DAILY PAST DUE ESCALATION (Runs Daily at Noon)
+ * Catch debts that were due exactly 1 day ago.
+ */
+const schedulePastDueEscalations = () => {
+    cron.schedule("0 12 * * *", async () => {
+        console.log("🚩 Running Daily Past-Due Escalation Check...");
+        try {
+            const yesterdayStart = new Date(); 
+            yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+            yesterdayStart.setHours(0,0,0,0);
+            
+            const yesterdayEnd = new Date(yesterdayStart);
+            yesterdayEnd.setHours(23,59,59,999);
+
+            // Find unpaid sales that were due exactly 1 day ago
+            const overdueSales = await Sale.find({
+                status: "unpaid",
+                dueDate: { $gte: yesterdayStart, $lte: yesterdayEnd }
+            }).populate("businessId");
+
+            for (const sale of overdueSales) {
+                const profile = sale.businessId;
+                if (!profile || profile.plan === "hustler" || !profile.whatsappNumber) continue;
+
+                const bossTitle = profile.plan === "chairman" ? "Chairman" : "Oga";
+                const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
+                
+                const msg = `🚩 *Overdue Alert, ${bossTitle}!*\n\n*${sale.customerName}* was supposed to pay ₦${bal.toLocaleString()} yesterday, but the record is still unpaid.\n\nShould I draft a follow-up link for you to forward to them? \n\n_Type: "Send link to ${sale.customerName}"_`;
+                
+                await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Escalation Alert Fail:", e));
+            }
+        } catch (error) {
+            console.error("Cron Job Error (Escalation):", error);
+        }
+    });
+};
+
+/**
+ * AUTOMATIC ESCROW RELEASE (Runs Hourly)
+ * Checks for escrowed payments whose security lock has expired.
+ * Only releases if the account is NOT flagged as compromised.
+ */
+const scheduleEscrowPayouts = () => {
+    cron.schedule("0 * * * *", async () => {
+        console.log("🔓 Running Automatic Escrow Release Check...");
+        try {
+            const EscrowPayment = require("../models/EscrowPayment");
+            const { createTransferRecipient, initiateTransfer } = require("./paystack");
+
+            // Find all pending escrow payments where releaseDate has passed
+            const readyToRelease = await EscrowPayment.find({
+                status: "pending",
+                releaseDate: { $lte: new Date() }
+            }).populate("businessId");
+
+            for (const escrow of readyToRelease) {
+                const profile = escrow.businessId;
+                
+                // 🛑 SAFETY VALVE: If the account was flagged, DO NOT release automatically!
+                if (!profile || profile.isCompromised) {
+                    console.warn(`🛑 Skipping Escrow Release for ${profile?.displayName || 'Unknown'}: Account Flagged or Missing.`);
+                    escrow.status = "frozen";
+                    await escrow.save();
+                    continue;
+                }
+
+                try {
+                    // 1. Ensure we have a bank to send to
+                    if (!profile.bankDetails?.accountNumber || !profile.bankDetails?.bankCode) {
+                        console.error(`❌ No bank details for ${profile.displayName} to release escrow ${escrow.reference}`);
+                        continue;
+                    }
+
+                    // 2. Create Transfer Recipient
+                    const recipient = await createTransferRecipient(
+                        profile.bankDetails.accountName || profile.displayName,
+                        profile.bankDetails.accountNumber,
+                        profile.bankDetails.bankCode
+                    );
+
+                    // 3. Initiate Transfer
+                    const transfer = await initiateTransfer(
+                        escrow.amount,
+                        recipient.recipient_code,
+                        `Escrow Release: ${escrow.reference}`
+                    );
+
+                    // 4. Update Status
+                    escrow.status = "released";
+                    escrow.transferReference = transfer.reference;
+                    await escrow.save();
+
+                    // 5. Notify Merchant
+                    const msg = `🔓 *Escrow Released, Chairman!*\n\nYour security lock has expired, and I've just pushed *₦${escrow.amount.toLocaleString()}* to your bank account (${profile.bankDetails.bankName}).\n\n_Ref: ${transfer.reference}_`;
+                    await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Escrow Notify Fail:", e));
+
+                    console.log(`✅ Released Escrow ${escrow.reference} to ${profile.displayName}`);
+
+                } catch (transferErr) {
+                    console.error(`❌ Transfer Failed for Escrow ${escrow.reference}:`, transferErr.message);
+                    escrow.status = "failed";
+                    await escrow.save();
+                }
+            }
+        } catch (error) {
+            console.error("Cron Job Error (Escrow Release):", error);
+        }
+    });
+};
+
+module.exports = { 
+    scheduleMorningSummary, 
+    scheduleRemindersWorker, 
+    schedulePlanExpiryReminders, 
+    scheduleProactiveFollowUps, 
+    schedulePastDueEscalations,
+    scheduleEscrowPayouts
+};

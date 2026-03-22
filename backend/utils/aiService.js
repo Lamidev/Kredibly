@@ -6,12 +6,12 @@ const genAI = new GoogleGenerativeAI(process.env.KREDDY_API_KEY || "");
 
 /**
  * MODELS EXPLAINED:
- * - gemini-1.5-flash: Ultra-fast, very high free-tier limits (15 RPM). Perfect for Beta and Oga Plan.
- * - gemini-1.5-pro: High-reasoning, heavy context. Reserved for Chairman Plan / Complex Analysis.
+ * - gemini-2.5-flash: Ultra-fast, very high limits (1K RPM on Tier 1). Perfect for Oga Plan and main engine.
+ * - gemini-2.5-pro: High-reasoning, heavy context (150 RPM on Tier 1). Reserved for Chairman Plan / Complex Analysis.
  */
 const MODELS = {
-    FLASH: "gemini-1.5-flash",
-    PRO: "gemini-1.5-pro"
+    FLASH: "gemini-2.5-flash",
+    PRO: "gemini-2.5-pro"
 };
 
 const SYSTEM_INSTRUCTION = `
@@ -49,7 +49,8 @@ INTENTS:
 12. "draft_invoice": When the merchant wants Kreddy to generate an invoice/payment link message they can copy or forward to the customer.
 13. "draft_reminder": When the merchant explicitly wants Kreddy to draft a debt reminder message to forward to the customer.
 14. "add_staff": When a merchant wants to add a new staff member or sales boy to their system by providing a phone number.
-15. "general_chat": Greetings, math, or non-transactional talk.
+15. "check_staff": When the merchant asks about their assigned staff, or wants to know who is working under them.
+16. "general_chat": Greetings, math, business advice, or general intelligence questions (e.g., "What is the capital of France?", "How many days till Christmas?", "What's the weather typically like in Lagos in March?"). If the user asks a live question like "what is the weather like NOW?", answer as best as you can based on your knowledge while maintaining the Chief of Staff persona.
 
 MULTI-INTENT RULE (CRITICAL):
 - If the user's message contains MULTIPLE distinct tasks/intents, you MUST return a JSON array of intent objects.
@@ -59,7 +60,7 @@ MULTI-INTENT RULE (CRITICAL):
 
 REQUIRED JSON OUTPUT (single intent):
 {
-  "intent": "create_sale" | "check_debt" | "update_record" | "confirm_record" | "create_reminder" | "snooze_reminder" | "check_schedule" | "support" | "upgrade" | "pay_subscription" | "check_billing" | "draft_invoice" | "draft_reminder" | "add_staff" | "general_chat",
+  "intent": "create_sale" | "check_debt" | "update_record" | "confirm_record" | "create_reminder" | "snooze_reminder" | "check_schedule" | "support" | "upgrade" | "pay_subscription" | "check_billing" | "draft_invoice" | "draft_reminder" | "add_staff" | "check_staff" | "general_chat",
   "confidence": 1.0,
   "data": {
     "customerName": "Name",
@@ -241,6 +242,17 @@ Output: {
     "reply": "Adding your new staff member..."
   }
 }
+
+Example 13 - EXTREME MULTI-INTENT (Update + 3 Reminders + General Chat):
+User: "Sarah James just called me. She paid 10k out of her 25k debt, and remind me to call her next Wednesday to collect the rest. Also, set a reminder for me about 5pm to go to the market and i have to make a call to my supplier by 7pm and whats the weather typically like in Lagos today?"
+Current Time (WAT): 2026-03-22T11:00:00+01:00
+Output: [
+  { "intent": "update_record", "confidence": 1.0, "data": { "customerName": "Sarah James", "totalAmount": 25000, "paidAmount": 10000, "reply": "Logged! ₦10,000 from Sarah James recorded. 📝" } },
+  { "intent": "create_reminder", "confidence": 1.0, "data": { "reminderDate": "2026-03-25T08:00:00.000Z", "reminderType": "debt", "taskDescription": "Call Sarah James for balance", "reply": "I'll remind you to call Sarah next Wednesday morning! 📞" } },
+  { "intent": "create_reminder", "confidence": 1.0, "data": { "reminderDate": "2026-03-22T16:00:00.000Z", "reminderType": "personal", "taskDescription": "Go to the market", "reply": "Market run at 5pm? I'm on it, Chief! 🛒" } },
+  { "intent": "create_reminder", "confidence": 1.0, "data": { "reminderDate": "2026-03-22T17:45:00.000Z", "reminderType": "task", "taskDescription": "Call supplier", "reply": "Supplier call by 7pm locked in. 🤝" } },
+  { "intent": "general_chat", "confidence": 1.0, "data": { "reply": "Lagos is looking sunny and bright as usual for late March, Chairman! Perfect for that market run. ☀️" } }
+]
 `;
 
 /**

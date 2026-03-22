@@ -88,14 +88,14 @@ const resolveAccount = async (accountNumber, bankCode) => {
 /**
  * 3. Create Subaccount (For Split Payments)
  */
-const createSubaccount = async (businessName, bankCode, accountNumber, percentage = 95) => {
-    // We default to giving them 95%, keeping 5% as platform fee (adjustable)
+const createSubaccount = async (businessName, bankCode, accountNumber, successFee = 5) => {
+    // successFee is our platform cut (e.g. 5 means we take 5%)
     const payload = {
         business_name: businessName, 
         bank_code: bankCode, 
         account_number: accountNumber, 
-        percentage_charge: 5, // 5% Platform Fee
-        primary_contact_email: "support@usekredibly.com", // Fallback contact
+        percentage_charge: successFee, 
+        primary_contact_email: "support@usekredibly.com", 
         primary_contact_name: "Kredibly Platform",
         primary_contact_phone: "08000000000"
     };
@@ -116,10 +116,39 @@ const initializePayment = async (email, amount, reference, metadata = {}) => {
     return paystackRequest('/transaction/initialize', 'POST', payload);
 };
 
+/**
+ * 5. Create Transfer Recipient
+ */
+const createTransferRecipient = async (name, accountNumber, bankCode) => {
+    const payload = {
+        type: "nuban",
+        name: name,
+        account_number: accountNumber,
+        bank_code: bankCode,
+        currency: "NGN"
+    };
+    return paystackRequest('/transferrecipient', 'POST', payload);
+};
+
+/**
+ * 6. Initiate Transfer (Payout from Main Balance)
+ */
+const initiateTransfer = async (amount, recipientCode, reason = "") => {
+    const payload = {
+        source: "balance",
+        amount: Math.round(amount * 100),
+        recipient: recipientCode,
+        reason: reason || "Kredibly Automatic Escrow Release"
+    };
+    return paystackRequest('/transfer', 'POST', payload);
+};
+
 module.exports = {
     verifyPaystackReference,
     getBanks,
     resolveAccount,
     createSubaccount,
-    initializePayment
+    initializePayment,
+    createTransferRecipient,
+    initiateTransfer
 };

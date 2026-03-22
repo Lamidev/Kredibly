@@ -103,6 +103,13 @@ exports.getSale = async (req, res) => {
 
         if (!sale) return res.status(404).json({ message: "Sale record not found" });
 
+        // SECURITY: If bank details were recently changed (24h lock), hide subaccount code
+        // This forces payments to Kredibly escrow instead of the new (risky) bank account.
+        if (sale.businessId?.bankDetails?.bankDetailsLockUntil && new Date() < sale.businessId.bankDetails.bankDetailsLockUntil) {
+            console.warn(`🛡️ Payout Hold Active for ${sale.businessId.displayName}. Redirecting to Escrow.`);
+            sale.businessId.paystackSubaccountCode = ""; 
+        }
+
         res.status(200).json({ success: true, data: sale });
     } catch (error) {
         res.status(500).json({ message: error.message });
