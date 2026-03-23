@@ -551,8 +551,17 @@ exports.handleIncoming = async (req, res) => {
             // >>> VIP KREDDY DEMO SANDBOX LOGIC <<<
             if (text.toUpperCase().startsWith("START DEMO")) {
                 const Waitlist = require('../../models/Waitlist');
-                // Check if they are officially on the waitlist
-                const waitlistUser = await Waitlist.findOne({ whatsappNumber: cleanFrom });
+                
+                // Build all possible number formats to handle '0XX' vs '234XX' mismatches
+                const numVariants = [cleanFrom];
+                if (cleanFrom.startsWith('234')) {
+                    numVariants.push('0' + cleanFrom.slice(3)); // 234XXXXXXXXXX → 0XXXXXXXXXX
+                } else if (cleanFrom.startsWith('0')) {
+                    numVariants.push('234' + cleanFrom.slice(1)); // 0XXXXXXXXXX → 234XXXXXXXXXX
+                }
+                
+                console.log(`🔍 [START DEMO] Looking up number variants: ${numVariants.join(', ')}`);
+                const waitlistUser = await Waitlist.findOne({ whatsappNumber: { $in: numVariants } });
                 
                 if (!waitlistUser) {
                     await sendReply(from, "⚠️ *Demo Access Denied*\n\nYour number is not registered on the Kredibly Waitlist. Nice try! 😉\n\nPlease join the waitlist first to unlock your free premium interactive demo:\n👉 https://usekredibly.com/waitlist");
@@ -1090,8 +1099,17 @@ Upgrade here: ${APP_URL}/pricing`);
                         const sale = matches[0];
                         if (aiResponseItem.data.paidAmount > 0) sale.payments.push({ amount: aiResponseItem.data.paidAmount, method: "WhatsApp Global Update" });
                         if (aiResponseItem.data.dueDate) sale.dueDate = new Date(aiResponseItem.data.dueDate);
-                        await sale.save();
-                        await sendReply(from, `✅ *Update Successful!* \n\nRecorded for *${sale.customerName}*. Receipt updated. 🛡️`);
+                        
+                        // Check for Name Correction
+                        if (aiResponseItem.data.newName) {
+                           const oldN = sale.customerName;
+                           sale.customerName = aiResponseItem.data.newName;
+                           await sale.save();
+                           await sendReply(from, `✅ *Update Successful!* \n\nChanged from *${oldN}* to *${sale.customerName}*. Receipt updated. 🛡️`);
+                        } else {
+                           await sale.save();
+                           await sendReply(from, `✅ *Update Successful!* \n\nRecorded for *${sale.customerName}*. Receipt updated. 🛡️`);
+                        }
                         isProcessed = true;
                      } else if (matches.length > 1) {
                         let disambigMsg = `🤔 I found *${matches.length}* people named *${aiResponseItem.data.customerName}* with unpaid debts. Which one should I update?\n\n`;
@@ -1334,23 +1352,38 @@ Upgrade here: ${APP_URL}/pricing`);
 
                                 const recLabel = recurrence !== 'none' ? ` (${recurrence} repeat)` : "";
 
-                                // SMART NOTIFICATION LOGIC
+                                // SMART NOTIFICATION LOGIC: Dual-Reminders for Meetings
                                 if (reminderType === "meeting" || reminderType === "personal") {
                                     const eventTimeStr = triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
-                                    triggerDate.setMinutes(triggerDate.getMinutes() - 15);
                                     
+                                    // 1. The On-Time Reminder
                                     await Reminder.create({
                                         businessId: profile._id,
                                         whatsappNumber: cleanFrom,
-                                        description: taskDescription,
-                                        triggerDate: triggerDate,
+                                        description: `🚀 *START NOW:* ${taskDescription}`,
+                                        triggerDate: new Date(triggerDate),
                                         type: reminderType,
                                         recurrence: recurrence,
                                         saleId: linkedSaleId
                                     });
 
-                                    const headsUpStr = triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', hour12: true });
-                                    await sendReply(from, `🫡 *Locked in!* \n\nYour event is at *${eventTimeStr}*${recLabel}. I will give you a heads-up 15 minutes early (at *${headsUpStr}*) so you can prepare.`);
+                                    // 2. The 15-Minute Heads-Up
+                                    const nudgeDate = new Date(triggerDate.getTime() - 15 * 60 * 1000);
+                                    if (nudgeDate > new Date()) {
+                                        await Reminder.create({
+                                            businessId: profile._id,
+                                            whatsappNumber: cleanFrom,
+                                            description: `🔔 *HEADS UP (15m):* ${taskDescription}`,
+                                            triggerDate: nudgeDate,
+                                            type: reminderType,
+                                            recurrence: recurrence,
+                                            saleId: linkedSaleId
+                                        });
+                                        const nudgeTime = nudgeDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', hour12: true });
+                                        await sendReply(from, `🫡 *Locked in!* \n\nEvent is at *${eventTimeStr}*${recLabel}. I'll nudge you 15 mins early (at *${nudgeTime}*) AND at the actual start time. 🚀`);
+                                    } else {
+                                        await sendReply(from, `✅ *Task Saved!* \n\nI will remind you at exactly *${eventTimeStr}*${recLabel}. (Too close for a 15m heads-up!) 🫡`);
+                                    }
                                 } else {
                                     // Tasks and Debts: Exact Match
                                     await Reminder.create({
