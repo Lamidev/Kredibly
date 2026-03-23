@@ -1077,13 +1077,21 @@ Upgrade here: ${APP_URL}/pricing`);
             if (!isProcessed && aiResponseItem && aiResponseItem.intent === "update_record") {
                  console.log("📝 Handling update_record intent...");
                  
-                 if (session?.data?.lastSaleId && (aiResponseItem.data.paidAmount > 0 || aiResponseItem.data.dueDate)) {
+                 if (session?.data?.lastSaleId && (aiResponseItem.data.paidAmount > 0 || aiResponseItem.data.dueDate || aiResponseItem.data.newName)) {
                      const sale = await Sale.findById(session.data.lastSaleId);
                      if (sale && sale.status !== 'paid') {
+                         let updatedConfirm = `I've updated the record for *${sale.customerName}*.`;
+                         
                          if (aiResponseItem.data.paidAmount > 0) sale.payments.push({ amount: aiResponseItem.data.paidAmount, method: "WhatsApp Context Update" });
                          if (aiResponseItem.data.dueDate) sale.dueDate = new Date(aiResponseItem.data.dueDate);
+                         if (aiResponseItem.data.newName) {
+                             const oldN = sale.customerName;
+                             sale.customerName = aiResponseItem.data.newName;
+                             updatedConfirm = `✅ *Name Correction:* Changed from *${oldN}* to *${sale.customerName}*. Invoice updated. 🛡️`;
+                         }
+                         
                          await sale.save();
-                         await sendReply(from, `✅ *Record Updated!* \n\nI've updated the ledger for *${sale.customerName}*.`);
+                         await sendReply(from, `✅ *Record Updated!* \n\n${updatedConfirm}`);
                          isProcessed = true;
                      }
                  } 
@@ -1380,9 +1388,9 @@ Upgrade here: ${APP_URL}/pricing`);
                                             saleId: linkedSaleId
                                         });
                                         const nudgeTime = nudgeDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', hour12: true });
-                                        await sendReply(from, `🫡 *Locked in!* \n\nEvent is at *${eventTimeStr}*${recLabel}. I'll nudge you 15 mins early (at *${nudgeTime}*) AND at the actual start time. 🚀`);
+                                        await sendReply(from, `🫡 *Locked in!* \n\nI'll remind you to *"${taskDescription}"* at *${eventTimeStr}*${recLabel}. I'll also give you a heads-up 15 mins early (at *${nudgeTime}*). 🚀`);
                                     } else {
-                                        await sendReply(from, `✅ *Task Saved!* \n\nI will remind you at exactly *${eventTimeStr}*${recLabel}. (Too close for a 15m heads-up!) 🫡`);
+                                        await sendReply(from, `✅ *Task Saved!* \n\nI will remind you to *"${taskDescription}"* at exactly *${eventTimeStr}*${recLabel}. (Too close for a 15m heads-up!) 🫡`);
                                     }
                                 } else {
                                     // Tasks and Debts: Exact Match
