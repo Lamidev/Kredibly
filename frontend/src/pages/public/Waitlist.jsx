@@ -307,13 +307,13 @@ const Waitlist = () => {
                     </p>
 
                     <div className="hero-button-group" style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '80px' }}>
-                        <button onClick={scrollToJoin} className="hero-main-btn" style={{ padding: '0 40px', height: '64px', fontSize: '1.1rem', borderRadius: '24px', background: 'var(--primary)', color: 'white', border: 'none', cursor: 'pointer', boxShadow: '0 20px 40px -10px rgba(76, 29, 149, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontWeight: 700 }}>
+                        <button onClick={scrollToJoin} className="hero-main-btn" style={{ padding: '0 32px', height: '64px', fontSize: '1.1rem', borderRadius: '24px', background: 'var(--primary)', color: 'white', border: 'none', cursor: 'pointer', boxShadow: '0 20px 40px -10px rgba(76, 29, 149, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontWeight: 700 }}>
                             Join the Waitlist
                         </button>
                         
                         <button onClick={() => {
                             window.open(`https://wa.me/2347071238658?text=START%20DEMO%20-%20I%20want%20to%20see%20how%20Kreddy%20works`, "_blank");
-                        }} className="hero-main-btn" style={{ padding: '0 40px', height: '64px', fontSize: '1.1rem', borderRadius: '24px', background: 'white', border: '2px solid #E2E8F0', color: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', transition: 'all 0.3s', cursor: 'pointer', fontWeight: 700 }}>
+                        }} className="hero-main-btn" style={{ padding: '0 32px', height: '64px', fontSize: '1.1rem', borderRadius: '24px', background: 'white', border: '2px solid #E2E8F0', color: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', transition: 'all 0.3s', cursor: 'pointer', fontWeight: 700 }}>
                             Start Demo
                         </button>
                     </div>
@@ -981,8 +981,8 @@ const Waitlist = () => {
                     .hero-badge { margin-bottom: 24px !important; padding: 8px 16px !important; gap: 4px !important; }
                     .hero-title { margin-bottom: 24px !important; line-height: 1.05 !important; }
                     .hero-subtext { margin-bottom: 32px !important; font-size: 1.1rem !important; }
-                    .hero-button-group { margin-bottom: 40px !important; }
-                    .hero-main-btn { width: 100% !important; max-width: 340px !important; }
+                    .hero-button-group { marginBottom: 40px !important; }
+                    .hero-main-btn { width: 100% !important; max-width: 280px !important; }
                     .waitlist-nav { padding: 24px 20px !important; }
                     .nav-logo { height: 32px !important; }
                     .mobile-ecosystem-grid { gap: 40px !important; }
