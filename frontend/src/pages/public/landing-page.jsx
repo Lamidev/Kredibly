@@ -230,7 +230,7 @@ const LandingPage = () => {
                         opacity: 0.8
                     }}>
                         From local commerce to global scale. Kredibly is the intelligent receivables platform that helps you 
-                        automate sales, track what you're owed, and monitor operations all inside WhatsApp.
+                        automate sales, track what you're owed, and manage your daily operations all inside WhatsApp.
                     </p>
 
                     <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '32px' }}>
@@ -377,7 +377,7 @@ const LandingPage = () => {
                                         { icon: Sparkles, title: "Your Digital Chief of Staff", desc: "Set gym reminders, meeting alarms, or personal tasks via voice. Kreddy tracks your entire day, not just your sales." },
                                         { icon: Zap, title: "Instant Debt Recovery", desc: "Send professional outstanding notices with secure payment links on WhatsApp. Your customers pay, and you receive the cash instantly into your bank account. No follow-ups needed." },
                                         { icon: Users, title: "Staff & Team Monitoring", desc: "Track what your sales boys are doing in real-time. Protect your money while you focus on vision." },
-                                        { icon: FileText, title: "8 AM Intelligence Briefing", desc: "Start every day with a high-level summary of cash collected, new sales, and top debtors—sent directly to your WhatsApp." },
+                                        { icon: FileText, title: "8 AM Intelligence Briefing", desc: "Start every day with a high-level summary of cash collected, new sales, and top debtors,sent directly to your WhatsApp." },
                                         { icon: Lock, title: "Biometric Security Vault", desc: "Professional-grade security that protects your records and your payouts. Scale with total peace of mind." }
                                     ].map((item, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '28px' }}>
