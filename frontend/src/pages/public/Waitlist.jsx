@@ -18,7 +18,8 @@ import {
     FileText,
     Zap,
     Menu,
-    X
+    X,
+    Mic
 } from "lucide-react";
 import PublicFooter from "../../components/public/PublicFooter";
 import PublicNavbar from "../../components/public/PublicNavbar";
@@ -219,9 +220,12 @@ const Waitlist = () => {
 
                             <div style={{ padding: '24px', borderTop: '1px solid rgba(0,0,0,0.05)', background: 'rgba(255,255,255,0.1)' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    <Link to="/auth/login" onClick={() => setIsMobileMenuOpen(false)} style={{ 
-                                        width: '100%', padding: '16px', borderRadius: '16px', background: 'white', border: '1px solid #E2E8F0', textAlign: 'center', textDecoration: 'none', color: '#000000', fontWeight: 800 
-                                    }}>Login</Link>
+                                    <button onClick={() => { 
+                                        setIsMobileMenuOpen(false); 
+                                        window.open(`https://wa.me/2349132205562?text=START%20DEMO%20-%20I%20want%20to%20see%20how%20Kreddy%20works`, "_blank");
+                                    }} style={{ 
+                                        width: '100%', padding: '16px', borderRadius: '16px', background: 'white', border: '1px solid #E2E8F0', textAlign: 'center', color: '#000000', fontWeight: 800, cursor: 'pointer' 
+                                    }}>Start Demo</button>
                                     <button onClick={() => { setIsMobileMenuOpen(false); scrollToJoin(); }} style={{ 
                                         width: '100%', padding: '16px', borderRadius: '16px', background: 'var(--primary)', textAlign: 'center', textDecoration: 'none', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 10px 20px -5px rgba(76, 29, 149, 0.3)' 
                                     }}>Join Waitlist Free</button>
@@ -273,7 +277,21 @@ const Waitlist = () => {
 
                 <div className="hero-section" style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto', padding: 'clamp(80px, 15vw, 160px) 24px clamp(2rem, 10vw, 80px)', textAlign: 'center' }}>
                 <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.1 }} transition={{ duration: 0.8 }}>
-                    <div className="hero-badge" style={{ display: 'inline-flex', alignItems: 'center', padding: '10px 24px', background: 'white', border: '1px solid rgba(76, 29, 149, 0.15)', borderRadius: '100px', color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 800, marginBottom: '40px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                    <div className="hero-badge" style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        padding: '10px 24px', 
+                        background: 'white', 
+                        border: '1px solid rgba(76, 29, 149, 0.15)', 
+                        borderRadius: '100px', 
+                        color: 'var(--primary)', 
+                        fontSize: '0.85rem', 
+                        fontWeight: 800, 
+                        marginBottom: '40px', 
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                        width: 'fit-content',
+                        margin: '0 auto 40px'
+                    }}>
                         JOIN THE REVOLUTION
                     </div>
 
@@ -286,18 +304,34 @@ const Waitlist = () => {
                         The sales ledger & **Digital Chief of Staff** designed uniquely for the Nigerian merchant. Track sales, manage your daily agenda, and collect debts—all inside WhatsApp.
                     </p>
 
-                    <div className="hero-button-group" style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '60px' }}>
-                        <button onClick={scrollToJoin} className="btn-primary" style={{ padding: '24px 56px', fontSize: '1.25rem', borderRadius: '24px', background: 'var(--primary)', color: 'white', boxShadow: '0 20px 40px -10px rgba(76, 29, 149, 0.3)' }}>
+                    <div className="hero-button-group" style={{ display: 'flex', gap: '24px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '60px' }}>
+                        <button onClick={scrollToJoin} className="btn-primary" style={{ padding: '24px 48px', fontSize: '1.2rem', borderRadius: '24px', background: 'var(--primary)', color: 'white', boxShadow: '0 20px 40px -10px rgba(76, 29, 149, 0.3)', display: 'flex', alignItems: 'center', gap: '12px' }}>
                             Join the Waitlist <ArrowRight size={22} />
                         </button>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'white', padding: '12px 24px', borderRadius: '100px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-                            <div style={{ display: 'flex', marginLeft: '8px' }}>
-                                {[1,2,3].map(i => (
-                                    <div key={i} style={{ width: '28px', height: '28px', borderRadius: '50%', border: '2px solid white', background: '#F1F5F9', marginLeft: '-10px', fontSize: '0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'var(--primary)' }}>{i}</div>
-                                ))}
-                            </div>
-                            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155' }}>Join <span style={{ color: '#0F172A', fontWeight: 700 }}>{stats + 480}+</span> innovative merchants</span>
+                        
+                        <button onClick={() => {
+                            window.open(`https://wa.me/2349132205562?text=START%20DEMO%20-%20I%20want%20to%20see%20how%20Kreddy%20works`, "_blank");
+                        }} className="btn-secondary" style={{ padding: '24px 48px', fontSize: '1.2rem', borderRadius: '24px', background: 'white', border: '2px solid #E2E8F0', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '12px', transition: 'all 0.3s' }}>
+                            <Zap size={22} color="var(--primary)" /> Start Demo
+                        </button>
+                    </div>
+
+                    <div style={{ marginBottom: '60px' }}>
+                        <p style={{ color: '#64748B', fontSize: '1.1rem', fontWeight: 600, margin: '0 0 8px' }}>
+                            🎁 <b>Get 30 Pilot Instructions Free</b> as a Pioneer.
+                        </p>
+                        <p style={{ color: '#94A3B8', fontSize: '0.85rem', fontWeight: 400 }}>
+                            Use the same WhatsApp number you register with.
+                        </p>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'white', padding: '12px 24px', borderRadius: '100px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', width: 'fit-content', margin: '0 auto 60px' }}>
+                        <div style={{ display: 'flex', marginLeft: '8px' }}>
+                            {[1,2,3].map(i => (
+                                <div key={i} style={{ width: '28px', height: '28px', borderRadius: '50%', border: '2px solid white', background: '#F1F5F9', marginLeft: '-10px', fontSize: '0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'var(--primary)' }}>{i}</div>
+                            ))}
                         </div>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155' }}>Join <span style={{ color: '#0F172A', fontWeight: 700 }}>{stats + 492}+</span> innovative merchants</span>
                     </div>
 
                     {/* Premium App Store Silhouettes - Now in Hero */}
@@ -328,15 +362,22 @@ const Waitlist = () => {
 
             {/* 2. Meet Kreddy Section */}
             <section className="adaptive-section" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0', borderBottom: '1px solid #E2E8F0' }}>
-                <div className="container waitlist-adaptive-grid" style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'clamp(2rem, 8vw, 5rem)', alignItems: 'center' }}>
+                    <div className="waitlist-mockup-grid" style={{ 
+                        maxWidth: '1300px', 
+                        margin: '0 auto', 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
+                        gap: 'clamp(4rem, 12vw, 8rem)', 
+                        alignItems: 'center' 
+                    }}>
                     <div style={{ textAlign: 'left' }}>
                         <div style={{ background: 'rgba(76, 29, 149, 0.1)', width: '64px', height: '64px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '32px' }}>
                             <Smartphone color="var(--primary)" size={32} />
                         </div>
-                        <h2 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 800, marginBottom: '24px', letterSpacing: '-0.03em', color: '#0F172A' }}>
-                            <span style={{ color: 'var(--primary)' }}>Kreddy talks to you.</span>
+                        <h2 style={{ fontSize: 'clamp(2.5rem, 5.5vw, 4.5rem)', fontWeight: 800, letterSpacing: '-0.04em', color: '#0F172A', lineHeight: 1, marginBottom: '24px' }}>
+                            Kreddy talks to you.
                         </h2>
-                        <p style={{ fontSize: '1.2rem', color: '#334155', lineHeight: 1.6, marginBottom: '40px', fontWeight: 400 }}>
+                        <p style={{ fontSize: '1.3rem', color: '#334155', fontWeight: 400, marginTop: '16px', lineHeight: 1.6 }}>
                             Talk to Kreddy AI on WhatsApp like you're talking to a partner. Record transactions, manage your daily schedule, and let him handle the follow-ups while you focus on growth.
                         </p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -358,8 +399,8 @@ const Waitlist = () => {
                         </div>
                     </div>
 
-                    {/* Chat Mockup */}
-                    <div className="chat-mockup" style={{
+1:                     {/* Chat Mockup */}
+                    <motion.div initial={{ opacity: 0, scale: 0.95, y: 40 }} whileInView={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.8, ease: "easeOut" }} viewport={{ once: false, amount: 0.1 }} className="chat-mockup" style={{
                         background: '#FFF',
                         borderRadius: '40px',
                         padding: '12px',
@@ -368,26 +409,34 @@ const Waitlist = () => {
                     }}>
                         <div style={{ background: '#E5DDD5', borderRadius: '32px', overflow: 'hidden', height: '520px', display: 'flex', flexDirection: 'column' }}>
                             <div style={{ background: '#075E54', padding: '36px 20px 14px', color: 'white', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '50%', color: '#075E54', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>K</div>
+                                <div style={{ width: '32px', height: '32px', background: 'var(--primary)', borderRadius: '50%', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, boxShadow: '0 2px 4px rgba(76, 29, 149, 0.3)' }}>K</div>
                                 <span style={{ fontWeight: 700 }}>Kreddy AI</span>
                             </div>
                             <div style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                <div style={{ alignSelf: 'flex-end', background: '#DCF8C6', padding: '12px 18px', borderRadius: '16px 0 16px 16px', fontSize: '0.85rem', color: '#111', fontWeight: 500, maxWidth: '85%', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
-                                    Record 50k from Sarah for balance, and remind me to call my supplier by 4pm.
-                                </div>
-                                <div style={{ alignSelf: 'flex-start', background: 'white', padding: '16px', borderRadius: '0 16px 16px 16px', fontSize: '0.85rem', color: '#111', maxWidth: '85%', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+                                <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }} viewport={{ once: false, amount: 0.1 }} style={{ alignSelf: 'flex-end', background: '#DCF8C6', padding: '16px', borderRadius: '16px 0 16px 16px', fontSize: '0.85rem', color: '#111', fontWeight: 500, maxWidth: '85%', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#128C7E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Mic size={20} color="white" /></div>
+                                        <div style={{ width: '120px', height: '6px', background: 'rgba(18, 140, 126, 0.3)', borderRadius: '3px', position: 'relative' }}>
+                                            <div style={{ width: '40%', height: '100%', background: '#128C7E', borderRadius: '3px' }} />
+                                            <div style={{ position: 'absolute', left: '40%', top: '-4px', width: '14px', height: '14px', background: '#075E54', borderRadius: '50%' }} />
+                                        </div>
+                                        <span style={{ fontSize: '0.75rem', color: '#075E54', fontWeight: 800 }}>0:12</span>
+                                    </div>
+                                    <p style={{ margin: '0', opacity: 0.7, fontSize: '0.75rem', fontStyle: 'italic', lineHeight: 1.4 }}>"Ah Kreddy, Sarah just paid 50k for the bags, remind me to call her next Friday morning to collect the rest..."</p>
+                                </motion.div>
+                                <motion.div initial={{ opacity: 0, x: -20, scale: 0.95 }} whileInView={{ opacity: 1, x: 0, scale: 1 }} transition={{ duration: 0.5, delay: 0.8 }} viewport={{ once: false, amount: 0.1 }} style={{ alignSelf: 'flex-start', background: 'white', padding: '16px', borderRadius: '0 16px 16px 16px', fontSize: '0.85rem', color: '#111', maxWidth: '85%', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
                                     <p style={{ margin: 0, fontWeight: 900, color: '#075E54', fontSize: '0.7rem', marginBottom: '6px' }}>Kreddy AI</p>
                                     <p style={{ fontWeight: 600, margin: 0 }}>Done, Boss! ✅ Updated Sarah's balance.</p>
-                                    <p style={{ fontWeight: 600, margin: '8px 0' }}>📂 <b>Also:</b> I've set a reminder for your supplier call at 4 PM today. 📞</p>
+                                    <p style={{ fontWeight: 600, margin: '8px 0' }}>📂 <b>Also:</b> I've set a reminder for Friday morning to call Sarah. 📞</p>
                                     <p style={{ fontWeight: 600, margin: 0 }}>Anything else, Chief?</p>
-                                </div>
+                                </motion.div>
                             </div>
                             <div style={{ padding: '15px', background: '#f0f0f0', display: 'flex', gap: '10px' }}>
                                 <div style={{ flex: 1, height: '38px', background: 'white', borderRadius: '20px' }}></div>
                                 <div style={{ width: '38px', height: '38px', background: '#075E54', borderRadius: '50%' }}></div>
                             </div>
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 
@@ -677,8 +726,8 @@ const Waitlist = () => {
                             { date: "JULY '25", title: "The Genesis", desc: "Concept & Research Phase. Identifying the 'Trust Gap' in African commerce.", status: "completed" },
                             { date: "SEPT '25", title: "Strategic Architecture", desc: "Core blueprinting of the Kredibly ledger and AI interface flow.", status: "completed" },
                             { date: "DEC '25", title: "Kreddy AI Core", desc: "Intelligence engine development. Teaching Kreddy to understand merchant slang and complex debts.", status: "completed" },
-                            { date: "JAN '26", title: "Premium Ledger UX", desc: "Rollout of smart telemetry, professional document generators, and cross-device syncing.", status: "active" },
-                            { date: "FEBRUARY - PRESENT", title: "Founding Member Waitlist", desc: "Onboarding our first 1,000 pioneers. Early access rewards and lifetime status for active participants.", status: "active" },
+                            { date: "JAN '26", title: "Premium Ledger UX", desc: "Rollout of smart telemetry, professional document generators, and cross-device syncing.", status: "done" },
+                            { date: "FEBRUARY - PRESENT", title: "Founding Member Waitlist", desc: "Onboarding our first 1,000 pioneers. Early access rewards and lifetime status for active participants.", status: "active", isFounding: true },
                             { date: "Q2 2026", title: "Global Marketplace Launch", desc: "Opening the ecosystem for public merchant registration and global transactions.", status: "future" },
                             { date: "Q3 2026", title: "Kredibly Mobile (Native)", desc: "The full ledger in your pocket. Offline-first, biometric security, and instant push intelligence.", status: "future", isMobile: true }
                         ].map((m, i) => (
@@ -718,7 +767,7 @@ const Waitlist = () => {
                                 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
                                         <span style={{ fontSize: '0.75rem', fontWeight: 900, color: m.status === 'active' ? 'var(--primary)' : '#94A3B8', letterSpacing: '0.1em' }}>{m.date}</span>
-                                        {m.status === 'active' && (
+                                        {m.isFounding && m.status === 'active' && (
                                             <span style={{ fontSize: '0.65rem', fontWeight: 900, background: 'rgba(76, 29, 149, 0.1)', color: 'var(--primary)', padding: '4px 12px', borderRadius: '100px' }}>LIVE NOW</span>
                                         )}
                                         {m.status === 'building' && (
@@ -877,6 +926,11 @@ const Waitlist = () => {
                                         Explore Ecosystem
                                     </button>
                                 </div>
+                                <button onClick={() => {
+                                    window.open(`https://wa.me/2349132205562?text=START%20DEMO%20-%20I%20want%20to%20see%20how%20Kreddy%20works`, "_blank");
+                                }} className="btn-primary" style={{ width: '100%', padding: '20px', borderRadius: '24px', background: 'var(--primary)', color: 'white', fontSize: '1.2rem', fontWeight: '800', marginTop: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 20px 40px -10px rgba(76, 29, 149, 0.4)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                                    <Zap size={22} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'text-bottom' }} /> Try Premium Demo on WhatsApp
+                                </button>
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -967,6 +1021,11 @@ const Waitlist = () => {
                     }
                     .hero-store-buttons {
                         gap: 12px !important;
+                    }
+                }
+                @media (min-width: 992px) {
+                    .waitlist-mockup-grid, .landing-mockup-grid {
+                        gridTemplateColumns: 1.1fr 0.9fr !important;
                     }
                 }
                 .pulse-dot {

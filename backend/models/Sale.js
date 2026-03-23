@@ -147,4 +147,8 @@ SaleSchema.pre("save", async function (next) {
     next();
 });
 
+// Performance Indexes for Mission Control & Revenue Analytics
+SaleSchema.index({ businessId: 1, status: 1 });
+SaleSchema.index({ "payments.date": 1 });
+
 module.exports = mongoose.model("Sale", SaleSchema);

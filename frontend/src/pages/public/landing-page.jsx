@@ -13,7 +13,8 @@ import {
     Smartphone,
     TrendingUp,
     FileText,
-    Lock
+    Lock,
+    Mic
 } from "lucide-react";
 import { motion } from "framer-motion";
 import PublicNavbar from "../../components/public/PublicNavbar";
@@ -329,17 +330,25 @@ const LandingPage = () => {
                         <p style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: 500, maxWidth: '700px', margin: '0 auto' }}>Leverage Kreddy AI to manage your commerce without ever leaving WhatsApp.</p>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'clamp(2rem, 8vw, 5rem)', alignItems: 'center' }}>
+                    <div className="landing-mockup-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'clamp(2rem, 8vw, 5rem)', alignItems: 'center' }}>
                         <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                            <div className="phone-mockup" style={{ width: '100%', maxWidth: '360px', height: '680px', background: '#111', borderRadius: '48px', padding: '12px', position: 'relative', boxShadow: '0 60px 120px -20px rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                            <motion.div initial={{ opacity: 0, y: 50, scale: 0.95 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.8, ease: "easeOut" }} viewport={{ once: false, amount: 0.1 }} className="phone-mockup" style={{ width: '100%', maxWidth: '360px', height: '680px', background: '#111', borderRadius: '48px', padding: '12px', position: 'relative', boxShadow: '0 60px 120px -20px rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
                                 <div style={{ width: '100%', height: '100%', background: '#E5DDD5', borderRadius: '40px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                                     <div style={{ background: '#075E54', padding: '40px 20px 16px', color: 'white', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#075E54' }}>K</div>
+                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'white', boxShadow: '0 2px 4px rgba(76, 29, 149, 0.3)' }}>K</div>
                                         <div><p style={{ fontSize: '0.95rem', fontWeight: 900 }}>Kreddy AI</p><p style={{ fontSize: '0.65rem', opacity: 0.8 }}>Business Assistant</p></div>
                                     </div>
                                     <div style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                        <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }} style={{ alignSelf: 'flex-end', background: '#DCF8C6', padding: '12px 16px', borderRadius: '16px 0 16px 16px', fontSize: '0.85rem' }}>
-                                            Kreddy, Sarah just paid 50k out of 120k for the bags. Remind me to call her next Friday morning to collect the rest. Also, set a reminder for my gym session by 6pm!
+                                        <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }} style={{ alignSelf: 'flex-end', background: '#DCF8C6', padding: '16px', borderRadius: '16px 0 16px 16px', fontSize: '0.85rem', color: '#111', fontWeight: 500, maxWidth: '85%', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                                                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#128C7E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Mic size={20} color="white" /></div>
+                                                <div style={{ width: '120px', height: '6px', background: 'rgba(18, 140, 126, 0.3)', borderRadius: '3px', position: 'relative' }}>
+                                                    <div style={{ width: '40%', height: '100%', background: '#128C7E', borderRadius: '3px' }} />
+                                                    <div style={{ position: 'absolute', left: '40%', top: '-4px', width: '14px', height: '14px', background: '#075E54', borderRadius: '50%' }} />
+                                                </div>
+                                                <span style={{ fontSize: '0.75rem', color: '#075E54', fontWeight: 800 }}>0:12</span>
+                                            </div>
+                                            <p style={{ margin: '0', opacity: 0.7, fontSize: '0.75rem', fontStyle: 'italic', lineHeight: 1.4 }}>"Ah Kreddy, Sarah just paid 50k for the bags, remind me to call her next Friday morning to collect the rest..."</p>
                                         </motion.div>
                                         <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: 1.5 }} style={{ alignSelf: 'flex-start', background: 'white', padding: '16px', borderRadius: '0 16px 16px 16px', fontSize: '0.85rem' }}>
                                             <p style={{ color: 'var(--primary)', fontWeight: 900, fontSize: '0.75rem', marginBottom: '6px' }}>Kreddy AI</p>
@@ -347,10 +356,9 @@ const LandingPage = () => {
                                                 Done, Chairman! 🫡<br /><br />
                                                 ✅ <b>Recorded:</b> ₦50k from Sarah James.<br />
                                                 ⏳ <b>New Balance:</b> ₦70k.<br /><br />
-                                                📋 <b>2 Reminders Set:</b><br />
-                                                1. Next Friday (Friday morning) to call Sarah.<br />
-                                                2. Today (5:45pm) for your gym session. 💪<br /><br />
-                                                <i>I'm on it! Anything else?</i>
+                                                📋 <b>Reminder Set:</b><br />
+                                                Next Friday morning to call Sarah.<br /><br />
+                                                <i>Anything else?</i>
                                             </p>
                                         </motion.div>
                                     </div>
@@ -359,13 +367,13 @@ const LandingPage = () => {
                                         <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#128C7E' }}></div>
                                     </div>
                                 </div>
-                            </div>
+                            </motion.div>
                         </div>
 
                         <div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '56px' }}>
                                     { [
-                                        { icon: MessageCircle, title: "One Chat, One Record.", desc: "Talk to Kreddy like you would a human partner. It understands inventory, owed money, and payments without forcing you into complex apps." },
+                                        { icon: MessageCircle, title: "Stop typing. Start talking.", desc: "Don't have time to type? Send Kreddy a messy 30-second voice note while you are walking. She instantly extracts the customer's name, calculates the balance, and sets reminders." },
                                         { icon: Sparkles, title: "Your Digital Chief of Staff", desc: "Set gym reminders, meeting alarms, or personal tasks via voice. Kreddy tracks your entire day, not just your sales." },
                                         { icon: Zap, title: "Proactive Follow-ups", desc: "Kreddy doesn't just wait for you. If a debt was due yesterday, he'll ask you about it this morning: 'Did they pay or should I snooze?'" },
                                         { icon: Users, title: "Staff & Team Monitoring", desc: "Track what your sales boys are doing in real-time. Protect your money while you focus on vision." },
@@ -652,6 +660,11 @@ const LandingPage = () => {
                 @keyframes pulse-ring-landing { 0% { transform: scale(1); opacity: 0.3; } 100% { transform: scale(2.5); opacity: 0; } }
                 .highlight-card-landing { transform: scale(1.05); }
                 @media (max-width: 640px) { .highlight-card-landing { transform: none !important; } }
+                @media (min-width: 992px) {
+                    .landing-mockup-grid {
+                        grid-template-columns: 1.1fr 0.9fr !important;
+                    }
+                }
             `}</style>
         </div>
     );

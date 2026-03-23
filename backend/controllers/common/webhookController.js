@@ -146,25 +146,30 @@ exports.handlePaystackWebhook = async (req, res) => {
                     }
                 }
 
-                const sale = await Sale.findOneAndUpdate(
-                    { 
-                        ...vaQuery,
-                        'payments.reference': { $ne: reference }
-                    },
-                    {
-                        $push: {
-                            payments: {
-                                amount: paidAmount,
-                                method: 'Virtual Account Transfer',
-                                reference: reference,
-                                date: new Date()
-                            }
-                        }
-                    },
-                    { new: true }
-                ).populate('businessId');
+                // 1. Idempotency Check
+                const alreadyPaid = await Sale.findOne({
+                    ...vaQuery,
+                    'payments.reference': reference
+                });
+
+                if (alreadyPaid) {
+                    console.log(`⏩ Webhook reference ${reference} already processed for Invoice ${invoiceNumber}. Skipping.`);
+                    return res.sendStatus(200);
+                }
+
+                // 2. Fetch and Validate Sale
+                const sale = await Sale.findOne(vaQuery).populate('businessId');
 
                 if (sale) {
+                    // Update payments via .save() to trigger Mongoose pre-save hook for status updates!
+                    sale.payments.push({
+                        amount: paidAmount,
+                        method: 'Virtual Account Transfer',
+                        reference: reference,
+                        date: new Date()
+                    });
+                    await sale.save();
+
                     const business = sale.businessId;
                     
                     await ActivityLog.create({

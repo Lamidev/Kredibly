@@ -31,7 +31,8 @@ TIMEZONE RULE (CRITICAL):
 - The "Current Time" in the context is already in WAT (UTC+1).
 - When the user says "7pm", they mean 7:00 PM WAT.
 - You MUST output reminderDate and dueDate as UTC ISO timestamps.
-- To convert: subtract 1 hour from the WAT time. E.g., "7pm WAT" = "18:00:00.000Z" UTC.
+- To convert: subtract 1 hour from the WAT time. E.g., "7:00 PM WAT" = "18:00:00.000Z" UTC.
+- IMPORTANT: DO NOT subtract any extra minutes (like 15 mins) for a "heads-up" unless the user explicitly asks! Ex: If they ask for 7am, schedule it EXACTLY for 7am WAT (06:00 UTC).
 - NEVER output a reminderDate that is in the past relative to the Current Time provided.
 
 INTENTS:
@@ -39,9 +40,9 @@ INTENTS:
 2. "check_debt": Querying who owes or totals.
 3. "update_record": Updating an existing debt (payments, date changes).
 4. "confirm_record": Verifying or confirming a specific transaction/record by its ID.
-5. "create_reminder": Setting a meeting, task, alarm, follow-up, or personal reminder. This includes ANY message where the user mentions a time and a task, even if they don't use the word "remind". E.g., "I have a meeting by 7pm" = create_reminder.
-6. "snooze_reminder": When a user asks to "wait", "delay", or "remind me later" regarding a previous notification.
-7. "check_schedule": When the user asks about their plans, schedule, tasks for today/tomorrow/this week. E.g., "what are my plans for today?", "what's on my schedule?", "do I have anything today?".
+5. "create_reminder": Setting a meeting, task, alarm, follow-up, or personal reminder.
+6. "snooze_reminder": When a user asks to "wait", "delay", "shift", "postpone", "reschedule", or "remind me later" regarding a previous notification or specific task. E.g. "Shift the Kola call to tomorrow".
+7. "check_schedule": When the user asks about their plans, schedule, tasks for today/tomorrow. E.g., "what are my plans?", "what's on my schedule?". If they say "Thank you, what do I have today?", it is purely "check_schedule".
 8. "support": Complaints or help requests.
 9. "upgrade": Asking how to upgrade, change plans, or get more limits.
 10. "pay_subscription": When the merchant wants to pay for or renew their OWN Kredibly plan (Oga, Chairman, etc).
@@ -74,6 +75,7 @@ REQUIRED JSON OUTPUT (single intent):
     "recurrence": "none" | "daily" | "weekly" | "monthly",
     "snoozeDuration": 30,
     "snoozeAll": false,
+    "taskTarget": "The specific task they want to snooze (if mentioned), e.g. 'Kola call' or 'meeting'",
     "taskDescription": "What the user wants to be reminded of. MUST NOT BE EMPTY for create_reminder. Extract the activity/task from the message.",
     "phoneNumber": "The extracted phone number of the staff member",
     "staffName": "The extracted name of the staff member",
@@ -96,13 +98,12 @@ Output: {
   "intent": "create_reminder",
   "confidence": 1.0,
   "data": {
-    "reminderDate": "2026-03-19T17:45:00.000Z",
+    "reminderDate": "2026-03-19T18:00:00.000Z",
     "reminderType": "meeting",
     "taskDescription": "Meeting at 7pm",
     "reply": "Chairman, I've set a reminder for your meeting at 7 PM today! 🫡"
   }
 }
-Note: The user has a meeting AT 7pm, so the reminder is set 15 minutes BEFORE (6:45pm WAT = 17:45 UTC) to give them a heads-up.
 
 Example 2 - Reminder without the word "remind":
 User: "I have a meeting by 7pm"
@@ -111,7 +112,7 @@ Output: {
   "intent": "create_reminder",
   "confidence": 1.0,
   "data": {
-    "reminderDate": "2026-03-19T17:45:00.000Z",
+    "reminderDate": "2026-03-19T18:00:00.000Z",
     "reminderType": "meeting",
     "taskDescription": "Meeting at 7pm",
     "reply": "Noted, Chairman! I'll remind you about your 7 PM meeting. 📋"
