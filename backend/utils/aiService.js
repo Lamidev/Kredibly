@@ -65,6 +65,7 @@ REQUIRED JSON OUTPUT (single intent):
   "confidence": 1.0,
   "data": {
     "customerName": "Name",
+    "newName": "Corrected Name (if user is fixing a spelling or renaming)",
     "totalAmount": 0,
     "paidAmount": 0,
     "item": "Description",

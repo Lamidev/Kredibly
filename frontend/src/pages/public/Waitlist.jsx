@@ -275,11 +275,12 @@ const Waitlist = () => {
                     }} 
                 />
 
-                <div className="hero-section" style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto', padding: 'clamp(80px, 15vw, 160px) 24px clamp(2rem, 10vw, 80px)', textAlign: 'center' }}>
+                <div className="hero-section" style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto', padding: 'clamp(120px, 18vw, 200px) 24px clamp(2rem, 10vw, 80px)', textAlign: 'center' }}>
                 <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.1 }} transition={{ duration: 0.8 }}>
                     <div className="hero-badge" style={{ 
                         display: 'flex', 
                         alignItems: 'center', 
+                        justifyContent: 'center',
                         padding: '10px 24px', 
                         background: 'white', 
                         border: '1px solid rgba(76, 29, 149, 0.15)', 
@@ -287,10 +288,11 @@ const Waitlist = () => {
                         color: 'var(--primary)', 
                         fontSize: '0.85rem', 
                         fontWeight: 800, 
-                        marginBottom: '40px', 
                         boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
                         width: 'fit-content',
-                        margin: '0 auto 40px'
+                        margin: '0 auto 40px',
+                        position: 'relative',
+                        zIndex: 20
                     }}>
                         JOIN THE REVOLUTION
                     </div>
@@ -301,28 +303,19 @@ const Waitlist = () => {
                     </h1>
 
                     <p className="hero-subtext" style={{ fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)', color: '#334155', lineHeight: 1.6, marginBottom: '56px', maxWidth: '850px', margin: '0 auto 56px', fontWeight: 400 }}>
-                        The sales ledger & **Digital Chief of Staff** designed uniquely for the Nigerian merchant. Track sales, manage your daily agenda, and collect debts—all inside WhatsApp.
+                        The sales ledger & Digital Chief of Staff designed uniquely for the Nigerian merchant. Track sales, manage your daily agenda, and collect debts,all inside WhatsApp.
                     </p>
 
-                    <div className="hero-button-group" style={{ display: 'flex', gap: '24px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '60px' }}>
-                        <button onClick={scrollToJoin} className="btn-primary" style={{ padding: '24px 48px', fontSize: '1.2rem', borderRadius: '24px', background: 'var(--primary)', color: 'white', boxShadow: '0 20px 40px -10px rgba(76, 29, 149, 0.3)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            Join the Waitlist <ArrowRight size={22} />
+                    <div className="hero-button-group" style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '80px' }}>
+                        <button onClick={scrollToJoin} className="hero-main-btn" style={{ padding: '0 40px', height: '64px', fontSize: '1.1rem', borderRadius: '24px', background: 'var(--primary)', color: 'white', border: 'none', cursor: 'pointer', boxShadow: '0 20px 40px -10px rgba(76, 29, 149, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontWeight: 700 }}>
+                            Join the Waitlist
                         </button>
                         
                         <button onClick={() => {
-                            window.open(`https://wa.me/2349132205562?text=START%20DEMO%20-%20I%20want%20to%20see%20how%20Kreddy%20works`, "_blank");
-                        }} className="btn-secondary" style={{ padding: '24px 48px', fontSize: '1.2rem', borderRadius: '24px', background: 'white', border: '2px solid #E2E8F0', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '12px', transition: 'all 0.3s' }}>
-                            <Zap size={22} color="var(--primary)" /> Start Demo
+                            window.open(`https://wa.me/2347071238658?text=START%20DEMO%20-%20I%20want%20to%20see%20how%20Kreddy%20works`, "_blank");
+                        }} className="hero-main-btn" style={{ padding: '0 40px', height: '64px', fontSize: '1.1rem', borderRadius: '24px', background: 'white', border: '2px solid #E2E8F0', color: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', transition: 'all 0.3s', cursor: 'pointer', fontWeight: 700 }}>
+                            Start Demo
                         </button>
-                    </div>
-
-                    <div style={{ marginBottom: '60px' }}>
-                        <p style={{ color: '#64748B', fontSize: '1.1rem', fontWeight: 600, margin: '0 0 8px' }}>
-                            🎁 <b>Get 30 Pilot Instructions Free</b> as a Pioneer.
-                        </p>
-                        <p style={{ color: '#94A3B8', fontSize: '0.85rem', fontWeight: 400 }}>
-                            Use the same WhatsApp number you register with.
-                        </p>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'white', padding: '12px 24px', borderRadius: '100px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', width: 'fit-content', margin: '0 auto 60px' }}>
@@ -374,13 +367,13 @@ const Waitlist = () => {
                         <div style={{ background: 'rgba(76, 29, 149, 0.1)', width: '64px', height: '64px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '32px' }}>
                             <Smartphone color="var(--primary)" size={32} />
                         </div>
-                        <h2 style={{ fontSize: 'clamp(2.5rem, 5.5vw, 4.5rem)', fontWeight: 800, letterSpacing: '-0.04em', color: '#0F172A', lineHeight: 1, marginBottom: '24px' }}>
+                        <h2 style={{ fontSize: 'clamp(2.5rem, 5.5vw, 4.5rem)', fontWeight: 800, letterSpacing: '-0.04em', color: '#0F172A', lineHeight: 1, marginBottom: '32px' }}>
                             Kreddy talks to you.
                         </h2>
-                        <p style={{ fontSize: '1.3rem', color: '#334155', fontWeight: 400, marginTop: '16px', lineHeight: 1.6 }}>
+                        <p style={{ fontSize: 'clamp(1.1rem, 2vw, 1.3rem)', color: '#334155', fontWeight: 400, marginTop: '16px', lineHeight: 1.6, marginBottom: '48px' }}>
                             Talk to Kreddy AI on WhatsApp like you're talking to a partner. Record transactions, manage your daily schedule, and let him handle the follow-ups while you focus on growth.
                         </p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }} className="mobile-feature-list">
                             {[
                                 { t: "Instant Direct Sweep", d: "Customers pay you through Kreddy, and the cash lands in your bank instantly. No delays." },
                                 { t: "AI Voice Sync", d: "Too busy to type? Just send a voice note to Kreddy. He'll record the sale and the debt for you." },
@@ -399,7 +392,7 @@ const Waitlist = () => {
                         </div>
                     </div>
 
-1:                     {/* Chat Mockup */}
+                    {/* Chat Mockup */}
                     <motion.div initial={{ opacity: 0, scale: 0.95, y: 40 }} whileInView={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.8, ease: "easeOut" }} viewport={{ once: false, amount: 0.1 }} className="chat-mockup" style={{
                         background: '#FFF',
                         borderRadius: '40px',
@@ -457,7 +450,7 @@ const Waitlist = () => {
                         {[
                             { icon: Users, t: "Staff Monitoring", d: "See exactly what your staff are selling from anywhere. Keep your money safe." },
                             { icon: FileText, t: "Beautiful Receipts", d: "Send professional receipts to customers on WhatsApp. Build trust instantly." },
-                            { icon: Lock, t: "Get Paid Faster", d: "Professional recovery logic. Kreddy pro-actively asks YOU if a debt was paid, so nothing slips through the cracks." },
+                            { icon: Lock, t: "Instant Debt Recovery", d: "Send professional outstanding notices with secure payment links directly on WhatsApp. Your customers pay, and you get the cash instantly. No more awkward follow-ups." },
                             { icon: Zap, t: "8 AM Executive Briefing", d: "Waking up to a summary of your sales, cash collected, and top debtors. Pure intelligence, no fluff." },
                             { icon: TrendingUp, t: "Voice-First Productivity", d: "Driving or in the market? Just send a voice note. Kreddy handles the logging and the follow-ups." }
                         ].map((item, i) => (
@@ -927,9 +920,9 @@ const Waitlist = () => {
                                     </button>
                                 </div>
                                 <button onClick={() => {
-                                    window.open(`https://wa.me/2349132205562?text=START%20DEMO%20-%20I%20want%20to%20see%20how%20Kreddy%20works`, "_blank");
-                                }} className="btn-primary" style={{ width: '100%', padding: '20px', borderRadius: '24px', background: 'var(--primary)', color: 'white', fontSize: '1.2rem', fontWeight: '800', marginTop: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 20px 40px -10px rgba(76, 29, 149, 0.4)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
-                                    <Zap size={22} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'text-bottom' }} /> Try Premium Demo on WhatsApp
+                                    window.open(`https://wa.me/2347071238658?text=START%20DEMO%20-%20I%20want%20to%20see%20how%20Kreddy%20works`, "_blank");
+                                }} style={{ width: '100%', height: '64px', borderRadius: '24px', background: 'var(--primary)', color: 'white', fontSize: '1.1rem', fontWeight: '800', marginTop: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 20px 40px -10px rgba(76, 29, 149, 0.4)', transition: 'transform 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                                    <Zap size={22} /> Start Demo on WhatsApp
                                 </button>
                             </motion.div>
                         )}
@@ -982,7 +975,6 @@ const Waitlist = () => {
                 @media (max-width: 640px) {
                     .waitlist-page { padding-top: 5px; }
                     .waitlist-input-light { height: 60px !important; }
-                    .btn-primary { height: 64px !important; }
                     #join-form { padding: 60px 16px !important; }
                     .form-card { padding: 40px 24px !important; border-radius: 32px !important; }
                     .hero-section { padding-top: 40px !important; padding-bottom: 60px !important; }
@@ -990,6 +982,7 @@ const Waitlist = () => {
                     .hero-title { margin-bottom: 24px !important; line-height: 1.05 !important; }
                     .hero-subtext { margin-bottom: 32px !important; font-size: 1.1rem !important; }
                     .hero-button-group { margin-bottom: 40px !important; }
+                    .hero-main-btn { width: 100% !important; max-width: 340px !important; }
                     .waitlist-nav { padding: 24px 20px !important; }
                     .nav-logo { height: 32px !important; }
                     .mobile-ecosystem-grid { gap: 40px !important; }
@@ -1025,7 +1018,22 @@ const Waitlist = () => {
                 }
                 @media (min-width: 992px) {
                     .waitlist-mockup-grid, .landing-mockup-grid {
-                        gridTemplateColumns: 1.1fr 0.9fr !important;
+                        grid-template-columns: 1.1fr 0.9fr !important;
+                    }
+                }
+                .hero-badge {
+                    display: flex !important;
+                    justify-content: center;
+                }
+                @media (max-width: 768px) {
+                    .hero-section {
+                        padding-top: 130px !important;
+                    }
+                    .hero-badge {
+                        display: flex !important;
+                        justify-content: center;
+                        visibility: visible !important;
+                        opacity: 1 !important;
                     }
                 }
                 .pulse-dot {
