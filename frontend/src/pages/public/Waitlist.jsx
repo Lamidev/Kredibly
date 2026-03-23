@@ -220,12 +220,11 @@ const Waitlist = () => {
 
                             <div style={{ padding: '24px', borderTop: '1px solid rgba(0,0,0,0.05)', background: 'rgba(255,255,255,0.1)' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    <button onClick={() => { 
-                                        setIsMobileMenuOpen(false); 
-                                        window.open(`https://wa.me/2349132205562?text=START%20DEMO%20-%20I%20want%20to%20see%20how%20Kreddy%20works`, "_blank");
-                                    }} style={{ 
-                                        width: '100%', padding: '16px', borderRadius: '16px', background: 'white', border: '1px solid #E2E8F0', textAlign: 'center', color: '#000000', fontWeight: 800, cursor: 'pointer' 
-                                    }}>Start Demo</button>
+                                    <button disabled style={{ 
+                                        width: '100%', padding: '16px', borderRadius: '16px', background: '#F8FAFC', border: '1px solid #E2E8F0', textAlign: 'center', color: '#94A3B8', fontWeight: 800, cursor: 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: 0.8 
+                                    }}>
+                                        <Lock size={18} /> Start Demo (Locked)
+                                    </button>
                                     <button onClick={() => { setIsMobileMenuOpen(false); scrollToJoin(); }} style={{ 
                                         width: '100%', padding: '16px', borderRadius: '16px', background: 'var(--primary)', textAlign: 'center', textDecoration: 'none', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 10px 20px -5px rgba(76, 29, 149, 0.3)' 
                                     }}>Join Waitlist Free</button>
@@ -311,10 +310,8 @@ const Waitlist = () => {
                             Join the Waitlist
                         </button>
                         
-                        <button onClick={() => {
-                            window.open(`https://wa.me/2347071238658?text=START%20DEMO%20-%20I%20want%20to%20see%20how%20Kreddy%20works`, "_blank");
-                        }} className="hero-main-btn" style={{ padding: '0 32px', height: '64px', fontSize: '1.1rem', borderRadius: '24px', background: 'white', border: '2px solid #E2E8F0', color: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', transition: 'all 0.3s', cursor: 'pointer', fontWeight: 700 }}>
-                            Start Demo
+                        <button disabled className="hero-main-btn" style={{ padding: '0 32px', height: '64px', fontSize: '1.1rem', borderRadius: '24px', background: '#F8FAFC', border: '1px solid #E2E8F0', color: '#94A3B8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', transition: 'all 0.3s', cursor: 'not-allowed', fontWeight: 600, opacity: 0.8 }}>
+                            <Lock size={18} /> Start Demo (Coming Soon)
                         </button>
                     </div>
 
@@ -915,14 +912,12 @@ const Waitlist = () => {
                                     <button onClick={() => {
                                         const el = document.getElementById('meet-kreddy');
                                         if (el) el.scrollIntoView({ behavior: 'smooth' });
-                                    }} className="btn-secondary" style={{ minWidth: '220px', height: '64px', fontSize: '1.1rem' }}>
+                                    }} className="btn-secondary" style={{ width: '100%', height: '64px', fontSize: '1.1rem' }}>
                                         Explore Ecosystem
                                     </button>
                                 </div>
-                                <button onClick={() => {
-                                    window.open(`https://wa.me/2347071238658?text=START%20DEMO%20-%20I%20want%20to%20see%20how%20Kreddy%20works`, "_blank");
-                                }} style={{ width: '100%', height: '64px', borderRadius: '24px', background: 'var(--primary)', color: 'white', fontSize: '1.1rem', fontWeight: '800', marginTop: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 20px 40px -10px rgba(76, 29, 149, 0.4)', transition: 'transform 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
-                                    <Zap size={22} /> Start Demo on WhatsApp
+                                <button disabled style={{ width: '100%', height: '64px', borderRadius: '24px', background: '#F1F5F9', color: '#94A3B8', fontSize: '1.1rem', fontWeight: '700', marginTop: '16px', border: '1px solid #E2E8F0', cursor: 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', opacity: 0.8 }}>
+                                    <Lock size={18} /> Start Demo (Locked)
                                 </button>
                             </motion.div>
                         )}
