@@ -16,14 +16,22 @@ const scheduleRemindersWorker = () => {
             }).populate("businessId").populate("saleId");
 
             for (const reminder of pendingReminders) {
-                if (!reminder.businessId) {
-                    reminder.status = "delivered";
-                    reminder.deliveredAt = new Date();
-                    await reminder.save();
+                // Atomic check-and-set to avoid duplicates if workers run concurrently
+                const acquired = await Reminder.findOneAndUpdate(
+                    { _id: reminder._id, status: "pending" },
+                    { status: "processing" }
+                ).populate("businessId").populate("saleId");
+                
+                if (!acquired) continue; // Already processed by another tick
+
+                if (!acquired.businessId) {
+                    acquired.status = "delivered";
+                    acquired.deliveredAt = new Date();
+                    await acquired.save();
                     continue;
                 }
 
-                const plan = reminder.businessId.plan || "hustler";
+                const plan = acquired.businessId.plan || "hustler";
                 let title = "Boss";
                 if (plan === "oga") title = "Oga";
                 if (plan === "chairman") title = "Chairman";
@@ -36,10 +44,10 @@ const scheduleRemindersWorker = () => {
                 };
                 const icon = typeIcons[reminder.type] || "🔔";
 
-                let msg = `${icon} *Kreddy Reminder!* \n\n${title}, you asked me to remind you to:\n*"${reminder.description}"*\n\n`;
+                let msg = `${icon} *Kreddy Reminder!* \n\n${title}, you asked me to remind you to:\n*"${acquired.description}"*\n\n`;
 
-                if (reminder.saleId) {
-                    const sale = reminder.saleId; // Corrected from typo
+                if (acquired.saleId) {
+                    const sale = acquired.saleId;
                     const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                     const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
                     
@@ -47,29 +55,29 @@ const scheduleRemindersWorker = () => {
                     msg += `*Forward this link to them to collect payment!* 💸\n\n`;
                 }
 
-                msg += `Let's get it done! 🚀`;
+                msg += `Let's get it done! 🚀\n\n_Reply "snooze 10 mins" if you are running late, or type a new time (e.g. "Tomorrow at 2pm")._`;
 
-                await sendWhatsAppMessage(reminder.whatsappNumber, msg).catch(e => {
-                    console.error(`Failed to send reminder to ${reminder.whatsappNumber}:`, e.message);
+                await sendWhatsAppMessage(acquired.whatsappNumber, msg).catch(e => {
+                    console.error(`Failed to send reminder to ${acquired.whatsappNumber}:`, e.message);
                 });
 
-                reminder.status = "delivered";
-                reminder.deliveredAt = new Date();
-                await reminder.save();
+                acquired.status = "delivered";
+                acquired.deliveredAt = new Date();
+                await acquired.save();
 
                 // --- RECURRENCE LOGIC ---
-                if (reminder.recurrence && reminder.recurrence !== "none") {
-                    const nextDate = new Date(reminder.triggerDate);
-                    if (reminder.recurrence === "daily") nextDate.setDate(nextDate.getDate() + 1);
-                    else if (reminder.recurrence === "weekly") nextDate.setDate(nextDate.getDate() + 7);
-                    else if (reminder.recurrence === "monthly") nextDate.setMonth(nextDate.getMonth() + 1);
+                if (acquired.recurrence && acquired.recurrence !== "none") {
+                    const nextDate = new Date(acquired.triggerDate);
+                    if (acquired.recurrence === "daily") nextDate.setDate(nextDate.getDate() + 1);
+                    else if (acquired.recurrence === "weekly") nextDate.setDate(nextDate.getDate() + 7);
+                    else if (acquired.recurrence === "monthly") nextDate.setMonth(nextDate.getMonth() + 1);
 
                     await Reminder.create({
-                        businessId: reminder.businessId._id,
-                        whatsappNumber: reminder.whatsappNumber,
-                        description: reminder.description,
-                        type: reminder.type,
-                        recurrence: reminder.recurrence,
+                        businessId: acquired.businessId._id,
+                        whatsappNumber: acquired.whatsappNumber,
+                        description: acquired.description,
+                        type: acquired.type,
+                        recurrence: acquired.recurrence,
                         triggerDate: nextDate,
                         status: "pending"
                     });
@@ -158,7 +166,7 @@ const scheduleMorningSummary = () => {
                             msg += `🔴 *Top Outstanding Balances:*\n`;
                             topDebtors.forEach(d => {
                                 const bal = d.totalAmount - d.payments.reduce((sum, p) => sum + p.amount, 0);
-                                const dueStr = d.dueDate ? ` (Due: ${new Date(d.dueDate).toLocaleDateString()})` : "";
+                                const dueStr = d.dueDate ? ` (Due: ${new Date(d.dueDate).toLocaleDateString('en-NG', { timeZone: 'Africa/Lagos' })})` : "";
                                 msg += `• ${d.customerName}: ₦${bal.toLocaleString()}${dueStr}\n`;
                             });
                             msg += `\n`;
@@ -178,7 +186,7 @@ const scheduleMorningSummary = () => {
                         if (todaysReminders.length > 0) {
                             msg += `📅 *Today's Agenda:*\n`;
                             todaysReminders.forEach(r => {
-                                const timeStr = new Date(r.triggerDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                const timeStr = new Date(r.triggerDate).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Africa/Lagos' });
                                 msg += `• ${timeStr}: ${r.description}\n`;
                             });
                             msg += `\n`;

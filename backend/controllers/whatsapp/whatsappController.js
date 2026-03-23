@@ -548,19 +548,78 @@ exports.handleIncoming = async (req, res) => {
         });
 
         if (!profile) {
-            await sendReply(from, "Welcome to Kredibly! 🚀 \n\nI don't recognize this number. Please log in to dashboard and link your number.");
+            // >>> VIP KREDDY DEMO SANDBOX LOGIC <<<
+            if (text.toUpperCase().startsWith("START DEMO")) {
+                const Waitlist = require('../../models/Waitlist');
+                // Check if they are officially on the waitlist
+                const waitlistUser = await Waitlist.findOne({ whatsappNumber: cleanFrom });
+                
+                if (!waitlistUser) {
+                    await sendReply(from, "⚠️ *Demo Access Denied*\n\nYour number is not registered on the Kredibly Waitlist. Nice try! 😉\n\nPlease join the waitlist first to unlock your free premium interactive demo:\n👉 https://usekredibly.com/waitlist");
+                    return;
+                }
+
+                // They are on the waitlist! Auto-Provision a real Kredibly Demo Account
+                console.log(`🎁 [START DEMO] Provisioning for ${waitlistUser.name} (${cleanFrom})`);
+                const User = require('../../models/User');
+                let demoUser = await User.findOne({ email: waitlistUser.email });
+                if (!demoUser) {
+                    demoUser = await User.create({
+                        name: waitlistUser.name,
+                        email: waitlistUser.email,
+                        password: "DEMO_" + Date.now() + Math.random().toString(36), // Random secure pass
+                        isVerified: true
+                    });
+                }
+
+                let profileObj = await BusinessProfile.findOne({ ownerId: demoUser._id });
+                if (!profileObj) {
+                    profileObj = await BusinessProfile.create({
+                        ownerId: demoUser._id,
+                        displayName: waitlistUser.name + " Store",
+                        entityType: "individual",
+                        whatsappNumber: cleanFrom,
+                        sellMode: waitlistUser.industry || "both",
+                        plan: "oga", // The Beta Tester Sweet Spot!
+                        isBetaTester: true,
+                        isKreddyConnected: true
+                    });
+                    
+                    await sendReply(from, "🎉 *Welcome to your Kredibly Beta Sandbox!*\n\nI just automatically upgraded your Pioneer Sandbox to the Oga Plan using your Waitlist profile.\n\n*Your Rules:* You get a full 30-interaction pilot to test my intelligence. Ask me anything or try sending a voice note like:\n\n🎧 _'Record a 50k sale from Sarah'_\n\nor\n\n🎧 _'Remind me to call David at 6pm'_\n\nReady? Let's make some money! 🚀");
+                    return;
+                } else {
+                    await sendReply(from, "Hi there! Your Demo Sandbox is already active. Send me a voice note or text to test my capabilities, Boss! 🚀");
+                    return;
+                }
+            }
+
+            // Normal unknown number flow
+            const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
+            const welcomeMsg = `*Welcome to Kredibly!* 🚀\n\nI am *Kreddy*, your new Digital Chief of Staff. I can help you record sales, track who owes you money, and send automated payment reminders—all directly from this WhatsApp chat!\n\n_I don't recognize your number yet._ 🧐\n\nTap the link below to create your free account in 30 seconds, and let's put your business on autopilot: 👇\n\n🔗 *${APP_URL}/signup*`;
+            await sendReply(from, welcomeMsg);
             return;
         }
 
         const isStaff = profile.whatsappNumber !== cleanFrom;
         let plan = profile.plan || "hustler";
 
+        // >>> CLOSED BETA 30-MESSAGE HARD STOP <<<
+        if (profile.isBetaTester) {
+            if (profile.demoMessagesUsed >= 30) {
+                const limitMsg = `🚨 *Demo Sandbox Closed*\n\nYou have used all 30 of your Beta Trial transactions! (You completed a full business testing loop).\n\nI hope you saw how powerful Kredibly is. As your future Chief of Staff, I am currently in 'Closed Beta' and we have not officially launched yet.\n\nBecause you completed your trial, I have automatically moved your number to the *Priority Launch List*. The moment we open the gates, you will be the first to get full access to your permanent account.\n\nWant to jump to the very front of the line? Refer 3 fellow business owners using your unique Waitlist link!\n👉 https://usekredibly.com/waitlist`;
+                await sendReply(from, limitMsg);
+                return;
+            }
+            
+            // Increment the counter and save
+            profile.demoMessagesUsed += 1;
+            await profile.save();
+        }
+
         const isTrialing = profile.planStatus === 'trialing';
-        // BETA OVERRIDE: Force Chairman logic for all active testers to show off AI
-        plan = "chairman"; 
         const isTrialExpired = false; 
         
-        console.log(`👤 User: ${cleanFrom} | Beta Forced: ${plan.toUpperCase()} | Original: ${profile.plan}`);
+        console.log(`👤 User: ${cleanFrom} | Plan: ${plan.toUpperCase()} | Demo Used: ${profile.demoMessagesUsed}/30`);
         
         // Usage Reset Logic (Monthly)
         if (!profile.monthlyUsage) {
@@ -580,9 +639,22 @@ exports.handleIncoming = async (req, res) => {
         const isHustler = plan === "hustler"; 
         const preferredTone = "friendly";
 
+        let isFirstTime = false;
         if (profile && !profile.isKreddyConnected && !isStaff) {
             profile.isKreddyConnected = true;
+            isFirstTime = true;
             await profile.save();
+        }
+
+        if (isFirstTime) {
+            const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+            const introMsg = `🫡 *Connection Successful, ${bossTitle}!* \n\nI am Kreddy, and I am officially clocked in as your Digital Chief of Staff. \n\nHere is what you can ask me to do right now:\n\n🎤 *Send a Voice Note:* _"Sarah just bought a bag for 15k, she paid 5k, remind me on Friday to collect the balance."_\n\n📸 *Send a Picture:* Send a pic of a receipt and tell me to log it.\n\n💡 *Ask a Question:* _"What do I have planned for today?"_\n\nTalk to me like a real person. Let's make some money! 💰`;
+            await sendReply(from, introMsg);
+            
+            // If they just said a basic greeting, stop here. Otherwise, keep processing the payload.
+            if (["hi", "hello", "hey", "start", "test"].includes(text.toLowerCase())) {
+                return;
+            }
         }
 
         await logActivity({
@@ -1256,23 +1328,44 @@ Upgrade here: ${APP_URL}/pricing`);
                                     if (sale) linkedSaleId = sale._id;
                                 }
 
-                                await Reminder.create({
-                                    businessId: profile._id,
-                                    whatsappNumber: cleanFrom,
-                                    description: taskDescription,
-                                    triggerDate: triggerDate,
-                                    type: reminderType,
-                                    recurrence: recurrence,
-                                    saleId: linkedSaleId
-                                });
-
                                 if (!profile.monthlyUsage) profile.monthlyUsage = { reminders: 0, voiceNotes: 0, images: 0, lastReset: new Date() };
                                 profile.monthlyUsage.reminders = usedReminders + 1;
                                 await profile.save();
 
-                                const FriendlyDate = triggerDate.toLocaleString('en-NG', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                                 const recLabel = recurrence !== 'none' ? ` (${recurrence} repeat)` : "";
-                                await sendReply(from, `✅ *Task Saved!* \n\nI will remind you to *"${taskDescription}"* on ${FriendlyDate}${recLabel}. 🫡`);
+
+                                // SMART NOTIFICATION LOGIC
+                                if (reminderType === "meeting" || reminderType === "personal") {
+                                    const eventTimeStr = triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                                    triggerDate.setMinutes(triggerDate.getMinutes() - 15);
+                                    
+                                    await Reminder.create({
+                                        businessId: profile._id,
+                                        whatsappNumber: cleanFrom,
+                                        description: taskDescription,
+                                        triggerDate: triggerDate,
+                                        type: reminderType,
+                                        recurrence: recurrence,
+                                        saleId: linkedSaleId
+                                    });
+
+                                    const headsUpStr = triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', hour12: true });
+                                    await sendReply(from, `🫡 *Locked in!* \n\nYour event is at *${eventTimeStr}*${recLabel}. I will give you a heads-up 15 minutes early (at *${headsUpStr}*) so you can prepare.`);
+                                } else {
+                                    // Tasks and Debts: Exact Match
+                                    await Reminder.create({
+                                        businessId: profile._id,
+                                        whatsappNumber: cleanFrom,
+                                        description: taskDescription,
+                                        triggerDate: triggerDate,
+                                        type: reminderType,
+                                        recurrence: recurrence,
+                                        saleId: linkedSaleId
+                                    });
+
+                                    const FriendlyDate = triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                                    await sendReply(from, `✅ *Task Saved!* \n\nI will remind you to *"${taskDescription}"* at exactly *${FriendlyDate}*${recLabel}. 🫡`);
+                                }
                             }
                         }
                     }
@@ -1282,6 +1375,8 @@ Upgrade here: ${APP_URL}/pricing`);
                     const reminderDateStr = data.reminderDate || aiResponseItem.reminderDate;
                     const snoozeMins = data.snoozeDuration || 30;
                     const snoozeAll = data.snoozeAll || false;
+                    
+                    const taskTarget = data.taskTarget || "";
                     
                     const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
 
@@ -1311,18 +1406,29 @@ Upgrade here: ${APP_URL}/pricing`);
                                 await r.save();
                             }
 
-                            const friendly = newTriggerDate.toLocaleString('en-NG', { hour: '2-digit', minute: '2-digit' });
+                            const friendly = newTriggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', hour12: true });
                             await sendReply(from, `Understood, ${bossTitle}! 😴 I've snoozed ALL *${remindersToSnooze.length}* tasks until *${friendly}*. talk soon!`);
                         } else {
                             await sendReply(from, `I don't see any active tasks to snooze right now, ${bossTitle}.`);
                         }
                     } else {
-                        const lastReminder = await Reminder.findOne({
+                        let filter = {
                             whatsappNumber: cleanFrom,
-                            status: "delivered"
-                        }).sort({ updatedAt: -1 });
+                            status: { $in: ["delivered", "pending"] }
+                        };
+                        
+                        // If AI extracted a specific task to target
+                        if (taskTarget && taskTarget.toLowerCase() !== "task") {
+                            filter.description = { $regex: new RegExp(taskTarget, "i") };
+                        } else {
+                            // Default behavior: just the last handled one
+                            filter.status = "delivered";
+                        }
 
-                        if (lastReminder) {
+                        const targetReminders = await Reminder.find(filter).sort({ updatedAt: -1 }).limit(1);
+
+                        if (targetReminders.length > 0) {
+                            const targetReminder = targetReminders[0];
                             let newTriggerDate;
                             let displayMsg;
 
@@ -1332,7 +1438,7 @@ Upgrade here: ${APP_URL}/pricing`);
                                     newTriggerDate = new Date(Date.now() + 30 * 60000);
                                     displayMsg = "I couldn't catch the exact time, so I've snoozed it for 30 minutes. 😴";
                                 } else {
-                                    const friendly = newTriggerDate.toLocaleString('en-NG', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                    const friendly = newTriggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
                                     displayMsg = `I've snoozed that until *${friendly}*. 🫡`;
                                 }
                             } else {
@@ -1340,13 +1446,13 @@ Upgrade here: ${APP_URL}/pricing`);
                                 displayMsg = `I've snoozed that for ${snoozeMins} minutes. 🫡`;
                             }
 
-                            lastReminder.triggerDate = newTriggerDate;
-                            lastReminder.status = "pending";
-                            lastReminder.snoozeCount += 1;
-                            await lastReminder.save();
+                            targetReminder.triggerDate = newTriggerDate;
+                            targetReminder.status = "pending";
+                            targetReminder.snoozeCount += 1;
+                            await targetReminder.save();
                             await sendReply(from, `Understood, ${bossTitle}! 😴 ${displayMsg}`);
                         } else {
-                            await sendReply(from, `I'm not sure which reminder you want to snooze, ${bossTitle}. I don't see any recent alerts.`);
+                            await sendReply(from, `I'm not sure which reminder you want to snooze, ${bossTitle}. I couldn't find a task matching that description.`);
                         }
                     }
                     isProcessed = true;
@@ -1373,7 +1479,7 @@ Upgrade here: ${APP_URL}/pricing`);
                     if (todayReminders.length > 0) {
                         scheduleMsg += `🗓️ *Today:*\n`;
                         todayReminders.forEach(r => {
-                            const time = r.triggerDate.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' });
+                            const time = r.triggerDate.toLocaleTimeString('en-NG', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', hour12: true });
                             const typeIcon = r.type === 'meeting' ? '📅' : (r.type === 'personal' ? '🏋️' : (r.type === 'debt' ? '💰' : '📌'));
                             scheduleMsg += `${typeIcon} *${time}* — ${r.description}\n`;
                         });
@@ -1384,7 +1490,7 @@ Upgrade here: ${APP_URL}/pricing`);
                     if (upcomingReminders.length > 0) {
                         scheduleMsg += `\n📆 *Coming Up:*\n`;
                         upcomingReminders.forEach(r => {
-                            const date = r.triggerDate.toLocaleString('en-NG', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                            const date = r.triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
                             scheduleMsg += `• ${r.description} — ${date}\n`;
                         });
                     }

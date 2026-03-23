@@ -39,4 +39,7 @@ const EscrowPaymentSchema = new mongoose.Schema({
     }
 });
 
+// Compound index for the Escrow Payout Worker (runs hourly)
+EscrowPaymentSchema.index({ status: 1, releaseDate: 1 });
+
 module.exports = mongoose.model("EscrowPayment", EscrowPaymentSchema);

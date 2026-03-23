@@ -99,6 +99,15 @@ const BusinessProfileSchema = new mongoose.Schema({
         type: Boolean,
         default: false // Whether they pay a commission on recovered debt
     },
+    // Beta Test / Waitlist Demo Tracking
+    isBetaTester: {
+        type: Boolean,
+        default: false
+    },
+    demoMessagesUsed: {
+        type: Number,
+        default: 0
+    },
     successFeePercentage: {
         type: Number,
         default: 5 
@@ -112,5 +121,8 @@ const BusinessProfileSchema = new mongoose.Schema({
         default: Date.now
     }
 });
+
+// High-speed index for daily Billing & Expiry Check crons
+BusinessProfileSchema.index({ plan: 1, planStatus: 1 });
 
 module.exports = mongoose.model("BusinessProfile", BusinessProfileSchema);

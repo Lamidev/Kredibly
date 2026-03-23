@@ -51,4 +51,7 @@ const ReminderSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+// High-speed lookup for the per-minute Reminders Worker
+ReminderSchema.index({ status: 1, triggerDate: 1 });
+
 module.exports = mongoose.model("Reminder", ReminderSchema);
