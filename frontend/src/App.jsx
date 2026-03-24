@@ -31,6 +31,7 @@ import AdminWaitlist from "./pages/admin/AdminWaitlist";
 import AdminSupport from "./pages/admin/AdminSupport";
 import AdminRevenue from "./pages/admin/AdminRevenue";
 import AdminCoupons from "./pages/admin/AdminCoupons";
+import AdminFeedback from "./pages/admin/AdminFeedback";
 import AdminLayout from "./components/admin/AdminLayout";
 
 import DashboardLayout from "./components/dashboard/DashboardLayout";
@@ -106,6 +107,7 @@ const App = () => {
           <Route path="/admin/support" element={<AdminSupport />} />
           <Route path="/admin/revenue" element={<AdminRevenue />} />
           <Route path="/admin/coupons" element={<AdminCoupons />} />
+          <Route path="/admin/roadmap" element={<AdminFeedback />} />
         </Route>
 
         {/* Default Catch-all */}
