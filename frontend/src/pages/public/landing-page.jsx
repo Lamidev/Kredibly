@@ -220,7 +220,7 @@ const LandingPage = () => {
                         </div>
                     </h1>
 
-                    <p style={{ 
+                    <p style={{  
                         fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)', 
                         color: 'var(--text-muted)', 
                         maxWidth: '850px', 
