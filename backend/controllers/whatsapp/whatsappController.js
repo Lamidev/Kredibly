@@ -1615,15 +1615,30 @@ Upgrade here: ${APP_URL}/pricing`);
 
                         if (debtCalls.length > 0) {
                             scheduleMsg += `💰 *Collection Calls Today:*\n`;
-                            debtCalls.forEach(r => {
+                            for (const r of debtCalls) {
                                 const time = r.triggerDate.toLocaleTimeString('en-NG', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', hour12: true });
                                 let displayDesc = r.description;
-                                if (r.saleId && r.type === 'debt') {
-                                    const balance = r.saleId.totalAmount - r.saleId.payments.reduce((s,p)=>s+p.amount, 0);
-                                    displayDesc = `Call ${r.saleId.customerName} for the ₦${balance.toLocaleString()} balance`;
+                                
+                                // Late-Link Sync: Try to get latest data from Sale
+                                let sale = r.saleId;
+                                if (!sale && r.type === 'debt') {
+                                    // Try fuzzy match on the fly if not linked
+                                    const rawName = r.description.replace(/^Call\s+/i, '').split(/\s+for\s+/i)[0].trim();
+                                    if (rawName) {
+                                        sale = await Sale.findOne({ 
+                                            businessId: profile._id, 
+                                            customerName: { $regex: new RegExp(rawName.replace(/\s+/g, '\\s+'), "i") },
+                                            status: { $ne: 'paid' }
+                                        }).sort({ updatedAt: -1 });
+                                    }
+                                }
+
+                                if (sale) {
+                                    const balance = sale.totalAmount - sale.payments.reduce((s,p)=>s+p.amount, 0);
+                                    displayDesc = `Call *${sale.customerName}* for the ₦${balance.toLocaleString()} balance`;
                                 }
                                 scheduleMsg += `☎️ *${time}* — ${displayDesc}\n`;
-                            });
+                            }
                             scheduleMsg += `\n`;
                         }
                     } else {
@@ -1632,15 +1647,29 @@ Upgrade here: ${APP_URL}/pricing`);
 
                     if (upcomingReminders.length > 0) {
                         scheduleMsg += `📆 *Coming Up:*\n`;
-                        upcomingReminders.forEach(r => {
+                        for (const r of upcomingReminders) {
                             const date = r.triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
                             let displayDesc = r.description;
-                            // Dynamic Name Sync: If linked to a sale, use current name
-                            if (r.saleId && r.description.toLowerCase().includes('call') && r.type === 'debt') {
-                                displayDesc = `Call ${r.saleId.customerName} for the ₦${(r.saleId.totalAmount - r.saleId.payments.reduce((s,p)=>s+p.amount, 0)).toLocaleString()} balance`;
+                            
+                            // Late-Link Sync: Try to get latest data from Sale
+                            let sale = r.saleId;
+                            if (!sale && r.type === 'debt') {
+                                const rawName = r.description.replace(/^Call\s+/i, '').split(/\s+for\s+/i)[0].trim();
+                                if (rawName) {
+                                    sale = await Sale.findOne({ 
+                                        businessId: profile._id, 
+                                        customerName: { $regex: new RegExp(rawName.replace(/\s+/g, '\\s+'), "i") },
+                                        status: { $ne: 'paid' }
+                                    }).sort({ updatedAt: -1 });
+                                }
                             }
-                            scheduleMsg += `• ${displayDesc} — ${date}\n`;
-                        });
+
+                            if (sale) {
+                                const balance = sale.totalAmount - sale.payments.reduce((s,p)=>s+p.amount, 0);
+                                displayDesc = `Call *${sale.customerName}* for the ₦${balance.toLocaleString()} balance`;
+                            }
+                            scheduleMsg += `* ${displayDesc} — ${date}\n`;
+                        }
                     }
 
                     scheduleMsg += `\n_To add a task, say: "Remind me to [task] by [time]"_ 💡`;
@@ -1802,13 +1831,37 @@ Upgrade here: ${APP_URL}/pricing`);
                         await sendReply(from, targetMsg);
                     }
                     isProcessed = true;
-                } else if (aiResponseItem && (aiResponseItem.intent === "reply_ticket" || aiResponseItem.intent === "support" || (aiResponseItem.intent === "general_chat" && (text.toLowerCase().includes("problem") || text.toLowerCase().includes("issue"))))) {
-                    if (openTicket && aiResponseItem.intent !== "new_support_ticket") {
+                } else if (aiResponseItem && (aiResponseItem.intent === "reply_ticket" || (aiResponseItem.intent === "general_chat" && (text.toLowerCase().includes("problem") || text.toLowerCase().includes("issue"))))) {
+                    if (openTicket) {
                          openTicket.replies.push({ message: text, sender: "user" });
                          openTicket.status = "open";
                          await openTicket.save();
                          await sendReply(from, "📨 *Reply Sent!* \n\nI've forwarded your message to the support team. They'll see it on your dashboard ticket.");
-                        isProcessed = true;
+                    } else {
+                        const newTicket = new SupportTicket({
+                            userId: profile.ownerId,
+                            businessId: profile._id,
+                            message: text,
+                            status: "open"
+                        });
+                        await newTicket.save();
+                        
+                        try {
+                            const { sendNewTicketEmail } = require("../../emailLogic/emails");
+                            const adminEmail = process.env.ADMIN_EMAIL || "support@usekredibly.com"; 
+                            await sendNewTicketEmail(adminEmail, profile.displayName, text, newTicket._id);
+                        } catch (e) { console.error("Email fail", e); }
+
+                        await Notification.create({
+                            businessId: profile._id,
+                            title: "Support Ticket Logged 🛡️",
+                            message: `Ticket #${newTicket._id.toString().slice(-6)} is now open.`,
+                            type: "system"
+                        });
+
+                        await sendReply(from, "🛡️ *Support Ticket Opened*\n\nI'll have the team look into this for you! 🚀 (Ticket #" + newTicket._id.toString().slice(-6) + ")");
+                    }
+                    isProcessed = true;
                 } else if (aiResponseItem && (aiResponseItem.intent === "support" || aiResponseItem.intent === "feedback")) {
                     // 🚀 FEEDBACK / BUG REPORT FORWARDER
                     const feedbackMsgText = aiResponseItem.data.reply || text;
@@ -1840,29 +1893,16 @@ Upgrade here: ${APP_URL}/pricing`);
 
                     await sendReply(from, `Got it, ${bossTitle}! 🫡 I've shared your idea directly with our Dev Team at the backend. We love hearing from you! 🚀🛡️`);
                     isProcessed = true;
-                } else {
-                        const newTicket = new SupportTicket({
-                            userId: profile.ownerId,
-                            businessId: profile._id,
-                            message: text,
-                            status: "open"
-                        });
-                        await newTicket.save();
-                        
-                        try {
-                            const { sendNewTicketEmail } = require("../../emailLogic/emails");
-                            const adminEmail = process.env.ADMIN_EMAIL || "support@usekredibly.com"; 
-                            await sendNewTicketEmail(adminEmail, profile.displayName, text, newTicket._id);
-                        } catch (e) { console.error("Email fail", e); }
-
-                        await Notification.create({
-                            businessId: profile._id,
-                            title: "Support Ticket Logged 🛡️",
-                            message: `Ticket #${newTicket._id.toString().slice(-6)} is now open.`,
-                            type: "system"
-                        });
-
-                        await sendReply(from, "🛡️ *Support Ticket Opened*\n\nI'll have the team look into this for you! 🚀 (Ticket #" + newTicket._id.toString().slice(-6) + ")");
+                } else if (aiResponseItem && aiResponseItem.intent === "delete_feedback") {
+                    // 🗑️ Handle "Cancel/Delete my suggestion"
+                    const bossTitle = profile.assistantSettings?.preferredName || (plan === "chairman" ? "Chairman" : "Oga");
+                    const lastFeedback = await Feedback.findOne({ businessId: profile._id }).sort({ createdAt: -1 });
+                    
+                    if (lastFeedback && (new Date() - lastFeedback.createdAt) < 60 * 60 * 1000) { // Only delete if in last 60 mins
+                        await lastFeedback.deleteOne();
+                        await sendReply(from, `No problem, ${bossTitle}! 🛡️ I've removed that suggestion from our internal roadmap. Your feedback loop is clean! ⚖️`);
+                    } else {
+                        await sendReply(from, `${bossTitle}, I couldn't find a very recent suggestion to delete. If you want to change something on the roadmap, just let me know exactly what! 🫡`);
                     }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "general_chat") {
@@ -1873,9 +1913,15 @@ Upgrade here: ${APP_URL}/pricing`);
                     await sendReply(from, aiResponseItem.data.reply || "I'm here, Chief! What's happening? 🚀");
                     isProcessed = true;
                 } else {
-                    // FALLBACK — Don't blindly reference old session context
-                    let fallbackMsg = aiResponseItem?.data?.reply || "I'm listening, Chief! 🫡 ";
-                    fallbackMsg += "I didn't quite catch the specifics. Try like: _'Sold a bag to Funke for 10k'_ or _'Remind me to call Kola by 4pm'_ 💰";
+                    // FALLBACK — Only trigger if truly unknown
+                    const bossTitle = profile.assistantSettings?.preferredName || (plan === "chairman" ? "Chairman" : "Oga");
+                    let fallbackMsg = aiResponseItem?.data?.reply || `I'm listening, ${bossTitle}! 🫡 `;
+                    
+                    // Only add the helpful tip if we haven't processed ANYTHING yet
+                    if (responses.length === 1 && !isProcessed) {
+                        fallbackMsg += "\n\nTip: You can ask me to record sales, set reminders, or even suggest features for the dashboard! 💡";
+                    }
+                    
                     await sendReply(from, fallbackMsg);
                     isProcessed = true;
                 }
