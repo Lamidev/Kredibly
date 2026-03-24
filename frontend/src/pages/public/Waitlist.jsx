@@ -45,6 +45,7 @@ const Waitlist = () => {
     const referredBy = searchParams.get("ref");
 
     useEffect(() => {
+        document.title = "Join Waitlist | Kredibly — Track Sales, Collect Debts & Invoice on WhatsApp";
         fetchStats();
     }, []);
 

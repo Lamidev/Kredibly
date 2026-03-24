@@ -40,7 +40,8 @@ const BusinessProfileSchema = new mongoose.Schema({
     assistantSettings: {
         enableReminders: { type: Boolean, default: true },
         reminderFrequency: { type: String, default: "daily" },
-        reminderTemplate: { type: String, enum: ["friendly", "formal"], default: "friendly" }
+        reminderTemplate: { type: String, enum: ["friendly", "formal"], default: "friendly" },
+        preferredName: { type: String, default: "" } // What Kreddy calls the merchant (e.g. "Tunde", "Boss", "The Chairman")
     },
     bankDetails: {
         bankName: { type: String, default: "" },

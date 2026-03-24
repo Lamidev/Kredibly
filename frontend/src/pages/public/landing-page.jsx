@@ -82,6 +82,7 @@ const LandingPage = () => {
     };
 
     useEffect(() => {
+        document.title = "Kredibly | Track Sales, Collect Debts & Invoice on WhatsApp";
         if (!window.location.hash) {
             window.scrollTo(0, 0);
         }
