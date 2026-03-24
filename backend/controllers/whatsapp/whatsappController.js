@@ -5,6 +5,7 @@ const WhatsAppSession = require("../../models/WhatsAppSession");
 const SupportTicket = require("../../models/SupportTicket");
 const Reminder = require("../../models/Reminder");
 const User = require("../../models/User");
+const Feedback = require("../../models/Feedback");
 const axios = require("axios");
 const { logActivity } = require("../../utils/activityLogger");
 const { processMessageWithAI, processAudioWithAI, processImageWithAI } = require("../../utils/aiService");
@@ -108,7 +109,17 @@ const extractInfoRobust = (text, context = {}) => {
         const newName = callMeMatch[1].trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
         result.intent = "set_preferred_name";
         result.data.preferredName = newName;
-        result.data.reply = `Got it! 🫡 From now on I'll call you *${newName}*! Your Kreddy knows her Chairman. 👑`;
+        result.data.reply = `Got it, *${newName}*! 🫡 From now on you are my *${newName}*. Your Kreddy knows her own. 👑`;
+        return result;
+    }
+
+    // CUSTOMER NAME CORRECTION: "Change Samuel Mews to Samuel Mills"
+    const renameMatch = text.match(/(?:change|rename|correct|update)\s+([a-z0-9\s''-]{2,30})\s+(?:to|as)\s+([a-z0-9\s''-]{2,30})/i);
+    if (renameMatch) {
+        result.intent = "update_record";
+        result.data.customerName = renameMatch[1].trim();
+        result.data.newName = renameMatch[2].trim();
+        result.data.reply = `I'll update *${result.data.customerName}* to *${result.data.newName}* in the records immediately! 🛡️`;
         return result;
     }
 
@@ -1132,11 +1143,21 @@ Upgrade here: ${APP_URL}/pricing`);
                  } 
                  
                  if (!isProcessed && aiResponseItem.data.customerName && aiResponseItem.data.customerName !== "Customer") {
-                     const matches = await Sale.find({ 
+                     const searchName = aiResponseItem.data.customerName.replace(/\s+/g, '\\s+');
+                     let matches = await Sale.find({ 
                         businessId: profile._id, 
-                        customerName: { $regex: new RegExp(`^${aiResponseItem.data.customerName.replace(/\s+/g, '\\s+')}$`, "i") },
+                        customerName: { $regex: new RegExp(`^${searchName}$`, "i") },
                         status: { $ne: "paid" }
                      });
+
+                     // If no exact match, try broad matching (contains) for easier corrections
+                     if (matches.length === 0) {
+                        matches = await Sale.find({ 
+                            businessId: profile._id, 
+                            customerName: { $regex: new RegExp(searchName, "i") },
+                            status: { $ne: "paid" }
+                        });
+                     }
 
                      if (matches.length === 1) {
                         const sale = matches[0];
@@ -1267,7 +1288,12 @@ Upgrade here: ${APP_URL}/pricing`);
                         if (!profile.assistantSettings) profile.assistantSettings = {};
                         profile.assistantSettings.preferredName = newName;
                         await profile.save();
-                        await sendReply(from, aiResponseItem.data.reply || `Got it, *${newName}*! 🫡 I'll call you that from now on.`);
+                        
+                        let reply = aiResponseItem.data.reply || `Got it, *${newName}*! 🫡 I'll call you that from now on.`;
+                        // Remove generic titles from the immediate reply to respect the new name instantly
+                        reply = reply.replace(/\b(Chairman|Oga|Boss)\b/gi, `*${newName}*`);
+                        
+                        await sendReply(from, reply);
                     } else {
                         await sendReply(from, "I catch that you want me to call you something else, but I didn't get the name clearly. 😵‍ Try say: _'Kreddy, call me Boss'_");
                     }
@@ -1563,13 +1589,13 @@ Upgrade here: ${APP_URL}/pricing`);
                         businessId: profile._id,
                         status: "pending",
                         triggerDate: { $gte: todayStart, $lte: todayEnd }
-                    }).sort({ triggerDate: 1 });
+                    }).sort({ triggerDate: 1 }).populate('saleId');
 
                     const upcomingReminders = await Reminder.find({
                         businessId: profile._id,
                         status: "pending",
                         triggerDate: { $gt: todayEnd }
-                    }).sort({ triggerDate: 1 }).limit(5);
+                    }).sort({ triggerDate: 1 }).limit(5).populate('saleId');
 
                     let scheduleMsg = `📋 *Your Schedule, ${bossTitle}!*\n\n`;
                     
@@ -1591,7 +1617,12 @@ Upgrade here: ${APP_URL}/pricing`);
                             scheduleMsg += `💰 *Collection Calls Today:*\n`;
                             debtCalls.forEach(r => {
                                 const time = r.triggerDate.toLocaleTimeString('en-NG', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', hour12: true });
-                                scheduleMsg += `☎️ *${time}* — ${r.description}\n`;
+                                let displayDesc = r.description;
+                                if (r.saleId && r.type === 'debt') {
+                                    const balance = r.saleId.totalAmount - r.saleId.payments.reduce((s,p)=>s+p.amount, 0);
+                                    displayDesc = `Call ${r.saleId.customerName} for the ₦${balance.toLocaleString()} balance`;
+                                }
+                                scheduleMsg += `☎️ *${time}* — ${displayDesc}\n`;
                             });
                             scheduleMsg += `\n`;
                         }
@@ -1603,7 +1634,12 @@ Upgrade here: ${APP_URL}/pricing`);
                         scheduleMsg += `📆 *Coming Up:*\n`;
                         upcomingReminders.forEach(r => {
                             const date = r.triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
-                            scheduleMsg += `• ${r.description} — ${date}\n`;
+                            let displayDesc = r.description;
+                            // Dynamic Name Sync: If linked to a sale, use current name
+                            if (r.saleId && r.description.toLowerCase().includes('call') && r.type === 'debt') {
+                                displayDesc = `Call ${r.saleId.customerName} for the ₦${(r.saleId.totalAmount - r.saleId.payments.reduce((s,p)=>s+p.amount, 0)).toLocaleString()} balance`;
+                            }
+                            scheduleMsg += `• ${displayDesc} — ${date}\n`;
                         });
                     }
 
@@ -1772,7 +1808,39 @@ Upgrade here: ${APP_URL}/pricing`);
                          openTicket.status = "open";
                          await openTicket.save();
                          await sendReply(from, "📨 *Reply Sent!* \n\nI've forwarded your message to the support team. They'll see it on your dashboard ticket.");
-                    } else {
+                        isProcessed = true;
+                } else if (aiResponseItem && (aiResponseItem.intent === "support" || aiResponseItem.intent === "feedback")) {
+                    // 🚀 FEEDBACK / BUG REPORT FORWARDER
+                    const feedbackMsgText = aiResponseItem.data.reply || text;
+                    const bossTitle = profile.assistantSettings?.preferredName || (plan === "chairman" ? "Chairman" : "Oga");
+
+                    // 🛠️ Save as official Feedback model entry
+                    await Feedback.create({
+                        userId: profile.ownerId,
+                        businessId: profile._id,
+                        whatsappNumber: cleanFrom,
+                        message: feedbackMsgText,
+                        category: "Roadmap Suggested via WhatsApp"
+                    });
+
+                    await Notification.create({
+                        businessId: profile._id,
+                        title: "Priority Feedback 📢",
+                        message: `Merchant ${profile.displayName} shared an idea: ${feedbackMsgText.substring(0, 50)}...`,
+                        type: "system"
+                    });
+
+                    // Log to SuperAdmin context
+                    await logActivity({
+                        businessId: profile._id,
+                        action: "MERCHANT_FEEDBACK",
+                        entityType: "AI_SUPPORT",
+                        details: feedbackMsgText
+                    });
+
+                    await sendReply(from, `Got it, ${bossTitle}! 🫡 I've shared your idea directly with our Dev Team at the backend. We love hearing from you! 🚀🛡️`);
+                    isProcessed = true;
+                } else {
                         const newTicket = new SupportTicket({
                             userId: profile.ownerId,
                             businessId: profile._id,

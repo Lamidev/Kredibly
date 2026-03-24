@@ -10,7 +10,8 @@ import {
     X,
     LogOut,
     CreditCard,
-    Globe
+    Globe,
+    Lightbulb
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -35,6 +36,7 @@ const AdminLayout = () => {
         { label: 'Support Tickets', path: '/admin/support', icon: Ticket },
         { label: 'Revenue & Subs', path: '/admin/revenue', icon: CreditCard },
         { label: 'Coupons & Promo', path: '/admin/coupons', icon: ShieldCheck },
+        { label: 'Founder Roadmap', path: '/admin/roadmap', icon: Lightbulb },
     ];
 
     return (
