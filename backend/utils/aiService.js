@@ -62,6 +62,7 @@ INTENTS:
 16. "general_chat": Greetings, math, business advice, or casual talk.
 17. "set_preferred_name": When the user asks to be called a specific name (e.g., "From now call me Papa").
 18. "feedback": New feature ideas, roadmap suggestions, or cool things to add for future versions.
+19. "delete_feedback": When the user says "cancel my idea", "delete my suggestion", or "I changed my mind about that feedback".
 
 MULTI-INTENT RULE (CRITICAL):
 - If the user's message contains MULTIPLE distinct tasks, return a JSON array of intent objects.
