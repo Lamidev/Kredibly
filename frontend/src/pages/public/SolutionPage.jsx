@@ -46,7 +46,10 @@ const SolutionPage = () => {
 
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, [id]);
+        document.title = solution
+            ? `${solution.title} | Kredibly — Kreddy AI for Nigerian Merchants`
+            : "Solutions | Kredibly";
+    }, [id, solution]);
 
     if (!solution) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>Solution not found</div>;
 

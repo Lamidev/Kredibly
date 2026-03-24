@@ -12,6 +12,7 @@ const PricingPage = () => {
 
     useEffect(() => {
         window.scrollTo(0, 0);
+        document.title = "Pricing Plans | Kredibly — Hustler, Oga & Chairman Plans";
     }, []);
 
     const { profile } = useAuth();

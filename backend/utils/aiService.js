@@ -58,6 +58,7 @@ INTENTS:
 14. "add_staff": Add a new staff member by providing a phone number.
 15. "check_staff": Query current staff list.
 16. "general_chat": Greetings, math, business advice, or casual talk.
+17. "set_preferred_name": When the user asks to be called a specific name (e.g., "From now call me Papa").
 
 MULTI-INTENT RULE (CRITICAL):
 - If the user's message contains MULTIPLE distinct tasks, return a JSON array of intent objects.
@@ -76,6 +77,7 @@ REQUIRED JSON OUTPUT:
     "reminderDate": "ISO Timestamp in UTC",
     "reminderType": "debt" | "task" | "meeting" | "personal",
     "taskDescription": "Extract the specific activity. MUST NOT BE EMPTY for create_reminder.",
+    "preferredName": "Desired name if the user is setting their preference (set_preferred_name intent).",
     "reply": "Your brief partner-like response recognizing the task. RELATE THE TITLE OF THE TASK IN YOUR REPLY."
   }
 }

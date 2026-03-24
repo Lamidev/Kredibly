@@ -2,8 +2,13 @@ import PublicNavbar from "../../components/public/PublicNavbar";
 import PublicFooter from "../../components/public/PublicFooter";
 import { Users, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 
 const AboutUs = () => {
+    useEffect(() => {
+        window.scrollTo(0, 0);
+        document.title = "About Us | Kredibly — Building the OS for African Commerce";
+    }, []);
     return (
         <div className="auth-pattern" style={{ minHeight: '100vh', background: '#F8FAFC' }}>
             <PublicNavbar />

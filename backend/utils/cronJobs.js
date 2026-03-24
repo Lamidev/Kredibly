@@ -32,9 +32,8 @@ const scheduleRemindersWorker = () => {
                 }
 
                 const plan = acquired.businessId.plan || "hustler";
-                let title = "Boss";
-                if (plan === "oga") title = "Oga";
-                if (plan === "chairman") title = "Chairman";
+                const planTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+                const title = acquired.businessId.assistantSettings?.preferredName || planTitle;
 
                 const typeIcons = {
                     debt: "⏳",
@@ -142,7 +141,8 @@ const scheduleMorningSummary = () => {
 
                 // Only send if there was activity OR if it's a Chairman/Oga
                 if (salesYesterday.length > 0 || totalCashIn > 0 || profile.plan === 'chairman' || profile.plan === 'oga') {
-                    const bossTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
+                    const planTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
+                    const bossTitle = profile.assistantSettings?.preferredName || planTitle;
                     
                     let msg = `🌞 *Rise and Grind, ${bossTitle}!* \n\nHere is your *Kredibly Intelligence Summary* for yesterday:\n\n`;
                     msg += `💰 *Cash Collected:* ₦${totalCashIn.toLocaleString()}\n`;
@@ -228,7 +228,8 @@ const schedulePlanExpiryReminders = () => {
                 const diffTime = expiry.getTime() - now.getTime();
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 
-                const bossTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
+                const planTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
+                const bossTitle = profile.assistantSettings?.preferredName || planTitle;
                 const planName = profile.plan.toUpperCase();
 
                 let msg = "";
@@ -254,7 +255,8 @@ const schedulePlanExpiryReminders = () => {
                 profile.planStatus = 'past_due';
                 await profile.save();
 
-                const bossTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
+                const planTitle2 = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
+                const bossTitle2 = profile.assistantSettings?.preferredName || planTitle2;
                 const msg = `🚨 *Plan Expired, ${bossTitle}!* \n\nYour premium features have paused. Renew now to continue tracking debt with AI without limits! 💰\n\n🔗 *Upgrade Now:* Just say _"I want to pay for ${profile.plan}"_`;
                 
                 if (profile.whatsappNumber) {
@@ -291,7 +293,8 @@ const scheduleProactiveFollowUps = () => {
                 if (!sale || sale.status === "paid" || !reminder.businessId) continue;
 
                 const profile = reminder.businessId;
-                const bossTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
+                const planFTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
+                const bossTitle = profile.assistantSettings?.preferredName || planFTitle;
                 const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
 
                 const msg = `🤔 *Did They Pay, ${bossTitle}?*\n\nYesterday, you had a reminder to collect from *${sale.customerName}*.\n\nMy records show they still owe *₦${bal.toLocaleString()}*. \n\nDid they pay offline? If yes, just say: _"${sale.customerName} paid"_. \n\nIf not, would you like me to snooze this reminder for later, or send them another message?`;
@@ -331,7 +334,8 @@ const schedulePastDueEscalations = () => {
                 const profile = sale.businessId;
                 if (!profile || profile.plan === "hustler" || !profile.whatsappNumber) continue;
 
-                const bossTitle = profile.plan === "chairman" ? "Chairman" : "Oga";
+                const planETitle = profile.plan === "chairman" ? "Chairman" : "Oga";
+                const bossTitle = profile.assistantSettings?.preferredName || planETitle;
                 const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                 
                 const msg = `🚩 *Overdue Alert, ${bossTitle}!*\n\n*${sale.customerName}* was supposed to pay ₦${bal.toLocaleString()} yesterday, but the record is still unpaid.\n\nShould I draft a follow-up link for you to forward to them? \n\n_Type: "Send link to ${sale.customerName}"_`;

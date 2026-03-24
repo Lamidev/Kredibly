@@ -96,8 +96,19 @@ const extractInfoRobust = (text, context = {}) => {
     // CHECK SCHEDULE: "what are my plans", "my schedule", "what's on today", "do I have anything"
     if (lower.includes("my plan") || lower.includes("my schedule") || lower.includes("what's on") || lower.includes("do i have") || lower.includes("my tasks") || lower.includes("my reminders") || lower.includes("what do i have")) {
         result.intent = "check_schedule";
-        const bossTitle = (context.plan || "hustler") === "chairman" ? "Chairman" : ((context.plan || "hustler") === "oga" ? "Oga" : "Boss");
-        result.data.reply = `Let me check your schedule, ${bossTitle}! 📋`;
+        const planT = (context.plan || "hustler") === "chairman" ? "Chairman" : ((context.plan || "hustler") === "oga" ? "Oga" : "Boss");
+        const nameToUse = context.preferredName || planT;
+        result.data.reply = `Let me check your schedule, ${nameToUse}! 📋`;
+        return result;
+    }
+
+    // CALL ME / SET NAME: "kreddy call me Tunde", "call me Boss", "from now call me The Chairman"
+    const callMeMatch = text.match(/(?:call me|from now (?:on )?call me|my name is|i am)\s+([a-z0-9\s''-]{2,30})/i);
+    if (callMeMatch) {
+        const newName = callMeMatch[1].trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+        result.intent = "set_preferred_name";
+        result.data.preferredName = newName;
+        result.data.reply = `Got it! 🫡 From now on I'll call you *${newName}*! Your Kreddy knows her Chairman. 👑`;
         return result;
     }
 
@@ -224,8 +235,9 @@ const extractInfoRobust = (text, context = {}) => {
     const tone = context.preferredTone || "friendly";
     const plan = context.plan || "hustler";
     
-    // Character Mapping based on plan
-    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+    // Character Mapping: use preferredName if set, else plan-based title
+    const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+    const bossTitle = context.preferredName || planDefaultTitle;
 
     if (result.intent === "update_record") {
         if (result.data.dueDate) {
@@ -526,8 +538,9 @@ exports.handleIncoming = async (req, res) => {
         const from = message.from;
         const msgType = message.type;
         const text = message.text?.body?.trim() || "";
+        const whatsappProfileName = value?.contacts?.[0]?.profile?.name || "";
         
-        console.log(`📩 Message from ${from}: "${text}"`);
+        console.log(`📩 Message from ${whatsappProfileName} (${from}): "${text}"`);
 
         // Send Read Receipt (The "Blue Ticks")
         await sendReadReceipt(messageId);
@@ -656,8 +669,17 @@ exports.handleIncoming = async (req, res) => {
         }
 
         if (isFirstTime) {
-            const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
-            const introMsg = `🫡 *Connection Successful, ${bossTitle}!* \n\nI am Kreddy, and I am officially clocked in as your Digital Chief of Staff. \n\nHere is what you can ask me to do right now:\n\n🎤 *Send a Voice Note:* _"Sarah just bought a bag for 15k, she paid 5k, remind me on Friday to collect the balance."_\n\n📸 *Send a Picture:* Send a pic of a receipt and tell me to log it.\n\n💡 *Ask a Question:* _"What do I have planned for today?"_\n\nTalk to me like a real person. Let's make some money! 💰`;
+            const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+            const bossTitleToUse = profile.assistantSettings?.preferredName || whatsappProfileName || planDefaultTitle;
+            
+            // Initial save of preferred name if found
+            if (whatsappProfileName && !profile.assistantSettings?.preferredName) {
+                if (!profile.assistantSettings) profile.assistantSettings = {};
+                profile.assistantSettings.preferredName = whatsappProfileName;
+                await profile.save();
+            }
+
+            const introMsg = `🫡 *Connection Successful, ${bossTitleToUse}!* \n\nI am Kreddy, and I am officially clocked in as your Digital Chief of Staff. \n\nI'll call you *${bossTitleToUse}* for now, but you can change this anytime—just say _"Kreddy, call me Boss"_ or any name you prefer! 👑\n\nHere is what you can ask me to do right now:\n\n🎤 *Send a Voice Note:* _"Sarah just bought a bag for 15k, she paid 5k, remind me on Friday to collect the balance."_\n\n📸 *Send a Picture:* Send a pic of a receipt and tell me to log it.\n\n💡 *Ask a Question:* _"What do I have planned for today?"_\n\nTalk to me like a real person. Let's make some money! 💰`;
             await sendReply(from, introMsg);
             
             // If they just said a basic greeting, stop here. Otherwise, keep processing the payload.
@@ -921,14 +943,15 @@ Upgrade here: ${APP_URL}/pricing`);
                 const mediaId = message.audio?.id || message.voice?.id;
                 if (!mediaId) return;
 
-                const bossTitle = plan === "chairman" ? "Chairman" : "Oga";
+                const planDefaultTitle = plan === "chairman" ? "Chairman" : "Oga";
+                const bossTitle = profile.assistantSettings?.preferredName || planDefaultTitle;
 
                 await sendReply(from, `${bossTitle}, I catch the voice note! 💎 Analyzing it now... 🎧`);
                 const media = await downloadWhatsAppMedia(mediaId);
                 
                 if (media) {
                     aiResponse = await processAudioWithAI(media.buffer, media.mimeType, {
-                        merchantName: profile.displayName,
+                        merchantName: profile.assistantSettings?.preferredName || profile.displayName,
                         plan: plan,
                         entityType: profile.entityType,
                         preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
@@ -949,15 +972,15 @@ Upgrade here: ${APP_URL}/pricing`);
                     return await sendReply(from, "Boss! 📸 Image scanning (Receipts) is an exclusive feature for the *Chairman Plan*. \n\nUpgrade now so you can just snap pictures and let me do the work! 🦁");
                 }
                 
-                const mediaId = message.image?.id;
-                if (!mediaId) return;
+                const planDefaultTitle = plan === "chairman" ? "Chairman" : "Oga";
+                const bossTitle = profile.assistantSettings?.preferredName || planDefaultTitle;
 
-                await sendReply(from, "Chairman, I catch the image! 💎 Scanning it now... 🔍");
+                await sendReply(from, `${bossTitle}, I catch the image! 💎 Scanning it now... 🔍`);
                 const media = await downloadWhatsAppMedia(mediaId);
                 
                 if (media) {
                     aiResponse = await processImageWithAI(media.buffer, media.mimeType, {
-                        merchantName: profile.displayName,
+                        merchantName: profile.assistantSettings?.preferredName || profile.displayName,
                         plan: plan,
                         entityType: profile.entityType,
                         preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
@@ -979,7 +1002,7 @@ Upgrade here: ${APP_URL}/pricing`);
                 if (aiUsed < 50) {
                     console.log(`⚡ Plan: Hustler (Using AI - ${aiUsed}/50 used)`);
                     aiResponse = await processMessageWithAI(text, { 
-                        merchantName: profile.displayName,
+                        merchantName: profile.assistantSettings?.preferredName || profile.displayName,
                         plan: plan,
                         entityType: profile.entityType,
                         preferredTone: preferredTone,
@@ -1009,6 +1032,7 @@ Upgrade here: ${APP_URL}/pricing`);
                             plan: plan,
                             entityType: profile.entityType,
                             preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
+                            preferredName: profile.assistantSettings?.preferredName || "",
                             currentSession: session || null 
                         });
                     }
@@ -1019,13 +1043,14 @@ Upgrade here: ${APP_URL}/pricing`);
                         plan: plan,
                         entityType: profile.entityType,
                         preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
+                        preferredName: profile.assistantSettings?.preferredName || "",
                         currentSession: session || null 
                     });
                 }
             } else {
                 console.log(`💎 Plan: ${plan.toUpperCase()} (Using Gemini AI)`);
                 aiResponse = await processMessageWithAI(text, { 
-                    merchantName: profile.displayName,
+                    merchantName: profile.assistantSettings?.preferredName || profile.displayName,
                     plan: plan,
                     entityType: profile.entityType,
                     preferredTone: preferredTone,
@@ -1045,6 +1070,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         plan: plan,
                         entityType: profile.entityType,
                         preferredTone: preferredTone,
+                        preferredName: profile.assistantSettings?.preferredName || "",
                         currentSession: session || null 
                     });
 
@@ -1235,7 +1261,18 @@ Upgrade here: ${APP_URL}/pricing`);
 
             // 3. OTHER INTENTS
             if (!isProcessed) {
-                if (aiResponseItem && aiResponseItem.intent === "check_debt") {
+                if (aiResponseItem && aiResponseItem.intent === "set_preferred_name") {
+                    const newName = aiResponseItem.data.preferredName;
+                    if (newName) {
+                        if (!profile.assistantSettings) profile.assistantSettings = {};
+                        profile.assistantSettings.preferredName = newName;
+                        await profile.save();
+                        await sendReply(from, aiResponseItem.data.reply || `Got it, *${newName}*! 🫡 I'll call you that from now on.`);
+                    } else {
+                        await sendReply(from, "I catch that you want me to call you something else, but I didn't get the name clearly. 😵‍ Try say: _'Kreddy, call me Boss'_");
+                    }
+                    isProcessed = true;
+                } else if (aiResponseItem && aiResponseItem.intent === "check_debt") {
                     const searchName = (aiResponseItem.data.customerName || "").trim();
                     
                     if (!searchName || searchName.toLowerCase() === "customer") {
