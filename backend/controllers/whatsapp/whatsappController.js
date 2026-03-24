@@ -1088,6 +1088,15 @@ Upgrade here: ${APP_URL}/pricing`);
                              const oldN = sale.customerName;
                              sale.customerName = aiResponseItem.data.newName;
                              updatedConfirm = `✅ *Name Correction:* Changed from *${oldN}* to *${sale.customerName}*. Invoice updated. 🛡️`;
+                             
+                             // SYNC-RENAME: Update pending reminders for this sale
+                             try {
+                                 const pendingRems = await Reminder.find({ saleId: sale._id, status: 'pending' });
+                                 for (const r of pendingRems) {
+                                     r.description = r.description.replace(new RegExp(oldN, "gi"), sale.customerName);
+                                     await r.save();
+                                 }
+                             } catch (err) { console.error("Sync Rename Error:", err); }
                          }
                          
                          await sale.save();
@@ -1113,6 +1122,16 @@ Upgrade here: ${APP_URL}/pricing`);
                            const oldN = sale.customerName;
                            sale.customerName = aiResponseItem.data.newName;
                            await sale.save();
+                           
+                           // SYNC-RENAME: Update pending reminders for this sale
+                           try {
+                               const pendingRems = await Reminder.find({ saleId: sale._id, status: 'pending' });
+                               for (const r of pendingRems) {
+                                   r.description = r.description.replace(new RegExp(oldN, "gi"), sale.customerName);
+                                   await r.save();
+                               }
+                           } catch (err) { console.error("Sync Global Rename Error:", err); }
+
                            await sendReply(from, `✅ *Update Successful!* \n\nChanged from *${oldN}* to *${sale.customerName}*. Receipt updated. 🛡️`);
                         } else {
                            await sale.save();
@@ -1518,18 +1537,33 @@ Upgrade here: ${APP_URL}/pricing`);
                     let scheduleMsg = `📋 *Your Schedule, ${bossTitle}!*\n\n`;
                     
                     if (todayReminders.length > 0) {
-                        scheduleMsg += `🗓️ *Today:*\n`;
-                        todayReminders.forEach(r => {
-                            const time = r.triggerDate.toLocaleTimeString('en-NG', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', hour12: true });
-                            const typeIcon = r.type === 'meeting' ? '📅' : (r.type === 'personal' ? '🏋️' : (r.type === 'debt' ? '💰' : '📌'));
-                            scheduleMsg += `${typeIcon} *${time}* — ${r.description}\n`;
-                        });
+                        const tasks = todayReminders.filter(r => r.type !== 'debt');
+                        const debtCalls = todayReminders.filter(r => r.type === 'debt');
+
+                        if (tasks.length > 0) {
+                            scheduleMsg += `🗓️ *Meetings & Tasks Today:*\n`;
+                            tasks.forEach(r => {
+                                const time = r.triggerDate.toLocaleTimeString('en-NG', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', hour12: true });
+                                const icon = r.type === 'meeting' ? '📅' : (r.type === 'personal' ? '🏋️' : '📌');
+                                scheduleMsg += `${icon} *${time}* — ${r.description}\n`;
+                            });
+                            scheduleMsg += `\n`;
+                        }
+
+                        if (debtCalls.length > 0) {
+                            scheduleMsg += `💰 *Collection Calls Today:*\n`;
+                            debtCalls.forEach(r => {
+                                const time = r.triggerDate.toLocaleTimeString('en-NG', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', hour12: true });
+                                scheduleMsg += `☎️ *${time}* — ${r.description}\n`;
+                            });
+                            scheduleMsg += `\n`;
+                        }
                     } else {
-                        scheduleMsg += `🗓️ *Today:* Nothing scheduled yet!\n`;
+                        scheduleMsg += `🗓️ *Today:* Nothing scheduled yet!\n\n`;
                     }
 
                     if (upcomingReminders.length > 0) {
-                        scheduleMsg += `\n📆 *Coming Up:*\n`;
+                        scheduleMsg += `📆 *Coming Up:*\n`;
                         upcomingReminders.forEach(r => {
                             const date = r.triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
                             scheduleMsg += `• ${r.description} — ${date}\n`;
