@@ -502,7 +502,7 @@ const PublicInvoicePage = () => {
                         </div>
                         
                         <div style={{ textAlign: 'right' }}>
-                            {sale?.businessId?.logoUrl ? (
+                            {sale?.businessId?.logoUrl && sale?.businessId?.plan !== 'hustler' ? (
                                 <img src={sale.businessId.logoUrl} alt="Merchant Logo" style={{ height: '48px', objectFit: 'contain', marginBottom: '8px' }} />
                             ) : (
                                 <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#0F172A', marginBottom: '4px' }}>{sale?.businessId?.displayName}</h3>
@@ -709,20 +709,22 @@ const PublicInvoicePage = () => {
                     </header>
 
                     {/* MAIN CONTENT CARD */}
-                    <div style={{ background: 'white', borderRadius: '32px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.04), 0 10px 10px -5px rgba(0,0,0,0.02)', border: '1px solid #F1F5F9', overflow: 'hidden' }}>
+                    <div className="glass-card" style={{ borderRadius: '32px', overflow: 'hidden' }}>
                         
                         {/* Merchant Banner */}
                         <div style={{ padding: '32px', borderBottom: '1px solid #F8FAFC', display: 'flex', alignItems: 'center', gap: '20px' }}>
                              <div style={{ width: '64px', height: '64px', background: 'var(--primary)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', border: '2px solid white', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
                                 {sale.businessId?.logoUrl ? <img src={sale.businessId.logoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Building2 size={32} />}
                              </div>
-                             <div style={{ flex: 1 }}>
+                         <div style={{ flex: 1 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
                                     <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A' }}>{sale.businessId?.displayName}</h3>
-                                    <CheckCircle size={10} color="#3B82F6" style={{ fill: '#3B82F6' }} />
+                                    {sale.businessId?.plan !== 'hustler' && <CheckCircle size={10} color="#3B82F6" style={{ fill: '#3B82F6' }} />}
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span style={{ fontSize: '9px', fontWeight: 900, background: '#F1F5F9', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', color: '#64748B' }}>Verified Merchant</span>
+                                    <span style={{ fontSize: '9px', fontWeight: 900, background: '#F1F5F9', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', color: '#64748B' }}>
+                                        {sale.businessId?.plan === 'hustler' ? 'Verified Merchant' : 'Official Merchant'}
+                                    </span>
                                     <span style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8' }}>• {sale.businessId?.entityType || 'Business'}</span>
                                 </div>
                              </div>

@@ -46,7 +46,7 @@ TIMEZONE RULE (CRITICAL):
 INTENTS:
 1. "create_sale": New transaction or debt record.
 2. "check_debt": Querying who owes or totals.
-3. "update_record": Updating an existing debt (payments, date changes, or name corrections).
+3. "update_record": Updating an existing debt (payments, date changes, or name corrections). IMPORTANT: If the user says "Change [Old Name] to [New Name]", use this intent and fill both customerName (old) and newName.
 4. "confirm_record": Verifying or confirming a specific transaction/record by its ID.
 5. "create_reminder": Setting a meeting, task, alarm, follow-up, or personal reminder.
 6. "snooze_reminder": When a user asks to "wait", "delay", "shift", or "remind me later".
@@ -67,6 +67,7 @@ INTENTS:
 MULTI-INTENT RULE (CRITICAL):
 - If the user's message contains MULTIPLE distinct tasks, return a JSON array of intent objects.
 - Each object should be a complete valid intent.
+- IMPORTANT: If a user records a sale AND asks for a reminder for it (e.g. "Remind me to call them next week"), return BOTH "create_sale" and "create_reminder". Ensure both the Sale and the Reminder have the SAME dueDate/reminderDate.
 
 REQUIRED JSON OUTPUT:
 {
@@ -79,18 +80,28 @@ REQUIRED JSON OUTPUT:
     "paidAmount": 0,
     "item": "Description",
     "reminderDate": "ISO Timestamp in UTC",
+    "dueDate": "ISO Timestamp in UTC (For sales)",
     "reminderType": "debt" | "task" | "meeting" | "personal",
     "taskDescription": "Extract the specific activity. MUST NOT BE EMPTY for create_reminder.",
     "preferredName": "Desired name if the user is setting their preference (set_preferred_name intent).",
+    "method": "card" | "transfer",
+    "plan": "oga" | "chairman",
     "reply": "Your brief partner-like response recognizing the task. RELATE THE TITLE OF THE TASK IN YOUR REPLY."
   }
 }
+
+Example 1: "Activate my chairman trial via transfer"
+Output: { "intent": "pay_subscription", "data": { "plan": "chairman", "method": "transfer", "reply": "Excellent! I'll generate the ₦500 transfer link for your trial now! 🛡️" } }
+
+Example 2: "I want to pay for oga with my card"
+Output: { "intent": "pay_subscription", "data": { "plan": "oga", "method": "card", "reply": "Perfect! I'll generate the secure card link for the Oga plan now. 🚀" } }
 
 Example 1: "SARAH PAID 5K AND REMIND ME TO CALL HER NEXT WEDNESDAY"
 Output: [
   { "intent": "update_record", "data": { "customerName": "Sarah", "paidAmount": 5000, "reply": "Logged! Sarah's ₦5,000 payment recorded." } },
   { "intent": "create_reminder", "data": { "reminderDate": "2026-03-30T08:00:00.000Z", "reminderType": "debt", "taskDescription": "Follow up with Sarah for balance", "reply": "I'll remind you to call Sarah for the balance next Wednesday! 📞" } }
 ]
+
 `;
 
 /**

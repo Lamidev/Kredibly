@@ -167,8 +167,9 @@ exports.verifyPayment = async (req, res) => {
 
         // 🔒 SECURITY CHECK: Assert payment intent
         if (reference && !reference.startsWith('FREE_') && paystackData) {
-             if (paystackData.metadata?.paymentType !== 'subscription') {
-                 return res.status(403).json({ success: false, message: "Invalid payment intent. Payment was not marked for a subscription." });
+             const intent = paystackData.metadata?.paymentType;
+             if (intent !== 'subscription' && intent !== 'subscription_trial') {
+                 return res.status(403).json({ success: false, message: "Invalid payment intent." });
              }
              
              // 🔒 SECURITY CHECK: Assert payment ownership (prevent replay/hijack)
@@ -177,6 +178,8 @@ exports.verifyPayment = async (req, res) => {
                  return res.status(403).json({ success: false, message: "Payment anomaly detected. Reference ownership mismatch." });
              }
         }
+
+        const isTrial = paystackData.metadata?.paymentType === 'subscription_trial';
 
         // 2. Validate Payment Amount (Anti-Fraud Check)
         let basePrice = getPlanPrice(plan, billingCycle);
@@ -218,12 +221,16 @@ exports.verifyPayment = async (req, res) => {
             });
         }
 
-        // Allow 1 Naira margin for floating point errors
-        if (Math.abs(paidAmount - expectedPrice) > 1) {
+        // Allow 1 Naira margin for floating point errors OR check Trial Fee
+        if (isTrial) {
+            if (paidAmount < 50) {
+                return res.status(400).json({ success: false, message: "Invalid trial authorization fee." });
+            }
+        } else if (Math.abs(paidAmount - expectedPrice) > 1) {
             console.error(`🚨 Payment Verification Failed: Paid ₦${paidAmount}, Expected ₦${expectedPrice}`);
             return res.status(400).json({ 
                 success: false, 
-                message: "Payment amount does not match plan price. If initialized correctly, please contact support." 
+                message: "Payment amount does not match plan price." 
             });
         }
 
@@ -237,16 +244,22 @@ exports.verifyPayment = async (req, res) => {
             billingCycle: billingCycle,
             couponUsed: couponCode || null,
             status: 'success',
+            paymentType: isTrial ? 'trial_auth' : 'subscription',
             paidAt: new Date()
         });
 
         // 4. Update Profile
+        const isTransfer = paystackData.metadata?.method === 'transfer';
         const updateData = {
-            plan: plan, // 'oga' or 'chairman'
-            planStatus: 'active',
-            billingCycle: billingCycle, // 'monthly' or 'yearly'
+            plan: plan, // 'chairman'
+            planStatus: isTrial ? 'trialing' : 'active',
+            billingCycle: billingCycle,
             lastPaidAt: new Date(),
-            nextBillingDate: new Date(Date.now() + (billingCycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000)
+            isLaunchPromo: paystackData.metadata?.isLaunchPromo || false,
+            hasUsedTrial: true,
+            walletBalance: isTrial && isTransfer ? (profile.walletBalance || 0) + paidAmount : profile.walletBalance,
+            trialExpiresAt: isTrial ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : profile.trialExpiresAt,
+            nextBillingDate: isTrial ? null : new Date(Date.now() + (billingCycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000)
         };
 
         const updatedProfile = await BusinessProfile.findByIdAndUpdate(

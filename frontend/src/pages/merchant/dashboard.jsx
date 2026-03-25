@@ -114,34 +114,6 @@ const Dashboard = () => {
     return (
         <div className="animate-fade-in" style={{ paddingBottom: '40px', position: 'relative' }}>
 
-            {/* Floating WhatsApp Button */}
-            <a 
-                href={KREDDY_CONFIG.getLink()}
-                target="_blank" 
-                rel="noreferrer"
-                style={{
-                    position: 'fixed',
-                    bottom: '90px',
-                    right: '25px',
-                    width: '60px',
-                    height: '60px',
-                    background: '#25D366',
-                    color: 'white',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 10px 40px -10px rgba(37, 211, 102, 0.5)',
-                    zIndex: 2500,
-                    cursor: 'pointer',
-                    transition: 'transform 0.2s',
-                }}
-                className="hover-scale"
-                title="Chat with Kreddy"
-            >
-                <MessagesSquare size={28} />
-                <div style={{ position: 'absolute', top: 0, right: 0, width: '14px', height: '14px', background: 'red', border: '2px solid white', borderRadius: '50%' }}></div>
-            </a>
 
             {/* Executive Header */}
             <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
@@ -161,31 +133,42 @@ const Dashboard = () => {
                     style={{ 
                         padding: '12px 24px', 
                         borderRadius: '20px', 
-                        background: profile?.plan === 'chairman' ? 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)' : 
+                        background: profile?.planStatus === 'inactive' ? '#F1F5F9' :
+                                    profile?.planStatus === 'past_due' ? '#FEF2F2' :
+                                    profile?.plan === 'chairman' ? 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)' : 
                                     profile?.plan === 'oga' ? 'linear-gradient(135deg, var(--primary) 0%, #7C3AED 100%)' : 
                                     '#FFFFFF',
-                        color: profile?.plan === 'hustler' ? '#64748B' : 'white',
+                        color: profile?.planStatus === 'inactive' ? '#64748B' : 
+                               profile?.planStatus === 'past_due' ? '#EF4444' :
+                               profile?.plan === 'hustler' ? '#64748B' : 'white',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '12px',
                         boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-                        border: '1px solid rgba(0,0,0,0.05)'
+                        border: '1px solid rgba(0,0,0,0.05)',
+                        cursor: 'pointer'
                     }}
+                    onClick={() => navigate('/settings')}
                 >
                     <div style={{ 
                         width: '32px', height: '32px', borderRadius: '10px', 
-                        background: 'rgba(255,255,255,0.2)', 
+                        background: profile?.planStatus === 'past_due' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255,255,255,0.2)', 
                         display: 'flex', alignItems: 'center', justifyContent: 'center' 
                     }}>
-                        {profile?.plan === 'chairman' ? <Shield size={18} /> : 
+                        {profile?.planStatus === 'past_due' ? <Clock size={18} /> :
+                         profile?.plan === 'chairman' ? <Shield size={18} /> : 
                          profile?.plan === 'oga' ? <Zap size={18} fill="white" /> : 
                          <Activity size={18} />}
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', opacity: 0.8, letterSpacing: '0.05em', marginBottom: '-2px' }}>Account Status</p>
+                        <p style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', opacity: 0.8, letterSpacing: '0.05em', marginBottom: '-2px' }}>
+                            {profile?.planStatus === 'trialing' ? 'Active Trial' : 
+                             profile?.planStatus === 'past_due' ? 'Plan Expired' : 
+                             profile?.planStatus === 'inactive' ? 'Hustler Mode' : 'Account Status'}
+                        </p>
                         <p style={{ fontSize: '0.9rem', fontWeight: 900, letterSpacing: '0.02em' }}>
                             {profile?.plan?.toUpperCase() || 'HUSTLER'}
-                            {profile?.isFoundingMember && <span style={{ marginLeft: '8px', fontSize: '0.7rem', color: '#4ADE80' }}>★ FOUNDER</span>}
+                            {profile?.isFoundingMember && <span style={{ marginLeft: '8px', fontSize: '0.7rem', color: '#4ADE80' }}>★</span>}
                         </p>
                     </div>
                 </motion.div>
@@ -526,15 +509,31 @@ const Dashboard = () => {
                                         <span style={{ fontSize: '0.75rem', fontWeight: 800, background: '#4ade80', color: '#064e3b', padding: '4px 12px', borderRadius: '100px', textTransform: 'uppercase' }}>Active</span>
                                     </div>
                                     <p style={{ opacity: 0.8, fontWeight: 500, marginBottom: '24px', fontSize: '0.85rem' }}>
-                                        Ready to record? Just say "Hi".
+                                        Ready to record? Sync your first sale now.
                                     </p>
-                                    <button
-                                        onClick={() => window.open(KREDDY_CONFIG.getLink(), '_blank')}
-                                        className="btn-primary"
-                                        style={{ background: '#25D366', border: 'none', width: '100%', justifyContent: 'center', gap: '8px' }}
+                                    <a 
+                                        href={KREDDY_CONFIG.getLink() + "&text=Hi%20Kreddy!%20I'm%20ready%20to%20record."}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="hover-scale"
+                                        style={{ 
+                                            padding: '16px 32px', 
+                                            borderRadius: '16px', 
+                                            background: '#FFFFFF', 
+                                            color: '#0F172A', 
+                                            width: '100%', 
+                                            justifyContent: 'center',
+                                            textDecoration: 'none',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            fontWeight: 900,
+                                            fontSize: '1rem',
+                                            boxShadow: '0 10px 20px -5px rgba(255, 255, 255, 0.1)'
+                                        }}
                                     >
-                                        <MessagesSquare size={20} /> Chat
-                                    </button>
+                                        <MessagesSquare size={20} /> Say Hi to Kreddy
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -583,23 +582,6 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    <div style={{ 
-                        padding: '24px', 
-                        background: '#F1F5F9', 
-                        borderRadius: '28px', 
-                        border: '1px solid #E2E8F0',
-                        position: 'relative',
-                        overflow: 'hidden'
-                    }}>
-                        <div style={{ position: 'relative', zIndex: 2 }}>
-                            <h4 style={{ fontWeight: 900, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px', color: '#0F172A' }}>
-                                <TrendingUp size={20} color="var(--primary)" /> Growth Metric
-                            </h4>
-                            <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.5, marginBottom: '0' }}>
-                                Your business is growing. Keep recording 100% of your sales to maintain a healthy credit history.
-                            </p>
-                        </div>
-                    </div>
                 </div>
             </div>
 

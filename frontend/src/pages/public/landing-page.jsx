@@ -6,7 +6,7 @@ import {
     MessageCircle,
     Sparkles,
     ShieldCheck,
-    CheckCheck,
+    Check,
     LayoutDashboard,
     CreditCard,
     Users,
@@ -285,7 +285,7 @@ const LandingPage = () => {
                         </div>
                     </motion.div>
 
-                    <motion.div className="bento-item bento-2" initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false, amount: 0.1 }} style={{ background: 'linear-gradient(135deg, #0F172A, #1E1B4B)', color: 'white' }}>
+                    <motion.div className="bento-item bento-2" initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false, amount: 0.1 }} style={{ background: 'linear-gradient(135deg, #0F172A, #1E1B4B)', color: 'white' }}>
                         <div style={{ position: 'relative', zIndex: 2 }}>
                             <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '12px' }}>Digital Reputation</h4>
                             <p style={{ opacity: 0.8, fontSize: '1.1rem', lineHeight: 1.5, fontWeight: 500 }}>Build a digital business reputation that unlocks credit and global opportunities.</p>
@@ -299,7 +299,7 @@ const LandingPage = () => {
                         <p style={{ fontSize: '0.95rem', color: '#1E293B', fontWeight: 600 }}>Professional invoices designed to get you paid 3x faster and build trust.</p>
                     </motion.div>
 
-                    <motion.div className="bento-item bento-4" initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 0.98 }} viewport={{ once: false, amount: 0.1 }} style={{ border: '2px solid var(--primary-glow)', background: 'rgba(76, 29, 149, 0.02)' }}>
+                    <motion.div className="bento-item bento-4" initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 0.98 }} viewport={{ once: false, amount: 0.1 }}>
                         <Zap color="var(--primary)" size={32} style={{ marginBottom: '16px' }} />
                         <h4 style={{ fontSize: '1.3rem', fontWeight: 900 }}>Executive Productivity</h4>
                         <p style={{ fontSize: '0.95rem', color: '#1E293B', fontWeight: 600 }}>Delegated power! Set tasks, get morning market briefings, and manage your entire business life via voice notes.</p>
@@ -517,19 +517,19 @@ const LandingPage = () => {
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '32px' }}>
-                            <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column' }}>
+                            <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', display: 'flex', flexDirection: 'column' }}>
                                 <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>Hustler</h3><p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: 400 }}>The Entry-Level Ledger.</p>
                                 <div style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '40px' }}>Free</div>
                                 <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Start Hustling</button>
                                 <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                     {[
-                                        "8% AI Debt Recovery Fee",
-                                        "Basic Productivity Assistant",
-                                        "Standard Security Vault",
-                                        "Unlimited Sales Recording",
-                                        "5 Automated Reminders / month"
+                                        "10 Recorded Sales per month",
+                                        "Basic Debt Tracking Assistant",
+                                        "Standard Security Ledger",
+                                        "Copy/Paste Payment Links",
+                                        "Email Intelligence Briefing"
                                     ].map((feat, i) => (
-                                        <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500, color: '#334155' }}><CheckCheck size={18} color="var(--primary)" /> {feat}</div>
+                                        <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500, color: '#334155' }}><Check size={18} color="var(--primary)" /> {feat}</div>
                                     ))}
                                 </div>
                             </div>
@@ -548,20 +548,19 @@ const LandingPage = () => {
                                 <button onClick={() => navigate('/auth/register')} className="btn-white" style={{ width: '100%' }}>Become an Oga</button>
                                 <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                     {[
-                                        "4% AI Debt Recovery Fee",
-                                        "Proactive 'Did They Pay?' Nudges",
-                                        "Advanced Digital Chief of Staff",
-                                        "8 AM Business Briefing (Morning)",
+                                        "Unlimited Sales Recording",
                                         "WhatsApp Voice Note Sync",
+                                        "Branded PDF/Image Receipts",
                                         "Staff Management (Add 2 Staff)",
-                                        "Standard Security Vault"
+                                        "Proactive Payment Nudges",
+                                        "Advanced Security Ledger"
                                     ].map((feat, i) => (
-                                        <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500 }}><CheckCheck size={18} color="#4ade80" /> {feat}</div>
+                                        <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500 }}><Check size={18} color="#4ade80" /> {feat}</div>
                                     ))}
                                 </div>
                             </div>
 
-                            <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column' }}>
+                            <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', display: 'flex', flexDirection: 'column' }}>
                                 <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>Chairman</h3><p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: 400 }}>The Elite Command Center.</p>
                                 
                                 <div style={{ marginBottom: '40px' }}>
@@ -575,14 +574,14 @@ const LandingPage = () => {
                                 <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Lead Empire</button>
                                 <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                     {[
-                                        "1.5% AI Debt Recovery Fee (Elite)",
-                                        "Elite Digital Chief of Staff",
-                                        "8 AM Executive Summary (Advanced)",
-                                        "Voice Note & Image Sync (Receipts)",
-                                        "Priority Vault Release",
-                                        "Unlimited Staff & Branches Tracking"
+                                        "Everything in Oga Plan",
+                                        "WhatsApp Image Sync (Receipts)",
+                                        "Unlimited Staff & Offices",
+                                        "Export Business Data (Excel)",
+                                        "8 AM Executive Intelligence",
+                                        "Priority Vault Access"
                                     ].map((feat, i) => (
-                                        <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500, color: '#334155' }}><CheckCheck size={18} color="var(--primary)" /> {feat}</div>
+                                        <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500, color: '#334155' }}><Check size={18} color="var(--primary)" /> {feat}</div>
                                     ))}
                                 </div>
                             </div>

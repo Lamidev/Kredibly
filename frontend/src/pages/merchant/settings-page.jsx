@@ -383,7 +383,51 @@ const SettingsPage = () => {
                 </section>
 
                 {/* Staff Management Section */}
-                <section className="glass-card" style={{ padding: '32px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0', marginBottom: '32px' }}>
+                <section 
+                    className="glass-card" 
+                    style={{ 
+                        padding: '32px', 
+                        background: 'white', 
+                        borderRadius: '24px', 
+                        border: '1px solid #E2E8F0', 
+                        marginBottom: '32px',
+                        position: 'relative',
+                        overflow: 'hidden'
+                    }}
+                >
+                    {profile?.plan === 'hustler' && profile?.planStatus !== 'trialing' && (
+                        <div style={{
+                            position: 'absolute',
+                            inset: 0,
+                            background: 'rgba(255, 255, 255, 0.7)',
+                            backdropFilter: 'blur(4px)',
+                            zIndex: 10,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '24px',
+                            textAlign: 'center'
+                        }}>
+                            <div style={{ background: '#FFF7ED', color: '#F97316', padding: '16px', borderRadius: '24px', marginBottom: '16px' }}>
+                                <Shield size={32} />
+                            </div>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#1E293B', marginBottom: '8px' }}>Staff Access Locked</h3>
+                            <p style={{ color: '#64748B', fontWeight: 600, fontSize: '0.9rem', maxWidth: '300px', marginBottom: '20px' }}>
+                                Add staff members to record sales while you monitor their activities from anywhere.
+                            </p>
+                            <button 
+                                onClick={() => {
+                                    setSelectedPlan('oga');
+                                    setShowCheckout(true);
+                                }}
+                                className="btn-primary" 
+                                style={{ width: 'auto', padding: '12px 24px' }}
+                            >
+                                Upgrade to Oga
+                            </button>
+                        </div>
+                    )}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <div style={{ background: '#FFF7ED', color: '#F97316', padding: '10px', borderRadius: '12px' }}>

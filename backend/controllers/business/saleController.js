@@ -17,14 +17,27 @@ exports.createSale = async (req, res) => {
             return res.status(404).json({ message: "Business profile not found. Please complete onboarding." });
         }
 
-        // Plan Limit Enforcement
-        const invoiceCount = await Sale.countDocuments({ businessId: business._id });
-        if (business.plan === 'hustler' && invoiceCount >= 5) {
-            return res.status(403).json({ 
-                success: false, 
-                message: "Trial Limit Reached: You've reached the 5-invoice limit for the Hustler plan. Upgrade to 'Oga' to continue professionalizing your business!",
-                code: "LIMIT_REACHED"
+        // Plan Limit Enforcement (Monthly Reset for Hustlers)
+        const isHustler = business.plan === 'hustler';
+        const isTrialing = business.planStatus === 'trialing';
+
+        if (isHustler && !isTrialing) {
+            const startOfMonth = new Date();
+            startOfMonth.setDate(1);
+            startOfMonth.setHours(0, 0, 0, 0);
+
+            const invoiceCount = await Sale.countDocuments({ 
+                businessId: business._id,
+                createdAt: { $gte: startOfMonth }
             });
+
+            if (invoiceCount >= 10) {
+                return res.status(403).json({ 
+                    success: false, 
+                    message: "Monthly Limit Reached: You've reached the 10-sale limit for your Hustler plan this month. Upgrade to 'Oga' for unlimited sales!",
+                    code: "LIMIT_REACHED"
+                });
+            }
         }
 
         const saleData = {

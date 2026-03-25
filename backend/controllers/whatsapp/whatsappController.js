@@ -571,36 +571,34 @@ exports.handleIncoming = async (req, res) => {
             ]
         });
 
+        // 🧠 SMART NAMING LOGIC: Determine how Kreddy should address this user
+        // Priority: Preferred Name > WhatsApp Profile Name > Plan Tier > "Boss"
+        const resolvedPlan = profile?.plan || "hustler";
+        const tierTitle = resolvedPlan === "chairman" ? "Chairman" : (resolvedPlan === "oga" ? "Oga" : "Boss");
+        const merchantFirstName = whatsappProfileName ? whatsappProfileName.split(' ')[0] : tierTitle;
+        const bossTitle = profile?.assistantSettings?.preferredName || merchantFirstName;
+
         if (!profile) {
             // >>> VIP KREDDY DEMO SANDBOX LOGIC <<<
             if (text.toUpperCase().startsWith("START DEMO")) {
                 const Waitlist = require('../../models/Waitlist');
-                
-                // Build all possible number formats to handle '0XX' vs '234XX' mismatches
                 const numVariants = [cleanFrom];
-                if (cleanFrom.startsWith('234')) {
-                    numVariants.push('0' + cleanFrom.slice(3)); // 234XXXXXXXXXX → 0XXXXXXXXXX
-                } else if (cleanFrom.startsWith('0')) {
-                    numVariants.push('234' + cleanFrom.slice(1)); // 0XXXXXXXXXX → 234XXXXXXXXXX
-                }
+                if (cleanFrom.startsWith('234')) numVariants.push('0' + cleanFrom.slice(3));
+                else if (cleanFrom.startsWith('0')) numVariants.push('234' + cleanFrom.slice(1));
                 
-                console.log(`🔍 [START DEMO] Looking up number variants: ${numVariants.join(', ')}`);
                 const waitlistUser = await Waitlist.findOne({ whatsappNumber: { $in: numVariants } });
-                
                 if (!waitlistUser) {
                     await sendReply(from, "⚠️ *Demo Access Denied*\n\nYour number is not registered on the Kredibly Waitlist. Nice try! 😉\n\nPlease join the waitlist first to unlock your free premium interactive demo:\n👉 https://usekredibly.com/waitlist");
                     return;
                 }
 
-                // They are on the waitlist! Auto-Provision a real Kredibly Demo Account
-                console.log(`🎁 [START DEMO] Provisioning for ${waitlistUser.name} (${cleanFrom})`);
                 const User = require('../../models/User');
                 let demoUser = await User.findOne({ email: waitlistUser.email });
                 if (!demoUser) {
                     demoUser = await User.create({
                         name: waitlistUser.name,
                         email: waitlistUser.email,
-                        password: "DEMO_" + Date.now() + Math.random().toString(36), // Random secure pass
+                        password: "DEMO_" + Date.now() + Math.random().toString(36),
                         isVerified: true
                     });
                 }
@@ -613,15 +611,15 @@ exports.handleIncoming = async (req, res) => {
                         entityType: "individual",
                         whatsappNumber: cleanFrom,
                         sellMode: waitlistUser.industry || "both",
-                        plan: "oga", // The Beta Tester Sweet Spot!
+                        plan: "oga",
                         isBetaTester: true,
                         isKreddyConnected: true
                     });
                     
-                    await sendReply(from, "🎉 *Welcome to your Kredibly Beta Sandbox!*\n\nI just automatically upgraded your Pioneer Sandbox to the Oga Plan using your Waitlist profile.\n\n*Your Rules:* You get a full 30-interaction pilot to test my intelligence. Ask me anything or try sending a voice note like:\n\n🎧 _'Record a 50k sale from Sarah'_\n\nor\n\n🎧 _'Remind me to call David at 6pm'_\n\nReady? Let's make some money! 🚀");
+                    await sendReply(from, `🎉 *Welcome to your Beta Sandbox, ${bossTitle}!*\n\nI just automatically upgraded your Pioneer Sandbox to the Oga Plan using your Waitlist profile.\n\n*Your Rules:* You get a full 30-interaction pilot to test my intelligence. Ask me anything or try sending a voice note like:\n\n🎧 _'Record a 50k sale from Sarah'_\n\nor\n\n🎧 _'Remind me to call David at 6pm'_\n\nReady? Let's make some money! 🚀`);
                     return;
                 } else {
-                    await sendReply(from, "Hi there! Your Demo Sandbox is already active. Send me a voice note or text to test my capabilities, Boss! 🚀");
+                    await sendReply(from, `Hi ${bossTitle}! Your Demo Sandbox is already active. Send me a voice note or text to test my capabilities! 🚀`);
                     return;
                 }
             }
@@ -634,7 +632,7 @@ exports.handleIncoming = async (req, res) => {
         }
 
         const isStaff = profile.whatsappNumber !== cleanFrom;
-        let plan = profile.plan || "hustler";
+        const plan = profile.plan || "hustler";
 
         // >>> CLOSED BETA 30-MESSAGE HARD STOP <<<
         if (profile.isBetaTester) {
@@ -909,15 +907,20 @@ Upgrade here: ${APP_URL}/pricing`);
         const isThanks = /thanks|thank you|merci|jazak|nice/i.test(lowerText);
         
         if (isGreeting && lowerText.split(' ').length <= 3) {
-            const personalizedGreeting = getRandom(HUMANIZE.greetings, { name: profile.displayName }, plan);
+            const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+            const bossTitle = profile.assistantSettings?.preferredName || planDefaultTitle;
+            
+            const personalizedGreeting = getRandom(HUMANIZE.greetings, { name: bossTitle }, plan);
             const statusLabel = plan === "chairman" ? "📊 *EMPIRE STATUS*" : "📊 *STATS*";
             const bossRole = plan === "chairman" ? "your Digital Chief of Staff" : "your Kredibly partner";
 
             await sendReply(from, `${personalizedGreeting} \n\nI'm *Kreddy*, ${bossRole}. \n\n*What's the plan for today?*\n${statusLabel}: Type *S*\n⏳ *DEBTS*: Type *D*\n💡 *HELP*: Type *HELP*`);
             return;
         } else if (isThanks) {
-            const title = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
-            await sendReply(from, `You're very welcome, ${title}! 🫡 Always happy to keep your records straight. Let me know if you need anything else!`);
+            const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+            const bossTitle = profile.assistantSettings?.preferredName || planDefaultTitle;
+            
+            await sendReply(from, `You're very welcome, ${bossTitle}! 🫡 Always happy to keep your records straight. Let me know if you need anything else!`);
             return;
         } else {
             // 🧠 100% AI-DRIVEN PIPELINE (No Regex)
@@ -983,6 +986,9 @@ Upgrade here: ${APP_URL}/pricing`);
                     return await sendReply(from, "Boss! 📸 Image scanning (Receipts) is an exclusive feature for the *Chairman Plan*. \n\nUpgrade now so you can just snap pictures and let me do the work! 🦁");
                 }
                 
+                const mediaId = message.image?.id;
+                if (!mediaId) return;
+
                 const planDefaultTitle = plan === "chairman" ? "Chairman" : "Oga";
                 const bossTitle = profile.assistantSettings?.preferredName || planDefaultTitle;
 
@@ -1126,9 +1132,13 @@ Upgrade here: ${APP_URL}/pricing`);
                              sale.customerName = aiResponseItem.data.newName;
                              updatedConfirm = `✅ *Name Correction:* Changed from *${oldN}* to *${sale.customerName}*. Invoice updated. 🛡️`;
                              
-                             // SYNC-RENAME: Update pending reminders for this sale
+                             // SYNC-RENAME: Update ALL pending reminders for this business matching the old name in description
                              try {
-                                 const pendingRems = await Reminder.find({ saleId: sale._id, status: 'pending' });
+                                 const pendingRems = await Reminder.find({ 
+                                     businessId: profile._id, 
+                                     status: 'pending',
+                                     description: { $regex: new RegExp(oldN.replace(/\s+/g, '\\s+'), "gi") }
+                                 });
                                  for (const r of pendingRems) {
                                      r.description = r.description.replace(new RegExp(oldN, "gi"), sale.customerName);
                                      await r.save();
@@ -1172,7 +1182,11 @@ Upgrade here: ${APP_URL}/pricing`);
                            
                            // SYNC-RENAME: Update pending reminders for this sale
                            try {
-                               const pendingRems = await Reminder.find({ saleId: sale._id, status: 'pending' });
+                               const pendingRems = await Reminder.find({ 
+                                    businessId: profile._id, 
+                                    status: 'pending',
+                                    description: { $regex: new RegExp(oldN.replace(/\s+/g, '\\s+'), "gi") }
+                               });
                                for (const r of pendingRems) {
                                    r.description = r.description.replace(new RegExp(oldN, "gi"), sale.customerName);
                                    await r.save();
@@ -1290,8 +1304,6 @@ Upgrade here: ${APP_URL}/pricing`);
                         await profile.save();
                         
                         let reply = aiResponseItem.data.reply || `Got it, *${newName}*! 🫡 I'll call you that from now on.`;
-                        // Remove generic titles from the immediate reply to respect the new name instantly
-                        reply = reply.replace(/\b(Chairman|Oga|Boss)\b/gi, `*${newName}*`);
                         
                         await sendReply(from, reply);
                     } else {
@@ -1330,7 +1342,7 @@ Upgrade here: ${APP_URL}/pricing`);
                             let msg1 = `🤝 *Payment Link for ${sale.customerName}*\n💰 Balance: *₦${bal.toLocaleString()}*\n\n*Just forward the message below directly to them:* 👇`;
                             let msg2 = `Hi ${sale.customerName}, here is the secure update and payment link for your outstanding balance of ₦${bal.toLocaleString()} with ${profile.displayName}: ${link}`;
                             await sendReply(from, msg1);
-                            setTimeout(async () => { await sendReply(from, msg2); }, 100);
+                            await sendReply(from, msg2);
                         }
                     }
                     isProcessed = true;
@@ -1385,9 +1397,14 @@ Upgrade here: ${APP_URL}/pricing`);
                     }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "upgrade") {
-                    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
-                    const upgradeUrl = `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/pricing`;
-                    await sendReply(from, `${bossTitle}! 💎 You want to level up your hustle? \n\nYou can see all our plans and upgrade directly here: ${upgradeUrl}\n\nLet's get your business to the next level! 🚀`);
+                    
+                    if (profile.hasUsedTrial) {
+                        const upgradeUrl = `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/pricing`;
+                        await sendReply(from, `💎 *${bossTitle}, want to Level Up?* \n\nYour free trial is over, but you can still upgrade to **OGA** or **CHAIRMAN** here: ${upgradeUrl}\n\nLet's get your business to the next level! 🚀`);
+                    } else {
+                        const trialMsg = `💎 *${bossTitle}, want to unlock my full brain?* \n\nYou can now try our **CHAIRMAN** powers for **7 Days FREE**! 🚀\n\n🎁 *Launch Special:* 50% OFF for your first few months. \n\n*Choose how to activate:* \n1️⃣ **CARD (Recommended):** ₦50 verification. Enables auto-billing on Day 8. \n2️⃣ **TRANSFER:** ₦500 deposit. Held as wallet credit for your first month. \n\nJust say _"Activate Chairman Trial"_ to start! 🛡️`;
+                        await sendReply(from, trialMsg);
+                    }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "create_reminder") {
                     const data = aiResponseItem.data || {};
@@ -1419,7 +1436,7 @@ Upgrade here: ${APP_URL}/pricing`);
                             } else if (plan === "hustler" || !plan) {
                                 if (usedReminders >= 5) {
                                     canSet = false;
-                                    await sendReply(from, "Chief! 📈 You've used your 5 free Task Reminders for this month. 👏 \n\nUpgrade to the *Oga Plan* for just ₦5,000 to get 60 reminders and unlock Voice Notes! 🚀");
+                                    await sendReply(from, `Chief ${bossTitle}! 📈 You've used your 5 free Task Reminders for this month. 👏 \n\nUpgrade to the *Oga Plan* for just ₦5,000 to get 60 reminders and unlock Voice Notes! 🚀`);
                                 }
                             }
 
@@ -1486,6 +1503,15 @@ Upgrade here: ${APP_URL}/pricing`);
                                         saleId: linkedSaleId
                                     });
 
+                                    // NEW: If it's a debt reminder linked to a sale, sync the sale's dueDate
+                                    if (reminderType === "debt" && linkedSaleId) {
+                                        const sale = await Sale.findById(linkedSaleId);
+                                        if (sale && (!sale.dueDate || sale.dueDate < triggerDate)) {
+                                            sale.dueDate = triggerDate;
+                                            await sale.save();
+                                        }
+                                    }
+
                                     const FriendlyDate = triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
                                     await sendReply(from, `✅ *Task Saved!* \n\nI will remind you to *"${taskDescription}"* at exactly *${FriendlyDate}*${recLabel}. 🫡`);
                                 }
@@ -1500,8 +1526,6 @@ Upgrade here: ${APP_URL}/pricing`);
                     const snoozeAll = data.snoozeAll || false;
                     
                     const taskTarget = data.taskTarget || "";
-                    
-                    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
 
                     if (snoozeAll) {
                         // Find all pending reminders for today and snooze them
@@ -1529,7 +1553,7 @@ Upgrade here: ${APP_URL}/pricing`);
                                 await r.save();
                             }
 
-                            const friendly = newTriggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', hour12: true });
+                            const friendly = newTriggerDate.toLocaleString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true });
                             await sendReply(from, `Understood, ${bossTitle}! 😴 I've snoozed ALL *${remindersToSnooze.length}* tasks until *${friendly}*. talk soon!`);
                         } else {
                             await sendReply(from, `I don't see any active tasks to snooze right now, ${bossTitle}.`);
@@ -1581,7 +1605,6 @@ Upgrade here: ${APP_URL}/pricing`);
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "check_schedule") {
                     // 📋 NEW: CHECK SCHEDULE - Show user their pending reminders/tasks
-                    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
                     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
                     const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
                     
@@ -1677,38 +1700,52 @@ Upgrade here: ${APP_URL}/pricing`);
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "pay_subscription") {
                     const targetPlan = (aiResponseItem.data.plan || "oga").toLowerCase();
-                    const cycle = (aiResponseItem.data.billingCycle || "monthly").toLowerCase();
-                    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
 
                     const user = await User.findById(profile.ownerId);
                     if (!user) {
                         await sendReply(from, `Sorry ${bossTitle}, I couldn't find your account details to generate a payment link. Please contact support!`);
+                    } else if (profile.hasUsedTrial) {
+                         const upgradeUrl = `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/pricing`;
+                         await sendReply(from, `${bossTitle}, you've already used your trial! You can upgrade anytime on your dashboard: ${upgradeUrl} 🛡️`);
                     } else {
-                        const price = getPlanPrice(targetPlan, cycle);
-                        if (!price) {
-                            await sendReply(from, `I’m sorry ${bossTitle}, I couldn't fetch the price for the ${targetPlan} plan. Try the dashboard!`);
-                        } else {
-                            const reference = `KREDDY_SUB_${Date.now()}`;
-                            const metadata = { 
-                                paymentType: 'subscription', 
-                                plan: targetPlan, 
-                                billingCycle: cycle, 
-                                businessId: profile._id.toString(),
-                                email: user.email 
-                            };
+                        // LAUNCH PROMO: 7-Day Trial + 50% Off (Card vs Transfer)
+                        const rawMethod = (aiResponseItem.data?.method || "").toLowerCase();
+                        const method = rawMethod.includes("transfer") ? "transfer" : "card"; 
+                        const authFee = method === "card" ? 50 : 500;
+                        const targetPlan = "chairman"; // Trial is always Chairman at launch
+                        const fullPrice = getPlanPrice(targetPlan, "monthly");
+                        const discountPrice = getPlanPrice(targetPlan, "launch");
+
+                        const reference = `KREDDY_TRIAL_${Date.now()}`;
+                        const metadata = { 
+                            paymentType: 'subscription_trial', 
+                            plan: targetPlan, 
+                            billingCycle: 'monthly', 
+                            businessId: profile._id.toString(),
+                            email: user.email,
+                            isLaunchPromo: true,
+                            fullPrice: fullPrice,
+                            discountPrice: discountPrice,
+                            method: method
+                        };
+                        
+                        try {
+                            const paystackData = await initializePayment(user.email, authFee, reference, metadata);
                             
-                            try {
-                                const paystackData = await initializePayment(user.email, price, reference, metadata);
-                                await sendReply(from, `🚀 *${bossTitle}, your upgrade is ready!* \n\nI've generated a secure payment link for the *${targetPlan.toUpperCase()}* (${cycle}) plan.\n\n💰 Amount: *₦${price.toLocaleString()}*\n🔗 Pay here: ${paystackData.authorization_url}\n\nOnce you pay, I'll instantly unlock your new powers! 🛡️`);
-                            } catch (e) {
-                                console.error("Paystack Init Error:", e.message);
-                                await sendReply(from, `Ouch! I had trouble generating that payment link. Please try again or use the website dashboard!`);
+                            let promoMsg = "";
+                            if (method === "card") {
+                                promoMsg = `🚀 *${bossTitle}, 7-Day Chairman Trial Ready!* \n\nI'll unlock my full scan and voice powers for you now. \n\n🛡️ *Verify Card:* Pay ₦50 below to start. (This enables **Auto-Billing** on Day 8 so your hustle never stops). \n🔗 *Start Trial:* ${paystackData.authorization_url}`;
+                            } else {
+                                promoMsg = `🚀 *${bossTitle}, 7-Day Chairman Trial Ready!* \n\n🎁 *Transfer Activation:* Pay ₦500 below. This ₦500 stays in your Wallet and counts towards your first month! \n🔗 *Start Trial:* ${paystackData.authorization_url}`;
                             }
+                            await sendReply(from, promoMsg);
+                        } catch (e) {
+                            console.error("Paystack Init Error:", e.message);
+                            await sendReply(from, `Ouch! I had trouble setting up your trial. Please try again!`);
                         }
                     }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "check_billing") {
-                    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
                     const nextDate = profile.nextBillingDate ? new Date(profile.nextBillingDate).toLocaleDateString() : (profile.trialExpiresAt ? new Date(profile.trialExpiresAt).toLocaleDateString() + " (Trial)" : "Not set");
                     const lastPaid = profile.lastPaidAt ? new Date(profile.lastPaidAt).toLocaleDateString() : "No record";
                     
@@ -1721,7 +1758,6 @@ Upgrade here: ${APP_URL}/pricing`);
                     await sendReply(from, msg);
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "check_staff") {
-                    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
                     if (!profile.staffNumbers || profile.staffNumbers.length === 0) {
                         await sendReply(from, `${bossTitle}, you currently have no staff members registered to your account.`);
                     } else {
@@ -1733,7 +1769,6 @@ Upgrade here: ${APP_URL}/pricing`);
                     }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "add_staff") {
-                    const bossTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
                     
                     if (plan === "hustler" || !plan) {
                         await sendReply(from, `${bossTitle}! 🛑 Adding staff via WhatsApp is a premium feature. \n\nUpgrade to the *Oga Plan* to add up to 2 staff, or the *Chairman Plan* for unlimited branch tracking! 🚀`);
@@ -1865,7 +1900,6 @@ Upgrade here: ${APP_URL}/pricing`);
                 } else if (aiResponseItem && (aiResponseItem.intent === "support" || aiResponseItem.intent === "feedback")) {
                     // 🚀 FEEDBACK / BUG REPORT FORWARDER
                     const feedbackMsgText = aiResponseItem.data.reply || text;
-                    const bossTitle = profile.assistantSettings?.preferredName || (plan === "chairman" ? "Chairman" : "Oga");
 
                     // 🛠️ Save as official Feedback model entry
                     await Feedback.create({
@@ -1895,7 +1929,6 @@ Upgrade here: ${APP_URL}/pricing`);
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "delete_feedback") {
                     // 🗑️ Handle "Cancel/Delete my suggestion"
-                    const bossTitle = profile.assistantSettings?.preferredName || (plan === "chairman" ? "Chairman" : "Oga");
                     const lastFeedback = await Feedback.findOne({ businessId: profile._id }).sort({ createdAt: -1 });
                     
                     if (lastFeedback && (new Date() - lastFeedback.createdAt) < 60 * 60 * 1000) { // Only delete if in last 60 mins
@@ -1914,11 +1947,9 @@ Upgrade here: ${APP_URL}/pricing`);
                     isProcessed = true;
                 } else {
                     // FALLBACK — Only trigger if truly unknown
-                    const bossTitle = profile.assistantSettings?.preferredName || (plan === "chairman" ? "Chairman" : "Oga");
                     let fallbackMsg = aiResponseItem?.data?.reply || `I'm listening, ${bossTitle}! 🫡 `;
                     
-                    // Only add the helpful tip if we haven't processed ANYTHING yet
-                    if (responses.length === 1 && !isProcessed) {
+                    if (!isProcessed) {
                         fallbackMsg += "\n\nTip: You can ask me to record sales, set reminders, or even suggest features for the dashboard! 💡";
                     }
                     
@@ -1926,8 +1957,8 @@ Upgrade here: ${APP_URL}/pricing`);
                     isProcessed = true;
                 }
             }
-            } // END of for loop (multi-intent)
         }
+    }
     } catch (err) {
         console.error("WhatsApp Assistant Error:", err);
         await sendReply(from, "Ouch! My brain had a small glitch. 😵‍ Give me a moment to recover and try again! 🛡️");

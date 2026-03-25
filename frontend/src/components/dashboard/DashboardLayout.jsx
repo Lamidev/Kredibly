@@ -117,7 +117,17 @@ const DashboardLayout = () => {
         { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, end: true },
         { label: 'Ledger (Sales)', path: '/sales', icon: FileText, activeIfMatch: ['/sales'] },
         { label: 'Money Outside', path: '/debtors', icon: Users, activeIfMatch: ['/debtors'] },
-        { label: 'Reports', path: '/reports', icon: BarChart3 },
+        { 
+            label: 'Reports', 
+            path: profile?.plan === 'hustler' && profile?.planStatus !== 'trialing' ? '#' : '/reports', 
+            icon: BarChart3,
+            onClick: (e) => {
+                if (profile?.plan === 'hustler' && profile?.planStatus !== 'trialing') {
+                    e.preventDefault();
+                    setShowLimitModal(true);
+                }
+            }
+        },
     ];
 
     return (
@@ -171,44 +181,38 @@ const DashboardLayout = () => {
                 </div>
 
                 <nav className="sidebar-nav" style={{ flex: 1 }}>
-                    {navItems.map((item) => (
-                        <NavLink
+                    {navItems.map((item) =>                         <NavLink
                             key={item.path}
                             to={item.path}
                             end={item.end}
                             className={({ isActive }) => {
+                                if (item.path === '#') return 'nav-item-premium locked-item';
                                 let isMatched = item.activeIfMatch 
                                     ? item.activeIfMatch.some(p => location.pathname.startsWith(p))
                                     : isActive;
-
-                                // Special case for individual invoice view
-                                if (location.pathname.startsWith('/dashboard/invoice')) {
-                                    const from = location.state?.from || '/sales';
-                                    if (item.path === from) {
-                                        isMatched = true;
-                                    } else {
-                                        isMatched = false;
-                                    }
-                                }
-
                                 return `nav-item-premium ${isMatched ? 'active' : ''}`;
                             }}
-                            onClick={() => setIsSidebarOpen(false)}
+                            onClick={(e) => {
+                                if (item.onClick) item.onClick(e);
+                                if (!e.defaultPrevented) setIsSidebarOpen(false);
+                            }}
                             style={{ margin: '4px 16px' }}
                         >
                             {({ isActive }) => {
                                 const isMatched = item.activeIfMatch 
                                     ? item.activeIfMatch.some(p => location.pathname.startsWith(p))
                                     : isActive;
+                                const isLocked = item.path === '#';
                                 return (
                                     <>
-                                        <item.icon size={20} strokeWidth={isMatched ? 2.5 : 2} />
-                                        <span style={{ fontWeight: 600 }}>{item.label}</span>
+                                        <item.icon size={20} strokeWidth={isMatched ? 2.5 : 2} style={{ opacity: isLocked ? 0.4 : 1 }} />
+                                        <span style={{ fontWeight: 600, opacity: isLocked ? 0.4 : 1 }}>{item.label}</span>
+                                        {isLocked && <ShieldCheck size={14} style={{ marginLeft: 'auto', color: '#94A3B8' }} />}
                                     </>
                                 );
                             }}
                         </NavLink>
-                    ))}
+)}
                 </nav>
 
                 <div className="sidebar-footer" style={{ borderTop: '1px solid #F1F5F9', padding: '16px 0 32px' }}>

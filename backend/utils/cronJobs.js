@@ -207,16 +207,16 @@ const scheduleMorningSummary = () => {
 };
 
 /**
- * PLAN EXPIRY REMINDERS (10:00 AM WAT / 9:00 AM UTC Daily)
+ * PLAN & TRIAL EXPIRY REMINDERS (10:00 AM WAT / 9:00 AM UTC Daily)
  */
 const schedulePlanExpiryReminders = () => {
     cron.schedule("0 9 * * *", async () => {
-        console.log("💳 Checking for expiring plans...");
+        console.log("💳 Checking for expiring plans and trials...");
         try {
             const now = new Date();
             const threeDaysLimit = new Date(); threeDaysLimit.setDate(threeDaysLimit.getDate() + 3);
             
-            // Find active plans expiring soon
+            // 1. Check ACTIVE Plans expiring soon
             const expiringSoon = await BusinessProfile.find({
                 plan: { $in: ["oga", "chairman"] },
                 planStatus: "active",
@@ -224,47 +224,76 @@ const schedulePlanExpiryReminders = () => {
             });
 
             for (const profile of expiringSoon) {
-                const expiry = new Date(profile.nextBillingDate);
-                const diffTime = expiry.getTime() - now.getTime();
+                const diffTime = new Date(profile.nextBillingDate).getTime() - now.getTime();
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const bossTitle = profile.assistantSettings?.preferredName || (profile.plan === "chairman" ? "Chairman" : "Oga");
                 
-                const planTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
-                const bossTitle = profile.assistantSettings?.preferredName || planTitle;
-                const planName = profile.plan.toUpperCase();
-
                 let msg = "";
-                if (diffDays === 3) {
-                    msg = `💳 *Plan Update, ${bossTitle}!* \n\nYour *${planName}* plan expires in 3 days. Renew now to keep your Kreddy AI powered up! 🚀\n\n🔗 *Quick Renew:* Just say _"I want to renew my plan"_ here on WhatsApp!`;
-                } else if (diffDays === 1) {
-                    msg = `⚠️ *Final Reminder, ${bossTitle}!* \n\nYour *${planName}* plan expires tomorrow. Don't let your business automation pause! 🛡️\n\n🔗 *Quick Renew:* Just say _"Pay for my ${profile.plan}"_!`;
-                }
+                if (diffDays === 3) msg = `💳 *Plan Update, ${bossTitle}!* \n\nYour *${profile.plan.toUpperCase()}* plan expires in 3 days. Renew now to keep your Kreddy AI powered up! 🚀\n\n🔗 *Quick Renew:* Just say _"I want to renew my plan"_!`;
+                else if (diffDays === 1) msg = `⚠️ *Final Reminder, ${bossTitle}!* \n\nYour *${profile.plan.toUpperCase()}* plan expires tomorrow. Don't let your business automation pause! 🛡️\n\n🔗 *Quick Renew:* Just say _"Pay for my ${profile.plan}"_!`;
 
-                if (msg && profile.whatsappNumber) {
-                    await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Expiry Alert Fail:", e));
+                if (msg && profile.whatsappNumber) await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Expiry Alert Fail:", e));
+            }
+
+            // 2. Check Expiring TRIALS (7-Day Limit)
+            const trialsExpiringSoon = await BusinessProfile.find({
+                planStatus: "trialing",
+                trialExpiresAt: { $lte: threeDaysLimit, $gt: now }
+            });
+
+            for (const profile of trialsExpiringSoon) {
+                const diffTime = new Date(profile.trialExpiresAt).getTime() - now.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const bossTitle = profile.assistantSettings?.preferredName || "Chief";
+                
+                let msg = "";
+                if (diffDays === 1) {
+                    msg = `🚀 *Trial Ending Alert, ${bossTitle}!* \n\nYour 7-Day Chairman Trial ends tomorrow. You've seen what I can do! 🛡️\n\n🎁 *Launch Promo:* Pay tomorrow to get **50% OFF** for your first few months. \n\nJust say _"I want to stay Chairman"_ or _"Switch to Oga"_ to continue!`;
+                }
+                if (msg && profile.whatsappNumber) await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Trial Expiry Alert Fail:", e));
+            }
+
+            // 3. Handle JUST EXPIRED Trials (Day 8 Hard Fallback)
+            const justExpiredTrials = await BusinessProfile.find({
+                planStatus: "trialing",
+                trialExpiresAt: { $lte: now }
+            });
+
+            for (const profile of justExpiredTrials) {
+                // Move to Hustler if no payment, but give 3-Day Grace for the "Conversion Choice"
+                const graceExpiry = new Date(profile.trialExpiresAt); 
+                graceExpiry.setDate(graceExpiry.getDate() + 3);
+
+                if (now > graceExpiry) {
+                    profile.planStatus = 'inactive';
+                    profile.plan = 'hustler';
+                    await profile.save();
+                    const bossTitle = profile.assistantSettings?.preferredName || "Boss";
+                    const msg = `🛑 *Trial Over, ${bossTitle}.* \n\nYour trial has ended and the grace period is over. I've moved you to the *Hustler Plan* (Basic Text Only). \n\nScan and Voice features are now locked. Upgrade anytime to get them back! 🛡️`;
+                    if (profile.whatsappNumber) await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Trial Lock Alert Fail:", e));
+                } else {
+                    // Still in Grace, send the Payment Choice Link
+                    const bossTitle = profile.assistantSettings?.preferredName || "Chairman";
+                    const msg = `📢 *Last Call, ${bossTitle}!* \n\nYour trial is over. Choose your plan now to keep your Scan and Voice powers at the **50% Launch Discount**: \n\n1️⃣ *Stay Chairman* (₦4,250/mo)\n2️⃣ *Switch to Oga* (₦2,500/mo)\n\nJust say _"Pay for Oga"_ or _"Pay for Chairman"_ right here! 🛡️`;
+                    if (profile.whatsappNumber) await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Grace Choice Alert Fail:", e));
                 }
             }
 
-            // Also check for newly expired plans
-            const justExpired = await BusinessProfile.find({
-                plan: { $in: ["oga", "chairman"] },
+            // 4. Handle EXPIRED Active Plans (Past Due)
+            const justExpiredActive = await BusinessProfile.find({
                 planStatus: "active",
                 nextBillingDate: { $lte: now }
             });
 
-            for (const profile of justExpired) {
+            for (const profile of justExpiredActive) {
                 profile.planStatus = 'past_due';
                 await profile.save();
-
-                const planTitle2 = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
-                const bossTitle2 = profile.assistantSettings?.preferredName || planTitle2;
-                const msg = `🚨 *Plan Expired, ${bossTitle}!* \n\nYour premium features have paused. Renew now to continue tracking debt with AI without limits! 💰\n\n🔗 *Upgrade Now:* Just say _"I want to pay for ${profile.plan}"_`;
-                
-                if (profile.whatsappNumber) {
-                    await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Expired Alert Fail:", e));
-                }
+                const bossTitle = profile.assistantSettings?.preferredName || (profile.plan === "chairman" ? "Chairman" : "Oga");
+                const msg = `🚨 *Plan Expired, ${bossTitle}!* \n\nYour premium features have paused. Renew now to continue tracking debt with AI without limits! 💰\n\n🔗 *Renew:* Just say _"Pay for ${profile.plan}"_`;
+                if (profile.whatsappNumber) await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Expired Alert Fail:", e));
             }
         } catch (error) {
-            console.error("Cron Job Error (Plan Expiry):", error);
+            console.error("Cron Job Error (Plan/Trial Expiry):", error);
         }
     });
 };

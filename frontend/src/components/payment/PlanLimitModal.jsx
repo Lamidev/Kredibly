@@ -32,60 +32,61 @@ const PlanLimitModal = ({ isOpen, onClose, onUpgrade }) => {
                     backdropFilter: 'blur(16px)', padding: '20px' 
                 }}
             >
-                <motion.div 
-                    initial={{ scale: 0.9, opacity: 0, y: 20 }} 
-                    animate={{ scale: 1, opacity: 1, y: 0 }} 
-                    exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    style={{ 
-                        background: 'white', 
-                        width: '100%', 
-                        maxWidth: '520px', 
-                        borderRadius: '40px', 
-                        boxShadow: '0 30px 100px -20px rgba(0,0,0,0.5)', 
-                        overflow: 'hidden',
-                        position: 'relative'
-                    }}
-                >
-                    {/* Background Glow */}
-                    <div style={{ position: 'absolute', top: '-100px', left: '-100px', width: '300px', height: '300px', background: 'var(--primary)', opacity: 0.1, filter: 'blur(100px)', borderRadius: '50%' }} />
-
-                    <div style={{ padding: '40px', position: 'relative' }}>
-                        {/* Close Button */}
-                        <button 
-                            onClick={onClose}
-                            style={{ position: 'absolute', top: '24px', right: '24px', background: '#F1F5F9', border: 'none', borderRadius: '12px', padding: '8px', cursor: 'pointer', color: '#64748B' }}
-                        >
-                            <X size={20} />
-                        </button>
-
-                        {/* Top Icon */}
-                        <div style={{ 
-                            background: 'linear-gradient(135deg, #4C1D95, #2E1065)', 
-                            color: 'white', 
-                            width: '80px', height: '80px', 
-                            borderRadius: '28px', 
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                            margin: '0 auto 32px',
-                            boxShadow: '0 20px 40px -10px var(--primary-glow)'
-                        }}>
-                            <Zap size={40} fill="white" />
-                        </div>
-
-                        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+                    <motion.div 
+                        initial={{ scale: 0.9, opacity: 0, y: 20 }} 
+                        animate={{ scale: 1, opacity: 1, y: 0 }} 
+                        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                        style={{ 
+                            background: 'white', 
+                            width: '100%', 
+                            maxWidth: '520px', 
+                            borderRadius: '40px', 
+                            boxShadow: '0 30px 100px -20px rgba(0,0,0,0.5)', 
+                            border: '2px solid var(--primary-glow)',
+                            overflow: 'hidden',
+                            position: 'relative'
+                        }}
+                    >
+                        {/* Background Glow */}
+                        <div style={{ position: 'absolute', top: '-100px', left: '-100px', width: '300px', height: '300px', background: 'var(--primary)', opacity: 0.1, filter: 'blur(100px)', borderRadius: '50%' }} />
+    
+                        <div style={{ padding: '40px', position: 'relative' }}>
+                            {/* Close Button */}
+                            <button 
+                                onClick={onClose}
+                                style={{ position: 'absolute', top: '24px', right: '24px', background: '#F1F5F9', border: 'none', borderRadius: '12px', padding: '8px', cursor: 'pointer', color: '#64748B' }}
+                            >
+                                <X size={20} />
+                            </button>
+    
+                            {/* Top Icon */}
                             <div style={{ 
-                                display: 'inline-flex', 
-                                alignItems: 'center', 
-                                gap: '8px', 
-                                background: 'rgba(76, 29, 149, 0.08)', 
-                                padding: '8px 16px', 
-                                borderRadius: '100px',
-                                marginBottom: '16px'
+                                background: 'linear-gradient(135deg, #4C1D95, #2E1065)', 
+                                color: 'white', 
+                                width: '80px', height: '80px', 
+                                borderRadius: '28px', 
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                margin: '0 auto 32px',
+                                boxShadow: '0 20px 40px -10px var(--primary-glow)'
                             }}>
-                                <Sparkles size={14} color="var(--primary)" />
-                                <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Trial Limit Reached</span>
+                                <Zap size={40} fill="white" />
                             </div>
-                            <h2 style={{ fontSize: '2.2rem', fontWeight: 950, color: '#0F172A', marginBottom: '16px', letterSpacing: '-0.04em', lineHeight: 1 }}>Upgrade to <span style={{ color: 'var(--primary)' }}>Oga</span></h2>
-                            <p style={{ color: '#64748B', fontWeight: 600, fontSize: '1.1rem', lineHeight: 1.5 }}>You've hit the 5-invoice limit. Ready to professionalize your business and recover debt faster?</p>
+    
+                            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+                                <div style={{ 
+                                    display: 'inline-flex', 
+                                    alignItems: 'center', 
+                                    gap: '8px', 
+                                    background: 'rgba(76, 29, 149, 0.08)', 
+                                    padding: '8px 16px', 
+                                    borderRadius: '100px',
+                                    marginBottom: '16px'
+                                }}>
+                                    <Sparkles size={14} color="var(--primary)" />
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Trial Limit Reached</span>
+                                </div>
+                                <h2 style={{ fontSize: '2.2rem', fontWeight: 950, color: '#0F172A', marginBottom: '16px', letterSpacing: '-0.04em', lineHeight: 1 }}>Upgrade to <span style={{ color: 'var(--primary)' }}>Oga</span></h2>
+                                <p style={{ color: '#64748B', fontWeight: 600, fontSize: '1.1rem', lineHeight: 1.5 }}>You've hit the 10-invoice limit. Ready to professionalize your business and recover debt faster?</p>
                         </div>
 
                         {/* Benefits Grid */}

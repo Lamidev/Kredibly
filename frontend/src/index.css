@@ -91,12 +91,13 @@ body.lock-scroll {
 }
 
 .glass-card {
-  background: var(--glass);
+  background: white; /* Changed from var(--glass) to white for better pop */
+  background: linear-gradient(to bottom right, #ffffff, rgba(76, 29, 149, 0.02)); 
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
+  border: 2px solid var(--primary-glow);
   border-radius: 20px;
-  box-shadow: var(--shadow);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05); /* Standardize shadow */
 }
 
 .glass-nav {
@@ -351,8 +352,9 @@ body.lock-scroll {
   position: relative;
   overflow: hidden;
   transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 2px solid var(--primary-glow);
   background: white;
+  background: linear-gradient(to bottom right, #ffffff, rgba(76, 29, 149, 0.02));
 }
 
 .bento-item:hover {
