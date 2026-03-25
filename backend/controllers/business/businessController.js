@@ -65,10 +65,13 @@ exports.updateProfile = async (req, res) => {
                 staffNumbers: staffNumbers ? staffNumbers.map(n => cleanPhone(n)).filter(n => n) : [],
                 // Founding Member Benefits
                 // Default Free Tier (Hustler Plan)
+                // LAUNCH STRATEGY: Default to Inactive Hustler (Trial must be claimed)
                 plan: 'hustler',
-                planStatus: 'active',
+                planStatus: 'inactive',
                 trialExpiresAt: null, 
+                hasUsedTrial: false,
                 isFoundingMember: isWaitlistUser,
+                walletBalance: 0,
                 discountActiveUntil: isWaitlistUser ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) : null
             });
 

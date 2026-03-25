@@ -33,11 +33,11 @@ const PricingPage = () => {
             price: "Free",
             period: "",
             features: [
-                "8% AI Debt Recovery Fee",
-                "Basic Productivity Assistant",
-                "Standard Security Vault",
-                "50 Smart AI Actions / month",
-                "5 Automated Reminders / month"
+                "10 Recorded Sales per month",
+                "Basic Debt Tracking Assistant",
+                "Standard Security Ledger",
+                "Copy/Paste Payment Links",
+                "Email Intelligence Briefing"
             ],
             cta: profile?.plan === "hustler" ? "Current Plan" : "Get Started",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -53,13 +53,12 @@ const PricingPage = () => {
             originalPrice: getPrice(5000),
             period: "/ month",
             features: [
-                "4% AI Debt Recovery Fee",
-                "Proactive 'Did They Pay?' Nudges",
-                "Advanced Digital Chief of Staff",
-                "8 AM Business Briefing (Morning)",
+                "Unlimited Sales Recording",
                 "WhatsApp Voice Note Sync",
+                "Branded PDF/Image Receipts",
                 "Staff Management (Add 2 Staff)",
-                "Standard Security Vault"
+                "Proactive Payment Nudges",
+                "Advanced Security Ledger"
             ],
             cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade Now" : "Become an Oga",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -75,12 +74,12 @@ const PricingPage = () => {
             originalPrice: getPrice(8500),
             period: "/ month",
             features: [
-                "1.5% AI Debt Recovery Fee (Elite)",
-                "Elite Digital Chief of Staff",
-                "Unlimited Staff & Branches Tracking",
-                "Voice Note & Image Sync (Receipts)",
-                "8 AM Executive Summary (Advanced)",
-                "Priority Vault Release"
+                "Everything in Oga Plan",
+                "WhatsApp Image Sync (Receipts)",
+                "Unlimited Staff & Offices",
+                "Export Business Data (Excel)",
+                "8 AM Executive Intelligence",
+                "Priority Vault Access"
             ],
             cta: profile?.plan === "chairman" ? "Current Plan" : profile ? "Upgrade Now" : "Lead Your Empire",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -90,15 +89,14 @@ const PricingPage = () => {
     ];
 
     const comparisonFeatures = [
-        { name: "Debt Recovery Success Fee", free: "8%", pro: "4%", ent: "1.5% (Elite)" },
-        { name: "AI Productivity Assistant", free: "Basic", pro: "Advanced", ent: "Genius" },
-        { name: "Proactive Debt Follow-ups", free: false, pro: "1-Day Nudges", ent: "1-Day Nudges" },
-        { name: "Morning Business Summary", free: false, pro: "8 AM (Standard)", ent: "8 AM (Executive)" },
-        { name: "24-Hour Security Vault", free: "Standard", pro: "Standard", ent: "Priority" },
+        { name: "Sales Records / Month", free: "10 Sales", pro: "Unlimited", ent: "Unlimited" },
         { name: "WhatsApp Voice Notes", free: false, pro: true, ent: true },
+        { name: "Branded PDF Receipts", free: false, pro: true, ent: true },
+        { name: "WhatsApp Image / Receipt Scan", free: false, pro: false, ent: true },
         { name: "Staff Management", free: "0 Staff", pro: "Up to 2 Staff", ent: "Unlimited Staff" },
-        { name: "Image/Receipt Processing", free: false, pro: false, ent: true },
-        { name: "Assistant Brain Actions", free: "50/mo", pro: "Unlimited", ent: "Unlimited" },
+        { name: "AI Productivity Assistant", free: "Basic", pro: "Advanced", ent: "Genius" },
+        { name: "Export to Excel/Accounting", free: false, pro: false, ent: true },
+        { name: "Security Ledger status", free: "Standard", pro: "Standard", ent: "Priority" },
     ];
 
     return (
@@ -182,11 +180,9 @@ const PricingPage = () => {
                             style={{ 
                                 padding: '40px 32px', 
                                 borderRadius: '32px', 
-                                border: plan.highlight ? 'none' : '1px solid #E2E8F0',
-                                background: plan.highlight ? 'var(--text)' : 'white',
+                                background: plan.highlight ? 'var(--text)' : undefined, // let global linear-gradient handle white cards
                                 color: plan.highlight ? 'white' : 'var(--text)',
                                 position: 'relative',
-                                boxShadow: plan.highlight ? '0 30px 60px -15px rgba(0,0,0,0.1)' : '0 10px 30px -10px rgba(0,0,0,0.05)',
                                 zIndex: plan.highlight ? 2 : 1
                             }}
                             className={`glass-card ${plan.highlight ? 'highlight-card' : ''}`}

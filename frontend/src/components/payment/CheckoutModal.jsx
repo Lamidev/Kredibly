@@ -17,8 +17,8 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
 
     // Calculate Base Price
     let basePrice = 0;
-    if (plan === 'oga') basePrice = billingCycle === 'yearly' ? 7000 * 12 * 0.9 : 7000;
-    else if (plan === 'chairman') basePrice = billingCycle === 'yearly' ? 30000 * 12 * 0.9 : 30000;
+    if (plan === 'oga') basePrice = billingCycle === 'yearly' ? 5000 * 12 * 0.9 : 5000;
+    else if (plan === 'chairman') basePrice = billingCycle === 'yearly' ? 8500 * 12 * 0.9 : 8500;
 
     // Calculate Final Price
     let finalPrice = basePrice;
@@ -153,6 +153,7 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
                 style={{
                     background: 'white', width: '100%', maxWidth: '440px',
                     borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+                    border: '2px solid var(--primary-glow)',
                     overflow: 'hidden', position: 'relative', minHeight: '300px'
                 }}
             >

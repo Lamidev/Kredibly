@@ -76,12 +76,23 @@ const BusinessProfileSchema = new mongoose.Schema({
     },
     planStatus: {
         type: String,
-        enum: ["trialing", "active", "past_due", "cancelled"],
-        default: "trialing"
+        enum: ["trialing", "active", "past_due", "cancelled", "inactive"],
+        default: "inactive"
+    },
+    hasUsedTrial: {
+        type: Boolean,
+        default: false
+    },
+    isLaunchPromo: {
+        type: Boolean,
+        default: false
+    },
+    walletBalance: {
+        type: Number,
+        default: 0
     },
     trialExpiresAt: {
-        type: Date,
-        default: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days trial
+        type: Date
     },
     nextBillingDate: {
         type: Date
