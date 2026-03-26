@@ -112,7 +112,7 @@ const PublicFooter = () => {
                             </div>
                             <div style={{ display: 'flex', gap: '12px', color: '#334155' }}>
                                 <Mail size={20} color="var(--primary)" />
-                                <span style={{ fontSize: '0.95rem', fontWeight: 500 }}>hello@kredibly.com</span>
+                                <span style={{ fontSize: '0.95rem', fontWeight: 500 }}>hello@usekredibly.com</span>
                             </div>
                         </div>
                     </div>
