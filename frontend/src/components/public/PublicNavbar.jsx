@@ -52,11 +52,11 @@ const PublicNavbar = () => {
         <>
             <div style={{ 
                 position: 'fixed', 
-                top: '24px', 
+                top: '12px',  // Moved closer to the top edge for a slicker look
                 left: 0, 
                 right: 0, 
                 zIndex: 1000, 
-                padding: '0 24px',
+                padding: '0 12px', // Tiny space (12px) on both mobile and desktop
                 pointerEvents: 'none'
             }}>
                 <nav  style={{ 
@@ -66,7 +66,7 @@ const PublicNavbar = () => {
                     backdropFilter: 'blur(20px)',
                     WebkitBackdropFilter: 'blur(20px)',
                     borderRadius: '100px',
-                    padding: '8px 12px 8px 16px',
+                    padding: '6px 8px 6px 16px', // Reduced padding so it's less thick
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -78,7 +78,7 @@ const PublicNavbar = () => {
                 }}>
                     {/* Logo */}
                     <Link to="/" onClick={() => window.scrollTo(0, 0)} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-                        <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '32px' }} />
+                        <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '26px' }} />
                     </Link>
 
                     {/* Desktop Links */}
@@ -120,21 +120,21 @@ const PublicNavbar = () => {
                     </div>
 
                     {/* Buttons */}
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <Link to="/auth/login" className="hidden md:flex" style={{ 
-                            padding: '12px 24px', borderRadius: '100px',
+                            padding: '10px 20px', borderRadius: '100px',
                             color: '#0F172A', fontSize: '0.92rem', fontWeight: 800, textDecoration: 'none', transition: '0.2s'
                         }}>
                             Login
                         </Link>
                         <Link to="/auth/register" className="hidden md:flex" style={{ 
-                            padding: '12px 28px', borderRadius: '100px', background: 'var(--primary)',
+                            padding: '10px 24px', borderRadius: '100px', background: 'var(--primary)',
                             color: 'white', fontSize: '0.9rem', fontWeight: 700, textDecoration: 'none',
                             boxShadow: '0 4px 12px rgba(76, 29, 149, 0.2)'
                         }}>
                             Get Started
                         </Link>
-                        <button onClick={() => setIsMobileMenuOpen(true)} style={{ background: 'none', border: 'none', color: '#0F172A', padding: '8px' }} className="md:hidden">
+                        <button onClick={() => setIsMobileMenuOpen(true)} style={{ background: 'none', border: 'none', color: '#0F172A', padding: '6px' }} className="md:hidden">
                             <Menu size={24} />
                         </button>
                     </div>

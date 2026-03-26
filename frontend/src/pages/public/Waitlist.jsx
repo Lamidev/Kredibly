@@ -119,7 +119,7 @@ const Waitlist = () => {
             overflowX: 'hidden'
         }}>
             {/* Fixed Floating Header - Waitlist Custom Edition */}
-            <div style={{ position: 'fixed', top: '24px', left: 0, right: 0, zIndex: 1000, padding: '0 24px', pointerEvents: 'none' }}>
+            <div style={{ position: 'fixed', top: '12px', left: 0, right: 0, zIndex: 1000, padding: '0 12px', pointerEvents: 'none' }}>
                 <nav style={{ 
                     maxWidth: '1600px', 
                     margin: '0 auto', 
@@ -127,7 +127,7 @@ const Waitlist = () => {
                     backdropFilter: 'blur(20px)',
                     WebkitBackdropFilter: 'blur(20px)',
                     borderRadius: '100px',
-                    padding: '8px 12px 8px 16px',
+                    padding: '6px 8px 6px 16px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -137,7 +137,7 @@ const Waitlist = () => {
                     WebkitTapHighlightColor: 'transparent'
                 }}>
                     <div onClick={() => navigate('/')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: 'clamp(24px, 5vw, 32px)' }} />
+                        <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '26px' }} />
                     </div>
                     
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -145,7 +145,7 @@ const Waitlist = () => {
                             onClick={scrollToJoin} 
                             className="hidden md:flex" 
                             style={{ 
-                                padding: '12px 32px', 
+                                padding: '10px 24px', 
                                 borderRadius: '100px', 
                                 background: 'var(--primary)', 
                                 color: 'white', 
@@ -166,7 +166,7 @@ const Waitlist = () => {
                                 background: 'none', 
                                 border: 'none', 
                                 color: '#000000', 
-                                padding: '8px',
+                                padding: '6px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center'

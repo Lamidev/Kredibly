@@ -451,7 +451,7 @@ const Dashboard = () => {
                             className="dashboard-glass" 
                             style={{ width: '100%', padding: '16px', borderRadius: '18px', border: '2px dashed var(--border)', background: 'transparent', color: 'var(--text-muted)', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
                             onClick={() => {
-                                if (profile?.plan === 'hustler' && (stats?.totalSales || 0) >= 5) {
+                                if (profile?.plan === 'hustler' && (stats?.totalSales || 0) >= 10) {
                                     setShowLimitModal(true);
                                 } else {
                                     navigate('/sales/new');
