@@ -128,6 +128,10 @@ const BusinessProfileSchema = new mongoose.Schema({
         type: Boolean,
         default: false // Set to true if merchant reports a hack (stops all auto-releases)
     },
+    prefersGatewayFeeAbsorption: {
+        type: Boolean,
+        default: true // Default: Merchant covers the Paystack/Gateway fees
+    },
     createdAt: {
         type: Date,
         default: Date.now

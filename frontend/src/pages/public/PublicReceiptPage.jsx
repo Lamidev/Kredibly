@@ -267,18 +267,44 @@ const PublicReceiptPage = () => {
             <div style={{ position: 'fixed', left: '-9999px', top: 0 }}>
                 <div id="receipt-download-target" style={{ width: '600px', background: 'white', padding: '48px', fontFamily: "'Inter', sans-serif" }}>
                     {/* Receipt Header */}
+                    {/* Receipt Header & Branding Tiers */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', borderBottom: '2px solid #F1F5F9', paddingBottom: '32px' }}>
                         <div>
-                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '32px' }} />
+                            {/* Branding Tier: Chairman gets NO Kredibly logo in header, Oga gets co-branded, Hustler gets Kredibly-focused */}
+                            {(sale?.businessId?.plan === 'hustler' || !sale?.businessId?.plan) && (
+                                <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '28px' }} />
+                            )}
+                            {sale?.businessId?.plan === 'oga' && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '20px', opacity: 0.6 }} />
+                                    <div style={{ width: '1px', height: '16px', background: '#CBD5E1' }}></div>
+                                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>Partner</span>
+                                </div>
+                            )}
                         </div>
                         
                         <div style={{ textAlign: 'right' }}>
+                            {/* Merchant Logo (Always for Oga/Chairman, fallback for Hustler) */}
                             {sale?.businessId?.logoUrl ? (
-                                <img src={sale.businessId.logoUrl} alt="Merchant Logo" style={{ height: '48px', objectFit: 'contain', marginBottom: '8px' }} />
+                                <img src={sale.businessId.logoUrl} alt="Merchant Logo" style={{ height: '48px', maxWidth: '180px', objectFit: 'contain', marginBottom: '8px' }} />
                             ) : (
                                 <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: '#0F172A', marginBottom: '4px' }}>{sale?.businessId?.displayName}</h3>
                             )}
                             <p style={{ margin: 0, fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Invoice #{sale?.invoiceNumber}</p>
+                        </div>
+                    </div>
+
+                    {/* Verified Ledger Seal (Printable) */}
+                    <div style={{ position: 'relative', marginBottom: '32px' }}>
+                        <div style={{ 
+                            position: 'absolute', right: '0', top: '-10px', 
+                            border: '3px solid #10B981', color: '#10B981', 
+                            padding: '8px 16px', borderRadius: '12px', 
+                            transform: 'rotate(5deg)', fontWeight: 900, 
+                            fontSize: '14px', textTransform: 'uppercase',
+                            opacity: 0.8
+                        }}>
+                            Verified Ledger
                         </div>
                     </div>
 
@@ -345,8 +371,25 @@ const PublicReceiptPage = () => {
             {/* Main Content */}
             <div style={{ maxWidth: '42rem', margin: '0 auto', padding: '24px 16px' }}>
                 {/* Header */}
+                {/* Header Branding (Sync with Invoice Page) */}
                 <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                    <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '24px' }} />
+                    <div>
+                        {sale?.businessId?.plan === 'chairman' ? (
+                             sale?.businessId?.logoUrl ? (
+                                <img src={sale.businessId.logoUrl} alt={sale?.businessId?.displayName} style={{ height: '32px', maxWidth: '150px', objectFit: 'contain' }} />
+                             ) : (
+                                <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text)' }}>{sale?.businessId?.displayName}</span>
+                             )
+                        ) : sale?.businessId?.plan === 'oga' ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                {sale?.businessId?.logoUrl && <img src={sale.businessId.logoUrl} alt="Logo" style={{ height: '28px' }} />}
+                                <div style={{ width: '1px', height: '16px', background: '#E2E8F0' }}></div>
+                                <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '18px', opacity: 0.7 }} />
+                            </div>
+                        ) : (
+                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '24px' }} />
+                        )}
+                    </div>
                     <button 
                         onClick={handleShare}
                         style={{ padding: '12px', background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(8px)', borderRadius: '50%', border: '1px solid #E2E8F0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', cursor: 'pointer' }}
@@ -557,11 +600,14 @@ const PublicReceiptPage = () => {
                     </div>
                 )}
 
-                {/* Footer */}
-                <div style={{ textAlign: 'center', marginTop: '40px', padding: '20px' }}>
-                    <p style={{ fontSize: '12px', color: '#94A3B8', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                        <ShieldCheck size={14} /> Secured by Kredibly
-                    </p>
+                {/* Secured by Kredibly Watermark (Universal Footer) */}
+                <div style={{ textAlign: 'center', marginTop: '60px', padding: '20px', opacity: 0.7 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <div style={{ height: '1px', width: '24px', background: '#CBD5E1' }}></div>
+                        <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Secured by Kredibly</p>
+                        <div style={{ height: '1px', width: '24px', background: '#CBD5E1' }}></div>
+                    </div>
+                    <p style={{ fontSize: '10px', color: '#CBD5E1', fontWeight: 600 }}>Official Transaction Log ID: KR-{sale.invoiceNumber}</p>
                 </div>
             </div>
         </div>

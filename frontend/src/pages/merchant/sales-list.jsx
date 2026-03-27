@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import PlanLimitModal from "../../components/payment/PlanLimitModal";
 import { 
     Search, Filter, CheckCircle, Clock, Plus, 
-    FileText, Trash2, X, ArrowUpDown, ChevronRight 
+    FileText, Trash2, X, ArrowUpDown, ChevronRight, ShieldCheck
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -227,13 +227,13 @@ const SalesList = ({ initialFilter }) => {
                                 {/* Client Info */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
                                     <div style={{ 
-                                        background: sale.status === 'paid' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)', 
-                                        color: sale.status === 'paid' ? 'var(--success)' : 'var(--warning)', 
+                                        background: sale.invoiceType === 'record' ? 'rgba(76, 29, 149, 0.05)' : sale.status === 'paid' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)', 
+                                        color: sale.invoiceType === 'record' ? 'var(--primary)' : sale.status === 'paid' ? 'var(--success)' : 'var(--warning)', 
                                         padding: '12px', 
                                         borderRadius: '14px', 
                                         flexShrink: 0 
                                     }}>
-                                        {sale.status === 'paid' ? <CheckCircle size={20} strokeWidth={2.5} /> : <Clock size={20} strokeWidth={2.5} />}
+                                        {sale.invoiceType === 'record' ? <ShieldCheck size={20} strokeWidth={2.5} /> : sale.status === 'paid' ? <CheckCircle size={20} strokeWidth={2.5} /> : <Clock size={20} strokeWidth={2.5} />}
                                     </div>
                                     <div style={{ overflow: 'hidden' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -293,7 +293,7 @@ const SalesList = ({ initialFilter }) => {
                                         background: sale.status === 'paid' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
                                         color: sale.status === 'paid' ? 'var(--success)' : 'var(--warning)'
                                     }}>
-                                        {sale.status}
+                                        {sale.invoiceType === 'record' ? 'Settled Record' : sale.status}
                                     </span>
                                 </div>
 
@@ -335,12 +335,12 @@ const SalesList = ({ initialFilter }) => {
                                 >
                                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                                         <div style={{ 
-                                            background: sale.status === 'paid' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)', 
-                                            color: sale.status === 'paid' ? 'var(--success)' : 'var(--warning)', 
+                                            background: sale.invoiceType === 'record' ? 'rgba(76, 29, 149, 0.05)' : sale.status === 'paid' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)', 
+                                            color: sale.invoiceType === 'record' ? 'var(--primary)' : sale.status === 'paid' ? 'var(--success)' : 'var(--warning)', 
                                             padding: '10px', 
                                             borderRadius: '12px' 
                                         }}>
-                                            {sale.status === 'paid' ? <CheckCircle size={18} /> : <Clock size={18} />}
+                                            {sale.invoiceType === 'record' ? <ShieldCheck size={18} /> : sale.status === 'paid' ? <CheckCircle size={18} /> : <Clock size={18} />}
                                         </div>
                                         <div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -371,7 +371,9 @@ const SalesList = ({ initialFilter }) => {
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
                                         <p style={{ fontWeight: 900, fontSize: '1.05rem', color: 'var(--text)', margin: 0 }}>₦{sale.totalAmount.toLocaleString()}</p>
-                                        <span style={{ fontSize: '0.65rem', fontWeight: 900, color: sale.status === 'paid' ? 'var(--success)' : 'var(--warning)', textTransform: 'uppercase' }}>{sale.status}</span>
+                                        <span style={{ fontSize: '0.65rem', fontWeight: 900, color: sale.status === 'paid' ? 'var(--success)' : 'var(--warning)', textTransform: 'uppercase' }}>
+                                            {sale.invoiceType === 'record' ? 'Settled Record' : sale.status}
+                                        </span>
                                     </div>
                                 </motion.div>
                             ))}

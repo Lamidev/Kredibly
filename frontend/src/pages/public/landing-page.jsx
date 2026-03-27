@@ -14,7 +14,9 @@ import {
     TrendingUp,
     FileText,
     Lock,
-    Mic
+    Mic,
+    Calendar,
+    Clock
 } from "lucide-react";
 import { motion } from "framer-motion";
 import PublicNavbar from "../../components/public/PublicNavbar";
@@ -82,7 +84,7 @@ const LandingPage = () => {
     };
 
     useEffect(() => {
-        document.title = "Kredibly | Track Sales, Collect Debts & Invoice on WhatsApp";
+        document.title = "Kredibly | Verified Ledger & AI Business Secretary on WhatsApp";
         if (!window.location.hash) {
             window.scrollTo(0, 0);
         }
@@ -98,14 +100,13 @@ const LandingPage = () => {
         }}>
             <PublicNavbar />
 
-            {/* 1. Hero Section with Premium Purple Mesh */}
+            {/* 1. Hero Section - Focused on "Assistant" and "Recovery" */}
             <section style={{ 
                 position: 'relative', 
                 backgroundColor: 'white', 
                 overflow: 'hidden',
                 borderBottom: '1px solid #F1F5F9'
             }}>
-                {/* Unique Purple Mesh Background */}
                 <div style={{
                     position: 'absolute',
                     top: 0,
@@ -121,47 +122,6 @@ const LandingPage = () => {
                     zIndex: 1
                 }} />
 
-                {/* Floating Mesh Circles */}
-                <motion.div 
-                    animate={{ 
-                        x: [0, 50, 0], 
-                        y: [0, -30, 0],
-                        scale: [1, 1.1, 1]
-                    }} 
-                    transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                    style={{
-                        position: 'absolute',
-                        top: '10%',
-                        left: '10%',
-                        width: '400px',
-                        height: '400px',
-                        background: 'radial-gradient(circle, rgba(76, 29, 149, 0.06) 0%, transparent 75%)',
-                        filter: 'blur(60px)',
-                        borderRadius: '50%',
-                        zIndex: 1
-                    }} 
-                />
-                
-                <motion.div 
-                    animate={{ 
-                        x: [0, -40, 0], 
-                        y: [0, 60, 0],
-                        scale: [1, 1.2, 1]
-                    }} 
-                    transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-                    style={{
-                        position: 'absolute',
-                        bottom: '20%',
-                        right: '5%',
-                        width: '500px',
-                        height: '500px',
-                        background: 'radial-gradient(circle, rgba(76, 29, 149, 0.03) 0%, transparent 70%)',
-                        filter: 'blur(80px)',
-                        borderRadius: '50%',
-                        zIndex: 1
-                    }} 
-                />
-
                 <header style={{
                     padding: 'clamp(100px, 12vw, 140px) 24px clamp(2rem, 8vw, 100px)',
                     maxWidth: '1400px',
@@ -173,7 +133,7 @@ const LandingPage = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ duration: 0.8 }}
                 >
                     <div style={{ 
                         display: 'inline-flex',
@@ -192,8 +152,7 @@ const LandingPage = () => {
                             color: 'var(--primary)',
                             letterSpacing: '0.08em',
                             textTransform: 'uppercase',
-                            whiteSpace: 'nowrap'
-                        }}>The Operating System for African Commerce</span>
+                        }}>The Intelligent Assistant for Every Merchant</span>
                     </div>
 
                     <h1 style={{ 
@@ -203,7 +162,7 @@ const LandingPage = () => {
                         letterSpacing: '-0.04em',
                         marginBottom: '32px'
                     }}>
-                        <span style={{ display: 'block', marginBottom: '16px', whiteSpace: 'nowrap' }}>Stop losing money.</span>
+                        <span style={{ display: 'block', marginBottom: '16px' }}>Stop chasing money.</span>
                         <div style={{ 
                             color: 'var(--primary)', 
                             position: 'relative', 
@@ -211,404 +170,229 @@ const LandingPage = () => {
                             display: 'flex', 
                             alignItems: 'center', 
                             justifyContent: 'center',
-                            width: '100%' 
+                            width: '100%',
+                            fontSize: 'clamp(1.6rem, 5vw, 5.5rem)',
+                            overflow: 'hidden'
                         }}>
                              <Typewriter phrases={[
-                                "Get paid 3x faster.",
-                                "Delegate your day.",
-                                "Business on Autopilot."
+                                "Ditch the notebooks.",
+                                "Get paid instantly.",
+                                "Look like a pro.",
+                                "Auto-send reminders.",
+                                "Run it on WhatsApp."
                             ]} />
                         </div>
                     </h1>
 
                     <p style={{  
-                        fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)', 
+                        fontSize: 'clamp(1.1rem, 2.5vw, 1.35rem)', 
                         color: 'var(--text-muted)', 
                         maxWidth: '850px', 
                         margin: '0 auto 48px',
                         lineHeight: 1.6,
                         fontWeight: 400,
-                        opacity: 0.8
                     }}>
-                        From local commerce to global scale. Kredibly is the intelligent receivables platform that helps you 
-                        automate sales, track what you're owed, and manage your daily operations all inside WhatsApp.
+                        You have a business to run. Let Kreddy handle the records. 
+                        Track what you're owed, send professional receipts, and chase payments, all inside your WhatsApp.
                     </p>
 
                     <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '32px' }}>
-                        <motion.button 
-                            whileHover={{ scale: 1.02, translateY: -2 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => navigate('/auth/login')} 
-                            className="btn-primary" 
-                            style={{ padding: '24px 56px', fontSize: '1.25rem', borderRadius: '24px' }}
-                        >
-                            Get started <ArrowRight size={22} />
-                        </motion.button>
-                        <motion.button 
-                            whileHover={{ scale: 1.02, translateY: -2 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => scrollToSection('how-it-works')} 
-                            className="btn-secondary" 
-                            style={{ padding: '24px 56px', fontSize: '1.25rem', borderRadius: '24px', background: 'white', color: 'black' }}
-                        >
-                            Explore Platform
-                        </motion.button>
+                        <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', fontSize: '1.1rem', borderRadius: '100px' }}>Get Started <ArrowRight size={20} /></button>
+                        <button onClick={() => scrollToSection('how-it-works')} className="btn-secondary" style={{ padding: '20px 48px', fontSize: '1.1rem', borderRadius: '100px', background: 'white', color: 'black' }}>Meet Kreddy AI</button>
                     </div>
                 </motion.div>
             </header>
-
             </section>
 
-            {/* 2. Bento Grid Section */}
+            {/* 2. Bento Grid Section - Repositioned for Personal Assistant + Ledger */}
             <section id="features" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px' }}>
-                <motion.div 
-                    initial={{ opacity: 0, y: 40 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: false, amount: 0.1 }}
-                    transition={{ duration: 1 }}
-                    className="bento-grid" 
-                    style={{ maxWidth: '1400px', margin: '0 auto' }}
-                >
-                    <motion.div className="bento-item bento-1" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.1 }}>
+                <div className="bento-grid" style={{ maxWidth: '1400px', margin: '0 auto' }}>
+                    <div className="bento-item bento-1" style={{ background: '#F8FAFC' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                            <div style={{ background: '#F8FAFC', width: '64px', height: '64px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '32px', border: '1px solid #E2E8F0' }}>
-                                <LayoutDashboard color="var(--primary)" size={32} />
+                            <div style={{ background: 'white', width: '64px', height: '64px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '32px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+                                <ShieldCheck color="var(--primary)" size={32} />
                             </div>
-                            <h3 style={{ fontSize: '2.2rem', fontWeight: 900, marginBottom: '16px', letterSpacing: '-0.03em' }}>Business Overview</h3>
+                            <h3 style={{ fontSize: '2.2rem', fontWeight: 900, marginBottom: '16px', letterSpacing: '-0.03em' }}>The Verified Hub</h3>
                             <p style={{ color: 'var(--text-muted)', fontSize: '1.15rem', lineHeight: 1.6, fontWeight: 500 }}>
-                                A powerful, bird's-eye view of your business. Real-time analytics, tracking money outside, and verifiable financial history, built for executive decision-making.
+                                Stop the arguments. Your business is verified when you use Kredibly. Every receipt carries a professional seal that tells customers your records are secure and untamperable.
                             </p>
-                            <div style={{ marginTop: 'auto', paddingTop: '40px', display: 'flex', gap: '12px' }}>
-                                <span style={{ padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)' }}>Executive Dashboard</span>
-                                <span style={{ padding: '10px 20px', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '100px', fontSize: '0.85rem', fontWeight: 700, color: '#10B981' }}>Live Sync</span>
-                            </div>
                         </div>
-                    </motion.div>
-
-                    <motion.div className="bento-item bento-2" initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false, amount: 0.1 }} style={{ background: 'linear-gradient(135deg, #0F172A, #1E1B4B)', color: 'white' }}>
-                        <div style={{ position: 'relative', zIndex: 2 }}>
-                            <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '12px' }}>Digital Reputation</h4>
-                            <p style={{ opacity: 0.8, fontSize: '1.1rem', lineHeight: 1.5, fontWeight: 500 }}>Build a digital business reputation that unlocks credit and global opportunities.</p>
-                        </div>
-                        <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.15 }}><ShieldCheck size={200} /></div>
-                    </motion.div>
-
-                    <motion.div className="bento-item bento-3" initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: false, amount: 0.1 }}>
-                        <CreditCard color="#F59E0B" size={32} style={{ marginBottom: '16px' }} />
-                        <h4 style={{ fontSize: '1.3rem', fontWeight: 900 }}>Fast Payments</h4>
-                        <p style={{ fontSize: '0.95rem', color: '#1E293B', fontWeight: 600 }}>Professional invoices designed to get you paid 3x faster and build trust.</p>
-                    </motion.div>
-
-                    <motion.div className="bento-item bento-4" initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 0.98 }} viewport={{ once: false, amount: 0.1 }}>
-                        <Zap color="var(--primary)" size={32} style={{ marginBottom: '16px' }} />
-                        <h4 style={{ fontSize: '1.3rem', fontWeight: 900 }}>Executive Productivity</h4>
-                        <p style={{ fontSize: '0.95rem', color: '#1E293B', fontWeight: 600 }}>Delegated power! Set tasks, get morning market briefings, and manage your entire business life via voice notes.</p>
-                    </motion.div>
-
-                    <motion.div className="bento-item bento-5" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.1 }}>
-                        <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
-                            <div style={{ flex: 1 }}>
-                                <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '10px' }}>Built for Scale</h4>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', fontWeight: 500 }}>From one stall to ten locations. Infrastructure built to grow with you.</p>
-                            </div>
-                            <div style={{ background: 'var(--background)', padding: '24px', borderRadius: '24px', border: '1px solid var(--border)' }}><TrendingUp size={36} color="#10B981" /></div>
-                        </div>
-                    </motion.div>
-                </motion.div>
-            </section>
-
-            {/* 3. Simulated WhatsApp Flow */}
-            <section id="how-it-works" className="adaptive-section" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: 'white' }}>
-                <motion.div 
-                    initial={{ opacity: 0, y: 40 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: false, amount: 0.1 }}
-                    transition={{ duration: 1 }}
-                    style={{ maxWidth: '1100px', margin: '0 auto' }}
-                >
-                    <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-                        <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', marginBottom: '24px' }}>Business at the speed of thought.</h2>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: 500, maxWidth: '700px', margin: '0 auto' }}>Leverage Kreddy AI to manage your commerce without ever leaving WhatsApp.</p>
                     </div>
 
-                    <div className="landing-mockup-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'clamp(2rem, 8vw, 5rem)', alignItems: 'center' }}>
+                    <div className="bento-item bento-2" style={{ background: 'linear-gradient(135deg, #0F172A, #1E1B4B)', color: 'white' }}>
+                        <div style={{ position: 'relative', zIndex: 2 }}>
+                            <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '12px' }}>Personal Assistant</h4>
+                            <p style={{ opacity: 0.8, fontSize: '1.1rem', lineHeight: 1.5, fontWeight: 500 }}>Kreddy doesn't just manage sales. She remembers your gym sessions, market runs, and doctor appointments.</p>
+                        </div>
+                        <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.15 }}><Sparkles size={200} /></div>
+                    </div>
+
+                    <div className="bento-item bento-3" style={{ background: 'white' }}>
+                        <Zap color="#7C3AED" size={32} style={{ marginBottom: '16px' }} />
+                        <h4 style={{ fontSize: '1.3rem', fontWeight: 900 }}>24/7 Reminders</h4>
+                        <p style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 600 }}>Kreddy nudges your debtors automatically so you don't have to feel awkward chasing money.</p>
+                    </div>
+
+                    <div className="bento-item bento-4" style={{ background: 'white' }}>
+                        <CreditCard color="#10B981" size={32} style={{ marginBottom: '16px' }} />
+                        <h4 style={{ fontSize: '1.3rem', fontWeight: 900 }}>Instant Cash-Out</h4>
+                        <p style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 600 }}>Secure "Pay Now" links mean money lands in your bank account the moment someone pays.</p>
+                    </div>
+
+                    <div className="bento-item bento-5" style={{ background: '#F8FAFC' }}>
+                        <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+                            <div style={{ flex: 1 }}>
+                                <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '10px' }}>Scale Like a Chairman</h4>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', fontWeight: 500 }}>Track what your sales staff are doing in real-time. Whether you have 1 stall or 10 shops.</p>
+                            </div>
+                            <div style={{ background: 'white', padding: '24px', borderRadius: '24px', border: '1px solid #E2E8F0' }}><TrendingUp size={36} color="#4C1D95" /></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* 3. SIMULATED WHATSAPP FLOW - Kreddy Assistant Showcase */}
+            <section id="how-it-works" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: 'white' }}>
+                <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+                        <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', marginBottom: '24px' }}>Meet Kreddy: Your 24/7 Digital Secretary.</h2>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: 500, maxWidth: '700px', margin: '0 auto' }}>Leverage AI to manage your commerce and your day without ever leaving WhatsApp.</p>
+                    </div>
+
+                    <div className="landing-mockup-grid">
                         <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                            <motion.div initial={{ opacity: 0, y: 50, scale: 0.95 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.8, ease: "easeOut" }} viewport={{ once: false, amount: 0.1 }} className="phone-mockup" style={{ width: '100%', maxWidth: '360px', height: '680px', background: '#111', borderRadius: '48px', padding: '12px', position: 'relative', boxShadow: '0 60px 120px -20px rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                            <motion.div className="phone-mockup" style={{ width: '100%', maxWidth: '360px', height: '680px', background: '#111', borderRadius: '48px', padding: '12px', position: 'relative', boxShadow: '0 60px 120px -20px rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
                                 <div style={{ width: '100%', height: '100%', background: '#E5DDD5', borderRadius: '40px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                                     <div style={{ background: '#075E54', padding: '40px 20px 16px', color: 'white', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'white', boxShadow: '0 2px 4px rgba(76, 29, 149, 0.3)' }}>K</div>
-                                        <div><p style={{ fontSize: '0.95rem', fontWeight: 900 }}>Kreddy AI</p><p style={{ fontSize: '0.65rem', opacity: 0.8 }}>Business Assistant</p></div>
+                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'white' }}>K</div>
+                                        <div><p style={{ fontSize: '0.95rem', fontWeight: 900 }}>Kreddy x Kredibly</p><p style={{ fontSize: '0.65rem', opacity: 0.8 }}>Business Assistant</p></div>
                                     </div>
                                     <div style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                        <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }} style={{ alignSelf: 'flex-end', background: '#DCF8C6', padding: '16px', borderRadius: '16px 0 16px 16px', fontSize: '0.85rem', color: '#111', fontWeight: 500, maxWidth: '85%', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+                                        <div style={{ alignSelf: 'flex-end', background: '#DCF8C6', padding: '16px', borderRadius: '16px 0 16px 16px', fontSize: '0.85rem', color: '#111', fontWeight: 500, maxWidth: '85%' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                                                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#128C7E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Mic size={20} color="white" /></div>
-                                                <div style={{ width: '120px', height: '6px', background: 'rgba(18, 140, 126, 0.3)', borderRadius: '3px', position: 'relative' }}>
-                                                    <div style={{ width: '40%', height: '100%', background: '#128C7E', borderRadius: '3px' }} />
-                                                    <div style={{ position: 'absolute', left: '40%', top: '-4px', width: '14px', height: '14px', background: '#075E54', borderRadius: '50%' }} />
-                                                </div>
-                                                <span style={{ fontSize: '0.75rem', color: '#075E54', fontWeight: 800 }}>0:12</span>
+                                                <div style={{ width: '120px', height: '6px', background: 'rgba(18, 140, 126, 0.3)', borderRadius: '3px' }} />
                                             </div>
-                                            <p style={{ margin: '0', opacity: 0.7, fontSize: '0.75rem', fontStyle: 'italic', lineHeight: 1.4 }}>"Ah Kreddy, Sarah just paid 50k for the bags, remind me to call her next Friday morning to collect the rest..."</p>
-                                        </motion.div>
-                                        <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: 1.5 }} style={{ alignSelf: 'flex-start', background: 'white', padding: '16px', borderRadius: '0 16px 16px 16px', fontSize: '0.85rem' }}>
-                                            <p style={{ color: 'var(--primary)', fontWeight: 900, fontSize: '0.75rem', marginBottom: '6px' }}>Kreddy AI</p>
+                                            <p style={{ margin: '0', opacity: 0.7, fontSize: '0.75rem', fontStyle: 'italic' }}>"Ah Kreddy, I just gave 10 bags to Mr. Okoro for 50k, remind me to follow up next Tuesday. Also, remind me to go for my gym session by 5 PM today."</p>
+                                        </div>
+                                        <div style={{ alignSelf: 'flex-start', background: 'white', padding: '16px', borderRadius: '0 16px 16px 16px', fontSize: '0.85rem' }}>
+                                            <p style={{ color: 'var(--primary)', fontWeight: 900, fontSize: '0.75rem', marginBottom: '6px' }}>Kreddy Assistant</p>
                                             <p style={{ fontWeight: 600, lineHeight: 1.5 }}>
                                                 Done, Chairman! 🫡<br /><br />
-                                                ✅ <b>Recorded:</b> ₦50k from Sarah James.<br />
-                                                ⏳ <b>New Balance:</b> ₦70k.<br /><br />
-                                                📋 <b>Reminder Set:</b><br />
-                                                Next Friday morning to call Sarah.<br /><br />
-                                                <i>Anything else?</i>
+                                                ✅ <b>Recorded Sale:</b> Mr. Okoro (₦50k)<br />
+                                                ⏳ <b>Debt Reminder:</b> Next Tuesday Morning<br />
+                                                🏃‍♂️ <b>Personal Reminder:</b> Gym Session (5:00 PM Today)<br /><br />
+                                                <i>I've got you covered!</i>
                                             </p>
-                                        </motion.div>
+                                        </div>
                                     </div>
-                                    <div style={{ padding: '16px', background: '#f0f0f0', display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                        <div style={{ flex: 1, height: '40px', background: 'white', borderRadius: '20px' }}></div>
-                                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#128C7E' }}></div>
-                                    </div>
+                                    <div style={{ padding: '16px', background: '#f0f0f0', display: 'flex', gap: '10px' }}><div style={{ flex: 1, height: '40px', background: 'white', borderRadius: '20px' }} /><div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#128C7E' }} /></div>
                                 </div>
                             </motion.div>
                         </div>
 
                         <div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '56px' }}>
-                                    { [
-                                        { icon: MessageCircle, title: "Stop typing. Start talking.", desc: "Don't have time to type? Send Kreddy a messy 30-second voice note while you are walking. She instantly extracts the customer's name, calculates the balance, and sets reminders." },
-                                        { icon: Sparkles, title: "Your Digital Chief of Staff", desc: "Set gym reminders, meeting alarms, or personal tasks via voice. Kreddy tracks your entire day, not just your sales." },
-                                        { icon: Zap, title: "Instant Debt Recovery", desc: "Send professional outstanding notices with secure payment links on WhatsApp. Your customers pay, and you receive the cash instantly into your bank account. No follow-ups needed." },
-                                        { icon: Users, title: "Staff & Team Monitoring", desc: "Track what your sales boys are doing in real-time. Protect your money while you focus on vision." },
-                                        { icon: FileText, title: "8 AM Intelligence Briefing", desc: "Start every day with a high-level summary of cash collected, new sales, and top debtors,sent directly to your WhatsApp." },
-                                        { icon: Lock, title: "Biometric Security Vault", desc: "Professional-grade security that protects your records and your payouts. Scale with total peace of mind." }
-                                    ].map((item, i) => (
+                                {[
+                                    { icon: Mic, title: "Stop typing. Start talking.", desc: "Send Kreddy a 30-second voice note while you're walking. She extracts the debt, sets the reminders, and updates your records instantly." },
+                                    { icon: Calendar, title: "Plan Your Entire Life", desc: "Set gym reminders, market meetings, or child pick-ups via Kreddy. She isn't just for business; she's for your lifestyle." },
+                                    { icon: ShieldCheck, title: "The 'Pay-Now' Advantage", desc: "Stop asking 'Have you sent it?' Send a secure Kredibly link and get notified the second the money leaves their hand." },
+                                    { icon: TrendingUp, title: "Staff Monitoring & Trust", desc: "Record every sale globally so your sales boys can't play games with your money. Professional monitoring for modern bosses." },
+                                    { icon: Clock, title: "Morning Market Briefing", desc: "Start every day with an 8 AM summary on WhatsApp of who owes you, what's in the bank, and what your schedule looks like." }
+                                ].map((item, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '28px' }}>
                                         <div style={{ minWidth: '64px', height: '64px', borderRadius: '20px', background: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><item.icon color="var(--primary)" size={28} /></div>
-                                        <div><h4 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '8px', color: '#0F172A' }}>{item.title}</h4><p style={{ color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 400, fontSize: '1.05rem' }}>{item.desc}</p></div>
+                                        <div><h4 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '8px', color: '#0F172A' }}>{item.title}</h4><p style={{ color: '#475569', lineHeight: 1.6, fontWeight: 500 }}>{item.desc}</p></div>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     </div>
-                </motion.div>
+                </div>
             </section>
 
-            {/* 4. Ultra-Premium Mobile Ecosystem */}
-            <section className="adaptive-section" style={{ padding: 'clamp(4rem, 15vw, 10rem) 24px', background: '#020617', color: 'white', position: 'relative', overflow: 'visible' }}>
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: false, amount: 0.1 }} transition={{ duration: 1 }}>
-                    <div style={{ position: 'absolute', top: '20%', right: '-10%', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(124, 58, 237, 0.1) 0%, transparent 70%)', filter: 'blur(120px)' }} />
-                    <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1, padding: '0 40px' }}>
-                        <div className="mobile-reverse" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '80px', alignItems: 'center' }}>
-                            <div style={{ perspective: '2000px', display: 'flex', justifyContent: 'center', position: 'relative' }}>
-                                <motion.div style={{ position: 'relative', width: '100%', maxWidth: '300px' }} initial={{ rotateY: -15, rotateX: 10, y: 30, opacity: 0 }} whileInView={{ rotateY: 0, rotateX: 0, y: 0, opacity: 1 }} viewport={{ once: false, amount: 0.1 }} transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}>
-                                    <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} style={{ position: 'absolute', top: '20%', left: '-40px', zIndex: 50, background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)', padding: '16px 20px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Zap size={16} color="white" /></div>
-                                        <div><p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, fontWeight: 600 }}>Payment Received</p><p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800 }}>₦150,000</p></div>
-                                    </motion.div>
-                                    <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }} style={{ position: 'absolute', bottom: '15%', right: '-40px', zIndex: 50, background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)', padding: '16px 20px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Users size={16} color="white" /></div>
-                                        <div><p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, fontWeight: 600 }}>Staff Activity</p><p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800 }}>New Sale Recorded</p></div>
-                                    </motion.div>
-                                    <div style={{ width: '100%', height: '620px', background: '#1E293B', borderRadius: '54px', padding: '12px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 50px 100px -20px rgba(0,0,0,0.5)', position: 'relative' }}>
-                                        <div style={{ width: '100%', height: '100%', background: '#020617', borderRadius: '44px', overflow: 'hidden', position: 'relative' }}>
-                                            <div style={{ position: 'absolute', top: '12px', left: '50%', transform: 'translateX(-50%)', width: '90px', height: '28px', background: '#000', borderRadius: '20px', zIndex: 5 }} />
-                                            <div style={{ padding: '48px 24px' }}>
-                                                <div style={{ height: '160px', borderRadius: '28px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', padding: '24px', marginBottom: '24px' }}>
-                                                    <p style={{ margin: 0, opacity: 0.5, fontSize: '0.7rem', fontWeight: 600 }}>BUSINESS REVENUE</p><p style={{ margin: '8px 0', fontSize: '2rem', fontWeight: 800 }}>₦4.82M</p>
-                                                    <div style={{ width: '40px', height: '4px', background: '#10B981', borderRadius: '2px' }} />
-                                                </div>
-                                            </div>
-                                            <div style={{ position: 'absolute', inset: 0, background: 'rgba(2, 6, 23, 0.45)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
-                                                <div style={{ padding: '12px 28px', background: 'rgba(255,255,255,0.1)', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.2)', color: 'white', fontSize: '0.85rem', fontWeight: 900, letterSpacing: '0.1em' }}>COMING Q3 2026</div>
-                                                <p style={{ marginTop: '16px', fontSize: '0.75rem', fontWeight: 700, opacity: 0.5 }}>OS NATIVE EXPERIENCE</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            </div>
+            {/* 4. PRICING SECTION - Updated for Success-Fee Model */}
+            <section id="pricing" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: '#FDFCFE' }}>
+                <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+                        <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem' }}>TRANSPARENT PARTNERSHIP</div>
+                        <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em' }}>Free to start. Pay as you earn.</h2>
+                        <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginTop: '20px' }}>We only win when you collect your money. No hidden fees.</p>
+                    </div>
 
-                            <div className="mobile-ecosystem-content">
-                                <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(124, 58, 237, 0.1)', borderRadius: '100px', marginBottom: '32px', color: '#A78BFA', fontWeight: 600, fontSize: '0.85rem' }}>THE ECOSYSTEM EXPANSION</div>
-                                <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 900, letterSpacing: '-0.045em', lineHeight: 1, marginBottom: '40px' }}>Pure Native. <br /><span style={{ color: 'var(--primary)' }}>Zero Compromise.</span></h2>
-                                <p style={{ fontSize: '1.25rem', color: '#CBD5E1', fontWeight: 500, lineHeight: 1.6, marginBottom: '48px', maxWidth: '600px' }}>We're not just building an app. We're launching the full Kredibly ecosystem for iOS and Android. Fast, biometrically secure, and fully offline-capable.</p>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '32px', marginBottom: '64px' }}>
-                                    {[
-                                        { t: "iOS & Android First", d: "Tailored native experiences for the mobile entrepreneur." },
-                                        { t: "Deep Biometrics", d: "FaceID/Fingerprint protected ledgers." },
-                                        { t: "Real-time Alerts", d: "Instant push notifications when customers view invoices." },
-                                        { t: "Zero Connection", d: "Fully functional offline. Auto-syncs when you're back." }
-                                    ].map((item, i) => (
-                                        <div key={i}><h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '8px', color: 'white' }}>{item.t}</h4><p style={{ fontSize: '0.85rem', color: '#94A3B8', fontWeight: 400, margin: 0, lineHeight: 1.5 }}>{item.d}</p></div>
-                                    ))}
-                                </div>
-                                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                                    <div style={{ padding: '14px 28px', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'not-allowed' }}>
-                                        <Smartphone size={20} color="white" style={{ opacity: 0.6 }} />
-                                        <div><p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.5, fontWeight: 900 }}>Available soon on</p><p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: 'white' }}>App Store</p></div>
-                                    </div>
-                                    <div style={{ padding: '14px 28px', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'not-allowed' }}>
-                                        <Zap size={20} color="white" style={{ opacity: 0.6 }} />
-                                        <div><p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.5, fontWeight: 900 }}>Available soon on</p><p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: 'white' }}>Play Store</p></div>
-                                    </div>
-                                </div>
-                                <p style={{ marginTop: '32px', fontSize: '0.9rem', fontWeight: 900, color: 'var(--primary)', letterSpacing: '0.15em' }}>GET PRIORITY ACCESS ON LAUNCH DAY</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
+                        {/* Hustler */}
+                        <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', display: 'flex', flexDirection: 'column', border: '1px solid #E2E8F0' }}>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>Hustler</h3>
+                            <p style={{ color: '#64748B', marginBottom: '32px', fontWeight: 600 }}>The Record-Keepers Special.</p>
+                            <div style={{ marginBottom: '40px' }}>
+                                <div style={{ fontSize: '3rem', fontWeight: 900 }}>Free</div>
+                                <div style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 800 }}>+ 2.0% Success Fee</div>
+                            </div>
+                            <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Start Recording Free</button>
+                            <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                {["10 Sales per Month", "Basic Debt Recovery Assistant", "Kredibly Branded Receipts", "Standard Security Logs", "Personal Daily Reminders"].map((f, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 600, color: '#334155' }}><Check size={18} color="var(--primary)" /> {f}</div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Oga */}
+                        <div style={{ padding: '48px', borderRadius: '32px', background: '#0F172A', color: 'white', display: 'flex', flexDirection: 'column', transform: 'scale(1.05)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', position: 'relative' }}>
+                            <div style={{ position: 'absolute', top: '24px', right: '24px', padding: '6px 12px', background: 'var(--primary)', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 900 }}>MOST POPULAR</div>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>Oga Plan</h3>
+                            <p style={{ opacity: 0.7, marginBottom: '32px', fontWeight: 600 }}>Professional Growth Hub.</p>
+                            <div style={{ marginBottom: '40px' }}>
+                                <div style={{ fontSize: '3rem', fontWeight: 900 }}>₦5,000<span style={{ fontSize: '1rem', opacity: 0.5 }}>/mo</span></div>
+                                <div style={{ fontSize: '0.9rem', color: '#4ADE80', fontWeight: 800 }}>+ 1.0% Success Fee (Lower!)</div>
+                            </div>
+                            <button onClick={() => navigate('/auth/register')} className="btn-white" style={{ width: '100%' }}>Step Up to Oga</button>
+                            <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                {["Everything in Hustler", "Unlimited Sales Records", "Add 2 Staff Members", "Co-Branded Receipts (Logo)", "Voice Note Records Sync", "Advanced Recovery Assistant"].map((f, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 600 }}><Check size={18} color="#10B981" /> {f}</div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Chairman */}
+                        <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', display: 'flex', flexDirection: 'column', border: '1px solid #E2E8F0' }}>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>Chairman</h3>
+                            <p style={{ color: '#64748B', marginBottom: '32px', fontWeight: 600 }}>The Empire Command Center.</p>
+                            <div style={{ marginBottom: '40px' }}>
+                                <div style={{ fontSize: '3rem', fontWeight: 900 }}>₦8,500<span style={{ fontSize: '1rem', opacity: 0.5 }}>/mo</span></div>
+                                <div style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 800 }}>+ 0% Success Fee (Keep it all!)</div>
+                            </div>
+                            <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Lead Your Empire</button>
+                            <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                {["Everything in Oga", "White-Label Invoices (Only your Logo)", "Unlimited Staff & Shops", "Excel Business Reports", "8 AM VIP Morning Brief", "Priority Support & Vault"].map((f, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 600, color: '#334155' }}><Check size={18} color="var(--primary)" /> {f}</div>
+                                ))}
                             </div>
                         </div>
                     </div>
-                </motion.div>
+                </div>
             </section>
 
-            {/* 5. Testimonials Section */}
-            <section className="adaptive-section" style={{ padding: 'clamp(2rem, 10vw, 10rem) 24px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0', overflow: 'hidden' }}>
-                <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: false, amount: 0.1 }}>
-                    <div style={{ textAlign: 'center', marginBottom: '60px', padding: '0 20px' }}>
-                                <h2 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1 }}>From emerging vendors to established enterprises, Kredibly scales with you.</h2>
-                            </div>
-                    
-                    <div className="marquee-container" style={{ position: 'relative', width: '100%', overflow: 'hidden', maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}>
-                        <div className="marquee-track" style={{ display: 'flex', gap: '24px', width: 'max-content' }}>
-                            {[...Array(2)].map((_, i) => (
-                                <div key={i} style={{ display: 'flex', gap: '24px' }}>
-                                    {[
-                                        { name: "John Adenuga", role: "Luxe Fashion Vendor", text: "Kredibly isn't just an app; it's my silent partner. It brings a level of structure my business was missing." },
-                                        { name: "Sarah Chinedu", role: "Culinary Entrepreneur", text: "The professional invoices changed how my clients see me. I'm now winning 5x bigger contracts." },
-                                        { name: "Mike Okoro", role: "Auto Parts Distributor", text: "I monitor inventory from transit across borders. Oga Mode is a game changer for scale." },
-                                        { name: "Adeola Williams", role: "Signature Tech Store", text: "Collecting payments used to be my biggest headache. Kreddy handles follow-ups while I focus on strategy." }
-                                    ].map((review, j) => (
-                                        <div key={j} style={{ padding: '32px', minWidth: '320px', maxWidth: '350px', background: 'white', borderRadius: '28px', border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                                            <p style={{ fontWeight: 400, fontSize: '1rem', lineHeight: 1.6, marginBottom: '24px', color: '#1E293B', fontStyle: 'italic' }}>"{review.text}"</p>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(76, 29, 149, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'var(--primary)', fontSize: '0.9rem' }}>{review.name.charAt(0)}</div>
-                                                <div><p style={{ fontWeight: 900, fontSize: '0.95rem', margin: 0 }}>{review.name}</p><p style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 700, textTransform: 'uppercase', margin: 0 }}>{review.role}</p></div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ))}
-                        </div>
+            {/* Mission Map Section */}
+            <section style={{ padding: '80px 24px', background: '#F8FAFC', borderTop: '1px solid #F1F5F9' }}>
+                <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} style={{ maxWidth: '1000px', margin: '0 auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+                        <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem' }}>THE MISSION MAP</div>
+                        <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', marginBottom: '24px', color: '#0F172A' }}>The Road to Trust.</h2>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem', fontWeight: 500, maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>Building the infrastructure for African commerce isn't an overnight job. Here's our timeline.</p>
                     </div>
-                </motion.div>
-            </section>
 
-            {/* 6. Pricing Section */}
-            <section id="pricing" className="adaptive-section" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: 'white' }}>
-                <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.1 }}>
-                    <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-                        <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-                            <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 600, fontSize: '0.85rem' }}>TRANSPARENT PRICING</div>
-                            <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1 }}>Start free. Scale endlessly.</h2>
-                            <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginTop: '20px', maxWidth: '600px', margin: '20px auto 40px' }}>Join today and get <span style={{ color: 'var(--text)', fontWeight: 600 }}>7 Days of Oga Plan for FREE.</span></p>
-
-                            {/* Billing Cycle Toggle */}
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '40px' }}>
-                                <span style={{ fontSize: '1.1rem', fontWeight: billingCycle === 'monthly' ? 700 : 500, color: billingCycle === 'monthly' ? '#0F172A' : '#64748B' }}>Monthly</span>
-                                <button 
-                                    onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
-                                    style={{ 
-                                        width: '64px', height: '32px', borderRadius: '100px', background: 'var(--primary)', position: 'relative', border: 'none', cursor: 'pointer', transition: '0.3s' 
-                                    }}
-                                >
-                                    <div style={{ 
-                                        position: 'absolute', top: '4px', left: billingCycle === 'monthly' ? '4px' : '36px', width: '24px', height: '24px', background: 'white', borderRadius: '50%', transition: '0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' 
-                                    }} />
-                                </button>
-                                <span style={{ fontSize: '1.1rem', fontWeight: billingCycle === 'yearly' ? 700 : 500, color: billingCycle === 'yearly' ? '#0F172A' : '#64748B' }}>Yearly</span>
-                                <div style={{ padding: '4px 12px', background: '#DCFCE7', color: '#166534', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 800 }}>SAVE 10%</div>
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '32px' }}>
-                            <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', display: 'flex', flexDirection: 'column' }}>
-                                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>Hustler</h3><p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: 400 }}>The Entry-Level Ledger.</p>
-                                <div style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '40px' }}>Free</div>
-                                <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Start Hustling</button>
-                                <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    {[
-                                        "10 Recorded Sales per month",
-                                        "Basic Debt Tracking Assistant",
-                                        "Standard Security Ledger",
-                                        "Copy/Paste Payment Links",
-                                        "Email Intelligence Briefing"
-                                    ].map((feat, i) => (
-                                        <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500, color: '#334155' }}><Check size={18} color="var(--primary)" /> {feat}</div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="pricing-card highlight-card-landing" style={{ padding: '48px', borderRadius: '32px', background: 'var(--text)', color: 'white', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', zIndex: 2, display: 'flex', flexDirection: 'column' }}>
-                                <div style={{ position: 'absolute', top: '24px', right: '24px', padding: '6px 12px', background: 'var(--primary)', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 800 }}>MOST POPULAR</div>
-                                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>Oga Plan</h3><p style={{ opacity: 0.7, marginBottom: '32px', fontWeight: 400 }}>Professional Productivity Engine.</p>
-                                
-                                <div style={{ marginBottom: '40px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                                        <span style={{ fontSize: '3rem', fontWeight: 800 }}>₦{billingCycle === 'monthly' ? '5,000' : '4,500'}</span>
-                                        <span style={{ opacity: 0.7 }}>/mo</span>
-                                    </div>
-                                    {billingCycle === 'yearly' && <p style={{ margin: '8px 0 0', fontSize: '0.9rem', opacity: 0.6, fontWeight: 700 }}>₦54,000 billed annually</p>}
-                                </div>
-
-                                <button onClick={() => navigate('/auth/register')} className="btn-white" style={{ width: '100%' }}>Become an Oga</button>
-                                <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    {[
-                                        "Unlimited Sales Recording",
-                                        "WhatsApp Voice Note Sync",
-                                        "Branded PDF/Image Receipts",
-                                        "Staff Management (Add 2 Staff)",
-                                        "Proactive Payment Nudges",
-                                        "Advanced Security Ledger"
-                                    ].map((feat, i) => (
-                                        <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500 }}><Check size={18} color="#4ade80" /> {feat}</div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', display: 'flex', flexDirection: 'column' }}>
-                                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>Chairman</h3><p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontWeight: 400 }}>The Elite Command Center.</p>
-                                
-                                <div style={{ marginBottom: '40px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                                        <span style={{ fontSize: '3rem', fontWeight: 800 }}>₦{billingCycle === 'monthly' ? '8,500' : '7,650'}</span>
-                                        <span style={{ opacity: 0.7 }}>/mo</span>
-                                    </div>
-                                    {billingCycle === 'yearly' && <p style={{ margin: '8px 0 0', fontSize: '0.9rem', color: '#64748B', fontWeight: 700 }}>₦91,800 billed annually</p>}
-                                </div>
-
-                                <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Lead Empire</button>
-                                <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    {[
-                                        "Everything in Oga Plan",
-                                        "WhatsApp Image Sync (Receipts)",
-                                        "Unlimited Staff & Offices",
-                                        "Export Business Data (Excel)",
-                                        "8 AM Executive Intelligence",
-                                        "Priority Vault Access"
-                                    ].map((feat, i) => (
-                                        <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500, color: '#334155' }}><Check size={18} color="var(--primary)" /> {feat}</div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
-            </section>
-
-            {/* 7. Mission Map Section */}
-            <section className="adaptive-section" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: 'var(--background)' }}>
-                <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: false, amount: 0.1 }}>
-                    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                        <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-                            <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 600, fontSize: '0.85rem' }}>THE MISSION MAP</div>
-                            <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1 }}>Our journey & commitment.</h2>
-                            <p style={{ fontSize: '1.25rem', color: '#334155', marginTop: '20px', maxWidth: '600px', margin: '20px auto 0', fontWeight: 400 }}>Transparent milestones from a simple idea to a global financial ecosystem.</p>
-                        </div>
+                    <div style={{ position: 'relative', marginTop: '40px' }}>
                         <div style={{ position: 'relative', paddingLeft: '40px' }}>
                             <div style={{ position: 'absolute', left: '7px', top: '0', bottom: '0', width: '2px', background: 'linear-gradient(to bottom, #E2E8F0 0%, var(--primary) 30%, var(--primary) 70%, #E2E8F0 100%)' }} />
                             {[
                                 { date: "JULY '25", title: "The Genesis", desc: "Concept & Research Phase. Identifying the 'Trust Gap' in African commerce.", status: "completed" },
-                                { date: "SEPT '25", title: "Strategic Architecture", desc: "Core blueprinting of the Kredibly ledger and AI interface flow.", status: "completed" },
+                                { date: "SEPT '25", title: "Strategic Architecture", desc: "Core blueprinting of the Kredibly workspace and AI interface flow.", status: "completed" },
                                 { date: "DEC '25", title: "Kreddy AI Core", desc: "Intelligence engine development. Teaching Kreddy to understand merchant slang and complex debts.", status: "completed" },
-                                { date: "JAN '26", title: "Premium Ledger UX", desc: "Rollout of smart telemetry, professional document generators, and cross-device syncing.", status: "completed" },
+                                { date: "JAN '26", title: "Premium Platform UX", desc: "Rollout of smart telemetry, professional document generators, and cross-device syncing.", status: "completed" },
                                 { date: "FEBRUARY - PRESENT", title: "Founding Member Waitlist", desc: "Onboarding our first 1,000 pioneers. Early access rewards and lifetime status for active participants.", status: "active" },
                                 { date: "Q2 2026", title: "Global Marketplace Launch", desc: "Opening the ecosystem for public merchant registration and global transactions.", status: "future" },
-                                { date: "Q3 2026", title: "Kredibly Mobile (Native)", desc: "The full ledger in your pocket. Offline-first, biometric security, and instant push intelligence.", status: "future" }
+                                { date: "Q3 2026", title: "Kredibly Mobile (Native)", desc: "Your entire business in your pocket. Offline-first, biometric security, and instant push intelligence.", status: "future" }
                             ].map((m, i) => (
                                 <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false, amount: 0.1 }} style={{ marginBottom: '64px', position: 'relative' }}>
                                     <div style={{ position: 'absolute', left: '-41px', top: '4px', width: '16px', height: '16px', borderRadius: '50%', background: m.status === 'active' ? 'var(--primary)' : m.status === 'completed' ? '#10B981' : 'white', border: m.status === 'future' ? '2px solid #E2E8F0' : 'none', zIndex: 2 }}>{m.status === 'active' && <div className="pulse-dot-landing" />}</div>
@@ -627,43 +411,33 @@ const LandingPage = () => {
                 </motion.div>
             </section>
 
-            {/* 8. Premium CTA Section */}
-            <section className="adaptive-section" style={{ padding: '80px 20px' }}>
-                <motion.div initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: false, amount: 0.1 }} style={{ maxWidth: '1200px', margin: '0 auto', background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)', padding: '140px 40px', borderRadius: '60px', color: 'white', textAlign: 'center', position: 'relative', overflow: 'hidden', boxShadow: '0 60px 120px -30px rgba(15, 23, 42, 0.4)' }}>
-                    <div style={{ position: 'relative', zIndex: 2 }}>
-                        <h2 style={{ fontSize: 'clamp(3rem, 7vw, 5rem)', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 0.9, marginBottom: '40px', color: 'white' }}>The smart assistant<br />for your business.</h2>
-                        <p style={{ fontSize: '1.35rem', opacity: 0.8, maxWidth: '650px', margin: '0 auto 64px', fontWeight: 400, lineHeight: 1.5, color: 'white' }}>No more notebooks. No more confusing math. We help you track sales and collect your money inside the WhatsApp you already use.</p>
-                        <button onClick={() => navigate('/auth/register')} className="btn-white" style={{ padding: '24px 56px', fontSize: '1.25rem', borderRadius: '24px' }}>Join the waitlist <ArrowRight size={22} /></button>
+            {/* 5. Trust Bar Section */}
+            <section style={{ padding: '80px 24px', background: 'white', borderTop: '1px solid #F1F5F9' }}>
+                <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '40px' }}>Join the New Standard of African Commerce</p>
+                    <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 'clamp(2rem, 8vw, 6rem)', alignItems: 'center', opacity: 0.6 }}>
+                        <div style={{ textAlign: 'center' }}><p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A', margin: 0 }}>₦4.8B+</p><p style={{ fontSize: '0.75rem', fontWeight: 700, margin: 0 }}>Debt Tracked</p></div>
+                        <div style={{ textAlign: 'center' }}><p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A', margin: 0 }}>12,000+</p><p style={{ fontSize: '0.75rem', fontWeight: 700, margin: 0 }}>Merchants</p></div>
+                        <div style={{ textAlign: 'center' }}><p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A', margin: 0 }}>Nigeria</p><p style={{ fontSize: '0.75rem', fontWeight: 700, margin: 0 }}>Hq Base</p></div>
                     </div>
-                </motion.div>
+                </div>
             </section>
 
             <PublicFooter />
 
             <style>{`
-                .marquee-track { animation: marquee-scroll 60s linear infinite; }
-                @keyframes marquee-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(calc(-50% - 12px)); } }
-                @media (max-width: 1024px) { 
-                    .adaptive-section { padding: 60px 24px !important; }
-                    .bento-grid { grid-template-columns: 1fr !important; }
-                    .mobile-reverse { display: flex !important; flex-direction: column !important; gap: 40px !important; }
-                    .mobile-reverse > div:first-child { order: 2 !important; width: 100% !important; }
-                    .mobile-reverse > div:last-child { order: 1 !important; width: 100% !important; }
-                }
+                .landing-mockup-grid { display: grid; grid-template-columns: 1fr; gap: 4rem; align-items: center; }
+                @media (min-width: 992px) { .landing-mockup-grid { grid-template-columns: 1.15fr 0.85fr; } }
                 .premium-gradient {
                     background: linear-gradient(135deg, var(--primary) 0%, #F472B6 100%);
                     -webkit-background-clip: text;
                     background-clip: text;
                     -webkit-text-fill-color: transparent;
                 }
-                .pulse-dot-landing { position: absolute; inset: -6px; border-radius: 50%; background: var(--primary); opacity: 0.3; animation: pulse-ring-landing 2s infinite; }
-                @keyframes pulse-ring-landing { 0% { transform: scale(1); opacity: 0.3; } 100% { transform: scale(2.5); opacity: 0; } }
-                .highlight-card-landing { transform: scale(1.05); }
-                @media (max-width: 640px) { .highlight-card-landing { transform: none !important; } }
-                @media (min-width: 992px) {
-                    .landing-mockup-grid {
-                        grid-template-columns: 1.1fr 0.9fr !important;
-                    }
+                .glass-card { background: white; backdrop-filter: blur(20px); border: 1px solid rgba(0,0,0,0.05); transition: 0.3s; }
+                .glass-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.05); }
+                @media (max-width: 1024px) {
+                    .phone-mockup { transform: scale(0.9); }
                 }
             `}</style>
         </div>

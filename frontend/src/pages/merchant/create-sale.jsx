@@ -17,7 +17,8 @@ const CreateSale = () => {
         description: "",
         totalAmount: "",
         amountPaid: "",
-        dueDate: ""
+        dueDate: "",
+        invoiceType: "billing" // "billing" or "record"
     });
     const [loading, setLoading] = useState(false);
     const [showLimitModal, setShowLimitModal] = useState(false);
@@ -69,8 +70,44 @@ const CreateSale = () => {
                     <Sparkles size={16} color="var(--primary)" />
                     <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>New Entry</span>
                 </div>
-                <h1 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--text)', marginBottom: '12px', letterSpacing: '-0.04em' }}>Record Sale</h1>
-                <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '1.1rem' }}>Enter the sale details below to create an invoice and payment link.</p>
+                <h1 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--text)', marginBottom: '12px', letterSpacing: '-0.04em' }}>
+                    {formData.invoiceType === 'record' ? 'Record Past Payment' : 'Create New Invoice'}
+                </h1>
+                <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '1.1rem' }}>
+                    {formData.invoiceType === 'record' 
+                        ? 'Log a payment already made outside Kredibly to keep your ledger balanced.' 
+                        : 'Enter details to generate an official payment link for your client.'}
+                </p>
+            </div>
+
+            {/* Implementation Type Toggle */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
+                <div style={{ background: '#F1F5F9', padding: '6px', borderRadius: '20px', display: 'flex', gap: '8px', border: '1px solid #E2E8F0' }}>
+                    <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, invoiceType: 'billing' })}
+                        style={{
+                            padding: '12px 24px', borderRadius: '14px', fontSize: '0.9rem', fontWeight: 800, border: 'none', cursor: 'pointer', transition: 'all 0.3s ease',
+                            background: formData.invoiceType === 'billing' ? 'white' : 'transparent',
+                            color: formData.invoiceType === 'billing' ? 'var(--primary)' : '#64748B',
+                            boxShadow: formData.invoiceType === 'billing' ? '0 4px 6px -1px rgba(0,0,0,0.1)' : 'none'
+                        }}
+                    >
+                        Official Invoice
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, invoiceType: 'record', amountPaid: formData.totalAmount })}
+                        style={{
+                            padding: '12px 24px', borderRadius: '14px', fontSize: '0.9rem', fontWeight: 800, border: 'none', cursor: 'pointer', transition: 'all 0.3s ease',
+                            background: formData.invoiceType === 'record' ? 'white' : 'transparent',
+                            color: formData.invoiceType === 'record' ? 'var(--primary)' : '#64748B',
+                            boxShadow: formData.invoiceType === 'record' ? '0 4px 6px -1px rgba(0,0,0,0.1)' : 'none'
+                        }}
+                    >
+                        Past Record (Receipt)
+                    </button>
+                </div>
             </div>
 
             <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '32px' }}>
@@ -220,11 +257,16 @@ const CreateSale = () => {
                             fontWeight: 900,
                             boxShadow: '0 20px 40px -10px var(--primary-glow)',
                             width: '100%',
-                            maxWidth: '400px'
+                            maxWidth: '430px',
+                            opacity: loading ? 0.7 : 1
                         }}
                         disabled={loading}
                     >
-                        {loading ? <Loader2 className="animate-spin" /> : <>Record & Generate <ArrowRight size={20} strokeWidth={3} /></>}
+                        {loading ? <Loader2 className="animate-spin" /> : (
+                            formData.invoiceType === 'record' 
+                                ? <>Finalize & Issue Receipt <ArrowRight size={20} strokeWidth={3} /></>
+                                : <>Record & Send Invoice <ArrowRight size={20} strokeWidth={3} /></>
+                        )}
                     </button>
                 </div>
             </form>

@@ -134,6 +134,7 @@ exports.handlePaystackWebhook = async (req, res) => {
                 }
 
                 const paidAmount = amount / 100;
+                const actualCreditAmount = metadata?.originalAmount ? Number(metadata.originalAmount) : paidAmount;
                 
                 // Try to find if this matches a Virtual Account reference
                 let vaQuery = { invoiceNumber: invoiceNumber.toUpperCase() };
@@ -163,7 +164,7 @@ exports.handlePaystackWebhook = async (req, res) => {
                 if (sale) {
                     // Update payments via .save() to trigger Mongoose pre-save hook for status updates!
                     sale.payments.push({
-                        amount: paidAmount,
+                        amount: actualCreditAmount,
                         method: 'Virtual Account Transfer',
                         reference: reference,
                         date: new Date()
@@ -183,7 +184,7 @@ exports.handlePaystackWebhook = async (req, res) => {
                     await Notification.create({
                         businessId: business._id,
                         title: 'Payment Received 💰',
-                        message: `₦${paidAmount.toLocaleString()} received for Invoice #${invoiceNumber} from ${sale.customerName}.`,
+                        message: `₦${actualCreditAmount.toLocaleString()} received for Invoice #${invoiceNumber} from ${sale.customerName}.`,
                         type: 'sale',
                         saleId: sale._id
                     });

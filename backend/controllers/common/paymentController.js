@@ -314,6 +314,7 @@ exports.verifyInvoicePayment = async (req, res) => {
         }
 
         const paidAmount = paystackData.amount / 100;
+        const actualCreditAmount = paystackData.metadata?.originalAmount ? Number(paystackData.metadata.originalAmount) : paidAmount;
 
         // 1b. Fetch the target Sale first to validate metadata
         const targetSale = await Sale.findOne({ 
@@ -344,7 +345,7 @@ exports.verifyInvoicePayment = async (req, res) => {
             {
                 $push: {
                     payments: {
-                        amount: paidAmount,
+                        amount: actualCreditAmount,
                         method: 'Paystack',
                         reference: reference,
                         date: new Date()
@@ -382,12 +383,12 @@ exports.verifyInvoicePayment = async (req, res) => {
             await EscrowPayment.create({
                 businessId: business._id,
                 saleId: sale._id,
-                amount: paidAmount,
+                amount: actualCreditAmount,
                 reference: reference,
                 releaseDate: lockUntil,
                 status: "pending"
             });
-            console.log(`🛡️ Escrowed ₦${paidAmount} for ${business.displayName}. Payout Hold active.`);
+            console.log(`🛡️ Escrowed ₦${actualCreditAmount} for ${business.displayName}. Payout Hold active.`);
         }
         
         // 5. Background Tasks (Notifications, etc)
@@ -398,14 +399,14 @@ exports.verifyInvoicePayment = async (req, res) => {
                 action: 'PAYMENT_RECEIVED',
                 entityType: 'PAYMENT',
                 entityId: sale._id,
-                details: `Online payment of ₦${paidAmount.toLocaleString()} verified for Invoice #${sale.invoiceNumber}`
+                details: `Online payment of ₦${actualCreditAmount.toLocaleString()} verified for Invoice #${sale.invoiceNumber}`
             });
 
             // Create Notification
             await Notification.create({
                 businessId: business._id,
                 title: 'Payment Received 💰',
-                message: `₦${paidAmount.toLocaleString()} received for Invoice #${sale.invoiceNumber} from ${sale.customerName}.`,
+                message: `₦${actualCreditAmount.toLocaleString()} received for Invoice #${sale.invoiceNumber} from ${sale.customerName}.`,
                 type: 'sale',
                 saleId: sale._id
             });
@@ -416,7 +417,7 @@ exports.verifyInvoicePayment = async (req, res) => {
                 const balance = sale.totalAmount - totalPaid;
                 const receiptLink = `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/r/${sale.invoiceNumber}`;
                 
-                let msg = `🔔 *Payment Verified!*\n\nChief, I've just verified an online payment of *₦${paidAmount.toLocaleString()}* for *Invoice #${sale.invoiceNumber}* (${sale.customerName}).\n\n`;
+                let msg = `🔔 *Payment Verified!*\n\nChief, I've just verified an online payment of *₦${actualCreditAmount.toLocaleString()}* for *Invoice #${sale.invoiceNumber}* (${sale.customerName}).\n\n`;
                 
                 // 🛡️ SECURITY ADD-ON: Inform them if it's escrowed
                 if (lockUntil && new Date() < lockUntil) {
@@ -442,5 +443,49 @@ exports.verifyInvoicePayment = async (req, res) => {
     } catch (error) {
         console.error("verifyInvoicePayment Error:", error);
         res.status(500).json({ success: false, message: "Internal server error during verification" });
+    }
+};
+
+exports.initializePaystackPayment = async (req, res) => {
+    try {
+        const { saleId, amount, email } = req.body;
+        const Sale = require('../../models/Sale');
+        
+        const sale = await Sale.findById(saleId).populate('businessId');
+        if (!sale) return res.status(404).json({ message: "Invoice not found" });
+        
+        const business = sale.businessId;
+        
+        let chargeAmount = Number(amount);
+        let gatewayFeeApplied = false;
+        
+        if (business && business.prefersGatewayFeeAbsorption === false) {
+            let flatFee = chargeAmount >= 2500 ? 100 : 0;
+            let grossAmount = (chargeAmount + flatFee) / (1 - 0.015);
+            let fee = grossAmount - chargeAmount;
+            if (fee > 2000) fee = 2000;
+            chargeAmount = Math.ceil(chargeAmount + fee);
+            gatewayFeeApplied = true;
+        }
+
+        const reference = `KREDDY_INV_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+        res.status(200).json({
+            success: true,
+            publicKey: process.env.PAYSTACK_PUBLIC_KEY,
+            email: email,
+            amount: chargeAmount,
+            originalAmount: Number(amount),
+            reference: reference,
+            metadata: {
+                paymentType: 'invoice',
+                invoiceNumber: sale.invoiceNumber,
+                originalAmount: Number(amount),
+                gatewayFeeApplied: gatewayFeeApplied
+            }
+        });
+    } catch (error) {
+        console.error("Initialize Paystack Error:", error);
+        res.status(500).json({ message: "Failed to initialize payment" });
     }
 };

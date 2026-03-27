@@ -12,4 +12,8 @@ router.get("/banks", protect, businessController.getBankList);
 router.get("/resolve-account/:bankCode/:accountNumber", protect, businessController.resolveAccountDetails);
 router.post("/payout-settings", protect, businessController.saveBankDetails);
 
+// Invoice Payment Initialization
+const paymentController = require("../../controllers/common/paymentController");
+router.post("/paystack/initialize", paymentController.initializePaystackPayment);
+
 module.exports = router;
