@@ -38,7 +38,8 @@ const SettingsPage = () => {
         accountNumber: profile?.bankDetails?.accountNumber || "",
         accountName: profile?.bankDetails?.accountName || "",
         logoUrl: profile?.logoUrl || "",
-        staffNumbers: profile?.staffNumbers || []
+        staffNumbers: profile?.staffNumbers || [],
+        prefersGatewayFeeAbsorption: profile?.prefersGatewayFeeAbsorption ?? true
     });
     const [newStaffPhone, setNewStaffPhone] = useState("");
     const [uploading, setUploading] = useState(false);
@@ -215,7 +216,8 @@ const SettingsPage = () => {
                     reminderTemplate: form.reminderTemplate
                 },
                 logoUrl: form.logoUrl,
-                staffNumbers: form.staffNumbers
+                staffNumbers: form.staffNumbers,
+                prefersGatewayFeeAbsorption: form.prefersGatewayFeeAbsorption
             });
             toast.success("Settings updated successfully!");
         } catch (err) {
@@ -709,6 +711,53 @@ const SettingsPage = () => {
                                 </div>
                             </div>
                         )}
+                    </div>
+                </section>
+
+                {/* Processing & Fees Strategy - NEW */}
+                <section className="glass-card" style={{ padding: '32px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                        <div style={{ background: '#F5F3FF', color: 'var(--primary)', padding: '10px', borderRadius: '12px' }}>
+                            <Zap size={24} />
+                        </div>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Processing & Fees</h2>
+                    </div>
+                    <p style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '24px', fontWeight: 500 }}>Choose who pays the payment gateway processing fees (1.5% + ₦100).</p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                        <button 
+                            type="button"
+                            onClick={() => setForm({ ...form, prefersGatewayFeeAbsorption: true })}
+                            style={{ 
+                                padding: '24px 20px', borderRadius: '20px', border: '2px solid', 
+                                borderColor: form.prefersGatewayFeeAbsorption ? 'var(--primary)' : '#F1F5F9',
+                                background: form.prefersGatewayFeeAbsorption ? '#F5F3FF' : 'white',
+                                textAlign: 'left', cursor: 'pointer', transition: '0.15s ease',
+                                display: 'flex', flexDirection: 'column', gap: '8px',
+                                boxShadow: form.prefersGatewayFeeAbsorption ? '0 10px 15px -3px rgba(76, 29, 149, 0.1)' : 'none'
+                            }}
+                        >
+                            <p style={{ margin: 0, fontWeight: 900, color: form.prefersGatewayFeeAbsorption ? 'var(--primary)' : '#1E293B', fontSize: '1rem' }}>Merchant Absorbs</p>
+                            <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748B', lineHeight: 1.4 }}>Fees are deducted from your payout. Your customers pay exactly what's on the invoice.</p>
+                            {form.prefersGatewayFeeAbsorption && <span style={{ fontSize: '0.7rem', fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', marginTop: '8px' }}>Active Selection</span>}
+                        </button>
+
+                        <button 
+                            type="button"
+                            onClick={() => setForm({ ...form, prefersGatewayFeeAbsorption: false })}
+                            style={{ 
+                                padding: '24px 20px', borderRadius: '20px', border: '2px solid', 
+                                borderColor: !form.prefersGatewayFeeAbsorption ? 'var(--primary)' : '#F1F5F9',
+                                background: !form.prefersGatewayFeeAbsorption ? '#F5F3FF' : 'white',
+                                textAlign: 'left', cursor: 'pointer', transition: '0.15s ease',
+                                display: 'flex', flexDirection: 'column', gap: '8px',
+                                boxShadow: !form.prefersGatewayFeeAbsorption ? '0 10px 15px -3px rgba(76, 29, 149, 0.1)' : 'none'
+                            }}
+                        >
+                            <p style={{ margin: 0, fontWeight: 900, color: !form.prefersGatewayFeeAbsorption ? 'var(--primary)' : '#1E293B', fontSize: '1rem' }}>Customer Pays</p>
+                            <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748B', lineHeight: 1.4 }}>Fees are added to the customer's total at checkout. You receive exactly what's on the invoice.</p>
+                            {!form.prefersGatewayFeeAbsorption && <span style={{ fontSize: '0.7rem', fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', marginTop: '8px' }}>Active Selection</span>}
+                        </button>
                     </div>
                 </section>
 

@@ -16,7 +16,7 @@ const cleanPhone = (num) => {
 
 exports.updateProfile = async (req, res) => {
     try {
-        const { displayName, entityType, sellMode, logoUrl, phoneNumber, whatsappNumber, address, assistantSettings, bankDetails, staffNumbers } = req.body;
+        const { displayName, entityType, sellMode, logoUrl, phoneNumber, whatsappNumber, address, assistantSettings, bankDetails, staffNumbers, prefersGatewayFeeAbsorption } = req.body;
 
         let profile = await BusinessProfile.findOne({ ownerId: req.user._id });
 
@@ -28,6 +28,7 @@ exports.updateProfile = async (req, res) => {
             profile.phoneNumber = phoneNumber || profile.phoneNumber;
             profile.whatsappNumber = whatsappNumber ? cleanPhone(whatsappNumber) : profile.whatsappNumber;
             profile.address = address || profile.address;
+            if (prefersGatewayFeeAbsorption !== undefined) profile.prefersGatewayFeeAbsorption = prefersGatewayFeeAbsorption;
             if (assistantSettings) {
                 profile.assistantSettings = {
                     ...profile.assistantSettings,
@@ -99,9 +100,10 @@ exports.updateProfile = async (req, res) => {
 
 const getSuccessFeeByPlan = (plan) => {
     switch (plan) {
-        case "chairman": return 1.5; // 1.5%
-        case "oga": return 4;        // 4%
-        default: return 8;           // 8% (Hustler)
+        case "chairman": return 0;   // 0% Platform Fee (Total: 1.5%)
+        case "oga": return 1.0;      // 1.0% Platform Fee (Total: 2.5%)
+        case "hustler": return 2.0;  // 2.0% Platform Fee (Total: 3.5%)
+        default: return 2.0;
     }
 };
 

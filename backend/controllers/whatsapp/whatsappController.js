@@ -66,6 +66,7 @@ const extractInfoRobust = (text, context = {}) => {
             paidAmount: 0,
             item: "Item",
             dueDate: null,
+            invoiceType: "billing",
             reply: ""
         }
     };
@@ -165,8 +166,14 @@ const extractInfoRobust = (text, context = {}) => {
         result.data.snoozeDuration = minMatch ? parseInt(minMatch[1]) : 30;
     } else if (lower.includes(" paid") || lower.includes(" pay") || lower.includes(" brought") || lower.includes(" sent") || lower.includes("received") || lower.includes("collect")) {
         result.intent = "update_record";
+        if (lower.includes("paid outside") || lower.includes("outside") || lower.includes("already")) {
+            result.data.invoiceType = "record";
+        }
     } else if (lower.includes("sold") || lower.includes("selling") || lower.includes("sale") || lower.includes("record") || lower.includes("bought")) {
         result.intent = "create_sale";
+        if (lower.includes("already paid") || lower.includes("record past") || lower.includes("ledger only")) {
+            result.data.invoiceType = "record";
+        }
     }
 
     // 2. Extract Amounts (handle 10k, 10000, 245k) ignoring time/durations
@@ -262,9 +269,10 @@ const extractInfoRobust = (text, context = {}) => {
         }
     } else if (result.intent === "create_sale" && result.data.totalAmount > 0) {
         if (result.data.item === "Item" || !result.data.item) result.data.item = "Purchase"; 
+        const label = result.data.invoiceType === 'record' ? 'Record (Already Paid)' : 'Invoice (Request Payment)';
         result.data.reply = tone === "friendly" 
-            ? `I catch the work! 🛡️ Recording *${result.data.item}* for *${result.data.customerName}*. \nTotal: *₦${result.data.totalAmount.toLocaleString()}* \nPaid: *₦${result.data.paidAmount.toLocaleString()}* \nCorrect? (Reply 'Yes' to confirm)`
-            : `Infrastructure Update: Recording *${result.data.item}* for ${result.data.customerName}. \nValue: ₦${result.data.totalAmount.toLocaleString()} \nCleared: ₦${result.data.paidAmount.toLocaleString()} \nConfirm?`;
+            ? `I catch the work! 🛡️ Recording *${result.data.item}* for *${result.data.customerName}* as a *${label}*. \nTotal: *₦${result.data.totalAmount.toLocaleString()}* \nPaid: *₦${result.data.paidAmount.toLocaleString()}* \nCorrect? (Reply 'Yes' to confirm)`
+            : `Infrastructure Update: Recording *${result.data.item}* for ${result.data.customerName} [${label}]. \nValue: ₦${result.data.totalAmount.toLocaleString()} \nCleared: ₦${result.data.paidAmount.toLocaleString()} \nConfirm?`;
     } else if (result.intent === "check_debt") {
         result.data.reply = `Omo, debtors plenty for street! 😅 Give me one second make I check the ledger...`;
     } else if (result.intent === "general_chat") {
@@ -793,7 +801,7 @@ Upgrade here: ${APP_URL}/pricing`);
 
             // Handle "Yes" for Smart Logic Drafts
             if (['yes', 'y', 'confirm', 'correct', 'true', 'sure'].includes(lowerText) && session.type === 'collect_sale_info') {
-                const { customerName, totalAmount, paidAmount, item, intent, dueDate } = session.data;
+                const { customerName, totalAmount, paidAmount, item, intent, dueDate, invoiceType } = session.data;
                 await WhatsAppSession.deleteOne({ _id: session._id });
 
                 if (intent === 'create_sale') {
@@ -804,7 +812,8 @@ Upgrade here: ${APP_URL}/pricing`);
                         totalAmount,
                         payments: [{ amount: paidAmount || 0, method: "WhatsApp" }],
                         dueDate: dueDate ? new Date(dueDate) : undefined,
-                        recordedBy: cleanFrom
+                        recordedBy: cleanFrom,
+                        invoiceType: invoiceType || 'billing'
                     });
                     await newSale.save();
 
@@ -826,7 +835,15 @@ Upgrade here: ${APP_URL}/pricing`);
 
                     const bal = totalAmount - (paidAmount || 0);
                     const successMsg = getRandom(HUMANIZE.success, {}, plan);
-                    return await sendReply(from, `${successMsg} \n\nI've logged Invoice *#${newSale.invoiceNumber}* for *${customerName}*.\n💰 Paid: ₦${paidAmount.toLocaleString()}\n⏳ Balance: ₦${bal.toLocaleString()}\n\n🔗 View & Share Preview: ${BACKEND_URL}/api/payments/share/${newSale.invoiceNumber}`);
+                    
+                    const paymentLink = `${FRONTEND_URL}/i/${newSale.publicSlug || newSale.invoiceNumber}`;
+                    const template = newSale.invoiceType === 'record' 
+                        ? `Hello ${customerName}, here is your verified receipt for the payment of ₦${totalAmount.toLocaleString()} to ${profile.displayName}. View/Download here: ${paymentLink}`
+                        : `Hello ${customerName}, this is your official invoice from ${profile.displayName} for ₦${totalAmount.toLocaleString()}. You can view and pay securely here: ${paymentLink}`;
+
+                    await sendReply(from, `${successMsg} \n\nI've logged Invoice *#${newSale.invoiceNumber}* for *${customerName}*.\n💰 Paid: ₦${paidAmount.toLocaleString()}\n⏳ Balance: ₦${bal.toLocaleString()}\n\n📝 *Draft Message for Customer* (Copy & Send): \n\n_"${template}"_`);
+                    
+                    return await sendReply(from, `🛡️ *Note:* I didn't send this to them directly to avoid spam. You hold the power, Boss!`);
                 } else if (intent === 'update_record') {
                     // 🧠 ROBUST SEARCH: Find the best match for the customer
                     let cleanName = customerName.replace(/^(for|to|from|of)\s+/i, '').trim();
@@ -881,18 +898,12 @@ Upgrade here: ${APP_URL}/pricing`);
                             return await sendReply(from, `🎉 *Good News!* \n\n*${customerName}* has already cleared this debt! No reminder needed. Keep winning! 🥂`);
                         }
                         
-                        if (sale && sale.customerPhone) {
-                            await sendReply(sale.customerPhone, debtorMsg);
-
-                            // Notify Oga (Oga Monitor)
-                            if (isStaff && profile.whatsappNumber) {
-                                const ogaMessage = `🔔 *Reminder Alert (Staff)* \n\nYour staff (*${cleanFrom}*) just sent a payment reminder to *${customerName}* for Invoice #${sale.invoiceNumber}. \n\n_Active recovery in progress!_ 🚀`;
-                                await sendReply(profile.whatsappNumber, ogaMessage);
-                            }
-
-                            return await sendReply(from, `✅ *Sent!* \n\nI've forwarded the reminder link directly to *${customerName}* on WhatsApp. 🚀`);
-                        } else if (sale) {
-                            return await sendReply(from, `📋 *Copy & Forward this to ${customerName}:* \n\n_"${debtorMsg}"_\n\n(I couldn't send it automatically because I don't have their WhatsApp number in my records yet)`);
+                        if (sale) {
+                            // Focus on DRAFTING only (Per strategic update)
+                            const paymentLink = `${FRONTEND_URL}/i/${sale.publicSlug || sale.invoiceNumber}`;
+                            const nudgeDraft = `Hi ${customerName}, this is a friendly nudge from ${profile.displayName} regarding your balance of ₦${(sale.totalAmount - sale.paidAmount).toLocaleString()} for ${sale.description}. You can view the details and pay securely here: ${paymentLink}`;
+                            
+                            return await sendReply(from, `📝 *Draft Reminder for ${customerName}* (Copy & Send): \n\n_"${nudgeDraft}"_ \n\n🛡️ *Kreddy Tip:* Personal messages from you convert 4x better than automated ones!`);
                         } else {
                             return await sendReply(from, `🤔 I couldn't locate that record anymore. It might have been deleted.`);
                         }

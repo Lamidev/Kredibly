@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import PublicNavbar from '../../components/public/PublicNavbar';
 import PublicFooter from '../../components/public/PublicFooter';
 import { motion } from 'framer-motion';
-import { Check, X, Zap, HelpCircle } from 'lucide-react';
+import { Check, X, Zap, HelpCircle, ArrowRight, ShieldCheck, Sparkles, Mic } from 'lucide-react';
 
 const PricingPage = () => {
     const navigate = useNavigate();
@@ -16,49 +16,43 @@ const PricingPage = () => {
     }, []);
 
     const { profile } = useAuth();
-    const isFoundingPhase = false; // Hide from public UI as per new strategy
-
-    const getPrice = (basePrice) => {
-        if (typeof basePrice !== 'number') return basePrice;
-        const price = billingCycle === 'yearly' ? basePrice * 0.9 : basePrice;
-        return `₦${Math.round(price).toLocaleString()}`;
-    };
 
     const plans = [
         {
             name: "Hustler",
             slug: "hustler",
-            tagline: "The Beginner's Tool",
-            description: "Stop losing money to forgotten records. Start tracking today.",
+            tagline: "The Record-Keeper's Choice",
+            description: "Stop writing in notebooks. Start building your digital reputation today.",
             price: "Free",
+            fee: "2.0% Kredibly Commission*",
             period: "",
             features: [
-                "10 Recorded Sales per month",
-                "Basic Debt Tracking Assistant",
-                "Standard Security Ledger",
-                "Copy/Paste Payment Links",
-                "Email Intelligence Briefing"
+                "10 Sale Records per Month",
+                "Basic Debt Recovery Assistant",
+                "Verified Ledger Seal",
+                "Personal Daily Reminders",
+                "Digital Receipts (Kredibly Branded)"
             ],
-            cta: profile?.plan === "hustler" ? "Current Plan" : "Get Started",
+            cta: profile?.plan === "hustler" ? "Current Plan" : "Start Hustling Free",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
             highlight: false,
-            color: "#475569"
+            color: "#64748B"
         },
         {
             name: "Oga Plan",
             slug: "oga",
             tagline: "The Business Leader",
-            description: "Step up to professional business management.",
-            price: getPrice(5000),
-            originalPrice: getPrice(5000),
+            description: "Step up to professional branding and lower fees for your growing business.",
+            price: billingCycle === 'monthly' ? "₦5,000" : "₦4,500",
+            fee: "1.0% Kredibly Commission*",
             period: "/ month",
             features: [
-                "Unlimited Sales Recording",
+                "Everything in Hustler Plan",
+                "Unlimited Sales Records",
+                "Add 2 Staff Members",
+                "Co-Branded Receipts (Your Logo)",
                 "WhatsApp Voice Note Sync",
-                "Branded PDF/Image Receipts",
-                "Staff Management (Add 2 Staff)",
-                "Proactive Payment Nudges",
-                "Advanced Security Ledger"
+                "Advanced AI Recovery Assistant"
             ],
             cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade Now" : "Become an Oga",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -68,18 +62,18 @@ const PricingPage = () => {
         {
             name: "Chairman",
             slug: "chairman",
-            tagline: "The Elite Suite",
-            description: "Run multiple shops without stress. Lead your empire.",
-            price: getPrice(8500),
-            originalPrice: getPrice(8500),
+            tagline: "The Empire Command Center",
+            description: "Run multiple shops without stress. Lead your empire with zero commissions.",
+            price: billingCycle === 'monthly' ? "₦8,500" : "₦7,650",
+            fee: "0% Kredibly Commission*",
             period: "/ month",
             features: [
                 "Everything in Oga Plan",
-                "WhatsApp Image Sync (Receipts)",
+                "White-Label Receipts (Only Your Logo)",
                 "Unlimited Staff & Offices",
-                "Export Business Data (Excel)",
-                "8 AM Executive Intelligence",
-                "Priority Vault Access"
+                "WhatsApp Image Sync (Automatic)",
+                "8 AM Executive Intelligence Brief",
+                "Priority Vault & Support"
             ],
             cta: profile?.plan === "chairman" ? "Current Plan" : profile ? "Upgrade Now" : "Lead Your Empire",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -88,235 +82,116 @@ const PricingPage = () => {
         }
     ];
 
-    const comparisonFeatures = [
-        { name: "Sales Records / Month", free: "10 Sales", pro: "Unlimited", ent: "Unlimited" },
-        { name: "WhatsApp Voice Notes", free: false, pro: true, ent: true },
-        { name: "Branded PDF Receipts", free: false, pro: true, ent: true },
-        { name: "WhatsApp Image / Receipt Scan", free: false, pro: false, ent: true },
-        { name: "Staff Management", free: "0 Staff", pro: "Up to 2 Staff", ent: "Unlimited Staff" },
-        { name: "AI Productivity Assistant", free: "Basic", pro: "Advanced", ent: "Genius" },
-        { name: "Export to Excel/Accounting", free: false, pro: false, ent: true },
-        { name: "Security Ledger status", free: "Standard", pro: "Standard", ent: "Priority" },
-    ];
-
     return (
         <div style={{ minHeight: '100vh', background: 'white', color: 'var(--text)' }}>
             <PublicNavbar />
             
-            {/* Header */}
-            <section className="pricing-header" style={{ padding: 'clamp(80px, 12vw, 120px) 20px clamp(40px, 8vw, 80px)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-                <div className="pattern-dots" />
+            {/* Header - Repurposed for partnership vibe */}
+            <section className="pricing-header" style={{ padding: 'clamp(80px, 12vw, 150px) 20px clamp(40px, 8vw, 80px)', textAlign: 'center', position: 'relative', overflow: 'hidden', background: '#FDFCFE' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.05, background: 'radial-gradient(circle at 50% 50%, var(--primary) 0%, transparent 70%)' }} />
+                
                 <div style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto' }}>
-                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px', background: 'var(--primary-glow)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.9rem', border: '1px solid rgba(59, 18, 138, 0.1)' }}>
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem' }}>
                             <Zap size={16} fill="currentColor" />
-                            SPECIAL PIONEER PRICING ENDS SOON
+                            SUCCESS-BASED PARTNERSHIP
                         </div>
                         <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', fontWeight: 900, letterSpacing: '-0.045em', lineHeight: 1.05, marginBottom: '24px', color: '#0F172A' }}>
-                            The smart assistant <br />
-                            <span className="premium-gradient">for your empire.</span>
+                            We only win when <br />
+                            <span className="premium-gradient">you collect your money.</span>
                         </h1>
-                        <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', marginBottom: '48px', maxWidth: '600px', margin: '0 auto 48px' }}>
-                            Join today and get <span style={{ color: 'var(--text)', fontWeight: 700 }}>7 Days of Oga Plan for FREE.</span> <br />
-                            Experience the full power of Kreddy AI.
+                        <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', marginBottom: '48px', maxWidth: '700px', margin: '0 auto 48px', fontWeight: 500 }}>
+                            No upfront costs for your first records. Kredibly is the first street-smart assistant that charges based on your growth.
+                            <br />
+                            <span style={{ fontSize: '0.85rem', opacity: 0.7 }}>*Standard payment gateway fees (1.5%) apply for automated online payments.</span>
                         </p>
 
-                        {/* Billing Toggle */}
-                        <div style={{ display: 'inline-flex', alignItems: 'center', background: '#F1F5F9', padding: '6px', borderRadius: '100px', position: 'relative' }}>
-                            <button 
-                                onClick={() => setBillingCycle('monthly')}
-                                style={{ 
-                                    padding: '12px 24px', 
-                                    borderRadius: '100px', 
-                                    border: 'none', 
-                                    background: billingCycle === 'monthly' ? 'white' : 'transparent', 
-                                    color: billingCycle === 'monthly' ? 'var(--text)' : '#475569', 
-                                    fontWeight: 700, 
-                                    cursor: 'pointer',
-                                    boxShadow: billingCycle === 'monthly' ? '0 4px 12px rgba(0,0,0,0.05)' : 'none',
-                                    transition: 'all 0.2s ease'
-                                }}
-                            >
-                                Monthly
-                            </button>
-                            <button 
-                                onClick={() => setBillingCycle('yearly')}
-                                style={{ 
-                                    padding: '12px 24px', 
-                                    borderRadius: '100px', 
-                                    border: 'none', 
-                                    background: billingCycle === 'yearly' ? 'white' : 'transparent', 
-                                    color: billingCycle === 'yearly' ? 'var(--text)' : '#64748B', 
-                                    fontWeight: 700, 
-                                    cursor: 'pointer',
-                                    boxShadow: billingCycle === 'yearly' ? '0 4px 12px rgba(0,0,0,0.05)' : 'none',
-                                    transition: 'all 0.2s ease',
-                                    display: 'flex', alignItems: 'center', gap: '8px'
-                                }}
-                            >
-                                Yearly <span style={{ fontSize: '0.7rem', background: '#DCFCE7', color: '#166534', padding: '2px 8px', borderRadius: '10px' }}>SAVE 10%</span>
-                            </button>
+                        {/* Billing Toggle - Minimalist */}
+                        <div style={{ display: 'inline-flex', alignItems: 'center', background: '#F1F5F9', padding: '6px', borderRadius: '100px' }}>
+                            <button onClick={() => setBillingCycle('monthly')} style={{ padding: '12px 28px', borderRadius: '100px', border: 'none', background: billingCycle === 'monthly' ? 'white' : 'transparent', color: billingCycle === 'monthly' ? '#0F172A' : '#64748B', fontWeight: 800, cursor: 'pointer', boxShadow: billingCycle === 'monthly' ? '0 4px 12px rgba(0,0,0,0.05)' : 'none', transition: '0.3s' }}>Monthly</button>
+                            <button onClick={() => setBillingCycle('yearly')} style={{ padding: '12px 28px', borderRadius: '100px', border: 'none', background: billingCycle === 'yearly' ? 'white' : 'transparent', color: billingCycle === 'yearly' ? '#0F172A' : '#64748B', fontWeight: 800, cursor: 'pointer', boxShadow: billingCycle === 'yearly' ? '0 4px 12px rgba(0,0,0,0.05)' : 'none', transition: '0.3s', display: 'flex', gap: '8px', alignItems: 'center' }}>Yearly <span style={{ fontSize: '0.7rem', background: '#DCFCE7', color: '#166534', padding: '2px 8px', borderRadius: '10px' }}>-10%</span></button>
                         </div>
                     </motion.div>
                 </div>
             </section>
 
-            {/* Pricing Cards */}
-            <section style={{ padding: '0 20px 100px' }}>
-                <div className="pricing-grid" style={{ 
-                    maxWidth: '1200px', 
-                    margin: '0 auto', 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-                    gap: '32px', 
-                    alignItems: 'flex-start' 
-                }}>
+            {/* Unique Pricing Grid */}
+            <section style={{ padding: '0 24px 100px', background: '#FDFCFE' }}>
+                <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
                     {plans.map((plan, i) => (
-                        <motion.div 
-                            key={i}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.1 }}
-                            style={{ 
-                                padding: '40px 32px', 
-                                borderRadius: '32px', 
-                                background: plan.highlight ? 'var(--text)' : undefined, // let global linear-gradient handle white cards
-                                color: plan.highlight ? 'white' : 'var(--text)',
-                                position: 'relative',
-                                zIndex: plan.highlight ? 2 : 1
-                            }}
-                            className={`glass-card ${plan.highlight ? 'highlight-card' : ''}`}
-                        >
-                            {plan.highlight && (
-                                <div style={{ position: 'absolute', top: '32px', right: '32px', background: 'var(--primary)', color: 'white', padding: '6px 16px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 800 }}>
-                                    RECOMMENDED
-                                </div>
-                            )}
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>{plan.name}</h3>
-                            <p style={{ opacity: 0.7, marginBottom: '32px', minHeight: '48px', fontWeight: 500 }}>{plan.description}</p>
+                        <div key={i} style={{ 
+                            padding: '48px', 
+                            borderRadius: '32px', 
+                            background: plan.highlight ? '#0F172A' : 'white', 
+                            color: plan.highlight ? 'white' : '#0F172A',
+                            border: plan.highlight ? 'none' : '1px solid #E2E8F0',
+                            position: 'relative',
+                            transform: plan.highlight ? 'scale(1.05)' : 'none',
+                            boxShadow: plan.highlight ? '0 30px 60px -15px rgba(15, 23, 42, 0.3)' : '0 10px 30px -10px rgba(0,0,0,0.02)',
+                            zIndex: plan.highlight ? 2 : 1,
+                            display: 'flex', flexDirection: 'column'
+                        }}>
+                            {plan.highlight && <div style={{ position: 'absolute', top: '24px', right: '32px', background: 'var(--primary)', color: 'white', padding: '6px 14px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 900 }}>MOST POPULAR</div>}
+                            <h3 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '8px' }}>{plan.name}</h3>
+                            <p style={{ opacity: 0.7, fontSize: '0.95rem', fontWeight: 500, marginBottom: '32px', minHeight: '44px' }}>{plan.description}</p>
                             
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '32px' }}>
-                                {plan.isFoundingMember ? (
-                                    <>
-                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                                            <span style={{ fontSize: '1.25rem', color: plan.highlight ? 'rgba(255,255,255,0.7)' : '#334155', textDecoration: 'line-through', fontWeight: 600 }}>{plan.originalPrice}</span>
-                                            <span style={{ fontSize: '3rem', fontWeight: 950, letterSpacing: '-0.05em' }}>{plan.discountPrice}</span>
-                                            <span style={{ opacity: 0.8, fontWeight: 500 }}>{plan.period}</span>
-                                        </div>
-                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: plan.highlight ? '#4ADE80' : '#10B981', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                            <Zap size={12} fill="currentColor" /> FOUNDING MEMBER PRICE (-25%)
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                                            <span style={{ fontSize: '3rem', fontWeight: 800, letterSpacing: '-0.05em' }}>{plan.price}</span>
-                                            <span style={{ opacity: 0.7, fontWeight: 500 }}>{plan.period}</span>
-                                        </div>
-                                        {billingCycle === 'yearly' && plan.slug !== 'hustler' && (
-                                            <div style={{ fontSize: '0.9rem', fontWeight: 700, opacity: 0.6, marginTop: '-4px' }}>
-                                                ₦{plan.slug === 'oga' ? '54,000' : '91,800'} billed annually
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                            <div style={{ marginBottom: '40px' }}>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                                    <span style={{ fontSize: '3rem', fontWeight: 950, letterSpacing: '-0.05em' }}>{plan.price}</span>
+                                    <span style={{ opacity: 0.6, fontWeight: 600 }}>{plan.period}</span>
+                                </div>
+                                <div style={{ fontSize: '1rem', fontWeight: 900, color: plan.highlight ? '#4ADE80' : 'var(--primary)', marginTop: '4px' }}>+ {plan.fee}</div>
                             </div>
 
                             <button 
                                 onClick={plan.ctaAction}
-                                className={plan.highlight ? "btn-primary" : "btn-secondary"} 
-                                style={{ 
-                                    width: '100%', 
-                                    justifyContent: 'center', 
-                                    marginBottom: '40px',
-                                    background: plan.highlight ? 'white !important' : '#F1F5F9',
-                                    color: plan.highlight ? 'black !important' : 'var(--text)',
-                                    border: 'none'
-                                }}
+                                className={plan.highlight ? "btn-white" : "btn-secondary"} 
+                                style={{ width: '100%', marginBottom: '40px', justifyContent: 'center' }}
                             >
-                                {plan.cta}
+                                {plan.cta} <ArrowRight size={18} />
                             </button>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                                 {plan.features.map((feat, j) => (
-                                    <div key={j} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 500 }}>
-                                        <div style={{ 
-                                            width: '24px', height: '24px', borderRadius: '50%', 
-                                            background: plan.highlight ? 'rgba(255,255,255,0.2)' : 'rgba(76, 29, 149, 0.1)', 
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 
-                                        }}>
-                                            <Check size={14} color={plan.highlight ? 'white' : 'var(--primary)'} />
+                                    <div key={j} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '1rem', fontWeight: 600 }}>
+                                        <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: plan.highlight ? 'rgba(255,255,255,0.1)' : 'rgba(76, 29, 149, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Check size={14} color={plan.highlight ? '#4ADE80' : 'var(--primary)'} />
                                         </div>
                                         {feat}
                                     </div>
                                 ))}
                             </div>
-                        </motion.div>
+                        </div>
                     ))}
                 </div>
             </section>
 
-            {/* Feature Comparison Table (Desktop Only mostly) */}
-            <section style={{ padding: '80px 20px', background: '#F8FAFC' }}>
-                <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-                        <h2 style={{ fontSize: '2.5rem', fontWeight: 800 }}>Compare Features</h2>
-                    </div>
-
-                    <div style={{ overflowX: 'auto', borderRadius: '24px', background: 'white', border: '1px solid #E2E8F0', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
-                            <thead>
-                                <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
-                                    <th style={{ textAlign: 'left', padding: '24px', width: '30%' }}></th>
-                                    <th style={{ padding: '24px', fontWeight: 800 }}>Hustler</th>
-                                    <th style={{ padding: '24px', fontWeight: 800, color: 'var(--primary)' }}>Oga</th>
-                                    <th style={{ padding: '24px', fontWeight: 800 }}>Chairman</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {comparisonFeatures.map((row, i) => (
-                                    <tr key={i} style={{ borderBottom: i === comparisonFeatures.length - 1 ? 'none' : '1px solid #F1F5F9' }}>
-                                        <td style={{ padding: '24px', fontWeight: 600 }}>{row.name}</td>
-                                        <td style={{ padding: '24px', textAlign: 'center', color: '#334155' }}>
-                                            {typeof row.free === 'boolean' ? (row.free ? <Check size={20} color="var(--primary)" style={{margin:'auto'}} /> : <X size={20} color="#94A3B8" style={{margin:'auto'}} />) : row.free}
-                                        </td>
-                                        <td style={{ padding: '24px', textAlign: 'center', fontWeight: 700, background: 'rgba(76,29,149,0.02)' }}>
-                                            {typeof row.pro === 'boolean' ? (row.pro ? <Check size={20} color="var(--primary)" style={{margin:'auto'}} /> : <X size={20} color="#94A3B8" style={{margin:'auto'}} />) : row.pro}
-                                        </td>
-                                        <td style={{ padding: '24px', textAlign: 'center', color: '#334155' }}>
-                                            {typeof row.ent === 'boolean' ? (row.ent ? <Check size={20} color="var(--primary)" style={{margin:'auto'}} /> : <X size={20} color="#94A3B8" style={{margin:'auto'}} />) : row.ent}
-                                        </td>
-                                    </tr>
+            {/* Why Kreddy Assistant Section */}
+            <section style={{ padding: '100px 24px', background: 'white' }}>
+                <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '60px', alignItems: 'center' }}>
+                        <div>
+                            <h2 style={{ fontSize: '3rem', fontWeight: 950, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: '24px' }}>It's more than <br /><span className="premium-gradient">just a ledger.</span></h2>
+                            <p style={{ fontSize: '1.2rem', color: '#475569', lineHeight: 1.6, marginBottom: '40px' }}>Kreddy is the first platform that proactively helps you collect. We don't just store data; we help you find the money you've worked for.</p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                {[
+                                    { i: ShieldCheck, t: "Verified Identity", d: "Your customers see a professional 'Verified Ledger' seal on every receipt." },
+                                    { i: Sparkles, t: "Assistant Intelligence", d: "Kreddy drafts the perfect messages for you to send to late payers." },
+                                    { i: Mic, t: "Voice Command", d: "Record sales and set reminders just by talking into WhatsApp." }
+                                ].map((item, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: '20px' }}>
+                                        <div style={{ minWidth: '50px', height: '50px', background: '#F8FAFC', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><item.i color="var(--primary)" size={24} /></div>
+                                        <div><h4 style={{ fontWeight: 800, fontSize: '1.1rem', margin: '0 0 4px 0' }}>{item.t}</h4><p style={{ margin: 0, fontSize: '0.95rem', color: '#64748B', fontWeight: 500 }}>{item.d}</p></div>
+                                    </div>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            {/* FAQ Area */}
-            <section style={{ padding: '100px 20px' }}>
-                <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-                    <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '48px', textAlign: 'center' }}>Frequently Asked Questions</h2>
-                    <div style={{ display: 'grid', gap: '24px' }}>
-                        {[
-                            { q: "How do Instant Online Payments work?", a: "With the Oga or Chairman plan, Kredibly generates a secure 'Pay Now' link on your invoices. When customers pay via card or bank transfer, the money is routed directly into your settlement bank account!" },
-                            { q: "Do I need to pay to add staff?", a: "On the Hustler (Free) plan, you are the only user. To add staff members who can record sales for you via WhatsApp, you'll need the Oga plan (allows 2 staff members) or Chairman plan (unlimited staff)." },
-                            { q: "Can I cancel anytime?", a: "Absolutely. There are no contracts. You can switch back to the Free plan whenever you like." },
-                            { q: "Is my data safe?", a: "Yes. We use bank-grade AES-256 encryption. Your business data is visible only to you and your authorized staff." }
-                        ].map((faq, i) => (
-                            <div key={i} className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
-                                <div style={{ display: 'flex', gap: '16px' }}>
-                                    <div style={{ padding: '4px', height: 'fit-content' }}>
-                                        <HelpCircle size={24} color="var(--primary)" />
-                                    </div>
-                                    <div>
-                                        <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '12px' }}>{faq.q}</h4>
-                                        <p style={{ lineHeight: 1.6, color: '#334155' }}>{faq.a}</p>
-                                    </div>
-                                </div>
                             </div>
-                        ))}
+                        </div>
+                        <div style={{ background: '#F8FAFC', padding: '60px', borderRadius: '40px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🫡</div>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '12px' }}>Personal Assistant Mode</h3>
+                            <p style={{ color: '#475569', fontWeight: 600, lineHeight: 1.5 }}>Included in all plans. Tell Kreddy your gym time, your meetings, and your market calls. She remembers everything so you don't have to.</p>
+                            <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ marginTop: '32px', width: '100%', justifyContent: 'center' }}>Try Kreddy Now</button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -324,48 +199,14 @@ const PricingPage = () => {
             <PublicFooter />
 
             <style>{`
-                .highlight-card {
-                    transform: scale(1.05);
-                }
-                .pricing-header {
-                    padding-top: 180px;
-                }
-                @media (max-width: 1024px) {
-                    .pricing-header {
-                        padding-top: 140px;
-                    }
-                    .highlight-card {
-                        transform: none !important;
-                    }
-                    .pricing-grid {
-                        gap: 24px !important;
-                    }
-                }
-                @media (max-width: 640px) {
-                    .pricing-header {
-                        padding-top: 120px;
-                    }
-                }
-                @media (max-width: 480px) {
-                    .glass-card {
-                        padding: 32px 24px !important;
-                    }
-                    h1 {
-                        font-size: 2.2rem !important;
-                    }
-                }
                 .premium-gradient {
                     background: linear-gradient(135deg, var(--primary) 0%, #F472B6 100%);
                     -webkit-background-clip: text;
                     background-clip: text;
                     -webkit-text-fill-color: transparent;
                 }
-                .pricing-grid {
-                    gap: clamp(1.5rem, 5vw, 2.5rem) !important;
-                }
-                @media (max-width: 640px) {
-                    .pricing-header { padding-top: 100px !important; }
-                    .pricing-card { padding: 32px 24px !important; border-radius: 24px !important; }
+                @media (max-width: 1024px) {
+                    h1 { font-size: 2.5rem !important; }
                 }
             `}</style>
         </div>

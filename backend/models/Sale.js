@@ -77,6 +77,12 @@ const SaleSchema = new mongoose.Schema({
         type: String,
         unique: true,
         index: true
+    },
+    invoiceType: {
+        type: String,
+        enum: ["billing", "record"],
+        default: "billing",
+        index: true
     }
 }, {
     timestamps: true,

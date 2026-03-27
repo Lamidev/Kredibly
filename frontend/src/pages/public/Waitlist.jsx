@@ -303,7 +303,7 @@ const Waitlist = () => {
                     </h1>
 
                     <p className="hero-subtext" style={{ fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)', color: '#334155', lineHeight: 1.6, marginBottom: '56px', maxWidth: '850px', margin: '0 auto 56px', fontWeight: 400 }}>
-                        The sales ledger & Digital Chief of Staff designed uniquely for the Nigerian merchant. Track sales, manage your daily agenda, and collect debts,all inside WhatsApp.
+                        The sales tracker & Digital Chief of Staff designed uniquely for the Nigerian merchant. Track sales, manage your daily agenda, and collect debts,all inside WhatsApp.
                     </p>
 
                     <div className="hero-button-group" style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '80px' }}>
@@ -641,7 +641,7 @@ const Waitlist = () => {
                                 <span style={{ color: 'var(--primary)' }}>Zero Compromise.</span>
                             </h2>
                             <p style={{ fontSize: '1.25rem', color: '#CBD5E1', fontWeight: 500, lineHeight: 1.6, marginBottom: '40px' }}>
-                                We're building the full Kredibly experience for iOS and Android. Biometric security, offline-first ledger, and instant sales intelligence at your fingertips.
+                                We're building the full Kredibly experience for iOS and Android. Biometric security, offline-first workspace, and instant sales intelligence at your fingertips.
                             </p>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
                                 {[
@@ -715,12 +715,12 @@ const Waitlist = () => {
 
                         {[
                             { date: "JULY '25", title: "The Genesis", desc: "Concept & Research Phase. Identifying the 'Trust Gap' in African commerce.", status: "completed" },
-                            { date: "SEPT '25", title: "Strategic Architecture", desc: "Core blueprinting of the Kredibly ledger and AI interface flow.", status: "completed" },
+                            { date: "SEPT '25", title: "Strategic Architecture", desc: "Core blueprinting of the Kredibly workspace and AI interface flow.", status: "completed" },
                             { date: "DEC '25", title: "Kreddy AI Core", desc: "Intelligence engine development. Teaching Kreddy to understand merchant slang and complex debts.", status: "completed" },
-                            { date: "JAN '26", title: "Premium Ledger UX", desc: "Rollout of smart telemetry, professional document generators, and cross-device syncing.", status: "done" },
+                            { date: "JAN '26", title: "Premium Platform UX", desc: "Rollout of smart telemetry, professional document generators, and cross-device syncing.", status: "done" },
                             { date: "FEBRUARY - PRESENT", title: "Founding Member Waitlist", desc: "Onboarding our first 1,000 pioneers. Early access rewards and lifetime status for active participants.", status: "active", isFounding: true },
                             { date: "Q2 2026", title: "Global Marketplace Launch", desc: "Opening the ecosystem for public merchant registration and global transactions.", status: "future" },
-                            { date: "Q3 2026", title: "Kredibly Mobile (Native)", desc: "The full ledger in your pocket. Offline-first, biometric security, and instant push intelligence.", status: "future", isMobile: true }
+                            { date: "Q3 2026", title: "Kredibly Mobile (Native)", desc: "Your entire business in your pocket. Offline-first, biometric security, and instant push intelligence.", status: "future", isMobile: true }
                         ].map((m, i) => (
                             <motion.div 
                                 key={i}
