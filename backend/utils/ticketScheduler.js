@@ -8,7 +8,7 @@ const whatsappController = require('../controllers/whatsapp/whatsappController')
 // For demo/testing, you might want to run it every minute: '* * * * *'
 const startTicketCleanup = () => {
     cron.schedule('0 * * * *', async () => {
-        console.log('🧹 Running Support Ticket Cleanup...');
+        // console.log('🧹 Running Support Ticket Cleanup...');
         try {
             // Logic:
             // 1. Find tickets that are 'replied' (Waiting for user)

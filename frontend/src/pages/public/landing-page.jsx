@@ -58,7 +58,7 @@ const Typewriter = ({ phrases }) => {
 
     return (
         <span style={{ display: 'inline-block', minWidth: '1px', whiteSpace: 'nowrap' }}>
-            <span className="premium-gradient">{displayText}</span>
+            <span className="premium-gradient" translate="no">{displayText}</span>
             <span style={{ 
                 color: '#F472B6', 
                 marginLeft: '2px',
@@ -171,15 +171,13 @@ const LandingPage = () => {
                             alignItems: 'center', 
                             justifyContent: 'center',
                             width: '100%',
-                            fontSize: 'clamp(1.6rem, 5vw, 5.5rem)',
+                            fontSize: 'clamp(2.1rem, 8vw, 5.5rem)',
                             overflow: 'hidden'
                         }}>
                              <Typewriter phrases={[
                                 "Ditch the notebooks.",
                                 "Get paid instantly.",
-                                "Look like a pro.",
-                                "Auto-send reminders.",
-                                "Run it on WhatsApp."
+                                "Do business better."
                             ]} />
                         </div>
                     </h1>
@@ -207,16 +205,14 @@ const LandingPage = () => {
             {/* 2. Bento Grid Section - Repositioned for Personal Assistant + Ledger */}
             <section id="features" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px' }}>
                 <div className="bento-grid" style={{ maxWidth: '1400px', margin: '0 auto' }}>
-                    <div className="bento-item bento-1" style={{ background: '#F8FAFC' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                            <div style={{ background: 'white', width: '64px', height: '64px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '32px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                                <ShieldCheck color="var(--primary)" size={32} />
-                            </div>
+                    <div className="bento-item bento-1" style={{ background: '#F8FAFC', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
                             <h3 style={{ fontSize: '2.2rem', fontWeight: 900, marginBottom: '16px', letterSpacing: '-0.03em' }}>The Verified Hub</h3>
                             <p style={{ color: 'var(--text-muted)', fontSize: '1.15rem', lineHeight: 1.6, fontWeight: 500 }}>
                                 Stop the arguments. Your business is verified when you use Kredibly. Every receipt carries a professional seal that tells customers your records are secure and untamperable.
                             </p>
                         </div>
+                        <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.05 }}><ShieldCheck size={260} color="var(--primary)" /></div>
                     </div>
 
                     <div className="bento-item bento-2" style={{ background: 'linear-gradient(135deg, #0F172A, #1E1B4B)', color: 'white' }}>
@@ -227,26 +223,28 @@ const LandingPage = () => {
                         <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.15 }}><Sparkles size={200} /></div>
                     </div>
 
-                    <div className="bento-item bento-3" style={{ background: 'white' }}>
-                        <Zap color="#7C3AED" size={32} style={{ marginBottom: '16px' }} />
-                        <h4 style={{ fontSize: '1.3rem', fontWeight: 900 }}>24/7 Reminders</h4>
-                        <p style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 600 }}>Kreddy nudges your debtors automatically so you don't have to feel awkward chasing money.</p>
-                    </div>
-
-                    <div className="bento-item bento-4" style={{ background: 'white' }}>
-                        <CreditCard color="#10B981" size={32} style={{ marginBottom: '16px' }} />
-                        <h4 style={{ fontSize: '1.3rem', fontWeight: 900 }}>Instant Cash-Out</h4>
-                        <p style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 600 }}>Secure "Pay Now" links mean money lands in your bank account the moment someone pays.</p>
-                    </div>
-
-                    <div className="bento-item bento-5" style={{ background: '#F8FAFC' }}>
-                        <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
-                            <div style={{ flex: 1 }}>
-                                <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '10px' }}>Scale Like a Chairman</h4>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', fontWeight: 500 }}>Track what your sales staff are doing in real-time. Whether you have 1 stall or 10 shops.</p>
-                            </div>
-                            <div style={{ background: 'white', padding: '24px', borderRadius: '24px', border: '1px solid #E2E8F0' }}><TrendingUp size={36} color="#4C1D95" /></div>
+                    <div className="bento-item bento-3" style={{ background: 'white', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'relative', zIndex: 2 }}>
+                            <h4 style={{ fontSize: '1.3rem', fontWeight: 900, marginBottom: '12px' }}>24/7 Reminders</h4>
+                            <p style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 600 }}>Kreddy nudges your debtors automatically so you don't have to feel awkward chasing money.</p>
                         </div>
+                        <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.05 }}><Zap size={200} color="#7C3AED" /></div>
+                    </div>
+
+                    <div className="bento-item bento-4" style={{ background: 'linear-gradient(135deg, #0F172A, #1E1B4B)', color: 'white', overflow: 'hidden' }}>
+                        <div style={{ position: 'relative', zIndex: 2 }}>
+                            <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '12px' }}>Instant Settlement</h4>
+                            <p style={{ opacity: 0.8, fontSize: '1.1rem', lineHeight: 1.5, fontWeight: 500 }}>Secure "Pay Now" links mean money lands in your bank account the moment someone pays.</p>
+                        </div>
+                        <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.15 }}><CreditCard size={200} /></div>
+                    </div>
+
+                    <div className="bento-item bento-5" style={{ background: '#F8FAFC', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                            <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '10px' }}>Scale Like a Chairman</h4>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', fontWeight: 500 }}>Track what your sales staff are doing in real-time. Whether you have 1 stall or 10 shops.</p>
+                        </div>
+                        <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.05 }}><TrendingUp size={200} color="#4C1D95" /></div>
                     </div>
                 </div>
             </section>
@@ -265,7 +263,7 @@ const LandingPage = () => {
                                 <div style={{ width: '100%', height: '100%', background: '#E5DDD5', borderRadius: '40px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                                     <div style={{ background: '#075E54', padding: '40px 20px 16px', color: 'white', display: 'flex', alignItems: 'center', gap: '14px' }}>
                                         <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'white' }}>K</div>
-                                        <div><p style={{ fontSize: '0.95rem', fontWeight: 900 }}>Kreddy x Kredibly</p><p style={{ fontSize: '0.65rem', opacity: 0.8 }}>Business Assistant</p></div>
+                                        <div><p style={{ fontSize: '0.95rem', fontWeight: 900 }}>Kredibly x Kreddy</p><p style={{ fontSize: '0.65rem', opacity: 0.8 }}>Business Assistant</p></div>
                                     </div>
                                     <div style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                         <div style={{ alignSelf: 'flex-end', background: '#DCF8C6', padding: '16px', borderRadius: '16px 0 16px 16px', fontSize: '0.85rem', color: '#111', fontWeight: 500, maxWidth: '85%' }}>
@@ -409,18 +407,6 @@ const LandingPage = () => {
                         </div>
                     </div>
                 </motion.div>
-            </section>
-
-            {/* 5. Trust Bar Section */}
-            <section style={{ padding: '80px 24px', background: 'white', borderTop: '1px solid #F1F5F9' }}>
-                <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
-                    <p style={{ fontSize: '0.9rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '40px' }}>Join the New Standard of African Commerce</p>
-                    <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 'clamp(2rem, 8vw, 6rem)', alignItems: 'center', opacity: 0.6 }}>
-                        <div style={{ textAlign: 'center' }}><p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A', margin: 0 }}>₦4.8B+</p><p style={{ fontSize: '0.75rem', fontWeight: 700, margin: 0 }}>Debt Tracked</p></div>
-                        <div style={{ textAlign: 'center' }}><p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A', margin: 0 }}>12,000+</p><p style={{ fontSize: '0.75rem', fontWeight: 700, margin: 0 }}>Merchants</p></div>
-                        <div style={{ textAlign: 'center' }}><p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A', margin: 0 }}>Nigeria</p><p style={{ fontSize: '0.75rem', fontWeight: 700, margin: 0 }}>Hq Base</p></div>
-                    </div>
-                </div>
             </section>
 
             <PublicFooter />
