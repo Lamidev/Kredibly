@@ -116,10 +116,11 @@ const PublicFooter = () => {
                             </div>
                         </div>
                     </div>
-                </div>
-                
+                </div> {/* Close Grid Container */}
+ 
                 <div style={{ 
-                    paddingTop: '40px', 
+                    paddingTop: '24px', 
+                    marginTop: '32px',
                     borderTop: '1px solid #F1F5F9', 
                     display: 'flex', 
                     justifyContent: 'space-between', 
@@ -127,13 +128,14 @@ const PublicFooter = () => {
                     flexWrap: 'wrap',
                     gap: '20px'
                 }}>
-                    <p style={{ fontWeight: 400, fontSize: '0.95rem', color: '#334155' }}>
-                        © 2026 Kredibly Technologies Inc. Made with ❤️ for Africa.
+                    <p style={{ fontWeight: 400, fontSize: '0.95rem', color: '#334155', margin: 0 }}>
+                        © 2026 Kredibly Technologies Inc.
                     </p>
                     <div style={{ display: 'flex', gap: '32px' }}>
                         <span style={{ color: '#334155', fontSize: '0.9rem', fontWeight: 600 }}>Built for Global Commerce</span>
                     </div>
                 </div>
+               
             </div>
 
             <style>{`

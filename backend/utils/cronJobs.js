@@ -95,7 +95,7 @@ const scheduleRemindersWorker = () => {
 const scheduleMorningSummary = () => {
     // Schedule for 7:00 AM UTC (8:00 AM WAT) every day
     cron.schedule("0 7 * * *", async () => {
-        console.log("🌞 Running Morning Chief Summary (8AM WAT)...");
+        // console.log("🌞 Running Morning Chief Summary (8AM WAT)...");
         
         try {
             const yesterday = new Date();
@@ -211,7 +211,7 @@ const scheduleMorningSummary = () => {
  */
 const schedulePlanExpiryReminders = () => {
     cron.schedule("0 9 * * *", async () => {
-        console.log("💳 Checking for expiring plans and trials...");
+        // console.log("💳 Checking for expiring plans and trials...");
         try {
             const now = new Date();
             const threeDaysLimit = new Date(); threeDaysLimit.setDate(threeDaysLimit.getDate() + 3);
@@ -304,7 +304,7 @@ const schedulePlanExpiryReminders = () => {
  */
 const scheduleProactiveFollowUps = () => {
     cron.schedule("0 * * * *", async () => {
-        console.log("🕵️‍♀️ Running Proactive Follow-up Check...");
+        // console.log("🕵️‍♀️ Running Proactive Follow-up Check...");
         try {
             const twentyFourHoursAgoStart = new Date(Date.now() - 25 * 60 * 60 * 1000); // 25 hours ago
             const twentyFourHoursAgoEnd = new Date(Date.now() - 24 * 60 * 60 * 1000);   // 24 hours ago
@@ -344,7 +344,7 @@ const scheduleProactiveFollowUps = () => {
  */
 const schedulePastDueEscalations = () => {
     cron.schedule("0 12 * * *", async () => {
-        console.log("🚩 Running Daily Past-Due Escalation Check...");
+        // console.log("🚩 Running Daily Past-Due Escalation Check...");
         try {
             const yesterdayStart = new Date(); 
             yesterdayStart.setDate(yesterdayStart.getDate() - 1);
@@ -384,7 +384,7 @@ const schedulePastDueEscalations = () => {
  */
 const scheduleEscrowPayouts = () => {
     cron.schedule("0 * * * *", async () => {
-        console.log("🔓 Running Automatic Escrow Release Check...");
+        // console.log("🔓 Running Automatic Escrow Release Check...");
         try {
             const EscrowPayment = require("../models/EscrowPayment");
             const { createTransferRecipient, initiateTransfer } = require("./paystack");
