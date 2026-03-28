@@ -448,7 +448,7 @@ exports.verifyInvoicePayment = async (req, res) => {
 
 exports.initializePaystackPayment = async (req, res) => {
     try {
-        const { saleId, amount, email } = req.body;
+        const { saleId, amount, email, paymentChannel } = req.body;
         const Sale = require('../../models/Sale');
         
         const sale = await Sale.findById(saleId).populate('businessId');
@@ -459,7 +459,8 @@ exports.initializePaystackPayment = async (req, res) => {
         let chargeAmount = Number(amount);
         let gatewayFeeApplied = false;
         
-        if (business && business.prefersGatewayFeeAbsorption === false) {
+        // 🛡️ ZERO-FEE HYBRID MODEL: Only charge 1.5% fee if they explicitly use the Card button
+        if (paymentChannel === 'card' && business && business.prefersGatewayFeeAbsorption === false) {
             let flatFee = chargeAmount >= 2500 ? 100 : 0;
             let grossAmount = (chargeAmount + flatFee) / (1 - 0.015);
             let fee = grossAmount - chargeAmount;

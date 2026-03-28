@@ -100,10 +100,10 @@ exports.updateProfile = async (req, res) => {
 
 const getSuccessFeeByPlan = (plan) => {
     switch (plan) {
-        case "chairman": return 0;   // 0% Platform Fee (Total: 1.5%)
-        case "oga": return 1.0;      // 1.0% Platform Fee (Total: 2.5%)
-        case "hustler": return 2.0;  // 2.0% Platform Fee (Total: 3.5%)
-        default: return 2.0;
+        case "chairman": return 0;   // 0% Platform Fee
+        case "oga": return 0;        // 0% Platform Fee
+        case "hustler": return 0;     // 0% Platform Fee
+        default: return 0;
     }
 };
 
@@ -221,7 +221,7 @@ exports.saveBankDetails = async (req, res) => {
                 profile.displayName, 
                 bankCode, 
                 accountNumber,
-                profile.successFeePercentage || 10
+                0 // Zero Platform Fee
             );
             subaccountCode = subaccount.subaccount_code;
         } catch (err) {

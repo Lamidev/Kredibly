@@ -13,7 +13,8 @@ import {
     FileText,
     Image as ImageIcon,
     ArrowRight,
-    CheckCircle
+    CheckCircle,
+    CreditCard
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -100,7 +101,7 @@ const PublicInvoicePage = () => {
         }
     };
 
-    const handlePaystackPayment = async () => {
+    const handlePaystackPayment = async (paymentChannel) => {
         const amountToPay = paymentMode === 'full' 
             ? (sale.totalAmount - sale.paidAmount) 
             : parseFloat(customAmount);
@@ -115,8 +116,12 @@ const PublicInvoicePage = () => {
             const res = await axios.post('http://localhost:7050/api/business/paystack/initialize', {
                 saleId: sale._id,
                 amount: amountToPay,
-                email: sale.customerEmail || `${sale.customerName.replace(/\s+/g, '').toLowerCase()}@kredibly.customer`
+                email: sale.customerEmail || `${sale.customerName.replace(/\s+/g, '').toLowerCase()}@kredibly.customer`,
+                paymentChannel: paymentChannel
             });
+
+            // Restrict channels so Paystack natively forces the right flow
+            const channels = paymentChannel === 'card' ? ['card'] : ['bank', 'bank_transfer', 'ussd'];
 
             const handler = window.PaystackPop.setup({
                 key: res.data.publicKey,
@@ -124,6 +129,7 @@ const PublicInvoicePage = () => {
                 amount: res.data.amount * 100,
                 ref: res.data.reference,
                 metadata: res.data.metadata,
+                channels: channels,
                 callback: function(response) {
                     setLastPaymentAmount(res.data.originalAmount);
                     setRecentPaymentDate(new Date());
@@ -582,43 +588,65 @@ const PublicInvoicePage = () => {
                                     )}
                                 </AnimatePresence>
 
-                                <button 
-                                    onClick={handlePaystackPayment}
-                                    disabled={verifying}
-                                    style={{ 
-                                        width: '100%', 
-                                        padding: isMobile ? '18px' : '20px', 
-                                        background: isOverdue 
-                                            ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)' 
-                                            : 'linear-gradient(135deg, #4C1D95 0%, #2E1065 100%)', 
-                                        color: 'white', 
-                                        borderRadius: '16px', 
-                                        border: 'none', 
-                                        fontWeight: 700, 
-                                        fontSize: isMobile ? '16px' : '18px', 
-                                        cursor: verifying ? 'not-allowed' : 'pointer', 
-                                        display: 'flex', 
-                                        alignItems: 'center', 
-                                        justifyContent: 'center', 
-                                        gap: '12px', 
-                                        boxShadow: isOverdue 
-                                            ? '0 10px 15px -3px rgba(239, 68, 68, 0.25)' 
-                                            : '0 10px 15px -3px rgba(124, 58, 237, 0.25)',
-                                        transition: 'all 0.3s ease'
-                                    }}
-                                >
-                                    {verifying ? (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                            <Loader2 size={20} className="spin-animation" /> 
-                                            <span>Verifying...</span>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <ShieldCheck size={22} /> 
-                                            <span>{isOverdue ? 'Settle Outstanding Now' : 'Pay Secured Invoice'}</span>
-                                        </>
-                                    )}
-                                </button>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    <button 
+                                        onClick={() => handlePaystackPayment('transfer')}
+                                        disabled={verifying}
+                                        style={{ 
+                                            width: '100%', 
+                                            padding: isMobile ? '16px' : '18px', 
+                                            background: isOverdue ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)' : 'linear-gradient(135deg, #4C1D95 0%, #2E1065 100%)',
+                                            color: 'white', 
+                                            borderRadius: '16px', 
+                                            border: 'none', 
+                                            fontWeight: 700, 
+                                            fontSize: isMobile ? '15px' : '16px', 
+                                            cursor: verifying ? 'not-allowed' : 'pointer', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center', 
+                                            gap: '12px', 
+                                            boxShadow: isOverdue ? '0 8px 12px rgba(239, 68, 68, 0.2)' : '0 8px 12px rgba(76, 29, 149, 0.25)',
+                                            transition: 'all 0.3s ease'
+                                        }}
+                                    >
+                                        {verifying ? (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <Loader2 size={18} className="spin-animation" /> 
+                                                <span>Connecting...</span>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <Building2 size={20} /> 
+                                                <span>Instant Bank Transfer (Free)</span>
+                                            </>
+                                        )}
+                                    </button>
+
+                                    <button 
+                                        onClick={() => handlePaystackPayment('card')}
+                                        disabled={verifying}
+                                        style={{ 
+                                            width: '100%', 
+                                            padding: isMobile ? '16px' : '18px', 
+                                            background: 'white',
+                                            color: '#0F172A', 
+                                            borderRadius: '16px', 
+                                            border: '2px solid #E2E8F0', 
+                                            fontWeight: 700, 
+                                            fontSize: isMobile ? '15px' : '16px', 
+                                            cursor: verifying ? 'not-allowed' : 'pointer', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center', 
+                                            gap: '12px', 
+                                            transition: 'all 0.3s ease'
+                                        }}
+                                    >
+                                        <CreditCard size={20} color="#64748B" /> 
+                                        <span>Pay with Debit Card (+1.5% Fee)</span>
+                                    </button>
+                                </div>
 
                                 {sale.businessId?.plan === 'hustler' && (
                                     <p style={{ textAlign: 'center', fontSize: '10px', color: '#94A3B8', marginTop: '12px', fontWeight: 600 }}> Standard secure processing fees apply to this transaction.</p>

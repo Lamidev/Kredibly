@@ -275,7 +275,7 @@ const Waitlist = () => {
                     }} 
                 />
 
-                <div className="hero-section" style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto', padding: 'clamp(120px, 18vw, 200px) 24px clamp(2rem, 10vw, 80px)', textAlign: 'center' }}>
+                <div className="hero-section" style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto', padding: 'clamp(80px, 12vw, 120px) 24px clamp(2rem, 10vw, 80px)', textAlign: 'center' }}>
                 <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.1 }} transition={{ duration: 0.8 }}>
                     <div className="hero-badge" style={{ 
                         display: 'flex', 
@@ -290,16 +290,16 @@ const Waitlist = () => {
                         fontWeight: 800, 
                         boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
                         width: 'fit-content',
-                        margin: '0 auto 40px',
+                        margin: '0 auto 24px',
                         position: 'relative',
                         zIndex: 20
                     }}>
-                        JOIN THE REVOLUTION
+                        100% FREE TRANSACTIONS & INSTANT SETTLEMENT
                     </div>
 
                     <h1 className="hero-title" style={{ fontSize: 'clamp(2.1rem, 8vw, 5.5rem)', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.04em', marginBottom: '32px', color: '#0F172A' }}>
-                        <span style={{ display: 'block', marginBottom: '16px', whiteSpace: 'nowrap' }}>Stop losing money.</span>
-                        <span className="premium-gradient">Stay organized.</span>
+                        <span style={{ display: 'block', marginBottom: '16px', whiteSpace: 'nowrap' }}>Zero Platform Fees.</span>
+                        <span className="premium-gradient">Keep 100% of your sales.</span>
                     </h1>
 
                     <p className="hero-subtext" style={{ fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)', color: '#334155', lineHeight: 1.6, marginBottom: '56px', maxWidth: '850px', margin: '0 auto 56px', fontWeight: 400 }}>

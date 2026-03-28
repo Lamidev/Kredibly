@@ -367,8 +367,17 @@ exports.getDashboardStats = async (req, res) => {
 
         const sales = await Sale.find({ businessId: business._id }).sort({ updatedAt: -1 });
 
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0,0,0,0);
+        const monthlySalesCount = await Sale.countDocuments({ 
+            businessId: business._id, 
+            createdAt: { $gte: startOfMonth } 
+        });
+
         const stats = {
             totalSales: sales.length,
+            monthlySalesCount,
             revenue: 0,
             outstanding: 0,
             recentSales: sales.slice(0, 5),
