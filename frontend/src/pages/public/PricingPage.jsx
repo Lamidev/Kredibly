@@ -24,13 +24,13 @@ const PricingPage = () => {
             tagline: "The Record-Keeper's Choice",
             description: "Stop writing in notebooks. Start building your digital reputation today.",
             price: "Free",
-            fee: "2.0% Kredibly Commission*",
+            fee: "0% Transaction Fees*",
             period: "",
             features: [
-                "10 Sale Records per Month",
+                "10 Sale Records limit per Month",
+                "Kreddy AI Text Intelligence (Type normally)",
                 "Basic Debt Recovery Assistant",
                 "Verified Ledger Seal",
-                "Personal Daily Reminders",
                 "Digital Receipts (Kredibly Branded)"
             ],
             cta: profile?.plan === "hustler" ? "Current Plan" : "Start Hustling Free",
@@ -44,14 +44,14 @@ const PricingPage = () => {
             tagline: "The Business Leader",
             description: "Step up to professional branding and lower fees for your growing business.",
             price: billingCycle === 'monthly' ? "₦5,000" : "₦4,500",
-            fee: "1.0% Kredibly Commission*",
+            fee: "0% Transaction Fees*",
             period: "/ month",
             features: [
                 "Everything in Hustler Plan",
                 "Unlimited Sales Records",
+                "Kreddy Voice Notes (Just speak!)",
                 "Add 2 Staff Members",
                 "Co-Branded Receipts (Your Logo)",
-                "WhatsApp Voice Note Sync",
                 "Advanced AI Recovery Assistant"
             ],
             cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade Now" : "Become an Oga",
@@ -65,7 +65,7 @@ const PricingPage = () => {
             tagline: "The Empire Command Center",
             description: "Run multiple shops without stress. Lead your empire with zero commissions.",
             price: billingCycle === 'monthly' ? "₦8,500" : "₦7,650",
-            fee: "0% Kredibly Commission*",
+            fee: "0% Transaction Fees*",
             period: "/ month",
             features: [
                 "Everything in Oga Plan",
@@ -92,18 +92,19 @@ const PricingPage = () => {
                 
                 <div style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto' }}>
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem', letterSpacing: '0.05em' }}>
                             <Zap size={16} fill="currentColor" />
-                            SUCCESS-BASED PARTNERSHIP
+                            100% FREE TRANSACTIONS & INSTANT SETTLEMENT
                         </div>
                         <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', fontWeight: 900, letterSpacing: '-0.045em', lineHeight: 1.05, marginBottom: '24px', color: '#0F172A' }}>
-                            We only win when <br />
-                            <span className="premium-gradient">you collect your money.</span>
+                            Zero Platform Fees. <br />
+                            <span className="premium-gradient">Keep 100% of your sales.</span>
                         </h1>
                         <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', marginBottom: '48px', maxWidth: '700px', margin: '0 auto 48px', fontWeight: 500 }}>
-                            No upfront costs for your first records. Kredibly is the first street-smart assistant that charges based on your growth.
+                            We don't charge you to collect your own money. Our instant bank transfers are completely free forever for you and your customers.
                             <br />
-                            <span style={{ fontSize: '0.85rem', opacity: 0.7 }}>*Standard payment gateway fees (1.5%) apply for automated online payments.</span>
+                            <br />
+                            <span style={{ fontSize: '0.85rem', opacity: 0.7 }}>*Standard third-party gateway fees (1.5%) only apply if your customer explicitly chooses to pay with a Debit Card.</span>
                         </p>
 
                         {/* Billing Toggle - Minimalist */}

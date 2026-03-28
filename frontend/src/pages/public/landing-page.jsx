@@ -313,9 +313,9 @@ const LandingPage = () => {
             <section id="pricing" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: '#FDFCFE' }}>
                 <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-                        <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem' }}>TRANSPARENT PARTNERSHIP</div>
-                        <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em' }}>Free to start. Pay as you earn.</h2>
-                        <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginTop: '20px' }}>We only win when you collect your money. No hidden fees.</p>
+                        <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem', letterSpacing: '0.05em' }}>100% FREE TRANSACTIONS & INSTANT SETTLEMENT</div>
+                        <h2 style={{ fontSize: 'clamp(2.2rem, 5vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Zero Platform Fees. <br /><span className="premium-gradient">Keep 100% of your sales.</span></h2>
+                        <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginTop: '20px', maxWidth: '600px', margin: '20px auto 0' }}>We don't charge you to collect your own money. Enjoy free bank transfers for you and your customers forever.</p>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
@@ -325,11 +325,11 @@ const LandingPage = () => {
                             <p style={{ color: '#64748B', marginBottom: '32px', fontWeight: 600 }}>The Record-Keepers Special.</p>
                             <div style={{ marginBottom: '40px' }}>
                                 <div style={{ fontSize: '3rem', fontWeight: 900 }}>Free</div>
-                                <div style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 800 }}>+ 2.0% Success Fee</div>
+                                <div style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 800 }}>0% Transaction Fees</div>
                             </div>
                             <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Start Recording Free</button>
                             <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                {["10 Sales per Month", "Basic Debt Recovery Assistant", "Kredibly Branded Receipts", "Standard Security Logs", "Personal Daily Reminders"].map((f, i) => (
+                                {["10 Sales/Invoices limit per Month", "Kreddy AI Text Intelligence (Type normally)", "Basic Debt Recovery Assistant", "Kredibly Branded Receipts", "Personal Daily Reminders"].map((f, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 600, color: '#334155' }}><Check size={18} color="var(--primary)" /> {f}</div>
                                 ))}
                             </div>
@@ -342,11 +342,11 @@ const LandingPage = () => {
                             <p style={{ opacity: 0.7, marginBottom: '32px', fontWeight: 600 }}>Professional Growth Hub.</p>
                             <div style={{ marginBottom: '40px' }}>
                                 <div style={{ fontSize: '3rem', fontWeight: 900 }}>₦5,000<span style={{ fontSize: '1rem', opacity: 0.5 }}>/mo</span></div>
-                                <div style={{ fontSize: '0.9rem', color: '#4ADE80', fontWeight: 800 }}>+ 1.0% Success Fee (Lower!)</div>
+                                <div style={{ fontSize: '0.9rem', color: '#4ADE80', fontWeight: 800 }}>0% Transaction Fees</div>
                             </div>
                             <button onClick={() => navigate('/auth/register')} className="btn-white" style={{ width: '100%' }}>Step Up to Oga</button>
                             <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                {["Everything in Hustler", "Unlimited Sales Records", "Add 2 Staff Members", "Co-Branded Receipts (Logo)", "Voice Note Records Sync", "Advanced Recovery Assistant"].map((f, i) => (
+                                {["Everything in Hustler", "Unlimited Sales Records", "Kreddy AI Voice Notes (Just speak!)", "Add 2 Staff Members", "Co-Branded Receipts (Your Logo)", "Advanced Recovery Assistant"].map((f, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 600 }}><Check size={18} color="#10B981" /> {f}</div>
                                 ))}
                             </div>
@@ -358,7 +358,7 @@ const LandingPage = () => {
                             <p style={{ color: '#64748B', marginBottom: '32px', fontWeight: 600 }}>The Empire Command Center.</p>
                             <div style={{ marginBottom: '40px' }}>
                                 <div style={{ fontSize: '3rem', fontWeight: 900 }}>₦8,500<span style={{ fontSize: '1rem', opacity: 0.5 }}>/mo</span></div>
-                                <div style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 800 }}>+ 0% Success Fee (Keep it all!)</div>
+                                <div style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 800 }}>0% Transaction Fees</div>
                             </div>
                             <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Lead Your Empire</button>
                             <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>

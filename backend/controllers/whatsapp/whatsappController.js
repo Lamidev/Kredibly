@@ -712,14 +712,21 @@ exports.handleIncoming = async (req, res) => {
             details: `From: ${from} | Msg: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`
         });
 
-        // HUSTLER LIMIT CHECK (Trial Cap: 5 Invoices)
+        // HUSTLER LIMIT CHECK (10 Sales limit per month)
         if (isHustler && (text.toLowerCase().includes("sold") || text.toLowerCase().includes("selling") || text.toLowerCase().includes("sale") || text.toLowerCase().includes("record"))) {
-            const invoiceCount = await Sale.countDocuments({ businessId: profile._id });
+            const startOfMonth = new Date();
+            startOfMonth.setDate(1);
+            startOfMonth.setHours(0,0,0,0);
+            
+            const invoiceCount = await Sale.countDocuments({ 
+                businessId: profile._id,
+                createdAt: { $gte: startOfMonth }
+            });
 
-            if (invoiceCount >= 5) {
-                return await sendReply(from, `Wow, Chief! 📈 You've reached your free limit of 5 invoices on the *Hustler* plan! 
+            if (invoiceCount >= 10) {
+                return await sendReply(from, `Wow, Chief! 📈 You've reached your free limit of 10 sales/invoices for this month! 
 
-To record more sales and keep professionalizing your business, abeg upgrade to the *Oga Plan* now. No time to check time! 🚀 
+To record unlimited sales, add staff, and unlock Voice Notes, abeg upgrade to the *Oga Plan* now. No time to check time! 🚀 
 
 Upgrade here: ${APP_URL}/pricing`);
             }
@@ -1023,57 +1030,6 @@ Upgrade here: ${APP_URL}/pricing`);
 
                 if (!aiResponse) {
                     return await sendReply(from, "Chairman, my brain logic failed to read that image clearly. 😵‍ Please try again or type it for now.");
-                }
-            } else if (isHustler) {
-                const aiUsed = profile.monthlyUsage?.aiRequests || 0;
-                
-                if (aiUsed < 50) {
-                    console.log(`⚡ Plan: Hustler (Using AI - ${aiUsed}/50 used)`);
-                    aiResponse = await processMessageWithAI(text, { 
-                        merchantName: profile.assistantSettings?.preferredName || profile.displayName,
-                        plan: plan,
-                        entityType: profile.entityType,
-                        preferredTone: preferredTone,
-                        debtors: debtorContext || "No active debtors yet.",
-                        activeReminders: reminderContext,
-                        currentSession: session || null,
-                        hasOpenTicket: !!openTicket
-                    });
-                    
-                    if (aiResponse && !aiResponse.isFallback && !Array.isArray(aiResponse)) {
-                        // Support multi-intent array too
-                        const isArrayOfFallbacks = Array.isArray(aiResponse) ? aiResponse.some(a => a.isFallback) : false;
-                        if(!isArrayOfFallbacks) {
-                            if (!profile.monthlyUsage) profile.monthlyUsage = {};
-                            profile.monthlyUsage.aiRequests = aiUsed + 1;
-                            await profile.save();
-                            
-                            if (profile.monthlyUsage.aiRequests === 50) {
-                                await sendReply(from, "⚠️ *AI Limit Reached*\n\nYou just used your 50th Smart AI action for the month! \n\nFrom now on, Kreddy will switch to 'dumb mode' (she will only understand strict formats like 'Record: Kola 5k'). \n\nTo get Kreddy's brain back, simply type _'Pay for Oga'_! 🚀");
-                            } else if (profile.monthlyUsage.aiRequests === 45) {
-                                await sendReply(from, "⚠️ *AI Limit Warning*\n\nYou have 5 Smart AI actions left for this month on the Hustler plan. Upgrade to Oga soon to keep Kreddy smart!");
-                            }
-                        }
-                    } else {
-                        aiResponse = extractInfoRobust(text, { 
-                            merchantName: profile.displayName,
-                            plan: plan,
-                            entityType: profile.entityType,
-                            preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
-                            preferredName: profile.assistantSettings?.preferredName || "",
-                            currentSession: session || null 
-                        });
-                    }
-                } else {
-                    console.log("⚡ Plan: Hustler (Out of Limit - Using Regex/Robust Logic)");
-                    aiResponse = extractInfoRobust(text, { 
-                        merchantName: profile.displayName,
-                        plan: plan,
-                        entityType: profile.entityType,
-                        preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
-                        preferredName: profile.assistantSettings?.preferredName || "",
-                        currentSession: session || null 
-                    });
                 }
             } else {
                 console.log(`💎 Plan: ${plan.toUpperCase()} (Using Gemini AI)`);
