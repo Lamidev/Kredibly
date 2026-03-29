@@ -60,6 +60,21 @@ const scheduleRemindersWorker = () => {
                     console.error(`Failed to send reminder to ${acquired.whatsappNumber}:`, e.message);
                 });
 
+                // 2. SEPARATE DRAFT MESSAGE: If it's a debt, send a forwardable message
+                if (acquired.saleId) {
+                    const sale = acquired.saleId;
+                    const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
+                    const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
+                    const link = `${APP_URL}/i/${sale.invoiceNumber}`;
+                    
+                    const draftMsg = `Hi ${sale.customerName}, this is a friendly reminder regarding your balance of ₦${bal.toLocaleString()} with ${acquired.businessId.displayName}. You can view and pay here: ${link}`;
+                    
+                    // Small delay to ensure it arrives second
+                    setTimeout(async () => {
+                        await sendWhatsAppMessage(acquired.whatsappNumber, draftMsg).catch(e => {});
+                    }, 1000);
+                }
+
                 acquired.status = "delivered";
                 acquired.deliveredAt = new Date();
                 await acquired.save();
@@ -198,10 +213,86 @@ const scheduleMorningSummary = () => {
                     await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => {
                         console.error(`Failed to send summary to ${profile.displayName}:`, e.message);
                     });
+
+                    // Update timestamp to mark as sent for today
+                    profile.lastSummaryAt = new Date();
+                    await profile.save();
                 }
             }
         } catch (err) {
             console.error("Cron Job Error (Morning Summary):", err);
+        }
+    });
+
+    // 🕵️ RECOVERY CHECK: If a summary was missed (e.g. server down at 8am), send it now.
+    // Runs every 2 hours as a safety net.
+    cron.schedule("0 */2 * * *", async () => {
+        try {
+            const now = new Date();
+            if (now.getHours() < 8) return; // Don't send before 8am WAT
+
+            const startOfToday = new Date(now);
+            startOfToday.setHours(0, 0, 0, 0);
+
+            const profiles = await BusinessProfile.find({ 
+                whatsappNumber: { $exists: true, $ne: "" },
+                $or: [
+                    { lastSummaryAt: null },
+                    { lastSummaryAt: { $lt: startOfToday } }
+                ]
+            });
+
+            if (profiles.length === 0) return;
+
+            console.log(`📡 Recovering missed summaries for ${profiles.length} businesses...`);
+            
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            yesterday.setHours(0, 0, 0, 0);
+            const startOfYesterday = new Date(yesterday);
+            const endOfYesterday = new Date(yesterday);
+            endOfYesterday.setHours(23, 59, 59, 999);
+
+            for (const profile of profiles) {
+                 const salesYesterday = await Sale.countDocuments({
+                    businessId: profile._id,
+                    createdAt: { $gte: startOfYesterday, $lte: endOfYesterday }
+                });
+
+                const allSalesWithPaymentsYesterday = await Sale.find({
+                    businessId: profile._id,
+                    "payments.date": { $gte: startOfYesterday, $lte: endOfYesterday }
+                });
+
+                let totalCashIn = 0;
+                allSalesWithPaymentsYesterday.forEach(sale => {
+                    sale.payments.forEach(p => {
+                        const pDate = new Date(p.date);
+                        if (pDate >= startOfYesterday && pDate <= endOfYesterday) totalCashIn += p.amount;
+                    });
+                });
+
+                // Only recover if they are premium OR had activity
+                if (salesYesterday > 0 || totalCashIn > 0 || ['oga', 'chairman'].includes(profile.plan)) {
+                    const planTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
+                    const bossTitle = profile.assistantSettings?.preferredName || planTitle;
+                    
+                    let msg = `🌞 *Catching up, ${bossTitle}!* \n\nI missed you this morning, but here is your summary for yesterday:\n\n`;
+                    msg += `💰 *Cash Collected:* ₦${totalCashIn.toLocaleString()}\n`;
+                    msg += `📑 *New Sales:* ${salesYesterday}\n\n`;
+                    msg += `Check full details on your dashboard: ${process.env.FRONTEND_URL || 'https://usekredibly.com'}`;
+
+                    await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => {});
+                    profile.lastSummaryAt = new Date();
+                    await profile.save();
+                } else {
+                    // Mark as sent anyway so we don't keep checking idle accounts
+                    profile.lastSummaryAt = new Date();
+                    await profile.save();
+                }
+            }
+        } catch (err) {
+            console.error("Summary Recovery Error:", err);
         }
     });
 };

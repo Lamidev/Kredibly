@@ -13,18 +13,20 @@ router.get("/financial-health", protect, admin, async (req, res) => {
 
         // Calculate totals for a quick overview
         const totals = stats.reduce((acc, curr) => {
-            acc.totalWhatsAppSent += curr.whatsappMessagesSent;
-            acc.totalWhatsAppCost += curr.whatsappEstimatedCost;
-            acc.totalAICalls += curr.aiCallsMade;
-            acc.totalAICost += curr.aiEstimatedCost;
-            acc.totalRevenue += curr.revenueProcessed;
+            acc.totalWhatsAppSent += (curr.whatsappMessagesSent || 0);
+            acc.totalWhatsAppCost += (curr.whatsappEstimatedCost || 0);
+            acc.totalAICalls += (curr.aiCallsMade || 0);
+            acc.totalAICost += (curr.aiEstimatedCost || 0);
+            acc.totalRevenue += (curr.revenueProcessed || 0);
+            acc.totalMerchantFeesAbsorbed += (curr.merchantFeeAbsorbed || 0);
             return acc;
         }, {
             totalWhatsAppSent: 0,
             totalWhatsAppCost: 0,
             totalAICalls: 0,
             totalAICost: 0,
-            totalRevenue: 0
+            totalRevenue: 0,
+            totalMerchantFeesAbsorbed: 0
         });
 
         res.status(200).json({

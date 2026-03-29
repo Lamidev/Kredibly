@@ -197,7 +197,6 @@ exports.addPayment = async (req, res) => {
 
             // Notify Business Owner via Email (Redundancy)
             if (sale.businessId && sale.businessId.ownerId) {
-                // Ensure ownerId is populated to access email
                 const BusinessProfile = require("../../models/BusinessProfile");
                 const fullProfile = await BusinessProfile.findById(sale.businessId._id).populate("ownerId");
                 
@@ -224,7 +223,7 @@ exports.addPayment = async (req, res) => {
                         to: fullProfile.ownerId.email,
                         subject: emailSubject,
                         html: emailHtml
-                    });
+                    }).catch(e => console.error("Email Error:", e.message));
                 }
             }
         }
@@ -585,8 +584,20 @@ exports.deleteSale = async (req, res) => {
             return res.status(403).json({ message: "Not authorized to delete this sale" });
         }
 
+        // DELETE Associated Reminders (Keep things clean)
+        const Reminder = require("../../models/Reminder");
+        await Reminder.deleteMany({ saleId: sale._id });
+
         await Sale.deleteOne({ _id: sale._id });
-        res.status(200).json({ success: true, message: "Sale deleted successfully" });
+        
+        await logActivity({
+            businessId: business._id,
+            action: "SALE_DELETED",
+            entityType: "SALE",
+            details: `Deleted invoice #${sale.invoiceNumber} for ${sale.customerName}`
+        });
+
+        res.status(200).json({ success: true, message: "Sale deleted successfully and reminders cleared." });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

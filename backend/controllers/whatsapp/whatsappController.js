@@ -1344,7 +1344,8 @@ Upgrade here: ${APP_URL}/pricing`);
                         const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                         const link = `${APP_URL}/i/${sale.invoiceNumber}`;
                         const draft = `Hi ${sale.customerName}, this is a friendly reminder for your balance of ₦${bal.toLocaleString()} with ${profile.displayName}. You can view and pay here: ${link}`;
-                        await sendReply(from, `📝 *Draft for ${sale.customerName}:* \n\n_"${draft}"_\n\n(You can copy and forward this to them! 🚀)`);
+                        await sendReply(from, `📝 *Draft for ${sale.customerName}:* (Copy the message below to forward it) 🚀`);
+                        await sendReply(from, draft);
                     } else {
                         let reply = `🤔 I found *${matches.length}* people named *${searchName}*. Which one should I draft for?\n\n`;
                         matches.forEach((m, i) => {
@@ -1905,12 +1906,66 @@ Upgrade here: ${APP_URL}/pricing`);
                         await sendReply(from, `${bossTitle}, I couldn't find a very recent suggestion to delete. If you want to change something on the roadmap, just let me know exactly what! 🫡`);
                     }
                     isProcessed = true;
+                } else if (aiResponseItem && aiResponseItem.intent === "delete_sale") {
+                    const searchRef = (aiResponseItem.data.invoiceNumber || aiResponseItem.data.customerName || "").trim();
+                    if (!searchRef) {
+                        await sendReply(from, `Boss, I catch that you want to delete a record, but I need the Customer Name or Invoice ID.`);
+                    } else {
+                        const matches = await Sale.find({
+                            businessId: profile._id,
+                            $or: [
+                                { invoiceNumber: searchRef.toUpperCase() },
+                                { customerName: { $regex: new RegExp(searchRef, "i") } }
+                            ]
+                        }).sort({ createdAt: -1 });
+
+                        if (matches.length === 0) {
+                            await sendReply(from, `🔍 I couldn't find a record for *${searchRef}* to delete.`);
+                        } else if (matches.length === 1) {
+                            const saleToDelete = matches[0];
+                            
+                            // Delete from DB
+                            await Sale.deleteOne({ _id: saleToDelete._id });
+                            
+                            // 🧹 Cascade Delete Reminders
+                            const Reminder = require("../../models/Reminder");
+                            await Reminder.deleteMany({ saleId: saleToDelete._id });
+
+                            // Activity Log
+                            await logActivity({
+                                businessId: profile._id,
+                                action: "SALE_DELETED_WHATSAPP",
+                                entityType: "SALE",
+                                details: `Merchant deleted invoice #${saleToDelete.invoiceNumber} for ${saleToDelete.customerName} via Kreddy.`
+                            });
+
+                            await sendReply(from, `🛡️ *Record Deleted!* \n\nI've removed the invoice for *${saleToDelete.customerName}* and cancelled all scheduled reminders for it. Your dashboard is updated! ⚖️`);
+                        } else {
+                            let msg = `🤔 I found *${matches.length}* matches for "${searchRef}". Which one should I delete?\n\n`;
+                            matches.slice(0, 5).forEach(m => {
+                                msg += `• *#${m.invoiceNumber}* (${m.customerName})\n`;
+                            });
+                            msg += `\nPlease type the exact Invoice ID! 🛡️`;
+                            await sendReply(from, msg);
+                        }
+                    }
+                    isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "general_chat") {
                     // Clear stale session context so follow-up messages don't get stuck
                     if (session) {
                         await WhatsAppSession.deleteOne({ _id: session._id });
                     }
-                    await sendReply(from, aiResponseItem.data.reply || "I'm here, Chief! What's happening? 🚀");
+                    let msg = aiResponseItem.data.reply || "I'm here, Chief! What's happening? 🚀";
+                    
+                    // Auto-Split if message contains a Draft marker
+                    if (msg.includes("📝 Draft for") || msg.includes("📝 *Draft ready")) {
+                        const parts = msg.split(/(?=📝 Draft for|📝 \*Draft ready)/g);
+                        for (const part of parts) {
+                            await sendReply(from, part.trim());
+                        }
+                    } else {
+                        await sendReply(from, msg);
+                    }
                     isProcessed = true;
                 } else {
                     // FALLBACK — Only trigger if truly unknown
@@ -1920,7 +1975,15 @@ Upgrade here: ${APP_URL}/pricing`);
                         fallbackMsg += "\n\nTip: You can ask me to record sales, set reminders, or even suggest features for the dashboard! 💡";
                     }
                     
-                    await sendReply(from, fallbackMsg);
+                    // Auto-Split if message contains a Draft marker
+                    if (fallbackMsg.includes("📝 Draft for") || fallbackMsg.includes("📝 *Draft ready")) {
+                        const parts = fallbackMsg.split(/(?=📝 Draft for|📝 \*Draft ready)/g);
+                        for (const part of parts) {
+                            await sendReply(from, part.trim());
+                        }
+                    } else {
+                        await sendReply(from, fallbackMsg);
+                    }
                     isProcessed = true;
                 }
             }

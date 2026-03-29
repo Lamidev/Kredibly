@@ -435,6 +435,10 @@ exports.verifyInvoicePayment = async (req, res) => {
                 await sendWhatsAppMessage(business.whatsappNumber, msg).catch(err => {
                     console.error(`❌ Failed to send WhatsApp notification for payment ${reference}:`, err.message);
                 });
+
+                // 🛡️ COST TRACKING: Log the fee absorbed by Kredibly
+                const { logUsage } = require('../../utils/usageTracker');
+                logUsage("merchant_fee", { amount: actualCreditAmount }).catch(e => console.error("Fee log fail:", e));
             }
         }
 
@@ -457,27 +461,29 @@ exports.initializePaystackPayment = async (req, res) => {
         const business = sale.businessId;
         
         let chargeAmount = Number(amount);
-        let gatewayFeeApplied = false;
         
-        // 🛡️ ZERO-FEE HYBRID MODEL: Only charge 1.5% fee if they explicitly use the Card button
-        if (paymentChannel === 'card' && business && business.prefersGatewayFeeAbsorption === false) {
-            let flatFee = chargeAmount >= 2500 ? 100 : 0;
-            let grossAmount = (chargeAmount + flatFee) / (1 - 0.015);
-            let fee = grossAmount - chargeAmount;
-            if (fee > 2000) fee = 2000;
-            chargeAmount = Math.ceil(chargeAmount + fee);
-            gatewayFeeApplied = true;
+        // 🔒 SECURITY CHECK: Only allow Bank Transfer for Public Invoices
+        if (paymentChannel === 'card') {
+            return res.status(403).json({ message: "Card payments are disabled for invoices. Please use Instant Bank Transfer (0% Fee)." });
         }
 
+        // 🛡️ ZERO-FEE MODEL: All bank transfers are 0% platform fee
+        // We charge exactly the amount requested by the merchant.
+        const gatewayFeeApplied = false;
+
         const reference = `KREDDY_INV_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+        // Robust Email Fallback: Paystack REQUIRES a valid looking email
+        const safeEmail = (email && email.includes('@')) ? email : `customer_${sale.invoiceNumber.toLowerCase().replace(/-/g, '')}@usekredibly.com`;
 
         res.status(200).json({
             success: true,
             publicKey: process.env.PAYSTACK_PUBLIC_KEY,
-            email: email,
+            email: safeEmail,
             amount: chargeAmount,
             originalAmount: Number(amount),
             reference: reference,
+            subaccount: business.paystackSubaccountCode, // 🚀 CRITICAL: Settles money to merchant
             metadata: {
                 paymentType: 'invoice',
                 invoiceNumber: sale.invoiceNumber,

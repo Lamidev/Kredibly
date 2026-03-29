@@ -37,11 +37,11 @@ exports.updateProfile = async (req, res) => {
             }
             if (bankDetails) profile.bankDetails = bankDetails;
             if (staffNumbers) {
-                const planLimit = profile.plan === 'chairman' ? Infinity : (profile.plan === 'oga' ? 2 : 0);
+                const planLimit = profile.plan === 'chairman' ? Infinity : (profile.plan === 'oga' ? 1 : 0);
                 if (staffNumbers.length > planLimit) {
                     return res.status(403).json({ 
                         success: false, 
-                        message: `Staff limit exceeded for your ${profile.plan.toUpperCase()} plan. Upgrade to add more.` 
+                        message: `Staff limit exceeded. Your ${profile.plan.toUpperCase()} plan allows only ${planLimit} staff member. Upgrade to Chairman for unlimited staff.` 
                     });
                 }
                 profile.staffNumbers = staffNumbers.map(n => cleanPhone(n)).filter(n => n);
@@ -64,16 +64,17 @@ exports.updateProfile = async (req, res) => {
                 assistantSettings,
                 bankDetails,
                 staffNumbers: staffNumbers ? staffNumbers.map(n => cleanPhone(n)).filter(n => n) : [],
-                // Founding Member Benefits
-                // Default Free Tier (Hustler Plan)
-                // LAUNCH STRATEGY: Default to Inactive Hustler (Trial must be claimed)
-                plan: 'hustler',
-                planStatus: 'inactive',
-                trialExpiresAt: null, 
-                hasUsedTrial: false,
-                isFoundingMember: isWaitlistUser,
+                
+                // 🚀 OPEN BETA STRATEGY: 
+                // All users who join during the pre-launch phase get OGA PLAN (Free) for 90 days.
+                // We tag them as Founding Members to reward them with "Slash Prices" at launch.
+                plan: 'oga', 
+                planStatus: 'trialing',
+                trialExpiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), 
+                hasUsedTrial: true,
+                isFoundingMember: true, // Tag everyone joining now as a Founding Member
                 walletBalance: 0,
-                discountActiveUntil: isWaitlistUser ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) : null
+                discountActiveUntil: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000) // 6 months potential for launch offers
             });
 
             await profile.save();

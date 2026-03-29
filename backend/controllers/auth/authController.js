@@ -28,13 +28,20 @@ const register = async (req, res) => {
       return res.status(400).json({ success: false, message: "User with this email already exists" });
     }
 
-    // Waitlist Gatekeeper Check
-    const waitlisted = await Waitlist.findOne({ email: email.toLowerCase() });
+    // Waitlist Lead Capture (Non-Blocking)
+    let waitlisted = await Waitlist.findOne({ email: email.toLowerCase() });
     if (!waitlisted) {
-        return res.status(403).json({ 
-            success: false, 
-            message: "This email hasn't been added to our pilot list yet. Please join the waitlist first!" 
+        // Silently add them to the waitlist database for future marketing & founder tagging
+        waitlisted = new Waitlist({ 
+            email: email.toLowerCase(), 
+            name: name,
+            status: 'active',
+            source: 'beta_registration'
         });
+        await waitlisted.save().catch(err => console.error("Waitlist Silent Add Fail:", err));
+    } else {
+        waitlisted.status = 'active';
+        await waitlisted.save().catch(err => console.error("Waitlist Update Fail:", err));
     }
 
     const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();

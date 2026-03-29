@@ -104,7 +104,6 @@ const PricingPage = () => {
                             We don't charge you to collect your own money. Our instant bank transfers are completely free forever for you and your customers.
                             <br />
                             <br />
-                            <span style={{ fontSize: '0.85rem', opacity: 0.7 }}>*Standard third-party gateway fees (1.5%) only apply if your customer explicitly chooses to pay with a Debit Card.</span>
                         </p>
 
                         {/* Billing Toggle - Minimalist */}

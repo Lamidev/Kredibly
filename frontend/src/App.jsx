@@ -52,7 +52,7 @@ const App = () => {
       <ScrollToTop />
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={user ? <Navigate to={getHomeRedirect()} /> : <Waitlist />} />
+        <Route path="/" element={!user ? <LandingPage /> : <Navigate to={getHomeRedirect()} />} />
         <Route path="/waitlist" element={<Waitlist />} />
         
         {/* Landing page accessible at /home for development/reference */}

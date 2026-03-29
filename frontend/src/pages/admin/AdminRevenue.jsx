@@ -38,7 +38,9 @@ const AdminRevenue = () => {
         </div>
     );
 
-    const netMargin = (healthStats?.summary?.totalRevenue || 0) - (healthStats?.summary?.totalWhatsAppCost || 0);
+    const netMargin = (healthStats?.summary?.totalRevenue || 0) - 
+                      (healthStats?.summary?.totalWhatsAppCost || 0) - 
+                      (healthStats?.summary?.totalMerchantFeesAbsorbed || 0);
 
     return (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="admin-content-fade">
@@ -81,6 +83,18 @@ const AdminRevenue = () => {
                     <p style={{ margin: '8px 0 0', fontSize: '0.75rem', fontWeight: 700, color: '#10B981', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <ArrowUpRight size={14} /> Positively Scalable
                     </p>
+                </div>
+
+                <div className="admin-stats-card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                        <div style={{ padding: '12px', background: '#FEF9C3', borderRadius: '16px', color: '#CA8A04' }}>
+                            <ArrowUpRight size={24} />
+                        </div>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#CA8A04', background: '#FEF9C3', padding: '4px 10px', borderRadius: '100px' }}>VANGUARD FEE BURN</span>
+                    </div>
+                    <p style={{ color: 'var(--text-muted)', fontWeight: 800, fontSize: '0.85rem', marginBottom: '4px' }}>Absorbed Merchant Fees</p>
+                    <h3 style={{ fontSize: 'clamp(1.5rem, 8vw, 2.2rem)', fontWeight: 950, color: '#CA8A04', letterSpacing: '-0.04em' }}>₦{healthStats?.summary?.totalMerchantFeesAbsorbed?.toLocaleString() || 0}</h3>
+                    <p style={{ margin: '8px 0 0', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Founding Member Promotion</p>
                 </div>
             </div>
 
