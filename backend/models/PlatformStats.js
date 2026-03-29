@@ -29,6 +29,10 @@ const PlatformStatsSchema = new mongoose.Schema({
     activeUsersCount: {
         type: Number,
         default: 0
+    },
+    merchantFeeAbsorbed: {
+        type: Number, // In NGN - The 1% we cover for merchants
+        default: 0
     }
 }, {
     timestamps: true

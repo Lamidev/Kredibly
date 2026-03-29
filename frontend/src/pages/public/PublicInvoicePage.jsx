@@ -42,14 +42,21 @@ const PublicInvoicePage = () => {
         
         const fetchSale = async () => {
             try {
-                const res = await axios.get(`http://localhost:7050/api/business/public/sale/${id}`);
-                setSale(res.data);
+                const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+                const res = await axios.get(`${API_URL}/sales/${id}`);
+                
+                if (res.data.success) {
+                    setSale(res.data.data);
+                } else {
+                    setSale(null);
+                }
                 
                 // Check if merchant is logged in (to hide viral loops)
                 const storedProfile = localStorage.getItem('businessProfile');
                 if (storedProfile) setProfile(JSON.parse(storedProfile));
             } catch (err) {
                 console.error("Error fetching invoice:", err);
+                setSale(null);
             } finally {
                 setLoading(false);
             }
@@ -113,10 +120,16 @@ const PublicInvoicePage = () => {
 
         try {
             setVerifying(true);
-            const res = await axios.post('http://localhost:7050/api/business/paystack/initialize', {
+            const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+            
+            // Robust Email Fallback: Strip special characters and spaces
+            const safeName = (sale.customerName || "Guest").toLowerCase().replace(/[^a-z0-9]/g, '');
+            const fallbackEmail = `${safeName || 'customer'}@kredibly.me`;
+
+            const res = await axios.post(`${API_URL}/business/paystack/initialize`, {
                 saleId: sale._id,
                 amount: amountToPay,
-                email: sale.customerEmail || `${sale.customerName.replace(/\s+/g, '').toLowerCase()}@kredibly.customer`,
+                email: sale.customerEmail || fallbackEmail,
                 paymentChannel: paymentChannel
             });
 
@@ -128,6 +141,7 @@ const PublicInvoicePage = () => {
                 email: res.data.email,
                 amount: res.data.amount * 100,
                 ref: res.data.reference,
+                subaccount: res.data.subaccount, // 💰 SETTLES DIRECTLY TO MERCHANT
                 metadata: res.data.metadata,
                 channels: channels,
                 callback: function(response) {
@@ -136,8 +150,13 @@ const PublicInvoicePage = () => {
                     setShowSuccessModal(true);
                     
                     // Refresh sale data
-                    axios.get(`http://localhost:7050/api/business/public/sale/${id}`)
-                        .then(r => setSale(r.data))
+                    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+                    axios.get(`${API_URL}/sales/${id}`)
+                        .then(r => {
+                            if (r.data.success) {
+                                setSale(r.data.data);
+                            }
+                        })
                         .finally(() => setVerifying(false));
                 },
                 onClose: function() {
@@ -182,7 +201,7 @@ const PublicInvoicePage = () => {
         </div>
     );
 
-    const balance = sale.totalAmount - sale.paidAmount;
+    const balance = sale.totalAmount - (sale.paidAmount || sale.payments?.reduce((s, p) => s + p.amount, 0) || 0);
     const isPaid = balance <= 0;
     const isOverdue = !isPaid && sale.dueDate && new Date(sale.dueDate) < new Date();
     const isDebtRecovery = !isPaid && (sale.status === 'partial' || isOverdue);
@@ -209,10 +228,13 @@ const PublicInvoicePage = () => {
                         </div>
                         
                         <div style={{ textAlign: 'right' }}>
-                            {sale?.businessId?.logoUrl && sale?.businessId?.plan !== 'hustler' && sale?.businessId?.plan !== 'chairman' ? (
+                            {sale?.businessId?.logoUrl && sale?.businessId?.plan === 'chairman' ? (
                                 <img src={sale.businessId.logoUrl} alt="Merchant Logo" style={{ height: '48px', objectFit: 'contain', marginBottom: '8px' }} />
                             ) : sale?.businessId?.plan === 'oga' ? (
-                                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#0F172A', marginBottom: '4px' }}>{sale?.businessId?.displayName}</h3>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                    {sale?.businessId?.logoUrl && <img src={sale.businessId.logoUrl} alt="Merchant Logo" style={{ height: '40px', objectFit: 'contain', marginBottom: '4px' }} />}
+                                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0F172A', marginBottom: '4px' }}>{sale?.businessId?.displayName}</h3>
+                                </div>
                             ) : sale?.businessId?.plan === 'chairman' ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                                     <div style={{ padding: '4px 12px', background: '#F8FAFC', borderRadius: '100px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -221,7 +243,7 @@ const PublicInvoicePage = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#0F172A', marginBottom: '4px' }}>{sale?.businessId?.displayName}</h3>
+                                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0F172A', marginBottom: '4px' }}>{sale?.businessId?.displayName}</h3>
                             )}
                             <p style={{ margin: 0, fontSize: '11px', color: '#94A3B8', fontWeight: 700, marginTop: '4px' }}>{sale?.invoiceType === 'record' ? 'Receipt' : 'Invoice'} #{sale?.invoiceNumber}</p>
                         </div>
@@ -618,39 +640,16 @@ const PublicInvoicePage = () => {
                                         ) : (
                                             <>
                                                 <Building2 size={20} /> 
-                                                <span>Instant Bank Transfer (Free)</span>
+                                                <span>Instant Bank Transfer (Zero Fee)</span>
                                             </>
                                         )}
                                     </button>
 
-                                    <button 
-                                        onClick={() => handlePaystackPayment('card')}
-                                        disabled={verifying}
-                                        style={{ 
-                                            width: '100%', 
-                                            padding: isMobile ? '16px' : '18px', 
-                                            background: 'white',
-                                            color: '#0F172A', 
-                                            borderRadius: '16px', 
-                                            border: '2px solid #E2E8F0', 
-                                            fontWeight: 700, 
-                                            fontSize: isMobile ? '15px' : '16px', 
-                                            cursor: verifying ? 'not-allowed' : 'pointer', 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            justifyContent: 'center', 
-                                            gap: '12px', 
-                                            transition: 'all 0.3s ease'
-                                        }}
-                                    >
-                                        <CreditCard size={20} color="#64748B" /> 
-                                        <span>Pay with Debit Card (+1.5% Fee)</span>
-                                    </button>
                                 </div>
 
-                                {sale.businessId?.plan === 'hustler' && (
-                                    <p style={{ textAlign: 'center', fontSize: '10px', color: '#94A3B8', marginTop: '12px', fontWeight: 600 }}> Standard secure processing fees apply to this transaction.</p>
-                                )}
+                                <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    <ShieldCheck size={16} color="#10B981" /> 100% Secure Bank Settlement
+                                </div>
 
                                 {verifying && (
                                     <motion.p 

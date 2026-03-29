@@ -33,6 +33,14 @@ const logUsage = async (type, data = {}) => {
                     revenueProcessed: data.amount || 0 
                 } 
             };
+        } else if (type === "merchant_fee") {
+            // Paystack Transfer Fee: ~1% capped at 300 NGN
+            const estimatedFee = Math.min(300, (data.amount || 0) * 0.01);
+            update = { 
+                $inc: { 
+                    merchantFeeAbsorbed: estimatedFee 
+                } 
+            };
         }
 
         await PlatformStats.findOneAndUpdate(

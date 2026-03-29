@@ -15,9 +15,8 @@ const WaitlistSchema = new mongoose.Schema({
   },
   whatsappNumber: { 
     type: String, 
-    required: [true, "WhatsApp number is required"],
-    unique: true,
-    trim: true
+    trim: true,
+    index: true
   },
   industry: { 
     type: String,

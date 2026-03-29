@@ -95,9 +95,8 @@ const createSubaccount = async (businessName, bankCode, accountNumber, successFe
         bank_code: bankCode, 
         account_number: accountNumber, 
         percentage_charge: successFee, 
+        primary_contact_at: 'paystack', // 🛡️ Kredibly covers the gateway fees
         primary_contact_email: "support@usekredibly.com", 
-        primary_contact_name: "Kredibly Platform",
-        primary_contact_phone: "08000000000"
     };
     return paystackRequest('/subaccount', 'POST', payload);
 };

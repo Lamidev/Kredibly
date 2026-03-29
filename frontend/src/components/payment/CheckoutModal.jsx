@@ -17,8 +17,13 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
 
     // Calculate Base Price
     let basePrice = 0;
-    if (plan === 'oga') basePrice = billingCycle === 'yearly' ? 5000 * 12 * 0.9 : 5000;
-    else if (plan === 'chairman') basePrice = billingCycle === 'yearly' ? 8500 * 12 * 0.9 : 8500;
+    if (billingCycle === 'launch') {
+        basePrice = plan === 'oga' ? 2500 : 4250;
+    } else if (plan === 'oga') {
+        basePrice = billingCycle === 'yearly' ? 5000 * 12 * 0.9 : 5000;
+    } else if (plan === 'chairman') {
+        basePrice = billingCycle === 'yearly' ? 8500 * 12 * 0.9 : 8500;
+    }
 
     // Calculate Final Price
     let finalPrice = basePrice;

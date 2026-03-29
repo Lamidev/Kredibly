@@ -231,9 +231,9 @@ const SettingsPage = () => {
         if (!newStaffPhone) return;
         
         // Plan Enforcement
-        const planLimit = profile?.plan === 'chairman' ? Infinity : (profile?.plan === 'oga' ? 2 : 0);
+        const planLimit = profile?.plan === 'chairman' ? Infinity : (profile?.plan === 'oga' ? 1 : 0);
         if (form.staffNumbers.length >= planLimit) {
-            return toast.error(`Plan Limit Reached: Your ${profile?.plan?.toUpperCase()} Plan allows only ${planLimit} staff member(s). Upgrade for more.`);
+            return toast.error(`Plan Limit Reached: Your ${profile?.plan?.toUpperCase()} Plan allows only ${planLimit} staff member. Upgrade for more.`);
         }
 
         if (!isValidNigerianPhone(newStaffPhone)) {
@@ -501,7 +501,7 @@ const SettingsPage = () => {
                     
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', position: 'relative', zIndex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ background: '#F0FDF4', color: '#10B981', padding: '10px', borderRadius: '12px' }}>
+                            <div style={{ background: 'rgba(76, 29, 149, 0.08)', color: 'var(--primary)', padding: '10px', borderRadius: '12px' }}>
                                 <CreditCard size={24} />
                             </div>
                             <div>
@@ -510,7 +510,7 @@ const SettingsPage = () => {
                             </div>
                         </div>
                         {profile?.paystackSubaccountCode && (
-                            <div style={{ background: '#ECFDF5', color: '#059669', padding: '6px 12px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ background: 'rgba(76, 29, 149, 0.08)', color: 'var(--primary)', padding: '6px 12px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <CheckCircle size={12} /> AUTOMATED PAYOUTS ACTIVE
                             </div>
                         )}
@@ -616,7 +616,7 @@ const SettingsPage = () => {
                                                 value={form.accountNumber}
                                                 maxLength={10}
                                                 onChange={(e) => setForm({ ...form, accountNumber: e.target.value.replace(/\D/g, '') })}
-                                                placeholder="10 Search digits"
+                                                placeholder="10 digit account number"
                                                 style={{ background: '#F8FAFC', paddingRight: '40px' }}
                                             />
                                             <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }}>
@@ -628,20 +628,20 @@ const SettingsPage = () => {
                                         <label className="input-label">Account Name</label>
                                         <div style={{ 
                                             padding: '14px', 
-                                            background: form.accountName ? '#F0FDF4' : '#F1F5F9', 
+                                            background: form.accountName ? 'rgba(76, 29, 149, 0.04)' : '#F1F5F9', 
                                             borderRadius: '12px', 
                                             border: '1.5px solid',
-                                            borderColor: form.accountName ? '#BBF7D0' : '#E5E7EB',
+                                            borderColor: form.accountName ? 'rgba(76, 29, 149, 0.2)' : '#E5E7EB',
                                             height: '54px',
                                             display: 'flex',
                                             alignItems: 'center',
-                                            color: form.accountName ? '#166534' : '#94A3B8',
+                                            color: form.accountName ? 'var(--primary)' : '#94A3B8',
                                             fontWeight: 700,
                                             fontSize: '0.95rem',
                                             transition: 'all 0.3s ease'
                                         }}>
                                             {form.accountName || "Type account number..."}
-                                            {form.accountName && <CheckCircle size={16} style={{ marginLeft: 'auto', color: '#22C55E' }} />}
+                                            {form.accountName && <CheckCircle size={16} style={{ marginLeft: 'auto', color: 'var(--primary)' }} />}
                                         </div>
                                     </div>
                                 </div>
@@ -683,7 +683,7 @@ const SettingsPage = () => {
                                                 flex: 2,
                                                 padding: '16px',
                                                 borderRadius: '14px',
-                                                background: isPro ? 'linear-gradient(135deg, #10B981, #059669)' : 'var(--primary)',
+                                                background: 'var(--primary)',
                                                 color: 'white',
                                                 fontWeight: 800,
                                                 fontSize: '0.95rem',
@@ -693,7 +693,7 @@ const SettingsPage = () => {
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
                                                 gap: '10px',
-                                                boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.2)',
+                                                boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.25)',
                                                 transition: 'all 0.3s ease'
                                             }}
                                             className="hover-scale"
@@ -714,52 +714,7 @@ const SettingsPage = () => {
                     </div>
                 </section>
 
-                {/* Processing & Fees Strategy - NEW */}
-                <section className="glass-card" style={{ padding: '32px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <div style={{ background: '#F5F3FF', color: 'var(--primary)', padding: '10px', borderRadius: '12px' }}>
-                            <Zap size={24} />
-                        </div>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Processing & Fees</h2>
-                    </div>
-                    <p style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '24px', fontWeight: 500 }}>Choose who pays the payment gateway processing fees (1.5% + ₦100).</p>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-                        <button 
-                            type="button"
-                            onClick={() => setForm({ ...form, prefersGatewayFeeAbsorption: true })}
-                            style={{ 
-                                padding: '24px 20px', borderRadius: '20px', border: '2px solid', 
-                                borderColor: form.prefersGatewayFeeAbsorption ? 'var(--primary)' : '#F1F5F9',
-                                background: form.prefersGatewayFeeAbsorption ? '#F5F3FF' : 'white',
-                                textAlign: 'left', cursor: 'pointer', transition: '0.15s ease',
-                                display: 'flex', flexDirection: 'column', gap: '8px',
-                                boxShadow: form.prefersGatewayFeeAbsorption ? '0 10px 15px -3px rgba(76, 29, 149, 0.1)' : 'none'
-                            }}
-                        >
-                            <p style={{ margin: 0, fontWeight: 900, color: form.prefersGatewayFeeAbsorption ? 'var(--primary)' : '#1E293B', fontSize: '1rem' }}>Merchant Absorbs</p>
-                            <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748B', lineHeight: 1.4 }}>Fees are deducted from your payout. Your customers pay exactly what's on the invoice.</p>
-                            {form.prefersGatewayFeeAbsorption && <span style={{ fontSize: '0.7rem', fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', marginTop: '8px' }}>Active Selection</span>}
-                        </button>
-
-                        <button 
-                            type="button"
-                            onClick={() => setForm({ ...form, prefersGatewayFeeAbsorption: false })}
-                            style={{ 
-                                padding: '24px 20px', borderRadius: '20px', border: '2px solid', 
-                                borderColor: !form.prefersGatewayFeeAbsorption ? 'var(--primary)' : '#F1F5F9',
-                                background: !form.prefersGatewayFeeAbsorption ? '#F5F3FF' : 'white',
-                                textAlign: 'left', cursor: 'pointer', transition: '0.15s ease',
-                                display: 'flex', flexDirection: 'column', gap: '8px',
-                                boxShadow: !form.prefersGatewayFeeAbsorption ? '0 10px 15px -3px rgba(76, 29, 149, 0.1)' : 'none'
-                            }}
-                        >
-                            <p style={{ margin: 0, fontWeight: 900, color: !form.prefersGatewayFeeAbsorption ? 'var(--primary)' : '#1E293B', fontSize: '1rem' }}>Customer Pays</p>
-                            <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748B', lineHeight: 1.4 }}>Fees are added to the customer's total at checkout. You receive exactly what's on the invoice.</p>
-                            {!form.prefersGatewayFeeAbsorption && <span style={{ fontSize: '0.7rem', fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', marginTop: '8px' }}>Active Selection</span>}
-                        </button>
-                    </div>
-                </section>
 
                 {/* Subscription & Plan Section */}
                 <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>

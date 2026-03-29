@@ -57,9 +57,12 @@ INTENTS:
 11. "check_billing": Asking about their plan status or billing date.
 12. "draft_invoice": Generate a payment link message to copy/forward.
 13. "draft_reminder": Draft a debt reminder message to forward to the customer.
+    - When drafting a message for a customer (intents: draft_invoice, draft_reminder), ALWAYS start the draft part with the marker: "📝 Draft for [Name]:".
+    - This allows the system to split the draft into its own WhatsApp bubble for easy forwarding.
 14. "add_staff": Add a new staff member by providing a phone number.
 15. "check_staff": Query current staff list.
-16. "general_chat": Greetings, math, business advice, or casual talk.
+16. "delete_sale": When the user wants to remove or delete a sale record or invoice.
+17. "general_chat": Greetings, math, business advice, or casual talk.
 17. "set_preferred_name": When the user asks to be called a specific name (e.g., "From now call me Papa").
 18. "feedback": New feature ideas, roadmap suggestions, or cool things to add for future versions.
 19. "delete_feedback": When the user says "cancel my idea", "delete my suggestion", or "I changed my mind about that feedback".
@@ -67,6 +70,7 @@ INTENTS:
 MULTI-INTENT RULE (CRITICAL):
 - If the user's message contains MULTIPLE distinct tasks, return a JSON array of intent objects.
 - Each object should be a complete valid intent.
+- If the user wants to delete a sale (e.g. "Delete the invoice for Victoria"), use "delete_sale" intent and capture "customerName" or "invoiceNumber".
 - IMPORTANT: If a user records a sale AND asks for a reminder for it (e.g. "Remind me to call them next week"), return BOTH "create_sale" and "create_reminder". Ensure both the Sale and the Reminder have the SAME dueDate/reminderDate.
 
 REQUIRED JSON OUTPUT:

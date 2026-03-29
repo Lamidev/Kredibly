@@ -132,6 +132,10 @@ const BusinessProfileSchema = new mongoose.Schema({
         type: Boolean,
         default: true // Default: Merchant covers the Paystack/Gateway fees
     },
+    lastSummaryAt: {
+        type: Date,
+        default: null
+    },
     createdAt: {
         type: Date,
         default: Date.now
