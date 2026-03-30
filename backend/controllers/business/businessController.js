@@ -84,7 +84,7 @@ exports.updateProfile = async (req, res) => {
                 bankDetails: bankDetails ? {
                     ...bankDetails,
                     lastBankChangeAt: new Date(),
-                    bankDetailsLockUntil: new Date(Date.now() + 24 * 60 * 60 * 1000)
+                    bankDetailsLockUntil: null // No lock for the very first setup!
                 } : {},
                 paystackSubaccountCode: subaccountCode,
                 staffNumbers: staffNumbers ? staffNumbers.map(n => cleanPhone(n)).filter(n => n) : [],
@@ -106,6 +106,20 @@ exports.updateProfile = async (req, res) => {
                 waitlistEntry.status = 'active';
                 await waitlistEntry.save();
             }
+            
+            // 📧 SEND ONBOARDING SUCCESS EMAIL
+            const { sendWelcomeEmail } = require("../../emailLogic/emails");
+            sendWelcomeEmail(req.user.email, req.user.name)
+              .catch(err => console.error("Onboarding Email Fail:", err.message));
+
+            await logActivity({
+                userId: req.user._id,
+                businessId: profile._id,
+                action: "PROFILE_CREATED",
+                details: "Completed merchant onboarding"
+            });
+            
+            res.status(201).json({ success: true, data: profile });
         }
 
         await logActivity({
@@ -251,29 +265,34 @@ exports.saveBankDetails = async (req, res) => {
             console.error("Paystack Subacct Create Error:", err.message);
             return res.status(500).json({ success: false, message: "Could not set up automatic payouts. Please try again later." });
         }
+        // 4. Save to Profile + SECURITY LOCK (Smart Check)
+        // Only lock if an account already existed AND it wasn't empty (This is a CHANGE, not first setup)
+        const isInitialSetup = !profile.bankDetails?.accountNumber || profile.bankDetails.accountNumber === "";
+        const lockUntil = isInitialSetup ? null : new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-        // 4. Save to Profile + SECURITY LOCK (24 hours)
         profile.bankDetails = {
             bankName: bankName,
             accountNumber: accountNumber,
             accountName: resolvedDetails.account_name,
             bankCode: bankCode,
             lastBankChangeAt: new Date(),
-            bankDetailsLockUntil: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24hr Payout Hold
+            bankDetailsLockUntil: lockUntil
         };
         profile.paystackSubaccountCode = subaccountCode;
         
         await profile.save();
 
-        // 5. SEND SECURITY NOTIFICATION
-        const bossTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
-        const securityMsg = `⚠️ *SECURITY ALERT: Bank Details Changed*\n\n${bossTitle}, your payout bank account was just updated to *${resolvedDetails.account_name}* (${bankName}).\n\n🛡️ *Safety Lock:* For your security, instant payouts are paused for 24 hours. They will resume automatically tomorrow.\n\n_If you did not make this change, please contact support immediately!_`;
-        
-        const { sendWhatsAppMessage } = require("../whatsapp/whatsappController");
-        await sendWhatsAppMessage(profile.whatsappNumber, securityMsg).catch(e => console.error("Security WA Fail:", e.message));
+        // 5. SEND SECURITY NOTIFICATION (Only for Changes)
+        if (!isInitialSetup) {
+            const bossTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
+            const securityMsg = `⚠️ *SECURITY ALERT: Bank Details Changed*\n\n${bossTitle}, your payout bank account was just updated to *${resolvedDetails.account_name}* (${bankName}).\n\n🛡️ *Safety Lock:* For your security, instant payouts are paused for 24 hours. They will resume automatically tomorrow.\n\n_If you did not make this change, please contact support immediately!_`;
+            
+            const { sendWhatsAppMessage } = require("../whatsapp/whatsappController");
+            await sendWhatsAppMessage(profile.whatsappNumber, securityMsg).catch(e => console.error("Security WA Fail:", e.message));
 
-        const { sendSecurityAlertEmail } = require("../../emailLogic/emails");
-        await sendSecurityAlertEmail(user.email, user.name, `${resolvedDetails.account_name} (${bankName})`).catch(e => console.error("Security Email Fail:", e.message));
+            const { sendSecurityAlertEmail } = require("../../emailLogic/emails");
+            await sendSecurityAlertEmail(user.email, user.name, `${resolvedDetails.account_name} (${bankName})`).catch(e => console.error("Security Email Fail:", e.message));
+        }
 
         await logActivity({
             userId: req.user._id,

@@ -12,21 +12,15 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
     const [discount, setDiscount] = useState(null); 
     const [error, setError] = useState("");
     
-    // UI States
     const [status, setStatus] = useState('billing'); // 'billing', 'verifying', 'success'
 
-    // Calculate Base Price
-    let basePrice = 0;
-    if (billingCycle === 'launch') {
-        basePrice = plan === 'oga' ? 2500 : 4250;
-    } else if (plan === 'oga') {
-        basePrice = billingCycle === 'yearly' ? 5000 * 12 * 0.9 : 5000;
-    } else if (plan === 'chairman') {
-        basePrice = billingCycle === 'yearly' ? 8500 * 12 * 0.9 : 8500;
-    }
-
+    // Pioneer Offering: Subsizided Launch Rates (3000 & 4500)
+    // These rates cover the first 2 months for merchants who join during the launch window.
+    let basePrice = (plan === 'oga') ? 3000 : (plan === 'chairman' ? 4500 : 0);
+    
     // Calculate Final Price
     let finalPrice = basePrice;
+
     if (discount) {
         if (discount.type === 'percentage') {
             finalPrice = basePrice * (1 - discount.value / 100);
@@ -184,12 +178,15 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
                                     <span className={plan === 'hustler' ? "plan-tag-hustler" : "plan-tag-bright"}>
                                         {plan === 'oga' ? 'Oga Plan' : plan === 'chairman' ? 'Chairman Plan' : plan === 'hustler' ? 'Hustler Plan' : 'Custom Plan'}
                                     </span>
-                                    <span style={{ fontSize: '1.05rem', fontWeight: 900 }}>₦{basePrice.toLocaleString()}</span>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <span style={{ fontSize: '1.1rem', fontWeight: 950 }}>₦{basePrice.toLocaleString()}</span>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 900, color: '#16A34A', background: '#F0FDF4', padding: '2px 8px', borderRadius: '4px', marginTop: '4px' }}>PIONEER SUBSIDY APPLIED</div>
+                                    </div>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', fontSize: '0.85rem', color: '#64748B', fontWeight: 600 }}>
                                     <span>Billing Cycle</span>
                                     <span style={{ textTransform: 'capitalize', color: 'var(--primary)', fontWeight: 800 }}>
-                                        {billingCycle === 'launch' ? 'Pioneer Offer (2 Months Slash)' : billingCycle}
+                                        Pioneer Offer (2 Months Slash)
                                     </span>
                                 </div>
 
