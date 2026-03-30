@@ -200,7 +200,7 @@ const Dashboard = () => {
                         </div>
                         <div>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '4px', letterSpacing: '-0.02em' }}>
-                                {new Date() < new Date('2026-05-01') ? "Special Pioneer Privilege: 2 Months on Us!" : "Grand Opening Special: 50% Off Lifetime!"}
+                                Pioneer Special: 2 Months on Us!
                             </h3>
                             <p style={{ fontSize: '0.9rem', color: '#94A3B8', fontWeight: 700, margin: 0 }}>
                                 {new Date() < new Date('2026-06-01') 
@@ -211,8 +211,18 @@ const Dashboard = () => {
                     </div>
                     <button 
                         onClick={() => navigate('/settings')}
-                        className="btn-primary" 
-                        style={{ padding: '14px 28px', height: 'auto', borderRadius: '14px', background: 'white', color: '#0F172A', fontWeight: 900 }}
+                        style={{ 
+                            padding: '14px 32px', 
+                            borderRadius: '16px', 
+                            background: 'white', 
+                            color: '#0F172A', 
+                            fontWeight: 900, 
+                            border: 'none', 
+                            cursor: 'pointer',
+                            fontSize: '0.95rem',
+                            boxShadow: '0 10px 20px -5px rgba(0,0,0,0.2)'
+                        }}
+                        className="hover-scale"
                     >
                         Secure My Discount
                     </button>

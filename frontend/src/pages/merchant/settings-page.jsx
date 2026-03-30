@@ -260,7 +260,7 @@ const SettingsPage = () => {
 
             <div style={{ display: 'grid', gap: '32px' }}>
                 {/* Profile Section */}
-                <section className="glass-card" style={{ padding: '32px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
+                <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
                         <div style={{ background: '#F0F9FF', color: '#0EA5E9', padding: '10px', borderRadius: '12px' }}>
                             <UserIcon size={24} />
@@ -316,7 +316,7 @@ const SettingsPage = () => {
 
 
                 {/* AI Assistant Section */}
-                <section className="glass-card" style={{ padding: '32px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
+                <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
                         <div style={{ background: '#F5F3FF', color: 'var(--primary)', padding: '10px', borderRadius: '12px' }}>
                             <MessageCircle size={24} />
@@ -388,7 +388,7 @@ const SettingsPage = () => {
                 <section 
                     className="glass-card" 
                     style={{ 
-                        padding: '32px', 
+                        padding: 'clamp(20px, 5%, 32px)', 
                         background: 'white', 
                         borderRadius: '24px', 
                         border: '1px solid #E2E8F0', 
@@ -496,7 +496,7 @@ const SettingsPage = () => {
                 </section>
 
                 {/* Payout Settings Section - THE PREMUM REDESIGN */}
-                <section className="glass-card" style={{ padding: '32px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0', overflow: 'hidden', position: 'relative' }}>
+                <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0', overflow: 'hidden', position: 'relative' }}>
                     <div style={{ position: 'absolute', top: 0, right: 0, width: '150px', height: '150px', background: 'radial-gradient(circle, rgba(76, 29, 149, 0.05) 0%, transparent 70%)', zIndex: 0 }} />
                     
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', position: 'relative', zIndex: 1 }}>
@@ -516,28 +516,7 @@ const SettingsPage = () => {
                         )}
                     </div>
 
-                    {/* VAULT SECURITY LOCK STATUS */}
-                    {lockCountdown && (
-                        <div style={{ 
-                            background: '#FFF1F2', 
-                            border: '1px solid #FFE4E6', 
-                            padding: '16px 20px', 
-                            borderRadius: '16px', 
-                            marginBottom: '24px', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '16px',
-                            animation: 'pulse 2s infinite'
-                        }}>
-                            <div style={{ background: '#FECDD3', color: '#E11D48', padding: '10px', borderRadius: '12px' }}>
-                                <Shield size={20} />
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 900, color: '#9F1239' }}>Security Vault Lock Active</h4>
-                                <p style={{ margin: 0, fontSize: '0.75rem', color: '#BE123C', fontWeight: 600 }}>Payments are held in Escrow for your safety. Releases in: <b style={{ fontSize: '0.9rem' }}>{lockCountdown}</b></p>
-                            </div>
-                        </div>
-                    )}
+
 
                     <div style={{ position: 'relative', zIndex: 1 }}>
                         {!isEditingPayout ? (
@@ -551,7 +530,7 @@ const SettingsPage = () => {
                                 flexDirection: 'column',
                                 gap: '16px'
                             }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
                                     <div>
                                         <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Active Destination Account</p>
                                         <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#1E293B', margin: 0 }}>{form.accountName || profile?.bankDetails?.accountName}</h3>
@@ -810,15 +789,20 @@ const SettingsPage = () => {
                                         setShowCheckout(true);
                                     }}
                                     className="glass-card clickable-card"
-                                    style={{ padding: '24px', border: '1px solid var(--border)', background: 'white', cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    style={{ padding: '24px', border: '1px solid var(--border)', background: 'white', cursor: 'pointer', textAlign: 'left', width: '100%', position: 'relative', overflow: 'hidden' }}
                                 >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                    <div style={{ position: 'absolute', top: '0', left: '0', background: 'var(--primary)', color: 'white', fontSize: '0.6rem', fontWeight: 900, padding: '4px 12px', borderRadius: '0 0 12px 0', textTransform: 'uppercase' }}>50% OFF PIONEER</div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', marginTop: '8px' }}>
                                         <span style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--primary)' }}>OGA PLAN</span>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0F172A' }}>₦3,000/mo</span>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', textDecoration: 'line-through', marginRight: '6px' }}>₦6,000</span>
+                                            <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0F172A' }}>₦3,000/mo</span>
+                                        </div>
                                     </div>
-                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Voice Notes, Oga Reports & 1 Staff account. Pioneer Special: 50% Off.</p>
+                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Voice Notes, Oga Reports & 1 Staff account. Pioneer Special active until May.</p>
                                 </button>
                             )}
+
 
                             {profile?.plan !== 'chairman' && (
                                 <button 
@@ -828,13 +812,17 @@ const SettingsPage = () => {
                                         setShowCheckout(true);
                                     }}
                                     className="glass-card clickable-card"
-                                    style={{ padding: '24px', border: '1px solid #E9D5FF', background: 'linear-gradient(135deg, white, #FAF5FF)', cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    style={{ padding: '24px', border: '1px solid #E9D5FF', background: 'linear-gradient(135deg, white, #FAF5FF)', cursor: 'pointer', textAlign: 'left', width: '100%', position: 'relative', overflow: 'hidden' }}
                                 >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                    <div style={{ position: 'absolute', top: '0', left: '0', background: '#8B5CF6', color: 'white', fontSize: '0.6rem', fontWeight: 900, padding: '4px 12px', borderRadius: '0 0 12px 0', textTransform: 'uppercase' }}>FOUNDER PRE-ORDER</div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', marginTop: '8px' }}>
                                         <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#8B5CF6' }}>CHAIRMAN</span>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0F172A' }}>₦4,500/mo</span>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', textDecoration: 'line-through', marginRight: '6px' }}>₦9,000</span>
+                                            <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0F172A' }}>₦4,500/mo</span>
+                                        </div>
                                     </div>
-                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Image Scanning, White-Label Receipts & Unlimited Staff. Pioneer Special.</p>
+                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Image Scanning, White-Label Receipts & Unlimited Staff. Best for Scale.</p>
                                 </button>
                             )}
 
@@ -845,9 +833,19 @@ const SettingsPage = () => {
                                         setSelectedPlan(profile.plan);
                                         setShowCheckout(true);
                                     }}
-                                    style={{ padding: '20px', borderRadius: '20px', border: '1px dashed var(--border)', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.9rem' }}
+                                    className="glass-card clickable-card"
+                                    style={{ padding: '24px', border: '1px solid #E2E8F0', background: 'linear-gradient(135deg, white, #FAF5FF)', cursor: 'pointer', textAlign: 'left', width: '100%', position: 'relative', overflow: 'hidden' }}
                                 >
-                                    Renew Current Plan
+                                    <div style={{ position: 'absolute', top: '0', left: '0', background: 'var(--primary)', color: 'white', fontSize: '0.6rem', fontWeight: 900, padding: '4px 12px', borderRadius: '0 0 12px 0', textTransform: 'uppercase' }}>CONTINUE MEMBERSHIP</div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', marginTop: '8px' }}>
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--primary)' }}>RENEW {profile.plan.toUpperCase()}</span>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0F172A' }}>
+                                                ₦{profile.plan === 'oga' ? '3,000' : '4,500'}/mo
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Maintain all your premium data, staff access, and Kreddy intelligence features.</p>
                                 </button>
                             )}
                         </div>
@@ -857,7 +855,7 @@ const SettingsPage = () => {
                 {showCheckout && (
                     <CheckoutModal 
                         plan={selectedPlan}
-                        billingCycle="monthly"
+                        billingCycle={new Date() < new Date('2026-06-01') ? 'launch' : 'monthly'}
                         userEmail={currentUser?.email}
                         onClose={() => setShowCheckout(false)}
                         onSuccess={async (reference, plan, billingCycle, couponCode) => {

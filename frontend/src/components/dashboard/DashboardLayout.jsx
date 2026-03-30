@@ -351,8 +351,9 @@ const DashboardLayout = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeft: '1px solid #E2E8F0', paddingLeft: '20px' }}>
                             <div style={{ textAlign: 'right' }} className="hidden sm:block">
                                 <p style={{ fontSize: 'clamp(0.85rem, 3vw, 0.95rem)', fontWeight: 600, color: '#1E293B' }}>{profile?.displayName || 'User'}</p>
-                                <p style={{ fontSize: 'clamp(0.7rem, 2.5vw, 0.8rem)', fontWeight: 500, color: '#64748B' }}>{profile?.entityType === 'business' ? 'Merchant' : 'Hustler'}</p>
-                            </div>
+                                <p style={{ fontSize: 'clamp(0.7rem, 2.5vw, 0.8rem)', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    {profile?.plan || 'Hustler'}
+                                </p>                            </div>
                             <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', fontWeight: 700, fontSize: '0.9rem' }}>
                                 {profile?.logoUrl ? (
                                     <img src={profile.logoUrl} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
