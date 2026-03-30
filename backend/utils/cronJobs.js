@@ -108,12 +108,18 @@ const scheduleRemindersWorker = () => {
  * Sends a summary of yesterday's performance to the Business Owner.
  */
 const scheduleMorningSummary = () => {
-    // Schedule for 7:00 AM UTC (8:00 AM WAT) every day
+    // Schedule for 7:00 AM UTC (8:00 AM WAT) every day, 7 days a week
     cron.schedule("0 7 * * *", async () => {
-        // console.log("🌞 Running Morning Chief Summary (8AM WAT)...");
+        console.log("🌞 Running Morning Chief Summary (8AM WAT)...");
         
         try {
-            const yesterday = new Date();
+            const now = new Date();
+
+            // Start of today — used to exclude brand-new merchants who joined today
+            const startOfToday = new Date(now);
+            startOfToday.setHours(0, 0, 0, 0);
+
+            const yesterday = new Date(now);
             yesterday.setDate(yesterday.getDate() - 1);
             yesterday.setHours(0, 0, 0, 0);
             
@@ -121,7 +127,11 @@ const scheduleMorningSummary = () => {
             const endOfYesterday = new Date(yesterday);
             endOfYesterday.setHours(23, 59, 59, 999);
 
-            const profiles = await BusinessProfile.find({ whatsappNumber: { $exists: true, $ne: "" } });
+            // ✅ GUARD: Skip merchants who joined TODAY — first summary fires tomorrow morning
+            const profiles = await BusinessProfile.find({ 
+                whatsappNumber: { $exists: true, $ne: "" },
+                createdAt: { $lt: startOfToday }
+            });
 
             for (const profile of profiles) {
                 // Fetch sales made yesterday
@@ -224,78 +234,9 @@ const scheduleMorningSummary = () => {
         }
     });
 
-    // 🕵️ RECOVERY CHECK: If a summary was missed (e.g. server down at 8am), send it now.
-    // Runs every 2 hours as a safety net.
-    cron.schedule("0 */2 * * *", async () => {
-        try {
-            const now = new Date();
-            if (now.getHours() < 8) return; // Don't send before 8am WAT
-
-            const startOfToday = new Date(now);
-            startOfToday.setHours(0, 0, 0, 0);
-
-            const profiles = await BusinessProfile.find({ 
-                whatsappNumber: { $exists: true, $ne: "" },
-                $or: [
-                    { lastSummaryAt: null },
-                    { lastSummaryAt: { $lt: startOfToday } }
-                ]
-            });
-
-            if (profiles.length === 0) return;
-
-            console.log(`📡 Recovering missed summaries for ${profiles.length} businesses...`);
-            
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            yesterday.setHours(0, 0, 0, 0);
-            const startOfYesterday = new Date(yesterday);
-            const endOfYesterday = new Date(yesterday);
-            endOfYesterday.setHours(23, 59, 59, 999);
-
-            for (const profile of profiles) {
-                 const salesYesterday = await Sale.countDocuments({
-                    businessId: profile._id,
-                    createdAt: { $gte: startOfYesterday, $lte: endOfYesterday }
-                });
-
-                const allSalesWithPaymentsYesterday = await Sale.find({
-                    businessId: profile._id,
-                    "payments.date": { $gte: startOfYesterday, $lte: endOfYesterday }
-                });
-
-                let totalCashIn = 0;
-                allSalesWithPaymentsYesterday.forEach(sale => {
-                    sale.payments.forEach(p => {
-                        const pDate = new Date(p.date);
-                        if (pDate >= startOfYesterday && pDate <= endOfYesterday) totalCashIn += p.amount;
-                    });
-                });
-
-                // Only recover if they are premium OR had activity
-                if (salesYesterday > 0 || totalCashIn > 0 || ['oga', 'chairman'].includes(profile.plan)) {
-                    const planTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
-                    const bossTitle = profile.assistantSettings?.preferredName || planTitle;
-                    
-                    let msg = `🌞 *Catching up, ${bossTitle}!* \n\nI missed you this morning, but here is your summary for yesterday:\n\n`;
-                    msg += `💰 *Cash Collected:* ₦${totalCashIn.toLocaleString()}\n`;
-                    msg += `📑 *New Sales:* ${salesYesterday}\n\n`;
-                    msg += `Check full details on your dashboard: ${process.env.FRONTEND_URL || 'https://usekredibly.com'}`;
-
-                    await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => {});
-                    profile.lastSummaryAt = new Date();
-                    await profile.save();
-                } else {
-                    // Mark as sent anyway so we don't keep checking idle accounts
-                    profile.lastSummaryAt = new Date();
-                    await profile.save();
-                }
-            }
-        } catch (err) {
-            console.error("Summary Recovery Error:", err);
-        }
-    });
 };
+
+
 
 /**
  * PLAN & TRIAL EXPIRY REMINDERS (10:00 AM WAT / 9:00 AM UTC Daily)
