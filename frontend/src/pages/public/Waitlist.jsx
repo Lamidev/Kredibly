@@ -358,7 +358,7 @@ const Waitlist = () => {
                         maxWidth: '1300px', 
                         margin: '0 auto', 
                         display: 'grid', 
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 350px), 1fr))', 
                         gap: 'clamp(4rem, 12vw, 8rem)', 
                         alignItems: 'center' 
                     }}>
@@ -445,7 +445,7 @@ const Waitlist = () => {
                         We are building more than an app. We are building the automated backbone for trade, trust, and growth in informal markets.
                     </p>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '32px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '32px' }}>
                         {[
                             { icon: Users, t: "Staff Monitoring", d: "See exactly what your staff are selling from anywhere. Keep your money safe." },
                             { icon: FileText, t: "Beautiful Receipts", d: "Send professional receipts to customers on WhatsApp. Build trust instantly." },
@@ -499,7 +499,7 @@ const Waitlist = () => {
                 <div style={{ position: 'absolute', top: '20%', right: '-10%', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(124, 58, 237, 0.1) 0%, transparent 70%)', filter: 'blur(120px)', zIndex: 0 }} />
 
                 <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1, padding: '0 24px' }}>
-                    <div className="mobile-ecosystem-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'clamp(2rem, 8vw, 5rem)', alignItems: 'center' }}>
+                    <div className="mobile-ecosystem-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 'clamp(2rem, 8vw, 5rem)', alignItems: 'center' }}>
                         
                         {/* 3D iPhone Mockup */}
                         <div style={{ perspective: '2000px', display: 'flex', justifyContent: 'center' }}>
@@ -808,7 +808,7 @@ const Waitlist = () => {
                                 <div style={{ display: 'inline-flex', padding: '8px 20px', borderRadius: '100px', background: 'rgba(244, 114, 182, 0.1)', color: '#F472B6', fontSize: '0.8rem', fontWeight: 700, marginBottom: '24px', letterSpacing: '0.05em' }}>
                                     LIMITED FOUNDING SPOTS
                                 </div>
-                                <h3 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '12px', letterSpacing: '-0.03em', color: '#0F172A' }}>The "Pioneer Council"</h3>
+                                <h3 style={{ fontSize: 'clamp(2rem, 6vw, 2.5rem)', fontWeight: 800, marginBottom: '12px', letterSpacing: '-0.03em', color: '#0F172A' }}>The "Pioneer Council"</h3>
                                 <p style={{ color: '#64748B', marginBottom: '48px', fontWeight: 400, fontSize: '1.2rem', lineHeight: 1.5 }}>
                                     Join the inner circle. Founding members get an exclusive <span style={{ color: '#0F172A', fontWeight: 600 }}>Lifetime Pioneer Badge</span> + <span style={{ color: '#0F172A', fontWeight: 600 }}>Exclusive Lifetime Pricing</span> for being part of the journey.
                                 </p>
@@ -888,7 +888,7 @@ const Waitlist = () => {
                                 <div style={{ width: '84px', height: '84px', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 32px' }}>
                                     <CheckCircle2 size={48} color="#22C55E" />
                                 </div>
-                                <h3 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '16px', letterSpacing: '-0.02em', color: '#0F172A' }}>Welcome to the Council, {referralData?.name.split(" ")[0]}!</h3>
+                                <h3 style={{ fontSize: 'clamp(1.75rem, 6vw, 2.5rem)', fontWeight: 800, marginBottom: '16px', letterSpacing: '-0.02em', color: '#0F172A' }}>Welcome to the Council, {referralData?.name.split(" ")[0]}!</h3>
                                 <p style={{ color: '#64748B', marginBottom: '48px', fontWeight: 400, fontSize: '1.2rem', lineHeight: 1.6 }}>
                                     You are officially a **Kredibly Pioneer.** <br />
                                     <span style={{ color: '#0F172A', fontWeight: 700 }}>Your Lifetime Pioneer Badge & Exclusive Pricing is locked in.</span> <br />
@@ -974,7 +974,7 @@ const Waitlist = () => {
                     .waitlist-input-light { height: 60px !important; }
                     #join-form { padding: 60px 16px !important; }
                     .form-card { padding: 40px 24px !important; border-radius: 32px !important; }
-                    .hero-section { padding-top: 40px !important; padding-bottom: 60px !important; }
+                    .hero-section { padding-top: 16px !important; padding-bottom: 60px !important; }
                     .hero-badge { margin-bottom: 24px !important; padding: 8px 16px !important; gap: 4px !important; }
                     .hero-title { margin-bottom: 24px !important; line-height: 1.05 !important; }
                     .hero-subtext { margin-bottom: 32px !important; font-size: 1.1rem !important; }
