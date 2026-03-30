@@ -243,7 +243,7 @@ const Onboarding = () => {
             <div className="onboarding-container" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px 40px', position: 'relative', zIndex: 10 }}>
                 <div style={{ maxWidth: '540px', width: '100%' }}>
                     
-                    <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)' }}>
+                    <div className="glass-card" style={{ padding: 'clamp(24px, 6vw, 48px)', borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)' }}>
                         <ProgressHeader />
                         
                         <AnimatePresence mode="wait">
@@ -254,7 +254,7 @@ const Onboarding = () => {
                                         <div style={{ width: '80px', height: '80px', background: 'linear-gradient(135deg, #7C3AED, #4C1D95)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: 'white', boxShadow: '0 15px 30px rgba(76, 29, 149, 0.3)' }}>
                                             <Zap size={40} fill="white" />
                                         </div>
-                                        <h2 style={{ fontSize: '2rem', fontWeight: 950, letterSpacing: '-0.04em', color: '#0F172A', marginBottom: '12px' }}>Welcome, Oga.</h2>
+                                        <h2 style={{ fontSize: 'clamp(1.5rem, 6vw, 2rem)', fontWeight: 950, letterSpacing: '-0.04em', color: '#0F172A', marginBottom: '12px' }}>Welcome, Oga.</h2>
                                         <p style={{ color: '#0F172A', fontWeight: 600, fontSize: '1rem', lineHeight: 1.7 }}>
                                             As a <span style={{ color: 'var(--primary)', fontWeight: 800 }}>Founding Member</span>, you've been granted <strong style={{ color: '#0F172A' }}>30 days</strong> of the <strong style={{ color: '#0F172A' }}>Oga Plan</strong> for free during this beta phase.
                                         </p>

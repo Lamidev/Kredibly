@@ -254,7 +254,7 @@ const SettingsPage = () => {
     return (
         <div className="animate-fade-in" style={{ maxWidth: '800px' }}>
             <div style={{ marginBottom: '32px' }}>
-                <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#1E293B', marginBottom: '8px', letterSpacing: '-0.02em' }}>Settings</h1>
+                <h1 style={{ fontSize: 'clamp(1.6rem, 8vw, 2.5rem)', fontWeight: 900, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.03em' }}>Settings</h1>
                 <p style={{ color: '#64748B', fontWeight: 500, margin: 0 }}>Manage your business identity, Kreddy (your AI partner), and payments.</p>
             </div>
 
@@ -289,7 +289,7 @@ const SettingsPage = () => {
                         </div>
                     </div>
 
-                    <div style={{ marginTop: '32px', padding: '24px', background: '#F8FAFC', borderRadius: '20px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div style={{ marginTop: '32px', padding: '24px', background: '#F8FAFC', borderRadius: '20px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
                         <div
                             onClick={() => fileInputRef.current.click()}
                             style={{ width: '80px', height: '80px', borderRadius: '20px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #CBD5E1', cursor: 'pointer', overflow: 'hidden', fontWeight: 800, fontSize: '1.5rem', color: 'var(--primary)', position: 'relative' }}

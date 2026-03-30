@@ -199,10 +199,10 @@ const Dashboard = () => {
                             <Sparkles size={28} className="text-secondary" fill="currentColor" />
                         </div>
                         <div>
-                            <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '4px', letterSpacing: '-0.02em' }}>
+                            <h3 style={{ fontSize: 'clamp(1.1rem, 4.5vw, 1.25rem)', fontWeight: 900, marginBottom: '4px', letterSpacing: '-0.02em' }}>
                                 Pioneer Special: 2 Months on Us!
                             </h3>
-                            <p style={{ fontSize: '0.9rem', color: '#94A3B8', fontWeight: 700, margin: 0 }}>
+                            <p style={{ fontSize: 'clamp(0.8rem, 3.5vw, 0.9rem)', color: '#94A3B8', fontWeight: 700, margin: 0, lineHeight: 1.4 }}>
                                 {new Date() < new Date('2026-06-01') 
                                     ? "Grand Opening Special: Get 50% off for your first 2 months if you join before June 1st!" 
                                     : "Claim your 50% Grand Launch discount before they expire. Don't pay full price later!"}
