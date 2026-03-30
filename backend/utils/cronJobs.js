@@ -370,7 +370,7 @@ const schedulePlanExpiryReminders = () => {
                 }
             }
 
-            // 4. Handle EXPIRED Active Plans (Past Due)
+            // 4. Handle EXPIRED Active Plans (Past Due / Downgrade)
             const justExpiredActive = await BusinessProfile.find({
                 planStatus: "active",
                 nextBillingDate: { $lte: now }
@@ -382,6 +382,21 @@ const schedulePlanExpiryReminders = () => {
                 const bossTitle = profile.assistantSettings?.preferredName || (profile.plan === "chairman" ? "Chairman" : "Oga");
                 const msg = `🚨 *Plan Expired, ${bossTitle}!* \n\nYour premium features have paused. Renew now to continue tracking debt with AI without limits! 💰\n\n🔗 *Renew:* Just say _"Pay for ${profile.plan}"_`;
                 if (profile.whatsappNumber) await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Expired Alert Fail:", e));
+            }
+
+            // 5. Hard Revert Past Due to Hustler (After 1 Cycle of Past Due)
+            const overdueForDays = await BusinessProfile.find({
+                planStatus: "past_due",
+                nextBillingDate: { $lte: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) } // 3-Day Grace for active plans
+            });
+
+            for (const profile of overdueForDays) {
+                profile.planStatus = 'inactive';
+                profile.plan = 'hustler';
+                await profile.save();
+                const bossTitle = profile.assistantSettings?.preferredName || "Boss";
+                const msg = `🛑 *Benefit Lock, ${bossTitle}.* \n\nYour premium features have been locked because your plan is overdue. I've moved you back to the *Hustler Plan*. \n\n_Upgrade anytime to restore your Scan & Voice powers!_ 🦁`;
+                if (profile.whatsappNumber) await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Downgrade Alert Fail:", e));
             }
         } catch (error) {
             console.error("Cron Job Error (Plan/Trial Expiry):", error);
@@ -541,11 +556,39 @@ const scheduleEscrowPayouts = () => {
     });
 };
 
+/**
+ * MONTHLY USAGE RESET (Runs on the 1st of every month at midnight)
+ * Resets AI message counters for all businesses.
+ */
+const scheduleMonthlyUsageReset = () => {
+    cron.schedule("0 0 1 * *", async () => {
+        try {
+            console.log("🧹 Running Monthly Usage Reset...");
+            await BusinessProfile.updateMany(
+                {}, // All businesses
+                { 
+                    $set: { 
+                        "monthlyUsage.messages": 0,
+                        "monthlyUsage.images": 0,
+                        "monthlyUsage.voiceNotes": 0,
+                        "monthlyUsage.reminders": 0,
+                        "monthlyUsage.lastReset": new Date()
+                    }
+                }
+            );
+            console.log("✅ All Monthly Quotas Reset Successfully.");
+        } catch (error) {
+            console.error("Cron Job Error (Usage Reset):", error);
+        }
+    });
+};
+
 module.exports = { 
     scheduleMorningSummary, 
     scheduleRemindersWorker, 
     schedulePlanExpiryReminders, 
     scheduleProactiveFollowUps, 
     schedulePastDueEscalations,
-    scheduleEscrowPayouts
+    scheduleEscrowPayouts,
+    scheduleMonthlyUsageReset
 };

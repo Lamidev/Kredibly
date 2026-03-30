@@ -393,11 +393,7 @@ const LandingPage = () => {
                         {plans.map((plan, i) => (
                             <div key={i} className={`lp-pricing-card ${plan.highlight ? 'lp-pricing-card--featured' : ''}`}>
                                 {/* Badge ABOVE plan name */}
-                                {plan.isSlash && (
-                                    <div className="lp-pricing-badge">
-                                        🎉 2-Month 50% Grand Opening Special
-                                    </div>
-                                )}
+
                                 <h3 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', fontWeight: 900, marginBottom: '6px' }}>{plan.name}</h3>
                                 <p style={{ opacity: 0.7, fontSize: '0.9rem', fontWeight: 500, marginBottom: '24px' }}>{plan.description}</p>
                                 

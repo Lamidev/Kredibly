@@ -587,54 +587,9 @@ exports.handleIncoming = async (req, res) => {
         const bossTitle = profile?.assistantSettings?.preferredName || merchantFirstName;
 
         if (!profile) {
-            // >>> VIP KREDDY DEMO SANDBOX LOGIC <<<
-            if (text.toUpperCase().startsWith("START DEMO")) {
-                const Waitlist = require('../../models/Waitlist');
-                const numVariants = [cleanFrom];
-                if (cleanFrom.startsWith('234')) numVariants.push('0' + cleanFrom.slice(3));
-                else if (cleanFrom.startsWith('0')) numVariants.push('234' + cleanFrom.slice(1));
-                
-                const waitlistUser = await Waitlist.findOne({ whatsappNumber: { $in: numVariants } });
-                if (!waitlistUser) {
-                    await sendReply(from, "⚠️ *Demo Access Denied*\n\nYour number is not registered on the Kredibly Waitlist. Nice try! 😉\n\nPlease join the waitlist first to unlock your free premium interactive demo:\n👉 https://usekredibly.com/waitlist");
-                    return;
-                }
-
-                const User = require('../../models/User');
-                let demoUser = await User.findOne({ email: waitlistUser.email });
-                if (!demoUser) {
-                    demoUser = await User.create({
-                        name: waitlistUser.name,
-                        email: waitlistUser.email,
-                        password: "DEMO_" + Date.now() + Math.random().toString(36),
-                        isVerified: true
-                    });
-                }
-
-                let profileObj = await BusinessProfile.findOne({ ownerId: demoUser._id });
-                if (!profileObj) {
-                    profileObj = await BusinessProfile.create({
-                        ownerId: demoUser._id,
-                        displayName: waitlistUser.name + " Store",
-                        entityType: "individual",
-                        whatsappNumber: cleanFrom,
-                        sellMode: waitlistUser.industry || "both",
-                        plan: "oga",
-                        isBetaTester: true,
-                        isKreddyConnected: true
-                    });
-                    
-                    await sendReply(from, `🎉 *Welcome to your Beta Sandbox, ${bossTitle}!*\n\nI just automatically upgraded your Pioneer Sandbox to the Oga Plan using your Waitlist profile.\n\n*Your Rules:* You get a full 30-interaction pilot to test my intelligence. Ask me anything or try sending a voice note like:\n\n🎧 _'Record a 50k sale from Sarah'_\n\nor\n\n🎧 _'Remind me to call David at 6pm'_\n\nReady? Let's make some money! 🚀`);
-                    return;
-                } else {
-                    await sendReply(from, `Hi ${bossTitle}! Your Demo Sandbox is already active. Send me a voice note or text to test my capabilities! 🚀`);
-                    return;
-                }
-            }
-
-            // Normal unknown number flow
+            // Pre-launch Phase: Force Registration for all unknown numbers
             const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
-            const welcomeMsg = `*Welcome to Kredibly!* 🚀\n\nI am *Kreddy*, your new Digital Chief of Staff. I can help you record sales, track who owes you money, and send automated payment reminders—all directly from this WhatsApp chat!\n\n_I don't recognize your number yet._ 🧐\n\nTap the link below to create your free account in 30 seconds, and let's put your business on autopilot: 👇\n\n🔗 *${APP_URL}/signup*`;
+            const welcomeMsg = `*Welcome to Kredibly (Pre-Launch)!* 🚀\n\nI am *Kreddy*, your new Digital Chief of Staff. I handle your sales records, debtors, and automated invoices directly from this WhatsApp chat!\n\n_I don't recognize your number as a registered merchant yet._ 🧐\n\nTap the link below to create your free account in 30 seconds, and let's get you set up for our May launch: 👇\n\n🔗 *${APP_URL}/signup*`;
             await sendReply(from, welcomeMsg);
             return;
         }
@@ -642,17 +597,14 @@ exports.handleIncoming = async (req, res) => {
         const isStaff = profile.whatsappNumber !== cleanFrom;
         const plan = profile.plan || "hustler";
 
-        // >>> CLOSED BETA 30-MESSAGE HARD STOP <<<
-        if (profile.isBetaTester) {
-            if (profile.demoMessagesUsed >= 30) {
-                const limitMsg = `🚨 *Demo Sandbox Closed*\n\nYou have used all 30 of your Beta Trial transactions! (You completed a full business testing loop).\n\nI hope you saw how powerful Kredibly is. As your future Chief of Staff, I am currently in 'Closed Beta' and we have not officially launched yet.\n\nBecause you completed your trial, I have automatically moved your number to the *Priority Launch List*. The moment we open the gates, you will be the first to get full access to your permanent account.\n\nWant to jump to the very front of the line? Refer 3 fellow business owners using your unique Waitlist link!\n👉 https://usekredibly.com/waitlist`;
-                await sendReply(from, limitMsg);
-                return;
-            }
-            
-            // Increment the counter and save
-            profile.demoMessagesUsed += 1;
-            await profile.save();
+        // 🛡️ PRE-LAUNCH EXPENSE MANAGEMENT (Capped AI messages)
+        const usedMessages = profile.monthlyUsage?.messages || 0;
+        const msgLimit = plan === "hustler" ? 50 : 150; // Trial Oga gets more bandwidth
+
+        if (usedMessages >= msgLimit) {
+            const limitMsg = `⚠️ *Monthly AI Usage Limit Met*\n\nHigh power, ${bossTitle}! 🚀 You've used up your *${msgLimit}* AI-powered messages for this month.\n\nYou can still record sales & manage your dashboard on the website, but my brain needs a rest! 🧠💤\n\nNeed unlimited Kreddy? Upgrade or check your plan here: ${APP_URL}/pricing`;
+            await sendReply(from, limitMsg);
+            return;
         }
 
         const isTrialing = profile.planStatus === 'trialing';
@@ -939,13 +891,28 @@ Upgrade here: ${APP_URL}/pricing`);
             const bossTitle = profile.assistantSettings?.preferredName || planDefaultTitle;
             
             await sendReply(from, `You're very welcome, ${bossTitle}! 🫡 Always happy to keep your records straight. Let me know if you need anything else!`);
-            return;
-        } else {
-            // 🧠 100% AI-DRIVEN PIPELINE (No Regex)
-            const session = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
+            return;        } else {
+            // 🔒 SECURITY & COST CHECK: Enforce AI Message Limits (Monthly Reset)
+            const msgLimit = plan === "hustler" ? 50 : 150;
+            const currentUsage = profile.monthlyUsage?.messages || 0;
 
-            // Fetch some context about debtors to help the AI be "Brainy"
+            if (currentUsage >= msgLimit) {
+                const bossTitle = profile.assistantSettings?.preferredName || (plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss"));
+                const upgradePlan = plan === "hustler" ? "Oga" : "Chairman";
+                const upgradeLink = `https://usekredibly.com/settings`;
+                
+                let limitMsg = `⚠️ *Brain Overload, ${bossTitle}!* \n\nI've used up my monthly AI brainpower for your current plan (Limit: ${msgLimit} messages). \n\nUpgrade to the *${upgradePlan} Plan* now to get *UNLIMITED* access and keep your records sharp! 🦁\n\n🔗 *Upgrade Here:* ${upgradeLink}`;
+                if (plan !== "hustler") {
+                     limitMsg = `🚀 *Limit Reached, ${bossTitle}!* \n\nYou've hit your 150-message monthly quota. This is amazing growth! To continue using my AI for unlimited insights, click here to refresh your subscription or move to *Chairman Priority*: ${upgradeLink}`;
+                }
+
+                return await sendReply(from, limitMsg);
+            }
+
+            // 🧠 100% AI-DRIVEN PIPELINE
+            const session = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
             const unpaidSales = await Sale.find({ businessId: profile._id, status: { $ne: "paid" } }).sort({ createdAt: -1 }).limit(10);
+            
             const debtorContext = unpaidSales.map(s => {
                 const bal = s.totalAmount - s.payments.reduce((sum, p) => sum + p.amount, 0);
                 return `${s.customerName}: ₦${bal.toLocaleString()} (Invoice #${s.invoiceNumber})`;
@@ -1024,6 +991,7 @@ Upgrade here: ${APP_URL}/pricing`);
 
                     if (aiResponse) {
                         profile.monthlyUsage.images = (profile.monthlyUsage.images || 0) + 1;
+                        profile.monthlyUsage.messages = (profile.monthlyUsage.messages || 0) + 1;
                         await profile.save();
                     }
                 }
@@ -1064,6 +1032,8 @@ Upgrade here: ${APP_URL}/pricing`);
                     }
                 } else {
                     console.log(`🤖 AI Result: Intent=${aiResponse.intent}, Confidence=${aiResponse.confidence}`);
+                    profile.monthlyUsage.messages = (profile.monthlyUsage.messages || 0) + 1;
+                    await profile.save();
                 }
             }
 

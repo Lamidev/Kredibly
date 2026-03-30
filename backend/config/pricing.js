@@ -1,16 +1,16 @@
 const LAUNCH_DATE = new Date('2026-05-01T00:00:00Z'); // Official Launch Day
-const SLASH_WINDOW_END = new Date('2026-07-01T00:00:00Z'); // Grand Opening Sale Ends (Cut-off)
+const SLASH_WINDOW_END = new Date('2026-06-01T00:00:00Z'); // Launch Promo Ends (End of May)
 
 const PRICING_PLANS = {
     oga: {
-        monthly: 5000,
-        yearly: 54000, 
-        launch: 2500   
+        monthly: 6000,
+        yearly: 64800, 
+        launch: 3000   
     },
     chairman: {
-        monthly: 8500,
-        yearly: 91800, 
-        launch: 4250   
+        monthly: 9000,
+        yearly: 97200, 
+        launch: 4500   
     }
 };
 

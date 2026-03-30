@@ -6,7 +6,9 @@ const {
   NEW_TICKET_ALERT_TEMPLATE,
   WAITLIST_NOTIFICATION_TEMPLATE,
   WAITLIST_CONFIRMATION_TEMPLATE,
-  SUPPORT_REPLY_TEMPLATE
+  SUPPORT_REPLY_TEMPLATE,
+  SUBSCRIPTION_CONFIRM_TEMPLATE,
+  BANK_CHANGE_ALERT_TEMPLATE
 } = require("./emailTemplates.js");
 const { resendClient, sender } = require("./emailConfig.js");
 
@@ -147,30 +149,42 @@ exports.sendSupportReplyEmail = async (userEmail, userName, message, ticketSubje
 
 exports.sendSecurityAlertEmail = async (email, userName, details) => {
   try {
+    const [accountName, bankName] = details.split(' (');
+    const displayBank = bankName.replace(')', '');
+    const accountNum = "Validating..."; // Details should ideally be split or passed better
+
     await resendClient.emails.send({
       from: `${sender.name} <${sender.email}>`,
       to: email,
       subject: "🚨 Security Alert: Payout Details Changed",
-      html: `
-        <div style="font-family: sans-serif; padding: 20px; color: #333;">
-          <h2 style="color: #e63946;">Security Alert</h2>
-          <p>Hello \${userName},</p>
-          <p>Your Kredibly payout bank account details were recently changed.</p>
-          <div style="background: #f1f1f1; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <strong>New Account Details:</strong><br/>
-            \${details}
-          </div>
-          <p style="color: #d62828; font-weight: bold;">🛡️ Security Lock Active:</p>
-          <p>For your protection, all automated payouts to this account are paused for 24 hours. They will resume automatically tomorrow.</p>
-          <p>If you did <strong>not</strong> authorize this change, please log in and contact Kredibly support immediately to secure your account.</p>
-          <br/>
-          <p>Stay safe,<br/>Kreddy AI Security Team</p>
-        </div>
-      `
+      html: BANK_CHANGE_ALERT_TEMPLATE
+        .replace("{name}", userName)
+        .replace("{bankName}", displayBank)
+        .replace("{accountNumber}", "Updated")
+        .replace("{accountName}", accountName)
     });
   } catch (error) {
     console.error("Error sending security alert email:", error);
   }
+};
+
+exports.sendSubscriptionConfirmEmail = async (email, userData) => {
+    try {
+        await resendClient.emails.send({
+            from: `${sender.name} <${sender.email}>`,
+            to: email,
+            subject: userData.subject || "Welcome to the Kredibly Vanguard 🛡️",
+            html: SUBSCRIPTION_CONFIRM_TEMPLATE
+                .replace(/{name}/g, userData.name)
+                .replace(/{planName}/g, userData.planName)
+                .replace(/{amount}/g, userData.amount)
+                .replace(/{expiryDate}/g, userData.expiryDate)
+                .replace(/{launchDate}/g, userData.launchDate)
+                .replace(/{pioneerStatus}/g, userData.pioneerStatus)
+        });
+    } catch (error) {
+        console.error("Error sending subscription confirmation email:", error);
+    }
 };
 
 

@@ -109,6 +109,7 @@ const BusinessProfileSchema = new mongoose.Schema({
         reminders: { type: Number, default: 0 },
         voiceNotes: { type: Number, default: 0 },
         images: { type: Number, default: 0 },
+        messages: { type: Number, default: 0 }, // 🛡️ Managed pre-launch expenses
         lastReset: { type: Date, default: Date.now }
     },
     isSuccessBased: {
