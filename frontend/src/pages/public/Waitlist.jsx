@@ -294,7 +294,7 @@ const Waitlist = () => {
                         position: 'relative',
                         zIndex: 20
                     }}>
-                        100% FREE TRANSACTIONS & INSTANT SETTLEMENT
+                        100% FREE TRANSACTIONS & NEXT-DAY SETTLEMENT
                     </div>
 
                     <h1 className="hero-title" style={{ fontSize: 'clamp(2.1rem, 8vw, 5.5rem)', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.04em', marginBottom: '32px', color: '#0F172A' }}>
@@ -373,7 +373,7 @@ const Waitlist = () => {
                         </p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }} className="mobile-feature-list">
                             {[
-                                { t: "Instant Direct Sweep", d: "Customers pay you through Kreddy, and the cash lands in your bank instantly. No delays." },
+                                { t: "Next-Day Direct Sweep", d: "Customers pay you through Kreddy, and the cash lands directly in your bank next-day. Guaranteed." },
                                 { t: "AI Voice Sync", d: "Too busy to type? Just send a voice note to Kreddy. He'll record the sale and the debt for you." },
                                 { t: "No more paper notebooks", d: "Kreddy handles the math and remembers the debts so you can focus on selling." }
                             ].map((item, i) => (
@@ -448,7 +448,7 @@ const Waitlist = () => {
                         {[
                             { icon: Users, t: "Staff Monitoring", d: "See exactly what your staff are selling from anywhere. Keep your money safe." },
                             { icon: FileText, t: "Beautiful Receipts", d: "Send professional receipts to customers on WhatsApp. Build trust instantly." },
-                            { icon: Lock, t: "Instant Debt Recovery", d: "Send professional outstanding notices with secure payment links directly on WhatsApp. Your customers pay, and you get the cash instantly. No more awkward follow-ups." },
+                            { icon: Lock, t: "Seamless Debt Recovery", d: "Send professional outstanding notices with secure payment links directly on WhatsApp. Your customers pay, and you get the cash seamlessly. No more awkward follow-ups." },
                             { icon: Zap, t: "8 AM Executive Briefing", d: "Waking up to a summary of your sales, cash collected, and top debtors. Pure intelligence, no fluff." },
                             { icon: TrendingUp, t: "Voice-First Productivity", d: "Driving or in the market? Just send a voice note. Kreddy handles the logging and the follow-ups." }
                         ].map((item, i) => (

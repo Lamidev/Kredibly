@@ -635,7 +635,7 @@ const PublicInvoicePage = () => {
                                         ) : (
                                             <>
                                                 <Building2 size={20} /> 
-                                                <span>Instant Bank Transfer (Zero Fee)</span>
+                                                <span>Direct Bank Transfer (Zero Fee)</span>
                                             </>
                                         )}
                                     </button>

@@ -39,11 +39,11 @@ const Login = () => {
 
   return (
     <div className="dashboard-glass" style={{ 
-      padding: '40px', 
+      padding: '48px', 
       borderRadius: '32px', 
       background: 'white',
-      border: '1px solid var(--border)',
-      boxShadow: 'var(--shadow-premium)' 
+      border: '1px solid rgba(0,0,0,0.06)',
+      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)'
     }}>
       <div style={{ marginBottom: '32px' }}>
         <h2 className="premium-gradient" style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em' }}>Welcome Back</h2>

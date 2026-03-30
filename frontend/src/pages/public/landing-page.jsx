@@ -247,7 +247,7 @@ const LandingPage = () => {
                         }}>
                              <Typewriter phrases={[
                                 "Ditch the notebooks.",
-                                "Get paid instantly.",
+                                "Get paid next-day.",
                                 "Do business better."
                             ]} />
                         </div>
@@ -262,7 +262,7 @@ const LandingPage = () => {
                         fontWeight: 400,
                     }}>
                         You have a business to run. Let Kreddy handle the records. 
-                        Plan your day, track what you're owed, send professional invoices, and get paid instantly, all inside your WhatsApp.
+                        Plan your day, track what you're owed, send professional invoices, and get paid seamlessly, all inside your WhatsApp.
                     </p>
 
                     <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '32px' }}>
@@ -304,7 +304,7 @@ const LandingPage = () => {
 
                     <div className="bento-item bento-4" style={{ background: 'linear-gradient(135deg, #0F172A, #1E1B4B)', color: 'white', overflow: 'hidden' }}>
                         <div style={{ position: 'relative', zIndex: 2 }}>
-                            <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '12px' }}>Instant Settlement</h4>
+                            <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '12px' }}>Next-Morning Settlement</h4>
                             <p style={{ opacity: 0.8, fontSize: '1.1rem', lineHeight: 1.5, fontWeight: 500 }}>Secure "Pay Now" links mean money lands in your bank account the moment someone pays.</p>
                         </div>
                         <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.15 }}><CreditCard size={200} /></div>
@@ -334,7 +334,7 @@ const LandingPage = () => {
                                 <div style={{ width: '100%', height: '100%', background: '#E5DDD5', borderRadius: '40px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                                     <div style={{ background: '#075E54', padding: '40px 20px 16px', color: 'white', display: 'flex', alignItems: 'center', gap: '14px' }}>
                                         <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'white' }}>K</div>
-                                        <div><p style={{ fontSize: '0.95rem', fontWeight: 900 }}>Kredibly x Kreddy</p><p style={{ fontSize: '0.65rem', opacity: 0.8 }}>Business Assistant</p></div>
+                                        <div><p style={{ fontSize: '0.95rem', fontWeight: 900 }}>KreddyAI</p><p style={{ fontSize: '0.65rem', opacity: 0.8 }}>Business Assistant</p></div>
                                     </div>
                                     <div style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                         <div style={{ alignSelf: 'flex-end', background: '#DCF8C6', padding: '16px', borderRadius: '16px 0 16px 16px', fontSize: '0.85rem', color: '#111', fontWeight: 500, maxWidth: '85%' }}>
@@ -382,57 +382,47 @@ const LandingPage = () => {
 
             {/* 4. PRICING SECTION - Updated for Success-Fee Model */}
             <section id="pricing" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: '#FDFCFE' }}>
-                <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-                        <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem', letterSpacing: '0.05em' }}>100% FREE SETTLEMENTS & INSTANT PAYOUT</div>
-                        <h2 style={{ fontSize: 'clamp(2.2rem, 5vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Zero Transaction Fees. <br /><span className="premium-gradient">Keep 100% of your sales.</span></h2>
-                        <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginTop: '20px', maxWidth: '600px', margin: '20px auto 48px' }}>We don't charge you to collect your own money. The exact amount on your invoice is what lands in your bank account.</p>
+                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: 'clamp(40px, 8vw, 80px)' }}>
+                        <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: 'clamp(0.7rem, 2vw, 0.85rem)', letterSpacing: '0.05em' }}>100% FREE SETTLEMENTS & NEXT-DAY PAYOUT</div>
+                        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Zero Transaction Fees. <br /><span className="premium-gradient">Keep 100% of your sales.</span></h2>
+                        <p style={{ fontSize: 'clamp(0.9rem, 2.5vw, 1.2rem)', color: 'var(--text-muted)', marginTop: '20px', maxWidth: '600px', margin: '20px auto 48px' }}>We don't charge you to collect your own money. The exact amount on your invoice is what lands in your bank account.</p>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
+                    <div className="lp-pricing-grid">
                         {plans.map((plan, i) => (
-                            <div key={i} style={{ 
-                                padding: '48px', 
-                                borderRadius: '32px', 
-                                background: plan.highlight ? '#0F172A' : 'white', 
-                                color: plan.highlight ? 'white' : '#0F172A',
-                                border: plan.highlight ? '2px solid var(--primary)' : '1px solid #E2E8F0',
-                                position: 'relative',
-                                transform: plan.highlight ? 'scale(1.02)' : 'none',
-                                boxShadow: plan.highlight ? '0 30px 60px -15px rgba(15, 23, 42, 0.3)' : '0 10px 30px -10px rgba(0,0,0,0.02)',
-                                zIndex: plan.highlight ? 2 : 1,
-                                display: 'flex', flexDirection: 'column'
-                            }}>
+                            <div key={i} className={`lp-pricing-card ${plan.highlight ? 'lp-pricing-card--featured' : ''}`}>
+                                {/* Badge ABOVE plan name */}
                                 {plan.isSlash && (
-                                    <div style={{ position: 'absolute', top: '24px', right: '32px', background: 'var(--primary)', color: 'white', padding: '6px 14px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        2-MONTH 50% GRAND OPENING SPECIAL
+                                    <div className="lp-pricing-badge">
+                                        🎉 2-Month 50% Grand Opening Special
                                     </div>
                                 )}
-                                <h3 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '8px' }}>{plan.name}</h3>
-                                <p style={{ opacity: 0.7, fontSize: '0.95rem', fontWeight: 600, marginBottom: '32px', minHeight: '44px' }}>{plan.description}</p>
+                                <h3 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', fontWeight: 900, marginBottom: '6px' }}>{plan.name}</h3>
+                                <p style={{ opacity: 0.7, fontSize: '0.9rem', fontWeight: 500, marginBottom: '24px' }}>{plan.description}</p>
                                 
-                                <div style={{ marginBottom: '40px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                                        {plan.isSlash && <span style={{ fontSize: '1.5rem', fontWeight: 700, textDecoration: 'line-through', opacity: 0.4 }}>{plan.originalPrice}</span>}
-                                        <span style={{ fontSize: '3rem', fontWeight: 950, letterSpacing: '-0.05em' }}>{plan.price}</span>
-                                        <span style={{ opacity: 0.6, fontWeight: 700 }}>{plan.period}</span>
+                                <div style={{ marginBottom: '32px' }}>
+                                    <div className="lp-price-row">
+                                        {plan.isSlash && <span className="lp-price-original">{plan.originalPrice}</span>}
+                                        <span className="lp-price-main">{plan.price}</span>
+                                        <span className="lp-price-period">{plan.period}</span>
                                     </div>
-                                    <div style={{ fontSize: '1rem', fontWeight: 900, color: plan.highlight ? '#4ADE80' : 'var(--primary)', marginTop: '4px' }}>+ {plan.fee}</div>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: plan.highlight ? 'white' : 'var(--primary)', marginTop: '4px' }}>+ {plan.fee}</div>
                                 </div>
 
                                 <button 
                                     onClick={plan.ctaAction}
                                     className={plan.highlight ? "btn-primary" : "btn-secondary"} 
-                                    style={{ width: '100%', marginBottom: '40px', justifyContent: 'center', height: '60px', borderRadius: '18px', boxShadow: plan.highlight ? '0 10px 20px rgba(124, 58, 237, 0.3)' : 'none' }}
+                                    style={{ width: '100%', marginBottom: '32px', justifyContent: 'center', height: '54px', borderRadius: '16px', fontSize: '0.95rem', boxShadow: plan.highlight ? '0 10px 20px rgba(124, 58, 237, 0.3)' : 'none' }}
                                 >
-                                    {plan.cta} <ArrowRight size={18} />
+                                    {plan.cta} <ArrowRight size={16} />
                                 </button>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                                     {plan.features.map((feat, j) => (
-                                        <div key={j} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 700 }}>
-                                            <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: plan.highlight ? 'rgba(255,255,255,0.1)' : 'rgba(76, 29, 149, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <Check size={14} color={plan.highlight ? '#4ADE80' : 'var(--primary)'} />
+                                        <div key={j} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '0.9rem', fontWeight: 600 }}>
+                                            <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: plan.highlight ? 'rgba(255,255,255,0.1)' : 'rgba(76, 29, 149, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
+                                                <Check size={12} color={plan.highlight ? '#4ADE80' : 'var(--primary)'} />
                                             </div>
                                             {feat}
                                         </div>
@@ -485,18 +475,102 @@ const LandingPage = () => {
             <PublicFooter />
 
             <style>{`
+                /* ── Mockup Grid ── */
                 .landing-mockup-grid { display: grid; grid-template-columns: 1fr; gap: 4rem; align-items: center; }
                 @media (min-width: 992px) { .landing-mockup-grid { grid-template-columns: 1.15fr 0.85fr; } }
+
+                /* ── Premium Gradient ── */
                 .premium-gradient {
                     background: linear-gradient(135deg, var(--primary) 0%, #F472B6 100%);
                     -webkit-background-clip: text;
                     background-clip: text;
                     -webkit-text-fill-color: transparent;
                 }
-                .glass-card { background: white; backdrop-filter: blur(20px); border: 1px solid rgba(0,0,0,0.05); transition: 0.3s; }
-                .glass-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.05); }
-                @media (max-width: 1024px) {
-                    .phone-mockup { transform: scale(0.9); }
+
+                /* ── Landing Pricing Grid ── */
+                .lp-pricing-grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 24px;
+                    align-items: start;
+                }
+                .lp-pricing-card {
+                    padding: 36px;
+                    border-radius: 28px;
+                    background: white;
+                    color: #0F172A;
+                    border: 1px solid #E2E8F0;
+                    display: flex;
+                    flex-direction: column;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+                }
+                .lp-pricing-card--featured {
+                    background: #0F172A;
+                    color: white;
+                    border: 2px solid var(--primary);
+                    box-shadow: 0 20px 50px -10px rgba(15,23,42,0.3);
+                }
+                .lp-pricing-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    background: var(--primary);
+                    color: white;
+                    padding: 5px 12px;
+                    border-radius: 100px;
+                    font-size: 0.7rem;
+                    font-weight: 800;
+                    margin-bottom: 14px;
+                    width: fit-content;
+                    white-space: nowrap;
+                }
+                .lp-price-row {
+                    display: flex;
+                    align-items: baseline;
+                    gap: 6px;
+                    flex-wrap: wrap;
+                }
+                .lp-price-original {
+                    font-size: 1.1rem;
+                    font-weight: 700;
+                    text-decoration: line-through;
+                    opacity: 0.4;
+                }
+                .lp-price-main {
+                    font-size: clamp(1.8rem, 4vw, 2.8rem);
+                    font-weight: 950;
+                    letter-spacing: -0.04em;
+                    line-height: 1;
+                }
+                .lp-price-period {
+                    opacity: 0.6;
+                    font-weight: 600;
+                    font-size: 0.9rem;
+                }
+
+                /* ── Mobile Pricing Responsive ── */
+                @media (max-width: 900px) {
+                    .lp-pricing-grid {
+                        grid-template-columns: 1fr;
+                        max-width: 480px;
+                        margin: 0 auto;
+                    }
+                    .lp-pricing-card--featured {
+                        order: -1;
+                    }
+                    .lp-pricing-badge {
+                        font-size: 0.65rem;
+                        padding: 4px 10px;
+                        white-space: normal;
+                    }
+                }
+
+                /* ── Global Mobile Typography ── */
+                @media (max-width: 768px) {
+                    .phone-mockup { transform: scale(0.95); }
+                    section h2 { font-size: clamp(1.5rem, 6vw, 2.4rem) !important; }
+                    section h3 { font-size: clamp(1rem, 4vw, 1.4rem) !important; }
+                    section h4 { font-size: clamp(0.95rem, 3.5vw, 1.2rem) !important; }
+                    section p  { font-size: clamp(0.82rem, 3vw, 1rem) !important; }
                 }
             `}</style>
         </div>
