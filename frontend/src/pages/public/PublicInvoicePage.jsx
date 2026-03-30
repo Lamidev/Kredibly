@@ -138,12 +138,7 @@ const PublicInvoicePage = () => {
 
             const handler = window.PaystackPop.setup({
                 key: res.data.publicKey,
-                email: res.data.email,
-                amount: res.data.amount * 100,
-                ref: res.data.reference,
-                subaccount: res.data.subaccount, // 💰 SETTLES DIRECTLY TO MERCHANT
-                metadata: res.data.metadata,
-                channels: channels,
+                accessCode: res.data.accessCode, // 💎 ALL-IN-ONE TOKEN (Fees, Settlements, Reference)
                 callback: function(response) {
                     setLastPaymentAmount(res.data.originalAmount);
                     setRecentPaymentDate(new Date());

@@ -50,7 +50,26 @@ exports.updateProfile = async (req, res) => {
         } else {
             // New Profile Creation: Check if user is from Waitlist
             const waitlistEntry = await Waitlist.findOne({ email: req.user.email });
-            const isWaitlistUser = !!waitlistEntry;
+            
+            // 🚀 SUBACCOUNT INIT: If bank details are provided during onboarding, set up Paystack immediately
+            let subaccountCode = null;
+            if (bankDetails && bankDetails.accountNumber && bankDetails.bankCode) {
+                try {
+                    const subaccount = await createSubaccount(
+                        displayName, 
+                        bankDetails.bankCode, 
+                        bankDetails.accountNumber,
+                        0 
+                    );
+                    subaccountCode = subaccount.subaccount_code;
+                } catch (err) {
+                    console.error("Onboarding Subaccount Error:", err.message);
+                    // We don't fail the whole onboarding if Paystack is down, but we log it
+                }
+            }
+
+            const { LAUNCH_DATE, SLASH_WINDOW_END } = require('../../config/pricing');
+            const now = new Date();
 
             profile = new BusinessProfile({
                 ownerId: req.user._id,
@@ -62,19 +81,23 @@ exports.updateProfile = async (req, res) => {
                 whatsappNumber: cleanPhone(whatsappNumber),
                 address,
                 assistantSettings,
-                bankDetails,
+                bankDetails: bankDetails ? {
+                    ...bankDetails,
+                    lastBankChangeAt: new Date(),
+                    bankDetailsLockUntil: new Date(Date.now() + 24 * 60 * 60 * 1000)
+                } : {},
+                paystackSubaccountCode: subaccountCode,
                 staffNumbers: staffNumbers ? staffNumbers.map(n => cleanPhone(n)).filter(n => n) : [],
                 
                 // 🚀 OPEN BETA STRATEGY: 
-                // All users who join during the pre-launch phase get OGA PLAN (Free) for 90 days.
-                // We tag them as Founding Members to reward them with "Slash Prices" at launch.
                 plan: 'oga', 
                 planStatus: 'trialing',
-                trialExpiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), 
+                trialExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 🚀 BETA TEST: 30 days trial
                 hasUsedTrial: true,
-                isFoundingMember: true, // Tag everyone joining now as a Founding Member
+                isFoundingMember: now < SLASH_WINDOW_END,
+                joinedAtLaunch: now < SLASH_WINDOW_END,
                 walletBalance: 0,
-                discountActiveUntil: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000) // 6 months potential for launch offers
+                discountActiveUntil: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000)
             });
 
             await profile.save();

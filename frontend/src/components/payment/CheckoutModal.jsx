@@ -188,7 +188,9 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', fontSize: '0.85rem', color: '#64748B', fontWeight: 600 }}>
                                     <span>Billing Cycle</span>
-                                    <span style={{ textTransform: 'capitalize' }}>{billingCycle}</span>
+                                    <span style={{ textTransform: 'capitalize', color: 'var(--primary)', fontWeight: 800 }}>
+                                        {billingCycle === 'launch' ? 'Pioneer Offer (2 Months Slash)' : billingCycle}
+                                    </span>
                                 </div>
 
                                 {discount ? (

@@ -174,6 +174,51 @@ const Dashboard = () => {
                 </motion.div>
             </div>
 
+            {/* 🚀 Grand Launch Urgency Banner */}
+            {(profile?.plan === 'hustler' || profile?.planStatus === 'trialing') && (
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    style={{ 
+                        background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)', 
+                        padding: '24px 32px', 
+                        borderRadius: '28px', 
+                        marginBottom: '40px',
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '24px',
+                        border: '1px solid rgba(124, 58, 237, 0.3)',
+                        boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.4)'
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                        <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: 'rgba(124, 58, 237, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Sparkles size={28} className="text-secondary" fill="currentColor" />
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '4px', letterSpacing: '-0.02em' }}>
+                                {new Date() < new Date('2026-05-01') ? "Special Pioneer Privilege: 2 Months on Us!" : "Grand Opening Special: 50% Off Lifetime!"}
+                            </h3>
+                            <p style={{ fontSize: '0.9rem', color: '#94A3B8', fontWeight: 700, margin: 0 }}>
+                                {new Date() < new Date('2026-06-01') 
+                                    ? "Grand Opening Special: Get 50% off for your first 2 months if you join before June 1st!" 
+                                    : "Claim your 50% Grand Launch discount before they expire. Don't pay full price later!"}
+                            </p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={() => navigate('/settings')}
+                        className="btn-primary" 
+                        style={{ padding: '14px 28px', height: 'auto', borderRadius: '14px', background: 'white', color: '#0F172A', fontWeight: 900 }}
+                    >
+                        Secure My Discount
+                    </button>
+                </motion.div>
+            )}
+
             {/* Premium Stats Bento Grid */}
             <div style={{
                 display: 'grid',

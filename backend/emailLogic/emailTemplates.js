@@ -278,6 +278,59 @@ const SUPPORT_REPLY_TEMPLATE = `
 </html>
 `;
 
+const SUBSCRIPTION_CONFIRM_TEMPLATE = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>A Personal Note: Your Kredibly Legacy</title>
+</head>
+<body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
+  
+  <div style="margin-bottom: 32px;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
+  </div>
+
+  <div style="background-color: #ffffff; padding: 0;">
+    <p style="font-size: 18px; font-weight: 800; color: ${THEME_COLOR}; margin-top: 0; display: flex; align-items: center; gap: 8px;">
+       Payment Verified. Welcome home, Pioneer 🛡️
+    </p>
+    
+    <p style="font-size: 16px;">Hi {name},</p>
+    
+    <p style="font-size: 16px;">I’m Oluwatosin, and I wanted to personally reach out because your support today means more than a simple transaction. By securing your <strong>{planName} Plan</strong>, you’ve not just bought a tool; you’ve joined me in a mission to build a more professional, reliable future for your business.</p>
+    
+    <div style="background: #F8FAFC; border-radius: 20px; padding: 28px; margin: 32px 0; border: 1px solid #E2E8F0;">
+        <p style="margin: 0 0 12px; font-size: 13px; font-weight: 800; color: ${THEME_COLOR}; text-transform: uppercase; letter-spacing: 0.05em;">Your Order Details</p>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <p style="margin: 0; font-size: 15px; color: #475569;"><strong>Elite Plan:</strong> {planName}</p>
+            <p style="margin: 0; font-size: 15px; color: #475569;"><strong>Amount:</strong> {amount}</p>
+            <p style="margin: 0; font-size: 15px; color: #475569;"><strong>Status:</strong> <span style="color: #16A34A; font-weight: 800;">ACTIVE NOW</span></p>
+            <p style="margin: 0; font-size: 15px; color: #475569;"><strong>Next Renewal:</strong> {expiryDate}</p>
+        </div>
+    </div>
+
+    <p style="font-size: 16px; font-weight: 800; color: #0F172A; margin-bottom: 8px;">A Word on Your Advantage:</p>
+    <p style="font-size: 16px; color: #475569; line-height: 1.5; margin-top: 0;">{pioneerStatus}</p>
+    
+    <p style="font-size: 16px; margin-top: 32px;">I built Kredibly because I believe your shop boy shouldn't be late and your debtors shouldn't have excuses. Together, we are changing the standard.</p>
+    
+    <p style="font-size: 16px;">I’m with you on this journey. If you need anything, simply reply to this email. I read them all.</p>
+    
+    <div style="margin-top: 40px;">
+      <p style="font-weight: 800; margin: 0; font-size: 16px;">Oluwatosin</p>
+      <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">CEO & Founder, Kredibly</p>
+    </div>
+  </div>
+
+  <div style="margin-top: 40px; border-top: 1px solid #E5E7EB; padding-top: 20px; font-size: 12px; color: #9CA3AF;">
+    <p>© ${new Date().getFullYear()} Kredibly Inc. All rights reserved.</p>
+  </div>
+</body>
+</html>
+`;
+
+
 module.exports = {
   VERIFICATION_EMAIL_TEMPLATE,
   PASSWORD_RESET_SUCCESS_TEMPLATE,
@@ -286,5 +339,6 @@ module.exports = {
   NEW_TICKET_ALERT_TEMPLATE,
   WAITLIST_NOTIFICATION_TEMPLATE,
   WAITLIST_CONFIRMATION_TEMPLATE,
-  SUPPORT_REPLY_TEMPLATE
+  SUPPORT_REPLY_TEMPLATE,
+  SUBSCRIPTION_CONFIRM_TEMPLATE
 };

@@ -11,7 +11,7 @@ const { logUsage } = require('../../utils/usageTracker');
 const { sendWhatsAppMessage } = require('../whatsapp/whatsappController');
 
 const { verifyPaystackReference } = require('../../utils/paystack');
-const { getPlanPrice, PRICING_PLANS } = require('../../config/pricing');
+const { getPlanPrice, PRICING_PLANS, LAUNCH_DATE } = require('../../config/pricing');
 
 exports.getUpgradeQuote = async (req, res) => {
     try {
@@ -48,7 +48,7 @@ exports.getUpgradeQuote = async (req, res) => {
             const remainingMs = expiry - now;
             const remainingDays = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
             
-            const ogaPrice = 5000;
+            const ogaPrice = getPlanPrice('oga', 'monthly');
             const dailyRate = ogaPrice / 30;
             const unusedCredit = Math.floor(remainingDays * dailyRate);
             
@@ -182,17 +182,27 @@ exports.verifyPayment = async (req, res) => {
         const isTrial = paystackData.metadata?.paymentType === 'subscription_trial';
 
         // 2. Validate Payment Amount (Anti-Fraud Check)
-        let basePrice = getPlanPrice(plan, billingCycle);
+        const { SLASH_WINDOW_END } = require('../../config/pricing');
+        const now = new Date();
+        
+        let targetCycle = billingCycle;
+        if (billingCycle === 'launch' && now > SLASH_WINDOW_END) {
+             console.warn(`🚨 Security: Attempted to pay Launch price after window end (${now})`);
+             targetCycle = 'monthly';
+        }
+
+        let basePrice = getPlanPrice(plan, targetCycle);
         if (!basePrice) return res.status(400).json({ message: "Invalid plan or billing cycle" });
 
         // If it's an UPGRADE from Oga to Chairman
         if (profile.plan === 'oga' && plan === 'chairman' && billingCycle === 'monthly') {
-             const now = new Date();
              const expiry = profile.nextBillingDate ? new Date(profile.nextBillingDate) : (profile.lastPaidAt ? new Date(new Date(profile.lastPaidAt).getTime() + 30*24*60*60*1000) : now);
              const remainingMs = expiry - now;
              const remainingDays = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
-             const unusedCredit = Math.floor(remainingDays * (5000 / 30));
-             basePrice = Math.max(1000, 8500 - unusedCredit);
+             const ogaPrice = getPlanPrice('oga', 'monthly');
+             const chairmanPrice = getPlanPrice('chairman', 'monthly');
+             const unusedCredit = Math.floor(remainingDays * (ogaPrice / 30));
+             basePrice = Math.max(1000, chairmanPrice - unusedCredit);
         }
 
         let expectedPrice = basePrice;
@@ -250,16 +260,51 @@ exports.verifyPayment = async (req, res) => {
 
         // 4. Update Profile
         const isTransfer = paystackData.metadata?.method === 'transfer';
+        const { LAUNCH_DATE } = require('../../config/pricing');
+        
+        let startDate = now;
+        let pioneerNote = "";
+        let emailSubject = `Welcome to the Kredibly Pioneer Group 🛡️`;
+
+        // 🚀 SCENARIO A: Paying during Pre-Launch Phase
+        if (now < LAUNCH_DATE) {
+            startDate = LAUNCH_DATE;
+            pioneerNote = `Since you joined during our Pre-Launch Phase, your 1st paid month won't even start until **May 1**. You get the rest of April as a bonus on us!`;
+        } 
+        // 🚀 SCENARIO B: Paying on Launch Day
+        else if (now.toLocaleDateString() === LAUNCH_DATE.toLocaleDateString()) {
+            pioneerNote = `Happy Launch Day! Since you joined on Day 1, you've unlocked the full Pioneer Advantage for your business.`;
+            emailSubject = `Happy Launch Day: Your Pioneer Status is Active! 🚀`;
+        }
+        // 🚀 SCENARIO C: Paying After Launch
+        else {
+            pioneerNote = `Welcome to Kredibly! You've successfully claimed the 50% discount for your growth journey.`;
+            emailSubject = `Your Kredibly Subscription is Active ✅`;
+        }
+
+        // 🎯 GRAND OPENING SPECIAL: Everyone who pays during the launch window gets 2 slash cycles. High urgency!
+        let slashCycles = 0;
+        
+        // 🔒 SECURITY: Safeguard against claiming launch cycles after window
+        if (billingCycle === 'launch') {
+            if (now <= SLASH_WINDOW_END) {
+                slashCycles = 2; // Grand Opening Special: 2 months of discount for all early joiners (Waitlist or New)
+            }
+        }
+
+        const nextBillingDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+
         const updateData = {
-            plan: plan, // 'chairman'
+            plan: plan, 
             planStatus: isTrial ? 'trialing' : 'active',
             billingCycle: billingCycle,
-            lastPaidAt: new Date(),
-            isLaunchPromo: paystackData.metadata?.isLaunchPromo || false,
+            lastPaidAt: now,
+            isLaunchPromo: billingCycle === 'launch',
             hasUsedTrial: true,
             walletBalance: isTrial && isTransfer ? (profile.walletBalance || 0) + paidAmount : profile.walletBalance,
             trialExpiresAt: isTrial ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : profile.trialExpiresAt,
-            nextBillingDate: isTrial ? null : new Date(Date.now() + (billingCycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000)
+            nextBillingDate: isTrial ? null : nextBillingDate,
+            slashCyclesRemaining: Math.max(0, (profile.slashCyclesRemaining || 0) + slashCycles - 1) 
         };
 
         const updatedProfile = await BusinessProfile.findByIdAndUpdate(
@@ -268,7 +313,34 @@ exports.verifyPayment = async (req, res) => {
             { new: true }
         );
 
-        // 5. Update Coupon Usage (Idempotent)
+        // 5. Send Confirmation Email (Async)
+        const { sendEmail } = require('../../utils/emailService');
+        const { SUBSCRIPTION_CONFIRM_TEMPLATE } = require('../../emailLogic/emailTemplates');
+
+        const emailHtml = SUBSCRIPTION_CONFIRM_TEMPLATE
+            .replace(/{name}/g, user.name || profile.displayName)
+            .replace(/{planName}/g, plan.toUpperCase())
+            .replace(/{amount}/g, `₦${paidAmount.toLocaleString()}`)
+            .replace(/{expiryDate}/g, nextBillingDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }))
+            .replace(/{launchDate}/g, LAUNCH_DATE.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }))
+            .replace(/{pioneerStatus}/g, slashCycles === 2 
+                ? "Since you joined us before launch, you have unlocked our **Special Pioneer Advantage**: 2 full months of slash pricing to fuel your growth!" 
+                : "You've successfully secured **1 month** of Grand Opening slash pricing to kickstart your growth!");
+
+        sendEmail({
+            to: user.email,
+            subject: emailSubject,
+            html: emailHtml
+        }).catch(err => console.error("Plan Confirmation Email Failed:", err.message));
+
+        // 🚀 WHATSAPP WOW FACTOR: Send upgrade confirmation via WhatsApp too
+        const waMsg = `🛡️ *Welcome to the Vanguard!*\n\nI've just verified your payment of *₦${paidAmount.toLocaleString()}* for the *${plan.toUpperCase()} Plan*.\n\n✅ *Status:* Active Immediately\n⏳ *Pioneer Note:* ${pioneerNote.replace(/\*\*/g, '*')}\n📅 *Next Renewal:* ${nextBillingDate.toLocaleDateString()}\n\nThank you for being part of the journey. Reach out here if you need any support!\n\n_Oluwatosin, Founder_`;
+        
+        await sendWhatsAppMessage(profile.whatsappNumber, waMsg).catch(err => {
+            console.error(`❌ Failed to send WhatsApp upgrade alert for ${user.email}:`, err.message);
+        });
+
+        // 6. Update Coupon Usage (Idempotent)
         if (coupon) {
             await Coupon.updateOne(
                 { _id: coupon._id, usedReferences: { $ne: reference } },
@@ -284,7 +356,7 @@ exports.verifyPayment = async (req, res) => {
 
         res.status(200).json({ 
             success: true, 
-            message: "Upgrade successful! Welcome to the Oga life.",
+            message: `Upgrade successful! Your Pioneer access is now active until ${expiryDate.toLocaleDateString()}.`,
             profile: updatedProfile 
         });
 
@@ -476,14 +548,28 @@ exports.initializePaystackPayment = async (req, res) => {
         // Robust Email Fallback: Paystack REQUIRES a valid looking email
         const safeEmail = (email && email.includes('@')) ? email : `customer_${sale.invoiceNumber.toLowerCase().replace(/-/g, '')}@usekredibly.com`;
 
+        const { initializePayment } = require('../../utils/paystack');
+        const paystackInit = await initializePayment(
+            safeEmail, 
+            amount, 
+            reference, 
+            {
+                paymentType: 'invoice',
+                invoiceNumber: sale.invoiceNumber,
+                originalAmount: Number(amount)
+            },
+            business.paystackSubaccountCode,
+            'account' // 🛡️ Kredibly covers the Gateway Fees
+        );
+
         res.status(200).json({
             success: true,
             publicKey: process.env.PAYSTACK_PUBLIC_KEY,
             email: safeEmail,
             amount: chargeAmount,
+            accessCode: paystackInit.access_code, // 💰 This carries the fee-bearing logic
             originalAmount: Number(amount),
             reference: reference,
-            subaccount: business.paystackSubaccountCode, // 🚀 CRITICAL: Settles money to merchant
             metadata: {
                 paymentType: 'invoice',
                 invoiceNumber: sale.invoiceNumber,

@@ -21,6 +21,7 @@ import {
 import { motion } from "framer-motion";
 import PublicNavbar from "../../components/public/PublicNavbar";
 import PublicFooter from "../../components/public/PublicFooter";
+import { useAuth } from "../../context/AuthContext";
 
 const Typewriter = ({ phrases }) => {
     const [displayText, setDisplayText] = useState("");
@@ -71,6 +72,76 @@ const Typewriter = ({ phrases }) => {
 
 const LandingPage = () => {
     const navigate = useNavigate();
+    const { profile } = useAuth();
+
+    const plans = [
+        {
+            name: "Hustler",
+            slug: "hustler",
+            tagline: "The Record-Keeper's Choice",
+            description: "Stop writing in notebooks. Start building your digital reputation today.",
+            price: "Free",
+            fee: "0% Transaction Fees*",
+            period: "",
+            features: [
+                "10 Sale Records limit per Month",
+                "Kreddy AI Text Intelligence (Type normally)",
+                "Basic Debt Recovery Assistant",
+                "Verified Ledger Seal",
+                "Digital Receipts (Kredibly Branded)"
+            ],
+            cta: profile?.plan === "hustler" ? "Current Plan" : "Start Hustling Free",
+            ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
+            highlight: false,
+            color: "#64748B"
+        },
+        {
+            name: "Oga Plan",
+            slug: "oga",
+            tagline: "The Business Leader",
+            description: "Step up to professional branding and lower fees for your growing business.",
+            originalPrice: "₦6,000",
+            price: "₦3,000", // 50% Slash
+            isSlash: true,
+            fee: "0% Transaction Fees*",
+            period: "/ month",
+            features: [
+                "Everything in Hustler Plan",
+                "Unlimited Sales Records",
+                "Kreddy Voice Notes (Just speak!)",
+                "Add 1 Staff Member",
+                "Co-Branded Receipts (Your Logo)",
+                "Advanced AI Recovery Assistant"
+            ],
+            cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Gain Pioneer Access" : "Become an Oga",
+            ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
+            highlight: true,
+            color: "var(--primary)"
+        },
+        {
+            name: "Chairman",
+            slug: "chairman",
+            tagline: "The Empire Command Center",
+            description: "Run multiple shops without stress. Lead your empire with zero commissions.",
+            originalPrice: "₦9,000",
+            price: "₦4,500", // 50% Slash
+            isSlash: true,
+            fee: "0% Transaction Fees*",
+            period: "/ month",
+            features: [
+                "Everything in Oga Plan",
+                "White-Label Receipts (Only Your Logo)",
+                "Unlimited Staff & Offices",
+                "WhatsApp Image Sync (Automatic)",
+                "8 AM Executive Intelligence Brief",
+                "Priority Vault & Support"
+            ],
+            cta: profile?.plan === "chairman" ? "Current Plan" : profile ? "Lead Your Empire" : "Claim Chairman Title",
+            ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
+            highlight: false,
+            color: "#0F172A"
+        }
+    ];
     const location = useLocation();
     const [scrolled, setScrolled] = useState(false);
     const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' or 'yearly'
@@ -191,7 +262,7 @@ const LandingPage = () => {
                         fontWeight: 400,
                     }}>
                         You have a business to run. Let Kreddy handle the records. 
-                        Track what you're owed, send professional receipts, and chase payments, all inside your WhatsApp.
+                        Plan your day, track what you're owed, send professional invoices, and get paid instantly, all inside your WhatsApp.
                     </p>
 
                     <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '32px' }}>
@@ -315,58 +386,60 @@ const LandingPage = () => {
                     <div style={{ textAlign: 'center', marginBottom: '80px' }}>
                         <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem', letterSpacing: '0.05em' }}>100% FREE SETTLEMENTS & INSTANT PAYOUT</div>
                         <h2 style={{ fontSize: 'clamp(2.2rem, 5vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Zero Transaction Fees. <br /><span className="premium-gradient">Keep 100% of your sales.</span></h2>
-                        <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginTop: '20px', maxWidth: '600px', margin: '20px auto 0' }}>We don't charge you to collect your own money. Enjoy free bank transfers for you and your customers on all plans.</p>
+                        <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginTop: '20px', maxWidth: '600px', margin: '20px auto 48px' }}>We don't charge you to collect your own money. The exact amount on your invoice is what lands in your bank account.</p>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
-                        {/* Hustler */}
-                        <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', display: 'flex', flexDirection: 'column', border: '1px solid #E2E8F0' }}>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>Hustler</h3>
-                            <p style={{ color: '#64748B', marginBottom: '32px', fontWeight: 600 }}>The Record-Keepers Special.</p>
-                            <div style={{ marginBottom: '40px' }}>
-                                <div style={{ fontSize: '3rem', fontWeight: 900 }}>Free</div>
-                                <div style={{ fontSize: '0.9rem', color: '#10B981', fontWeight: 800 }}>0% Transaction Fee</div>
-                            </div>
-                            <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Get Early Access</button>
-                            <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                {["10 Invoices Per Month", "Bank Transfer Only (Zero Fee)", "Kreddy AI Text Intelligence", "Basic Debt Recovery Assistant", "Kredibly Branded Receipts"].map((f, i) => (
-                                     <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 600, color: '#334155' }}><Check size={18} color="var(--primary)" /> {f}</div>
-                                 ))}
-                            </div>
-                        </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
+                        {plans.map((plan, i) => (
+                            <div key={i} style={{ 
+                                padding: '48px', 
+                                borderRadius: '32px', 
+                                background: plan.highlight ? '#0F172A' : 'white', 
+                                color: plan.highlight ? 'white' : '#0F172A',
+                                border: plan.highlight ? '2px solid var(--primary)' : '1px solid #E2E8F0',
+                                position: 'relative',
+                                transform: plan.highlight ? 'scale(1.02)' : 'none',
+                                boxShadow: plan.highlight ? '0 30px 60px -15px rgba(15, 23, 42, 0.3)' : '0 10px 30px -10px rgba(0,0,0,0.02)',
+                                zIndex: plan.highlight ? 2 : 1,
+                                display: 'flex', flexDirection: 'column'
+                            }}>
+                                {plan.isSlash && (
+                                    <div style={{ position: 'absolute', top: '24px', right: '32px', background: 'var(--primary)', color: 'white', padding: '6px 14px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        2-MONTH 50% GRAND OPENING SPECIAL
+                                    </div>
+                                )}
+                                <h3 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '8px' }}>{plan.name}</h3>
+                                <p style={{ opacity: 0.7, fontSize: '0.95rem', fontWeight: 600, marginBottom: '32px', minHeight: '44px' }}>{plan.description}</p>
+                                
+                                <div style={{ marginBottom: '40px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                                        {plan.isSlash && <span style={{ fontSize: '1.5rem', fontWeight: 700, textDecoration: 'line-through', opacity: 0.4 }}>{plan.originalPrice}</span>}
+                                        <span style={{ fontSize: '3rem', fontWeight: 950, letterSpacing: '-0.05em' }}>{plan.price}</span>
+                                        <span style={{ opacity: 0.6, fontWeight: 700 }}>{plan.period}</span>
+                                    </div>
+                                    <div style={{ fontSize: '1rem', fontWeight: 900, color: plan.highlight ? '#4ADE80' : 'var(--primary)', marginTop: '4px' }}>+ {plan.fee}</div>
+                                </div>
 
-                        {/* Oga */}
-                        <div style={{ padding: '48px', borderRadius: '32px', background: '#0F172A', color: 'white', display: 'flex', flexDirection: 'column', transform: 'scale(1.05)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', position: 'relative' }}>
-                            <div style={{ position: 'absolute', top: '24px', right: '24px', padding: '6px 12px', background: 'var(--primary)', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 900 }}>MOST POPULAR</div>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>Oga Plan</h3>
-                            <p style={{ opacity: 0.7, marginBottom: '32px', fontWeight: 600 }}>Professional Growth Hub.</p>
-                            <div style={{ marginBottom: '40px' }}>
-                                <div style={{ fontSize: '3rem', fontWeight: 900 }}>₦5,000<span style={{ fontSize: '1rem', opacity: 0.5 }}>/mo</span></div>
-                                <div style={{ fontSize: '0.9rem', color: '#4ADE80', fontWeight: 800 }}>0% Transaction Fees</div>
-                            </div>
-                            <button onClick={() => navigate('/auth/register')} className="btn-white" style={{ width: '100%' }}>Get Early Access</button>
-                            <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                {["Everything in Hustler", "Unlimited Sales Records", "Debit Card + Bank Transfer (Zero Fee)", "Kreddy AI Voice Notes", "Add 1 Staff Member", "Co-Branded Receipts (Logo)"].map((f, i) => (
-                                     <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 600 }}><Check size={18} color="#10B981" /> {f}</div>
-                                 ))}
-                            </div>
-                        </div>
+                                <button 
+                                    onClick={plan.ctaAction}
+                                    className={plan.highlight ? "btn-primary" : "btn-secondary"} 
+                                    style={{ width: '100%', marginBottom: '40px', justifyContent: 'center', height: '60px', borderRadius: '18px', boxShadow: plan.highlight ? '0 10px 20px rgba(124, 58, 237, 0.3)' : 'none' }}
+                                >
+                                    {plan.cta} <ArrowRight size={18} />
+                                </button>
 
-                        {/* Chairman */}
-                        <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', display: 'flex', flexDirection: 'column', border: '1px solid #E2E8F0' }}>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>Chairman</h3>
-                            <p style={{ color: '#64748B', marginBottom: '32px', fontWeight: 600 }}>The Empire Command Center.</p>
-                            <div style={{ marginBottom: '40px' }}>
-                                <div style={{ fontSize: '3rem', fontWeight: 900 }}>₦8,500<span style={{ fontSize: '1rem', opacity: 0.5 }}>/mo</span></div>
-                                <div style={{ fontSize: '0.9rem', color: '#10B981', fontWeight: 800 }}>0% Transaction Fee</div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                                    {plan.features.map((feat, j) => (
+                                        <div key={j} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 700 }}>
+                                            <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: plan.highlight ? 'rgba(255,255,255,0.1)' : 'rgba(76, 29, 149, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <Check size={14} color={plan.highlight ? '#4ADE80' : 'var(--primary)'} />
+                                            </div>
+                                            {feat}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                            <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Get Early Access</button>
-                            <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                {["Everything in Oga", "White-Label Invoices (Only your Logo)", "Unlimited Staff & Shops", "Excel Business Reports", "8 AM VIP Morning Brief", "Priority Support & Vault"].map((f, i) => (
-                                    <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 600, color: '#334155' }}><Check size={18} color="var(--primary)" /> {f}</div>
-                                ))}
-                            </div>
-                        </div>
+                        ))}
                     </div>
                 </div>
             </section>
