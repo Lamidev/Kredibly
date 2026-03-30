@@ -43,8 +43,8 @@ const PublicFooter = () => {
                     marginBottom: '60px'
                 }}>
                     <div style={{ maxWidth: '380px' }}>
-                        <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '36px', objectFit: 'contain', marginBottom: '24px' }} />
-                        <p style={{ fontSize: '1.1rem', lineHeight: 1.6, color: '#334155', fontWeight: 400, marginBottom: '24px' }}>
+                        <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '26px', objectFit: 'contain', marginBottom: '24px' }} />
+                        <p style={{ fontSize: 'clamp(0.9rem, 2vw, 1rem)', lineHeight: 1.6, color: '#334155', fontWeight: 500, marginBottom: '24px' }}>
                             Receivables Infrastructure & Operating System for African Commerce. We help millions of vendors automate sales, track debts, and build financial credibility.
                         </p>
                         <div style={{ display: 'flex', gap: '16px' }}>
@@ -79,13 +79,13 @@ const PublicFooter = () => {
                     </div>
 
                     <div className="footer-links-container">
-                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px', color: 'var(--text)' }}>Product</h4>
+                        <h4 style={{ fontSize: 'clamp(0.8rem, 2vw, 0.9rem)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px', color: '#0F172A' }}>Product</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {['Features', 'How it Works', 'Pricing', 'Mission Map'].map(item => (
                                 <button 
                                     key={item}
                                     onClick={() => item === 'Pricing' ? navigate('/pricing') : scrollToSection(item.toLowerCase().replace(/ /g, '-'))}
-                                    style={{ background: 'none', border: 'none', textAlign: 'left', color: '#334155', fontWeight: 500, cursor: 'pointer', padding: 0, fontSize: '1rem', transition: 'color 0.3s' }}
+                                    style={{ background: 'none', border: 'none', textAlign: 'left', color: '#475569', fontWeight: 600, cursor: 'pointer', padding: 0, fontSize: 'clamp(0.85rem, 2vw, 0.95rem)', transition: 'color 0.3s' }}
                                     className="footer-link-hover"
                                 >
                                     {item}
@@ -95,24 +95,24 @@ const PublicFooter = () => {
                     </div>
 
                     <div>
-                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px', color: 'var(--text)' }}>Company</h4>
+                        <h4 style={{ fontSize: 'clamp(0.8rem, 2vw, 0.9rem)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px', color: '#0F172A' }}>Company</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <Link to="/about" style={{ textDecoration: 'none', color: '#334155', fontWeight: 500, transition: 'color 0.3s' }} className="footer-link-hover">About Us</Link>
-                            <Link to="/contact" style={{ textDecoration: 'none', color: '#334155', fontWeight: 500, transition: 'color 0.3s' }} className="footer-link-hover">Contact Support</Link>
-                            <Link to="/privacy" style={{ textDecoration: 'none', color: '#334155', fontWeight: 500, transition: 'color 0.3s' }} className="footer-link-hover">Privacy & Terms</Link>
+                            <Link to="/about" style={{ textDecoration: 'none', color: '#475569', fontWeight: 600, fontSize: 'clamp(0.85rem, 2vw, 0.95rem)', transition: 'color 0.3s' }} className="footer-link-hover">About Us</Link>
+                            <Link to="/contact" style={{ textDecoration: 'none', color: '#475569', fontWeight: 600, fontSize: 'clamp(0.85rem, 2vw, 0.95rem)', transition: 'color 0.3s' }} className="footer-link-hover">Contact Support</Link>
+                            <Link to="/privacy" style={{ textDecoration: 'none', color: '#475569', fontWeight: 600, fontSize: 'clamp(0.85rem, 2vw, 0.95rem)', transition: 'color 0.3s' }} className="footer-link-hover">Privacy & Terms</Link>
                         </div>
                     </div>
 
                     <div>
-                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px', color: 'var(--text)' }}>Contact</h4>
+                        <h4 style={{ fontSize: 'clamp(0.8rem, 2vw, 0.9rem)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px', color: '#0F172A' }}>Contact</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                            <div style={{ display: 'flex', gap: '12px', color: '#334155' }}>
+                            <div style={{ display: 'flex', gap: '12px', color: '#475569' }}>
                                 <MapPin size={20} color="var(--primary)" />
-                                <span style={{ fontSize: '0.95rem', fontWeight: 500 }}>Lagos, Nigeria & globally remote.</span>
+                                <span style={{ fontSize: 'clamp(0.85rem, 2vw, 0.95rem)', fontWeight: 600 }}>Lagos, Nigeria & globally remote.</span>
                             </div>
-                            <div style={{ display: 'flex', gap: '12px', color: '#334155' }}>
+                            <div style={{ display: 'flex', gap: '12px', color: '#475569' }}>
                                 <Mail size={20} color="var(--primary)" />
-                                <span style={{ fontSize: '0.95rem', fontWeight: 500 }}>hello@usekredibly.com</span>
+                                <span style={{ fontSize: 'clamp(0.85rem, 2vw, 0.95rem)', fontWeight: 600 }}>hello@usekredibly.com</span>
                             </div>
                         </div>
                     </div>
@@ -128,11 +128,11 @@ const PublicFooter = () => {
                     flexWrap: 'wrap',
                     gap: '20px'
                 }}>
-                    <p style={{ fontWeight: 400, fontSize: '0.95rem', color: '#334155', margin: 0 }}>
+                    <p style={{ fontWeight: 600, fontSize: 'clamp(0.75rem, 1.5vw, 0.85rem)', color: '#64748B', margin: 0 }}>
                         © 2026 Kredibly Technologies Inc.
                     </p>
                     <div style={{ display: 'flex', gap: '32px' }}>
-                        <span style={{ color: '#334155', fontSize: '0.9rem', fontWeight: 600 }}>Built for Global Commerce</span>
+                        <span style={{ color: '#64748B', fontSize: 'clamp(0.75rem, 1.5vw, 0.85rem)', fontWeight: 700 }}>Built for Global Commerce</span>
                     </div>
                 </div>
                

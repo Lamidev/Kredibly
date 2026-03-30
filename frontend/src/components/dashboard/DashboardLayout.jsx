@@ -165,6 +165,7 @@ const DashboardLayout = () => {
                             gap: '10px',
                             fontWeight: 700,
                             letterSpacing: '-0.01em',
+                            fontSize: 'clamp(0.95rem, 4vw, 1.05rem)',
                             boxShadow: '0 10px 20px -5px var(--primary-glow)'
                         }}
                         onClick={() => {
@@ -206,7 +207,7 @@ const DashboardLayout = () => {
                                 return (
                                     <>
                                         <item.icon size={20} strokeWidth={isMatched ? 2.5 : 2} style={{ opacity: isLocked ? 0.4 : 1 }} />
-                                        <span style={{ fontWeight: 600, opacity: isLocked ? 0.4 : 1 }}>{item.label}</span>
+                                        <span style={{ fontWeight: 600, fontSize: 'clamp(0.9rem, 3.5vw, 1rem)', opacity: isLocked ? 0.4 : 1 }}>{item.label}</span>
                                         {isLocked && <ShieldCheck size={14} style={{ marginLeft: 'auto', color: '#94A3B8' }} />}
                                     </>
                                 );
@@ -222,7 +223,7 @@ const DashboardLayout = () => {
                         onClick={() => setIsSidebarOpen(false)}
                         style={{ margin: '4px 16px' }}
                     >
-                        <Settings size={20} /> <span style={{ fontWeight: 600 }}>Settings</span>
+                        <Settings size={20} /> <span style={{ fontWeight: 600, fontSize: 'clamp(0.9rem, 3.5vw, 1rem)' }}>Settings</span>
                     </NavLink>
                     <button
                         onClick={() => setShowLogoutConfirm(true)}
@@ -238,7 +239,7 @@ const DashboardLayout = () => {
                             justifyContent: 'flex-start'
                         }}
                     >
-                        <LogOut size={20} /> <span style={{ fontWeight: 600 }}>Logout</span>
+                        <LogOut size={20} /> <span style={{ fontWeight: 600, fontSize: 'clamp(0.9rem, 3.5vw, 1rem)' }}>Logout</span>
                     </button>
                 </div>
             </aside>
@@ -349,8 +350,8 @@ const DashboardLayout = () => {
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeft: '1px solid #E2E8F0', paddingLeft: '20px' }}>
                             <div style={{ textAlign: 'right' }} className="hidden sm:block">
-                                <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1E293B' }}>{profile?.displayName || 'User'}</p>
-                                <p style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748B' }}>{profile?.entityType === 'business' ? 'Merchant' : 'Hustler'}</p>
+                                <p style={{ fontSize: 'clamp(0.85rem, 3vw, 0.95rem)', fontWeight: 600, color: '#1E293B' }}>{profile?.displayName || 'User'}</p>
+                                <p style={{ fontSize: 'clamp(0.7rem, 2.5vw, 0.8rem)', fontWeight: 500, color: '#64748B' }}>{profile?.entityType === 'business' ? 'Merchant' : 'Hustler'}</p>
                             </div>
                             <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', fontWeight: 700, fontSize: '0.9rem' }}>
                                 {profile?.logoUrl ? (
