@@ -76,7 +76,7 @@ function AuthLayout() {
 
       <style>{`
         .auth-pattern {
-          background-image: url('/Krediblypattern.png');
+          background-image: url('/Krediblypattern-sm.jpg');
           background-size: cover;
           background-position: center;
           background-attachment: fixed;
