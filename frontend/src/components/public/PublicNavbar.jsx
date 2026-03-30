@@ -162,7 +162,7 @@ const PublicNavbar = () => {
                                                 <div key={i}>
                                                     {link.type === 'dropdown' ? (
                                                         <>
-                                                            <button onClick={() => toggleAccordion(link.name)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', padding: '16px', background: 'none', border: 'none', fontWeight: 600, fontSize: '1.05rem', color: '#0F172A', outline: 'none' }}>
+                                                            <button onClick={() => toggleAccordion(link.name)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', padding: '16px', background: 'none', border: 'none', fontWeight: 700, fontSize: 'clamp(0.95rem, 4vw, 1.05rem)', color: '#0F172A', outline: 'none' }}>
                                                                 {link.name} <ChevronDown size={18} style={{ transform: expandedMenu === link.name ? 'rotate(180deg)' : 'rotate(0deg)' }} />
                                                             </button>
                                                             {expandedMenu === link.name && (
@@ -177,7 +177,7 @@ const PublicNavbar = () => {
                                                             )}
                                                         </>
                                                     ) : (
-                                                        <Link to={link.path} onClick={() => setIsMobileMenuOpen(false)} style={{ padding: '16px', display: 'block', textDecoration: 'none', color: '#0F172A', fontWeight: 600 }}>{link.name}</Link>
+                                                        <Link to={link.path} onClick={() => setIsMobileMenuOpen(false)} style={{ padding: '16px', display: 'block', textDecoration: 'none', color: '#0F172A', fontWeight: 700, fontSize: 'clamp(0.95rem, 4vw, 1.05rem)' }}>{link.name}</Link>
                                                     )}
                                                 </div>
                                             ))}
@@ -188,10 +188,10 @@ const PublicNavbar = () => {
                                     <div style={{ padding: '24px', borderTop: '1px solid rgba(0,0,0,0.05)', background: 'rgba(255,255,255,0.1)' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                             <Link to="/auth/login" onClick={() => setIsMobileMenuOpen(false)} style={{ 
-                                                width: '100%', padding: '16px', borderRadius: '16px', background: 'white', border: '1px solid #E2E8F0', textAlign: 'center', textDecoration: 'none', color: '#0F172A', fontWeight: 700 
+                                                width: '100%', padding: '16px', borderRadius: '16px', background: 'white', border: '1px solid #E2E8F0', textAlign: 'center', textDecoration: 'none', color: '#0F172A', fontWeight: 800, fontSize: 'clamp(0.85rem, 3.5vw, 0.95rem)'
                                             }}>Login</Link>
                                             <Link to="/auth/register" onClick={() => setIsMobileMenuOpen(false)} style={{ 
-                                                width: '100%', padding: '16px', borderRadius: '16px', background: 'var(--primary)', textAlign: 'center', textDecoration: 'none', color: 'white', fontWeight: 700, boxShadow: '0 10px 20px -5px rgba(76, 29, 149, 0.3)' 
+                                                width: '100%', padding: '16px', borderRadius: '16px', background: 'var(--primary)', textAlign: 'center', textDecoration: 'none', color: 'white', fontWeight: 800, fontSize: 'clamp(0.85rem, 3.5vw, 0.95rem)', boxShadow: '0 10px 20px -5px rgba(76, 29, 149, 0.3)' 
                                             }}>Start Selling Free</Link>
                                         </div>
                                     </div>

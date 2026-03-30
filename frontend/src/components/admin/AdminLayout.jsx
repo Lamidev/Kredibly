@@ -89,7 +89,7 @@ const AdminLayout = () => {
                             {({ isActive }) => (
                                 <>
                                     <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} color={isActive ? 'var(--primary)' : 'currentColor'} />
-                                    <span style={{ fontWeight: 800 }}>{item.label}</span>
+                                    <span style={{ fontWeight: 800, fontSize: 'clamp(0.9rem, 3.5vw, 1rem)' }}>{item.label}</span>
                                 </>
                             )}
                         </NavLink>
@@ -111,7 +111,7 @@ const AdminLayout = () => {
                             justifyContent: 'flex-start'
                         }}
                     >
-                        <LogOut size={20} /> <span style={{ fontWeight: 700 }}>Exit System</span>
+                        <LogOut size={20} /> <span style={{ fontWeight: 700, fontSize: 'clamp(0.9rem, 3.5vw, 1rem)' }}>Exit System</span>
                     </button>
                     <div style={{ padding: '20px 24px 0', textAlign: 'center' }}>
                         <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>KREDDY ADMIN v2.0.1</p>
