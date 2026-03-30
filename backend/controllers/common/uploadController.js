@@ -7,10 +7,7 @@ exports.uploadImage = async (req, res) => {
             return res.status(400).json({ success: false, message: "No file uploaded" });
         }
 
-        console.log("📤 Attempting Cloudinary Upload...", {
-            mimetype: req.file.mimetype,
-            size: req.file.size
-        });
+        // Removed verbose logging for clean terminal
 
         // Convert buffer to base64
         const fileBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
@@ -20,7 +17,7 @@ exports.uploadImage = async (req, res) => {
             resource_type: "auto",
         });
 
-        console.log("✅ Cloudinary Upload Success:", result.secure_url);
+        // Success
 
         res.status(200).json({
             success: true,
@@ -28,11 +25,7 @@ exports.uploadImage = async (req, res) => {
             public_id: result.public_id,
         });
     } catch (error) {
-        console.error("🚨 Logo Upload Error:", {
-            message: error.message,
-            stack: error.stack,
-            cloudinaryError: error.http_code || "N/A"
-        });
+        console.error("🚨 Logo Upload Error:", error.message);
         res.status(500).json({ 
             success: false, 
             message: "Upload failed: " + (error.message || "Cloudinary connection issue") 

@@ -87,7 +87,7 @@ function AuthLayout() {
             padding: 0 12px 40px !important;
             align-items: flex-start !important;
           }
-          .dashboard-glass {
+          .dashboard-glass, .glass-card {
             padding: 24px 20px !important;
             border-radius: 24px !important;
             margin-top: 10px;

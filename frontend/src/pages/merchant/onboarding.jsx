@@ -126,7 +126,8 @@ const Onboarding = () => {
                 toast.success("Logo uploaded!");
             }
         } catch (err) {
-            toast.error("Logo upload failed.");
+            console.error("Upload error details:", err.response?.data || err);
+            toast.error(err.response?.data?.message || err.message || "Logo upload failed.");
         } finally {
             setUploading(false);
         }

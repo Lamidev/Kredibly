@@ -27,11 +27,9 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="dashboard-glass" style={{ 
+    <div className="glass-card" style={{ 
       padding: '40px', 
       borderRadius: '32px', 
-      background: 'white',
-      border: '1px solid var(--border)',
       boxShadow: 'var(--shadow-premium)' 
     }}>
       <div style={{ textAlign: 'left', marginBottom: '32px' }}>
