@@ -59,10 +59,11 @@ const handleEmailError = (error, message) => {
 // Send Verification Email
 exports.sendVerificationEmail = async (email, verificationToken) => {
   try {
-    const response = await resendClient.emails.send({
+    await resendClient.emails.send({
       from: `${sender.name} <${sender.email}>`,
       to: email,
-      subject: "Verify your email",
+      subject: "Your Kredibly verification code",
+      text: `Hi,\n\nYour Kredibly verification code is: ${verificationToken}\n\nThis code expires in 15 minutes. If you didn't sign up, please ignore this email.\n\n— Oluwatosin, Founder of Kredibly`,
       html: VERIFICATION_EMAIL_TEMPLATE.replace("{verificationCode}", verificationToken),
     });
   } catch (error) {
@@ -72,10 +73,11 @@ exports.sendVerificationEmail = async (email, verificationToken) => {
 
 exports.sendWelcomeEmail = async (email, userName) => {
   try {
-    const response = await resendClient.emails.send({
+    await resendClient.emails.send({
       from: `${sender.name} <${sender.email}>`,
       to: email,
       subject: "Welcome to Kredibly",
+      text: `Hi ${userName},\n\nI just wanted to personally say — welcome.\n\nI'm Oluwatosin, the founder of Kredibly. I built this so growing your business doesn't mean drowning in notebooks and chasing debtors.\n\nIf you ever have questions or just want to say hi, reply to this email directly. I read every single one.\n\nWelcome to the new standard.\n\n— Oluwatosin\nFounder, Kredibly`,
       html: WELCOME_EMAIL_TEMPLATE.replace("{name}", userName),
     });
   } catch (error) {
@@ -88,7 +90,8 @@ exports.sendOnboardingSuccessEmail = async (email, userName, businessName) => {
         await resendClient.emails.send({
             from: `${sender.name} <${sender.email}>`,
             to: email,
-            subject: "Your Business is Live! 🛡️ (Kredibly Setup Complete)",
+            subject: "Your business is now live on Kredibly",
+            text: `Hi ${userName},\n\nCongratulations! ${businessName} is officially live on Kredibly.\n\nYour bank details are verified. You can now send invoices and receive payments directly.\n\nLog in here: https://usekredibly.com/dashboard\n\n— Oluwatosin\nFounder, Kredibly`,
             html: ONBOARDING_SUCCESS_TEMPLATE
                 .replace(/{name}/g, userName)
                 .replace(/{businessName}/g, businessName)

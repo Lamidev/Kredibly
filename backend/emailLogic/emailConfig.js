@@ -11,7 +11,7 @@ const resendClient = new Resend(RESEND_API_KEY);
 
 const sender = {
     email: process.env.SENDER_EMAIL || "onboarding@resend.dev",
-    name: "Kredibly"
+    name: "Oluwatosin from Kredibly" // Human sender name = better inbox placement
 };
 
 module.exports = {
