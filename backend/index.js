@@ -29,7 +29,15 @@ const { startProactiveAssistant } = require("./utils/proactiveAssistant");
 const { startTicketCleanup } = require("./utils/ticketScheduler");
 const { startBackupScheduler } = require("./utils/backupService");
 const { setupSentryErrorHandler } = require("./utils/sentry");
-const { scheduleMorningSummary, scheduleRemindersWorker, schedulePlanExpiryReminders, scheduleProactiveFollowUps, schedulePastDueEscalations, scheduleEscrowPayouts } = require("./utils/cronJobs");
+const { 
+  scheduleMorningSummary, 
+  scheduleRemindersWorker, 
+  schedulePlanExpiryReminders, 
+  scheduleProactiveFollowUps, 
+  schedulePastDueEscalations, 
+  scheduleEscrowPayouts, 
+  scheduleMonthlyUsageReset 
+} = require("./utils/cronJobs");
 
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
@@ -185,15 +193,16 @@ mongoose
     startBackupScheduler();
     scheduleMorningSummary();
     scheduleRemindersWorker();
-    schedulePlanExpiryReminders();
-    scheduleProactiveFollowUps();
-    schedulePastDueEscalations();
-    scheduleEscrowPayouts();
-  })
-  .catch((error) => {
-    console.error("❌ MongoDB connection failed:", error);
-    process.exit(1);
-  });
+        schedulePlanExpiryReminders();
+        scheduleProactiveFollowUps();
+        schedulePastDueEscalations();
+        scheduleEscrowPayouts();
+        scheduleMonthlyUsageReset();
+    })
+    .catch((error) => {
+        console.error("❌ MongoDB connection failed:", error);
+        process.exit(1);
+    });
 
 // 7. Start Server
 app.listen(PORT, () => {

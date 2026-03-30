@@ -68,7 +68,7 @@ exports.updateProfile = async (req, res) => {
                 }
             }
 
-            const { LAUNCH_DATE, SLASH_WINDOW_END } = require('../../config/pricing');
+            const { LAUNCH_DATE } = require('../../config/pricing');
             const now = new Date();
 
             profile = new BusinessProfile({
@@ -89,15 +89,14 @@ exports.updateProfile = async (req, res) => {
                 paystackSubaccountCode: subaccountCode,
                 staffNumbers: staffNumbers ? staffNumbers.map(n => cleanPhone(n)).filter(n => n) : [],
                 
-                // 🚀 OPEN BETA STRATEGY: 
+                // 🚀 PRE-LAUNCH STRATEGY: 
+                // Everyone is an Oga during pre-launch. Paid plans active from Launch Day (May 1st).
                 plan: 'oga', 
                 planStatus: 'trialing',
-                trialExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 🚀 BETA TEST: 30 days trial
+                trialExpiresAt: now < LAUNCH_DATE ? LAUNCH_DATE : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // Till launch, then 14d thereafter
                 hasUsedTrial: true,
-                isFoundingMember: now < SLASH_WINDOW_END,
-                joinedAtLaunch: now < SLASH_WINDOW_END,
-                walletBalance: 0,
-                discountActiveUntil: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000)
+                isLaunchPromo: true, 
+                walletBalance: 0 
             });
 
             await profile.save();

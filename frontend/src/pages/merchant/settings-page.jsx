@@ -770,19 +770,19 @@ const SettingsPage = () => {
                             }}>
                                 <div>
                                     <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>Intelligence</p>
-                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? 'Basic' : 'Genius'}</p>
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? 'Standard' : 'Genius +'}</p>
                                 </div>
                                 <div>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>Records</p>
-                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? '20' : 'Unlimited'}</p>
+                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>Sales Records</p>
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? '10/mo' : 'Unlimited'}</p>
                                 </div>
                                 <div>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>Staff</p>
-                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? 'Owner Only' : profile?.plan === 'oga' ? 'Owner + 2' : 'Unlimited'}</p>
+                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>Staff Limit</p>
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? 'Owner' : profile?.plan === 'oga' ? 'Owner + 1' : 'Unlimited'}</p>
                                 </div>
                                 <div>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>WhatsApp</p>
-                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? 'Standard' : profile?.plan === 'oga' ? '2,000/mo' : '10,000/mo'}</p>
+                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>AI Quota</p>
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? '50/mo' : profile?.plan === 'oga' ? '150/mo' : '150/mo'}</p>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -814,9 +814,9 @@ const SettingsPage = () => {
                                 >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                                         <span style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--primary)' }}>OGA PLAN</span>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0F172A' }}>₦7k/mo</span>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0F172A' }}>₦3,000/mo</span>
                                     </div>
-                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Multi-device support, Staff accounts & Smart Kreddy reminders.</p>
+                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Voice Notes, Oga Reports & 1 Staff account. Pioneer Special: 50% Off.</p>
                                 </button>
                             )}
 
@@ -832,9 +832,9 @@ const SettingsPage = () => {
                                 >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                                         <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#8B5CF6' }}>CHAIRMAN</span>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0F172A' }}>₦30k/mo</span>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0F172A' }}>₦4,500/mo</span>
                                     </div>
-                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Voice Sync, Custom Branding, Global Exports & Priority Kreddy AI.</p>
+                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Image Scanning, White-Label Receipts & Unlimited Staff. Pioneer Special.</p>
                                 </button>
                             )}
 

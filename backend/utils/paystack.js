@@ -72,15 +72,6 @@ const resolveAccount = async (accountNumber, bankCode) => {
     try {
         return await paystackRequest(`/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`);
     } catch (err) {
-        // Handle Test Mode Limit: "Test mode daily limit of 3 live bank resolves exceeded"
-        if (err.message.includes("limit") && process.env.PAYSTACK_SECRET_KEY.startsWith("sk_test_")) {
-            console.warn("⚠️ Paystack Limit Hit - Returning Mock Name for Testing");
-            return {
-                account_number: accountNumber,
-                account_name: "KREDIBLY TEST USER (LIMIT EXCEEDED)",
-                bank_id: 999
-            };
-        }
         throw err;
     }
 };
@@ -104,14 +95,15 @@ const createSubaccount = async (businessName, bankCode, accountNumber, successFe
 /**
  * 4. Initialize Payment (Generate Checkout Link)
  */
-const initializePayment = async (email, amount, reference, metadata = {}, subaccount = null, bearer = 'subaccount') => {
+const initializePayment = async (email, amount, reference, metadata = {}, subaccount = null, bearer = 'subaccount', channels = []) => {
     const payload = {
         email,
         amount: Math.round(amount * 100), // Convert to Kobo
         reference,
         metadata,
         callback_url: `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/dashboard/payment/success`,
-        ...(subaccount ? { subaccount, ...(bearer ? { bearer } : {}) } : {}) // 💰 Relies on Dashboard setting if bearer is empty
+        ...(subaccount ? { subaccount, ...(bearer ? { bearer } : {}) } : {}), // 💰 Relies on Dashboard setting if bearer is empty
+        ...(channels.length > 0 ? { channels } : {}) // 🛡️ Restrict payment channels if specified
     };
     return paystackRequest('/transaction/initialize', 'POST', payload);
 };

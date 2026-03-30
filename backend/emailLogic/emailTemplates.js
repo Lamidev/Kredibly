@@ -331,6 +331,49 @@ const SUBSCRIPTION_CONFIRM_TEMPLATE = `
 `;
 
 
+const BANK_CHANGE_ALERT_TEMPLATE = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Security Alert: Bank Details Changed</title>
+</head>
+<body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
+  <div style="margin-bottom: 32px;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
+  </div>
+  <div style="background-color: #ffffff; padding: 0;">
+    <div style="background-color: #FFFBEB; border-left: 4px solid #F59E0B; padding: 16px; margin-bottom: 24px;">
+        <p style="margin: 0; font-size: 14px; color: #92400E; font-weight: 700;">🚨 SECURITY ALERT</p>
+    </div>
+    
+    <p style="font-size: 16px;">Hello {name},</p>
+    
+    <p style="font-size: 16px;">This is an automated security notification to let you know that the <strong>bank account details</strong> for your Kredibly business were just updated.</p>
+    
+    <div style="background: #F8FAFC; border-radius: 16px; padding: 24px; margin: 24px 0; border: 1px solid #E2E8F0;">
+        <p style="margin: 0; font-size: 14px; color: #64748B; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 8px;">New Destination Details</p>
+        <p style="margin: 4px 0; font-size: 16px; color: #1E293B;"><strong>Bank:</strong> {bankName}</p>
+        <p style="margin: 4px 0; font-size: 16px; color: #1E293B;"><strong>Account:</strong> {accountNumber}</p>
+        <p style="margin: 4px 0; font-size: 16px; color: #1E293B;"><strong>Holder:</strong> {accountName}</p>
+    </div>
+    
+    <p style="font-size: 16px; font-weight: 700; color: #EF4444;">If you DID NOT make this change:</p>
+    <p style="font-size: 16px;">Please reply to this email immediately or click the button below to secure your account. We have temporarily suspended automated payouts to the new account for the next 24 hours as a precaution.</p>
+    
+    <div style="margin: 32px 0;">
+      <a href="https://usekredibly.com/dashboard/support" style="background-color: #EF4444; color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 14px; display: inline-block;">This Wasn't Me!</a>
+    </div>
+
+    <p style="font-size: 14px; color: #6B7280;">If you made this change, you can safely ignore this email. No further action is required.</p>
+  </div>
+  <div style="margin-top: 40px; border-top: 1px solid #E5E7EB; padding-top: 20px; font-size: 12px; color: #9CA3AF;">
+    <p>© ${new Date().getFullYear()} Kredibly Security Team. All rights reserved.</p>
+  </div>
+</body>
+</html>
+`;
+
 module.exports = {
   VERIFICATION_EMAIL_TEMPLATE,
   PASSWORD_RESET_SUCCESS_TEMPLATE,
@@ -340,5 +383,6 @@ module.exports = {
   WAITLIST_NOTIFICATION_TEMPLATE,
   WAITLIST_CONFIRMATION_TEMPLATE,
   SUPPORT_REPLY_TEMPLATE,
-  SUBSCRIPTION_CONFIRM_TEMPLATE
+  SUBSCRIPTION_CONFIRM_TEMPLATE,
+  BANK_CHANGE_ALERT_TEMPLATE
 };
