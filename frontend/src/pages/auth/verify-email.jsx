@@ -27,9 +27,13 @@ const VerifyEmail = () => {
     };
 
     return (
-        <div className="glass-card auth-form-card w-full shadow-2xl" style={{ background: 'white', borderRadius: '32px' }}>
+        <div className="glass-card" style={{ 
+            padding: '48px', 
+            borderRadius: '32px', 
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)'
+        }}>
             <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-                <h2 style={{ fontSize: '2.2rem', fontWeight: 700, marginBottom: '8px', color: '#000', letterSpacing: '-0.02em' }}>Verify Account</h2>
+                <h2 className="premium-gradient" style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em' }}>Verify Account</h2>
                 <p style={{ color: '#6B7280', fontWeight: 500, fontSize: '1.05rem' }}>Enter the 6-digit code we sent you</p>
                 <p style={{ fontSize: '0.85rem', color: '#EF4444', marginTop: '8px', fontWeight: 600 }}>
                     ⚠️ Not seeing it? Check your Spam or Promotions folder.
@@ -54,7 +58,16 @@ const VerifyEmail = () => {
                 <button
                     type="submit"
                     className="btn-primary"
-                    style={{ width: '100%', height: '58px', borderRadius: '14px', fontSize: '1.1rem', fontWeight: 700, background: 'var(--primary)', marginTop: '8px' }}
+                    style={{ 
+                        width: '100%', 
+                        height: '60px', 
+                        borderRadius: '16px', 
+                        fontSize: '1.1rem', 
+                        fontWeight: 700, 
+                        background: 'var(--primary)', 
+                        marginTop: '8px',
+                        boxShadow: '0 10px 20px -5px var(--primary-glow)' 
+                    }}
                     disabled={loading}
                 >
                     {loading ? "Verifying..." : "Confirm Verification"}

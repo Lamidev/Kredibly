@@ -37,12 +37,12 @@ const ResetPassword = () => {
 
   return (
     <div className="glass-card" style={{ 
-      padding: '40px', 
+      padding: '48px', 
       borderRadius: '32px', 
-      boxShadow: 'var(--shadow-premium)' 
+      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)'
     }}>
       <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '2.2rem', fontWeight: 700, color: 'var(--text)', marginBottom: '8px', letterSpacing: '-0.03em' }}>New Password</h2>
+        <h2 className="premium-gradient" style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em' }}>New Password</h2>
         <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '1.05rem' }}>Enter the 6-digit code we sent you and set a new password.</p>
       </div>
 
