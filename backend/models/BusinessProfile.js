@@ -97,6 +97,10 @@ const BusinessProfileSchema = new mongoose.Schema({
     nextBillingDate: {
         type: Date
     },
+    slashCyclesRemaining: {
+        type: Number,
+        default: 0 // Number of months left at the discounted Pioneer price
+    },
     lastPaidAt: {
         type: Date
     },

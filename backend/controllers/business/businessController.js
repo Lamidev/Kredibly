@@ -68,6 +68,9 @@ exports.updateProfile = async (req, res) => {
                 }
             }
 
+            const { LAUNCH_DATE, SLASH_WINDOW_END } = require('../../config/pricing');
+            const now = new Date();
+
             profile = new BusinessProfile({
                 ownerId: req.user._id,
                 displayName,
@@ -91,7 +94,8 @@ exports.updateProfile = async (req, res) => {
                 planStatus: 'trialing',
                 trialExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 🚀 BETA TEST: 30 days trial
                 hasUsedTrial: true,
-                isFoundingMember: true, 
+                isFoundingMember: now < SLASH_WINDOW_END,
+                joinedAtLaunch: now < SLASH_WINDOW_END,
                 walletBalance: 0,
                 discountActiveUntil: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000)
             });

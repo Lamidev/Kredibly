@@ -104,13 +104,14 @@ const createSubaccount = async (businessName, bankCode, accountNumber, successFe
 /**
  * 4. Initialize Payment (Generate Checkout Link)
  */
-const initializePayment = async (email, amount, reference, metadata = {}) => {
+const initializePayment = async (email, amount, reference, metadata = {}, subaccount = null, bearer = 'account') => {
     const payload = {
         email,
         amount: Math.round(amount * 100), // Convert to Kobo
         reference,
         metadata,
-        callback_url: `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/dashboard/payment/success`
+        callback_url: `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/dashboard/payment/success`,
+        ...(subaccount ? { subaccount, bearer } : {}) // 💰 Kredibly covers fees if subaccount is used
     };
     return paystackRequest('/transaction/initialize', 'POST', payload);
 };
