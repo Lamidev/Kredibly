@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import PublicNavbar from '../../components/public/PublicNavbar';
 import PublicFooter from '../../components/public/PublicFooter';
 import { motion } from 'framer-motion';
-import { Check, X, Zap, HelpCircle, ArrowRight, ShieldCheck, Sparkles, Mic, UserX, UserCheck, TrendingUp, Wallet } from 'lucide-react';
+import { Check, X, Zap, HelpCircle, ArrowRight, ShieldCheck, Sparkles, Mic } from 'lucide-react';
 
 const PricingPage = () => {
     const navigate = useNavigate();
@@ -98,112 +98,53 @@ const PricingPage = () => {
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                         <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem' }}>GRAND LAUNCH WINDOW (MAY 1 - JUNE 1)</div>
                         <h1 style={{ fontSize: 'clamp(3rem, 7vw, 5rem)', fontWeight: 950, letterSpacing: '-0.05em', lineHeight: 1, marginBottom: '24px' }}>
-                            Hire Kreddy for <br />
-                            <span className="premium-gradient">Less than ₦100 per day.</span>
+                            Simple Pricing.<br />
+                            <span className="premium-gradient">Zero Hidden Fees.</span>
                         </h1>
-                        <p style={{ fontSize: '1.25rem', color: '#64748B', marginBottom: '48px', maxWidth: '800px', margin: '0 auto 48px', fontWeight: 600 }}>
-                            Launch Month Special: Get your first <strong>2 months</strong> at 50% off if you join before June 1. Welcome to the Vanguard!
+                        <p style={{ fontSize: '1.25rem', color: '#64748B', marginBottom: '48px', maxWidth: '700px', margin: '0 auto 48px', fontWeight: 600 }}>
+                            Join during our Grand Launch and lock in <strong>50% off</strong> your first 2 months. Cancel anytime. No hidden charges — ever.
                         </p>
                     </motion.div>
                 </div>
             </section>
 
-            {/* Street-Smart Comparison Card */}
-            <section style={{ padding: '0 24px 80px' }}>
-                <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-                    <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        style={{ background: '#0F172A', borderRadius: '32px', padding: '48px', color: 'white', position: 'relative', overflow: 'hidden' }}
-                    >
-                        <div style={{ position: 'absolute', top: 0, right: 0, padding: '40px', opacity: 0.1 }}><TrendingUp size={120} /></div>
-                        
-                        <div style={{ position: 'relative', zIndex: 2 }}>
-                            <h3 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '40px', textAlign: 'center' }}>"The Street-Smart Choice"</h3>
-                            
-                            <div className="pricing-comparison-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-                                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '32px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><UserX size={20} color="#F87171" /></div>
-                                        <span style={{ fontWeight: 950, fontSize: '1.25rem', color: '#F87171' }}>Human Shop Boy</span>
-                                    </div>
-                                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '1rem', fontWeight: 600, opacity: 0.8 }}>
-                                        <li style={{ display: 'flex', gap: '10px' }}>❌ Salary: ~₦30,000 / month</li>
-                                        <li style={{ display: 'flex', gap: '10px' }}>❌ Arrives Late & Leaves Early</li>
-                                        <li style={{ display: 'flex', gap: '10px' }}>❌ Forgets to record debts</li>
-                                        <li style={{ display: 'flex', gap: '10px' }}>❌ "Can I borrow from the till?"</li>
-                                    </ul>
-                                </div>
-
-                                <div style={{ background: 'rgba(76, 29, 149, 0.2)', padding: '32px', borderRadius: '24px', border: '1px solid var(--primary-glow)', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><UserCheck size={20} color="white" /></div>
-                                        <span style={{ fontWeight: 950, fontSize: '1.25rem', color: 'white' }}>Kreddy AI (Launch Prices)</span>
-                                    </div>
-                                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '1rem', fontWeight: 700 }}>
-                                        <li style={{ display: 'flex', gap: '10px' }}>✅ Oga: ₦100/day | Chairman: ₦150/day</li>
-                                        <li style={{ display: 'flex', gap: '10px' }}>✅ Works 24/7 without sleep</li>
-                                        <li style={{ display: 'flex', gap: '10px' }}>✅ Records every kobo accurately</li>
-                                        <li style={{ display: 'flex', gap: '10px' }}>✅ Recovers your debts while you sleep</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            
-                            <p style={{ textAlign: 'center', marginTop: '40px', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.8rem', letterSpacing: '0.1em' }}>
-                                Kreddy doesn't take lunch breaks. She just tracks money.
-                            </p>
-                        </div>
-                    </motion.div>
-                </div>
-            </section>
 
             {/* Pricing Grid */}
-            <section style={{ padding: '0 24px 100px', background: '#FDFCFE' }}>
-                <div className="pricing-cards-grid" style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
+            <section style={{ padding: '40px 24px 100px', background: '#FDFCFE' }}>
+                <div className="pp-pricing-grid" style={{ maxWidth: '1200px', margin: '0 auto' }}>
                     {plans.map((plan, i) => (
-                        <div key={i} className={plan.highlight ? 'pricing-card-featured' : ''} style={{ 
-                            padding: '48px', 
-                            borderRadius: '32px', 
-                            background: plan.highlight ? '#0F172A' : 'white', 
-                            color: plan.highlight ? 'white' : '#0F172A',
-                            border: plan.highlight ? '2px solid var(--primary)' : '1px solid #E2E8F0',
-                            position: 'relative',
-                            transform: plan.highlight ? 'scale(1.02)' : 'none',
-                            boxShadow: plan.highlight ? '0 30px 60px -15px rgba(15, 23, 42, 0.3)' : '0 10px 30px -10px rgba(0,0,0,0.02)',
-                            zIndex: plan.highlight ? 2 : 1,
-                            display: 'flex', flexDirection: 'column'
-                        }}>
+                        <div key={i} className={`pp-pricing-card ${plan.highlight ? 'pp-pricing-card--featured' : ''}`}>
+                            {/* Badge ABOVE plan name */}
                             {plan.isSlash && (
-                                <div className="pricing-card-badge" style={{ position: 'absolute', top: '24px', right: '32px', background: 'var(--primary)', color: 'white', padding: '6px 14px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    2-MONTH 50% GRAND OPENING SPECIAL
+                                <div className="pp-pricing-badge">
+                                    🎉 2-Month 50% Grand Opening Special
                                 </div>
                             )}
-                            <h3 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '8px' }}>{plan.name}</h3>
-                            <p style={{ opacity: 0.7, fontSize: '0.95rem', fontWeight: 600, marginBottom: '32px', minHeight: '44px' }}>{plan.description}</p>
+                            <h3 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', fontWeight: 900, marginBottom: '8px' }}>{plan.name}</h3>
+                            <p style={{ opacity: 0.7, fontSize: '0.9rem', fontWeight: 500, marginBottom: '24px' }}>{plan.description}</p>
                             
-                            <div style={{ marginBottom: '40px' }}>
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                                    {plan.isSlash && <span style={{ fontSize: '1.5rem', fontWeight: 700, textDecoration: 'line-through', opacity: 0.4 }}>{plan.originalPrice}</span>}
-                                    <span style={{ fontSize: '3rem', fontWeight: 950, letterSpacing: '-0.05em' }}>{plan.price}</span>
-                                    <span style={{ opacity: 0.6, fontWeight: 700 }}>{plan.period}</span>
+                            <div style={{ marginBottom: '32px' }}>
+                                <div className="pp-price-row">
+                                    {plan.isSlash && <span className="pp-price-original">{plan.originalPrice}</span>}
+                                    <span className="pp-price-main">{plan.price}</span>
+                                    <span className="pp-price-period">{plan.period}</span>
                                 </div>
-                                <div style={{ fontSize: '1rem', fontWeight: 900, color: plan.highlight ? '#4ADE80' : 'var(--primary)', marginTop: '4px' }}>+ {plan.fee}</div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 900, color: plan.highlight ? 'white' : 'var(--primary)', marginTop: '4px' }}>+ {plan.fee}</div>
                             </div>
 
                             <button 
                                 onClick={plan.ctaAction}
                                 className={plan.highlight ? "btn-primary" : "btn-secondary"} 
-                                style={{ width: '100%', marginBottom: '40px', justifyContent: 'center', height: '60px', borderRadius: '18px', boxShadow: plan.highlight ? '0 10px 20px rgba(124, 58, 237, 0.3)' : 'none' }}
+                                style={{ width: '100%', marginBottom: '32px', justifyContent: 'center', height: '54px', borderRadius: '16px', fontSize: '0.95rem', boxShadow: plan.highlight ? '0 10px 20px rgba(124, 58, 237, 0.3)' : 'none' }}
                             >
-                                {plan.cta} <ArrowRight size={18} />
+                                {plan.cta} <ArrowRight size={16} />
                             </button>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                                 {plan.features.map((feat, j) => (
-                                    <div key={j} style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.95rem', fontWeight: 700 }}>
-                                        <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: plan.highlight ? 'rgba(255,255,255,0.1)' : 'rgba(76, 29, 149, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <Check size={14} color={plan.highlight ? '#4ADE80' : 'var(--primary)'} />
+                                    <div key={j} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '0.9rem', fontWeight: 600 }}>
+                                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: plan.highlight ? 'rgba(255,255,255,0.1)' : 'rgba(76, 29, 149, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
+                                            <Check size={12} color={plan.highlight ? '#4ADE80' : 'var(--primary)'} />
                                         </div>
                                         {feat}
                                     </div>
@@ -243,28 +184,97 @@ const PricingPage = () => {
                     -webkit-text-fill-color: transparent;
                 }
 
+                /* ── Pricing Grid ── */
+                .pp-pricing-grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 24px;
+                    align-items: start;
+                }
+                .pp-pricing-card {
+                    padding: 40px;
+                    border-radius: 28px;
+                    background: white;
+                    color: #0F172A;
+                    border: 1px solid #E2E8F0;
+                    display: flex;
+                    flex-direction: column;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+                }
+                .pp-pricing-card--featured {
+                    background: #0F172A;
+                    color: white;
+                    border: 2px solid var(--primary);
+                    box-shadow: 0 20px 50px -10px rgba(15,23,42,0.3);
+                }
+                .pp-pricing-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    background: var(--primary);
+                    color: white;
+                    padding: 5px 12px;
+                    border-radius: 100px;
+                    font-size: 0.72rem;
+                    font-weight: 800;
+                    margin-bottom: 14px;
+                    width: fit-content;
+                }
+                .pp-price-row {
+                    display: flex;
+                    align-items: baseline;
+                    gap: 6px;
+                    flex-wrap: wrap;
+                }
+                .pp-price-original {
+                    font-size: 1.1rem;
+                    font-weight: 700;
+                    text-decoration: line-through;
+                    opacity: 0.4;
+                }
+                .pp-price-main {
+                    font-size: clamp(1.8rem, 4vw, 2.8rem);
+                    font-weight: 950;
+                    letter-spacing: -0.04em;
+                    line-height: 1;
+                }
+                .pp-price-period {
+                    opacity: 0.6;
+                    font-weight: 600;
+                    font-size: 0.9rem;
+                }
+
                 /* ── Mobile Responsive Fixes ── */
+                @media (max-width: 900px) {
+                    .pp-pricing-grid {
+                        grid-template-columns: 1fr;
+                        max-width: 480px;
+                        margin: 0 auto;
+                    }
+                    .pp-pricing-card--featured {
+                        order: -1;
+                    }
+                }
                 @media (max-width: 768px) {
                     .pricing-comparison-grid {
                         grid-template-columns: 1fr !important;
                     }
-                    .pricing-cards-grid {
-                        grid-template-columns: 1fr !important;
-                    }
-                    .pricing-card-featured {
-                        transform: none !important;
-                    }
-                    .pricing-card-badge {
-                        position: static !important;
-                        display: inline-flex !important;
-                        margin-bottom: 16px;
-                        font-size: 0.65rem !important;
-                    }
-                    .pricing-comparison-box {
-                        padding: 28px 20px !important;
-                    }
                     .pricing-cta-box {
-                        padding: 40px 24px !important;
+                        padding: 36px 20px !important;
+                    }
+                    /* Header text scaling */
+                    .pricing-header h1 {
+                        font-size: clamp(2rem, 8vw, 3.5rem) !important;
+                    }
+                    .pricing-header p {
+                        font-size: clamp(0.85rem, 3.5vw, 1.1rem) !important;
+                    }
+                }
+                @media (max-width: 480px) {
+                    .pp-pricing-card, .pp-pricing-card--featured {
+                        padding: 24px 20px !important;
+                    }
+                    .pp-pricing-badge {
+                        font-size: 0.62rem;
                     }
                 }
             `}</style>

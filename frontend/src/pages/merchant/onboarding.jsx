@@ -40,6 +40,7 @@ const Onboarding = () => {
     const [accountNumber, setAccountNumber] = useState("");
     const [accountName, setAccountName] = useState("");
     const [isResolving, setIsResolving] = useState(false);
+    const [banksLoading, setBanksLoading] = useState(false);
     
     // Step 4 Data: Logo & Staff
     const [logoUrl, setLogoUrl] = useState("");
@@ -48,19 +49,32 @@ const Onboarding = () => {
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
 
-    const { updateProfile } = useAuth();
+    const { updateProfile, user } = useAuth();
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
 
-    // Fetch Banks on Mount
+    // Get initials for logo fallback
+    const getInitials = (name) => {
+        if (!name) return user?.email?.[0]?.toUpperCase() || "K";
+        return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+    };
+
+    // Fetch Banks on Mount — must send credentials (user is authenticated)
     useEffect(() => {
         const fetchBanks = async () => {
+            setBanksLoading(true);
             try {
                 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
-                const res = await axios.get(`${API_URL}/business/banks`);
-                if (res.data.success) setBanks(res.data.data);
+                const res = await axios.get(`${API_URL}/business/banks`, { withCredentials: true });
+                if (res.data.success) {
+                    const sorted = res.data.data.sort((a, b) => a.name.localeCompare(b.name));
+                    setBanks(sorted);
+                }
             } catch (err) {
                 console.error("Failed to fetch banks", err);
+                // Don't show error toast on mount — only show if user is on the bank step
+            } finally {
+                setBanksLoading(false);
             }
         };
         fetchBanks();
@@ -79,7 +93,9 @@ const Onboarding = () => {
         setIsResolving(true);
         try {
             const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
-            const res = await axios.get(`${API_URL}/business/resolve-account/${selectedBank.code}/${accountNumber}`);
+            const res = await axios.get(`${API_URL}/business/resolve-account/${selectedBank.code}/${accountNumber}`, {
+                withCredentials: true
+            });
             if (res.data.success) {
                 setAccountName(res.data.data.account_name);
                 toast.success(`Account Verified: ${res.data.data.account_name}`);
@@ -173,7 +189,7 @@ const Onboarding = () => {
                     <h3 style={{ margin: 0, fontWeight: 950, fontSize: '1.5rem', letterSpacing: '-0.02em', color: '#0F172A' }}>
                         {step === 1 ? 'Elite Access' : 'Quick Setup'}
                     </h3>
-                    <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: '#64748B', fontWeight: 600 }}>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: '#0F172A', fontWeight: 600 }}>
                         {step === 1 ? 'You are a Founding Member.' : `Step ${step - 1} of 3`}
                     </p>
                 </div>
@@ -197,13 +213,33 @@ const Onboarding = () => {
         </div>
     );
 
-    const filteredBanks = banks.filter(b => b.name.toLowerCase().includes(searchBank.toLowerCase())).slice(0, 5);
+    const filteredBanks = banks.filter(b => b.name.toLowerCase().includes(searchBank.toLowerCase())).slice(0, 8);
 
     return (
         <div className="auth-pattern" style={{ minHeight: '100vh', width: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
             <div className="pattern-dots" style={{ opacity: 0.05 }} />
+
+            {/* Logo header — same style as AuthLayout */}
+            <div
+                onClick={() => navigate('/')}
+                className="auth-logo-header animate-fade-in"
+                style={{ 
+                    padding: '40px',
+                    cursor: 'pointer',
+                    zIndex: 100,
+                    display: 'flex',
+                    alignItems: 'center',
+                    width: 'fit-content'
+                }}
+            >
+                <img 
+                    src="/krediblyrevamped.png" 
+                    alt="Kredibly" 
+                    style={{ height: '40px', width: 'auto' }} 
+                />
+            </div>
             
-            <div className="onboarding-container" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', position: 'relative', zIndex: 10 }}>
+            <div className="onboarding-container" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px 40px', position: 'relative', zIndex: 10 }}>
                 <div style={{ maxWidth: '540px', width: '100%' }}>
                     
                     <div className="glass-card" style={{ padding: '48px', borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)' }}>
@@ -218,22 +254,22 @@ const Onboarding = () => {
                                             <Zap size={40} fill="white" />
                                         </div>
                                         <h2 style={{ fontSize: '2rem', fontWeight: 950, letterSpacing: '-0.04em', color: '#0F172A', marginBottom: '12px' }}>Welcome, Oga.</h2>
-                                        <p style={{ color: '#64748B', fontWeight: 600, fontSize: '1.05rem', lineHeight: 1.6 }}>
-                                            As a <span style={{ color: 'var(--primary)', fontWeight: 800 }}>Founding Member</span>, you've been granted **30 days** of the **Oga Plan** for free during this beta phase.
+                                        <p style={{ color: '#0F172A', fontWeight: 600, fontSize: '1rem', lineHeight: 1.7 }}>
+                                            As a <span style={{ color: 'var(--primary)', fontWeight: 800 }}>Founding Member</span>, you've been granted <strong style={{ color: '#0F172A' }}>30 days</strong> of the <strong style={{ color: '#0F172A' }}>Oga Plan</strong> for free during this beta phase.
                                         </p>
                                     </div>
-                                    <div style={{ background: '#F8FAFC', padding: '24px', borderRadius: '24px', border: '1px solid #E2E8F0', marginBottom: '40px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                                    <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1.5px solid #E2E8F0', marginBottom: '40px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
                                             <CheckCircle2 size={18} color="#10B981" />
-                                            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#334155' }}>Unlimited Invoice Records (No 10 sale limit)</span>
+                                            <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#1E293B' }}>Unlimited Invoice Records (No 10 sale limit)</span>
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
                                             <CheckCircle2 size={18} color="#10B981" />
-                                            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#334155' }}>Kreddy AI Voice Notes (Just Speak!)</span>
+                                            <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#1E293B' }}>Kreddy AI Voice Notes (Just Speak!)</span>
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                             <CheckCircle2 size={18} color="#10B981" />
-                                            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#334155' }}>0% Transaction Fees Always</span>
+                                            <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#1E293B' }}>0% Transaction Fees, Always</span>
                                         </div>
                                     </div>
                                     <button onClick={() => setStep(2)} className="btn-primary" style={{ width: '100%', height: '64px', fontSize: '1.15rem' }}>Verify Business Profile <ArrowRight size={20} /></button>
@@ -244,12 +280,12 @@ const Onboarding = () => {
                             {step === 2 && (
                                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} key="info">
                                     <div className="input-group" style={{ marginBottom: '24px' }}>
-                                        <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>What is your Business/Shop name?</label>
+                                        <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>Name of your Business, Shop, or Service?</label>
                                         <input 
                                             type="text" 
                                             className="input-field" 
                                             style={{ height: '60px', fontSize: '1.1rem', fontWeight: 700 }}
-                                            placeholder="e.g. Trendy Collections" 
+                                            placeholder="e.g. Trendy Collections, John The Plumber" 
                                             value={displayName} 
                                             onChange={e => setDisplayName(e.target.value)} 
                                             autoFocus 
@@ -268,7 +304,7 @@ const Onboarding = () => {
                                                 onChange={e => setWhatsappNumber(e.target.value)} 
                                             />
                                         </div>
-                                        <p style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '8px', fontWeight: 600 }}>We'll use this to send you daily business summaries.</p>
+                                        <p style={{ fontSize: '0.8rem', color: '#0F172A', marginTop: '8px', fontWeight: 600 }}>We'll use this to send you daily summaries and AI insights.</p>
                                     </div>
                                     <div style={{ display: 'flex', gap: '16px' }}>
                                         <button onClick={nextStep} className="btn-primary" style={{ flex: 1, height: '64px', fontSize: '1.1rem' }}>Next: Payout Setup <ArrowRight size={20} /></button>
@@ -282,24 +318,59 @@ const Onboarding = () => {
                                     <div className="input-group" style={{ marginBottom: '24px' }}>
                                         <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>Where should we pay your money?</label>
                                         <div style={{ position: 'relative' }}>
-                                            <Search size={18} style={{ position: 'absolute', left: '16px', top: '20px', color: '#94A3B8' }} />
+                                            <Search size={18} style={{ position: 'absolute', left: '16px', top: '20px', color: '#94A3B8', zIndex: 2 }} />
                                             <input 
                                                 type="text" 
                                                 className="input-field" 
                                                 style={{ height: '56px', paddingLeft: '48px', fontSize: '1rem', fontWeight: 700 }}
-                                                placeholder="Search Bank (e.g. Kuda, GTB)" 
+                                                placeholder={banksLoading ? "Loading banks..." : "Search Bank (e.g. Kuda, GTB)"}
                                                 value={selectedBank ? selectedBank.name : searchBank}
                                                 onChange={e => { setSearchBank(e.target.value); setSelectedBank(null); }}
-                                                onClick={() => setSelectedBank(null)}
+                                                onClick={() => { if (selectedBank) setSelectedBank(null); }}
+                                                disabled={banksLoading}
                                             />
-                                            {searchBank && !selectedBank && (
-                                                <div style={{ position: 'absolute', top: '64px', left: 0, right: 0, background: 'white', border: '1px solid #E2E8F0', borderRadius: '16px', zIndex: 100, boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+                                            {banksLoading && (
+                                                <Loader2 size={16} style={{ position: 'absolute', right: '16px', top: '20px', color: '#94A3B8', animation: 'spin 1s linear infinite' }} />
+                                            )}
+                                            {searchBank && !selectedBank && filteredBanks.length > 0 && (
+                                                <div style={{ position: 'absolute', top: '62px', left: 0, right: 0, background: 'white', border: '1px solid #E2E8F0', borderRadius: '16px', zIndex: 100, boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', maxHeight: '280px', overflowY: 'auto' }}>
                                                     {filteredBanks.map(b => (
-                                                        <div key={b.code} onClick={() => { setSelectedBank(b); setSearchBank(""); }} style={{ padding: '14px 20px', cursor: 'pointer', borderBottom: '1px solid #F1F5F9', fontWeight: 700, fontSize: '0.9rem' }}>{b.name}</div>
+                                                        <div 
+                                                            key={b.code} 
+                                                            onMouseDown={() => { setSelectedBank(b); setSearchBank(""); setAccountName(""); }} 
+                                                            style={{ padding: '14px 20px', cursor: 'pointer', borderBottom: '1px solid #F1F5F9', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '10px' }}
+                                                            onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'}
+                                                            onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                                                        >
+                                                            <Landmark size={14} color="#94A3B8" />
+                                                            {b.name}
+                                                        </div>
                                                     ))}
                                                 </div>
                                             )}
+                                            {searchBank && !selectedBank && banks.length > 0 && filteredBanks.length === 0 && (
+                                                <div style={{ position: 'absolute', top: '62px', left: 0, right: 0, background: 'white', border: '1px solid #E2E8F0', borderRadius: '16px', zIndex: 100, padding: '16px', textAlign: 'center', color: '#0F172A', fontSize: '0.85rem' }}>
+                                                    No bank found. Try a shorter name.
+                                                </div>
+                                            )}
                                         </div>
+                                        {/* If banks failed to load, show retry */}
+                                        {!banksLoading && banks.length === 0 && (
+                                            <button 
+                                                onClick={async () => {
+                                                    setBanksLoading(true);
+                                                    try {
+                                                        const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+                                                        const res = await axios.get(`${API_URL}/business/banks`, { withCredentials: true });
+                                                        if (res.data.success) setBanks(res.data.data.sort((a, b) => a.name.localeCompare(b.name)));
+                                                    } catch { toast.error("Still can't load banks. Check your connection."); }
+                                                    finally { setBanksLoading(false); }
+                                                }}
+                                                style={{ marginTop: '8px', background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', padding: '4px 0' }}
+                                            >
+                                                ↻ Tap to retry loading banks
+                                            </button>
+                                        )}
                                     </div>
                                     <div className="input-group" style={{ marginBottom: '24px' }}>
                                         <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>Account Number</label>
@@ -311,9 +382,9 @@ const Onboarding = () => {
                                                 placeholder="0123456789" 
                                                 maxLength={10}
                                                 value={accountNumber} 
-                                                onChange={e => setAccountNumber(e.target.value)}
+                                                onChange={e => setAccountNumber(e.target.value.replace(/\D/g, ""))}
                                             />
-                                            {isResolving && <Loader2 className="spin" size={20} style={{ position: 'absolute', right: '16px', top: '18px', color: 'var(--primary)' }} />}
+                                            {isResolving && <Loader2 className="spin" size={20} style={{ position: 'absolute', right: '16px', top: '18px', color: 'var(--primary)', animation: 'spin 1s linear infinite' }} />}
                                         </div>
                                     </div>
                                     {accountName && (
@@ -328,28 +399,47 @@ const Onboarding = () => {
                                 </motion.div>
                             )}
 
-                            {/* Step 4: Finishing Touches */}
+                            {/* Step 4: Finishing Touches — Logo + Staff (Optional) */}
                             {step === 4 && (
                                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} key="staff">
+                                    {/* Logo Upload */}
                                     <div style={{ textAlign: 'center', marginBottom: '32px' }}>
                                         <div
                                             onClick={() => fileInputRef.current.click()}
-                                            style={{ width: '96px', height: '96px', borderRadius: '28px', background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: '3px dashed #E2E8F0', cursor: 'pointer', overflow: 'hidden' }}
+                                            style={{ 
+                                                width: '96px', height: '96px', borderRadius: '28px', 
+                                                background: logoUrl ? 'transparent' : '#F8FAFC', 
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                                margin: '0 auto 12px', border: '3px dashed #E2E8F0', 
+                                                cursor: 'pointer', overflow: 'hidden',
+                                                fontWeight: 900, fontSize: '1.8rem', color: 'var(--primary)'
+                                            }}
                                         >
-                                            {logoUrl ? <img src={logoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Camera size={32} color="#94A3B8" />}
+                                            {uploading ? (
+                                                <Loader2 size={32} color="#94A3B8" style={{ animation: 'spin 1s linear infinite' }} />
+                                            ) : logoUrl ? (
+                                                <img src={logoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="logo" />
+                                            ) : (
+                                                getInitials(displayName)
+                                            )}
                                         </div>
-                                        <p style={{ fontWeight: 800, color: '#0F172A', cursor: 'pointer' }} onClick={() => fileInputRef.current.click()}>Upload Brand Logo (Optional)</p>
+                                        <p style={{ fontWeight: 800, color: '#0F172A', cursor: 'pointer', marginBottom: '4px' }} onClick={() => fileInputRef.current.click()}>
+                                            {logoUrl ? "Logo Uploaded ✓" : "Upload Brand Logo (Optional)"}
+                                        </p>
+                                        <p style={{ fontSize: '0.78rem', color: '#0F172A', fontWeight: 600 }}>
+                                            {logoUrl ? "Click to change" : "Your initials show until you add a logo — you can also do this in Settings later"}
+                                        </p>
                                         <input ref={fileInputRef} type="file" hidden onChange={handleLogoUpload} accept="image/*" />
                                     </div>
 
                                     <div className="input-group" style={{ marginBottom: '40px' }}>
-                                        <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>Add a Business Manager (Optional)</label>
+                                        <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>Add a Manager or Partner (Optional)</label>
                                         <div style={{ display: 'flex', gap: '8px' }}>
                                             <input 
                                                 type="tel" 
                                                 className="input-field" 
                                                 style={{ height: '56px', fontSize: '1rem', fontWeight: 700 }}
-                                                placeholder="Manager's Phone" 
+                                                placeholder="Their Phone Number" 
                                                 value={newStaffPhone}
                                                 onChange={e => setNewStaffPhone(e.target.value)}
                                             />
@@ -368,20 +458,28 @@ const Onboarding = () => {
                                         className="btn-primary" 
                                         style={{ width: '100%', height: '64px', fontSize: '1.2rem', boxShadow: '0 15px 30px rgba(76, 29, 149, 0.4)' }}
                                     >
-                                        {loading ? <Loader2 className="spin" size={24} /> : "Launch My Business"}
+                                        {loading ? <Loader2 className="spin" size={24} style={{ animation: 'spin 1s linear infinite' }} /> : "Launch My Workspace 🚀"}
                                     </button>
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
 
-                    <div style={{ marginTop: '32px', textAlign: 'center', opacity: 0.6 }}>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                            <ShieldCheck size={16} /> DATA ENCRYPTED & BANK-GRADE SECURE
+                    <div style={{ marginTop: '32px', textAlign: 'center' }}>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <ShieldCheck size={16} color="#0F172A" /> DATA ENCRYPTED & BANK-GRADE SECURE
                         </p>
                     </div>
                 </div>
             </div>
+
+            <style>{`
+                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @media (max-width: 640px) {
+                    .auth-logo-header { padding: 24px 20px 10px !important; }
+                    .glass-card { padding: 24px !important; border-radius: 24px !important; }
+                }
+            `}</style>
         </div>
     );
 };
