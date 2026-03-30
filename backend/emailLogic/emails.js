@@ -3,6 +3,7 @@ const {
   PASSWORD_RESET_SUCCESS_TEMPLATE,
   VERIFICATION_EMAIL_TEMPLATE,
   WELCOME_EMAIL_TEMPLATE,
+  ONBOARDING_SUCCESS_TEMPLATE,
   NEW_TICKET_ALERT_TEMPLATE,
   WAITLIST_NOTIFICATION_TEMPLATE,
   WAITLIST_CONFIRMATION_TEMPLATE,
@@ -80,6 +81,21 @@ exports.sendWelcomeEmail = async (email, userName) => {
   } catch (error) {
     handleEmailError(error, "Error sending welcome email");
   }
+};
+
+exports.sendOnboardingSuccessEmail = async (email, userName, businessName) => {
+    try {
+        await resendClient.emails.send({
+            from: `${sender.name} <${sender.email}>`,
+            to: email,
+            subject: "Your Business is Live! 🛡️ (Kredibly Setup Complete)",
+            html: ONBOARDING_SUCCESS_TEMPLATE
+                .replace(/{name}/g, userName)
+                .replace(/{businessName}/g, businessName)
+        });
+    } catch (error) {
+        console.error("Error sending onboarding success email:", error);
+    }
 };
 
 // Send Password Reset Email

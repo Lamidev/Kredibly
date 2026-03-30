@@ -70,7 +70,7 @@ const CreateSale = () => {
                     <Sparkles size={16} color="var(--primary)" />
                     <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>New Entry</span>
                 </div>
-                <h1 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--text)', marginBottom: '12px', letterSpacing: '-0.04em' }}>
+                <h1 style={{ fontSize: 'clamp(1.5rem, 8vw, 2.5rem)', fontWeight: 900, color: 'var(--text)', marginBottom: '12px', letterSpacing: '-0.04em', lineHeight: 1.1 }}>
                     {formData.invoiceType === 'record' ? 'Record Past Payment' : 'Create New Invoice'}
                 </h1>
                 <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '1.1rem' }}>
@@ -112,7 +112,7 @@ const CreateSale = () => {
 
             <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '32px' }}>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '32px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '32px' }}>
                     {/* Left Side: Client & Details */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                         {/* Transaction Content */}
@@ -209,12 +209,12 @@ const CreateSale = () => {
                                             exit={{ opacity: 0, height: 0 }}
                                             style={{ padding: '24px', background: 'rgba(249, 115, 22, 0.05)', borderRadius: '24px', border: '1px solid rgba(249, 115, 22, 0.1)' }}
                                         >
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--warning)' }}>
                                                     <AlertCircle size={18} />
                                                     <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>Remaining Balance</span>
                                                 </div>
-                                                <span style={{ fontWeight: 900, color: 'var(--warning)', fontSize: '1.3rem' }}>₦{balance.toLocaleString()}</span>
+                                                <span style={{ fontWeight: 900, color: 'var(--warning)', fontSize: 'clamp(1.1rem, 4vw, 1.3rem)' }}>₦{balance.toLocaleString()}</span>
                                             </div>
 
                                             <div className="input-group">
@@ -247,12 +247,12 @@ const CreateSale = () => {
                         type="submit"
                         className="btn-primary"
                         style={{ 
-                            padding: '20px 60px', 
+                            padding: 'clamp(16px, 4vw, 20px) 20px', 
                             display: 'flex', 
                             alignItems: 'center', 
                             justifyContent: 'center', 
                             gap: '12px', 
-                            fontSize: '1.2rem', 
+                            fontSize: 'clamp(1rem, 4vw, 1.2rem)', 
                             borderRadius: '24px', 
                             fontWeight: 900,
                             boxShadow: '0 20px 40px -10px var(--primary-glow)',

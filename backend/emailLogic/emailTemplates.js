@@ -374,11 +374,63 @@ const BANK_CHANGE_ALERT_TEMPLATE = `
 </html>
 `;
 
+const ONBOARDING_SUCCESS_TEMPLATE = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Business is Live!</title>
+</head>
+<body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
+  
+  <div style="margin-bottom: 32px;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
+  </div>
+
+  <div style="background-color: #ffffff; padding: 0;">
+    <p style="font-size: 18px; font-weight: 800; color: ${THEME_COLOR}; margin-top: 0;">Setup Complete. You are officially an Oga! 🛡️</p>
+    
+    <p style="font-size: 16px;">Hi {name},</p>
+    
+    <p style="font-size: 16px;">Congratulations! Your business, <strong>{businessName}</strong>, is now fully set up on Kredibly. Our system has verified your bank details, and you are officially ready to start building your professional legacy.</p>
+
+    <div style="background: #F8FAFC; border-radius: 20px; padding: 28px; margin: 32px 0; border: 1px solid #E2E8F0;">
+        <p style="margin: 0 0 12px; font-size: 13px; font-weight: 800; color: ${THEME_COLOR}; text-transform: uppercase; letter-spacing: 0.05em;">What's Next?</p>
+        <ul style="padding-left: 20px; margin: 0; color: #475569; font-size: 15px;">
+            <li style="margin-bottom: 12px;"><strong>Generate Invoices:</strong> Create professional payment links for your customers in 30 seconds.</li>
+            <li style="margin-bottom: 12px;"><strong>Link Kreddy:</strong> Just type (or speak!) to record sales directly from WhatsApp.</li>
+            <li style="margin-bottom: 12px;"><strong>Staff Control:</strong> Your staff can now record sales while you stay in control.</li>
+        </ul>
+    </div>
+
+    <p style="font-size: 16px;">Since you joined during our Grand Opening, your <strong>Oga Plan</strong> trial is active. Go ahead and commit your first transaction to the ledger—let’s grow your business together.</p>
+
+    <div style="margin: 32px 0;">
+      <a href="https://usekredibly.com/dashboard" style="background-color: ${THEME_COLOR}; color: white; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 14px; display: inline-block; box-shadow: 0 4px 12px rgba(0,0,80,0.15);">Enter My Dashboard</a>
+    </div>
+
+    <p style="font-size: 16px;">Welcome home.</p>
+
+    <div style="margin-top: 32px;">
+      <p style="font-weight: 700; margin: 0; font-size: 16px;">Oluwatosin</p>
+      <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder, Kredibly</p>
+    </div>
+  </div>
+
+  <div style="margin-top: 40px; border-top: 1px solid #E5E7EB; padding-top: 20px; font-size: 12px; color: #9CA3AF;">
+    <p>© ${new Date().getFullYear()} Kredibly Inc. All rights reserved.</p>
+  </div>
+</body>
+</html>
+`;
+
 module.exports = {
   VERIFICATION_EMAIL_TEMPLATE,
   PASSWORD_RESET_SUCCESS_TEMPLATE,
   PASSWORD_RESET_REQUEST_TEMPLATE,
   WELCOME_EMAIL_TEMPLATE,
+  ONBOARDING_SUCCESS_TEMPLATE,
   NEW_TICKET_ALERT_TEMPLATE,
   WAITLIST_NOTIFICATION_TEMPLATE,
   WAITLIST_CONFIRMATION_TEMPLATE,

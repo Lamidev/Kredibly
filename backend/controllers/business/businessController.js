@@ -106,10 +106,10 @@ exports.updateProfile = async (req, res) => {
                 waitlistEntry.status = 'active';
                 await waitlistEntry.save();
             }
-            
-            // 📧 SEND ONBOARDING SUCCESS EMAIL
-            const { sendWelcomeEmail } = require("../../emailLogic/emails");
-            sendWelcomeEmail(req.user.email, req.user.name)
+
+            // 📧 SEND ONBOARDING SUCCESS EMAIL (fires once, when profile is first created)
+            const { sendOnboardingSuccessEmail } = require("../../emailLogic/emails");
+            sendOnboardingSuccessEmail(req.user.email, req.user.name, displayName)
               .catch(err => console.error("Onboarding Email Fail:", err.message));
 
             await logActivity({
