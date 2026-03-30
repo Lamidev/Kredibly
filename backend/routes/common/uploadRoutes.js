@@ -8,7 +8,7 @@ const { protect } = require("../../utils/authMiddleware");
 const storage = multer.memoryStorage();
 const upload = multer({
     storage,
-    limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
     fileFilter: (req, file, cb) => {
         const allowedTypes = /jpeg|jpg|png|webp/;
         const mimeType = allowedTypes.test(file.mimetype);

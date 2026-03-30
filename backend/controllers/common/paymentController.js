@@ -559,7 +559,7 @@ exports.initializePaystackPayment = async (req, res) => {
                 originalAmount: Number(amount)
             },
             business.paystackSubaccountCode,
-            'account' // 🛡️ Kredibly covers the Gateway Fees
+            'subaccount' // 🛡️ Since we are a Starter Business, the subaccount (Merchant) MUST temporarily bear the gateway fee. Customer pays exactly what they owe.
         );
 
         res.status(200).json({

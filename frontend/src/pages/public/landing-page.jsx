@@ -385,8 +385,8 @@ const LandingPage = () => {
                 <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: 'clamp(40px, 8vw, 80px)' }}>
                         <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: 'clamp(0.7rem, 2vw, 0.85rem)', letterSpacing: '0.05em' }}>100% FREE SETTLEMENTS & NEXT-DAY PAYOUT</div>
-                        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Zero Transaction Fees. <br /><span className="premium-gradient">Keep 100% of your sales.</span></h2>
-                        <p style={{ fontSize: 'clamp(0.9rem, 2.5vw, 1.2rem)', color: 'var(--text-muted)', marginTop: '20px', maxWidth: '600px', margin: '20px auto 48px' }}>We don't charge you to collect your own money. The exact amount on your invoice is what lands in your bank account.</p>
+                        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Zero Platform Fees. <br /><span className="premium-gradient">Keep more of your sales.</span></h2>
+                        <p style={{ fontSize: 'clamp(0.9rem, 2.5vw, 1.2rem)', color: 'var(--text-muted)', marginTop: '20px', maxWidth: '600px', margin: '20px auto 48px' }}>We don't charge you a single Naira to record sales or send invoices. Your money is settled directly to your bank account with industry-leading speed.</p>
                     </div>
 
                     <div className="lp-pricing-grid">

@@ -299,7 +299,7 @@ const Waitlist = () => {
 
                     <h1 className="hero-title" style={{ fontSize: 'clamp(2.1rem, 8vw, 5.5rem)', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.04em', marginBottom: '32px', color: '#0F172A' }}>
                         <span style={{ display: 'block', marginBottom: '16px', whiteSpace: 'nowrap' }}>Zero Platform Fees.</span>
-                        <span className="premium-gradient">Keep 100% of your sales.</span>
+                        <span className="premium-gradient">Keep more of your sales.</span>
                     </h1>
 
                     <p className="hero-subtext" style={{ fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)', color: '#334155', lineHeight: 1.6, marginBottom: '56px', maxWidth: '850px', margin: '0 auto 56px', fontWeight: 400 }}>
