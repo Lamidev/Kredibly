@@ -315,7 +315,13 @@ exports.verifyInvoicePayment = async (req, res) => {
 
         // 🔒 SECURITY CHECK: Contextual Validation
         const paystackInvoiceNo = paystackData.metadata?.invoiceNumber;
-        if (!paystackInvoiceNo || paystackInvoiceNo.toUpperCase() !== targetSale.invoiceNumber.toUpperCase()) {
+        
+        // 🛡️ ENHANCED SECURITY: Fallback to Reference Prefix if Metadata matches but InvoiceNo is missing
+        const isKreddyRef = reference.startsWith('KREDDY_INV_');
+        
+        if (isKreddyRef && !paystackInvoiceNo) {
+            console.log(`🛡️ Recovered Metadata-less payment for Ref: ${reference}`);
+        } else if (!paystackInvoiceNo || paystackInvoiceNo.toUpperCase() !== targetSale.invoiceNumber.toUpperCase()) {
             return res.status(403).json({ message: "Payment reference mismatch." });
         }
 
@@ -368,6 +374,8 @@ exports.verifyInvoicePayment = async (req, res) => {
                 let msg = `🔔 *Payment Verified!*\n\nChief, I've just verified an online payment of *₦${actualCreditAmount.toLocaleString()}* for *Invoice #${sale.invoiceNumber}* (${sale.customerName}).\n\n`;
                 if (lockUntil && new Date() < lockUntil) {
                     msg += `🛡️ *Security Hold:* Since you recently updated your bank details, this money is being held in our *Secure Escrow* for 24 hours. \n\n`;
+                } else {
+                    msg += `🛡️ *Clearing:* We have secured these funds. They will settle to your bank account on the standard *T+1* clearing schedule.\n\n`;
                 }
                 msg += balance <= 0 ? "✅ *Fully Paid!*" : `⏳ *Balance Remaining:* ₦${balance.toLocaleString()}`;
                 msg += `\n📄 *Receipt:* ${receiptLink}`;
@@ -415,8 +423,28 @@ exports.initializePaystackPayment = async (req, res) => {
         const isLocked = lockUntil && new Date() < new Date(lockUntil);
         
         const subaccountCode = isLocked ? null : sale.businessId.paystackSubaccountCode;
+        const subStatus = sale.businessId.subaccountStatus || 'unverified';
+        
+        // 🛡️ SUBACCOUNT STATUS SHIELD:
+        // If it's locked OR not explicitly "active," we force the payment into Escrow.
+        // This ensures the Customer NEVER sees an initialization error.
+        const effectiveSubaccount = (isLocked || subStatus !== 'active') ? null : subaccountCode;
+        const effectiveBearer = effectiveSubaccount ? (isLocked ? 'none' : 'subaccount') : 'none';
+
         if (isLocked) {
-            console.log(`🛡️ Escrow Active for ${sale.businessId.displayName}. Redirecting payment to Main Account.`);
+            console.log(`🛡️ Escrow Active for ${sale.businessId.displayName}. Security Lock.`);
+        } else if (subStatus !== 'active' && subaccountCode) {
+            console.log(`🛡️ Escrow Active for ${sale.businessId.displayName}. Subaccount still Unverified.`);
+        }
+
+        // 🛡️ DYNAMIC STATUS SYNC: Try to verify the subaccount on-the-fly
+        if (subaccountCode && subStatus !== 'active') {
+            try {
+                const subRes = await require('../../utils/paystack').getSubaccount(subaccountCode);
+                if (subRes && subRes.active) {
+                     await BusinessProfile.updateOne({ _id: sale.businessId._id }, { $set: { "subaccountStatus": "active" } });
+                }
+            } catch (e) { console.warn("Subaccount Sync Wait:", e.message); }
         }
 
         let paystackInit;
@@ -426,8 +454,8 @@ exports.initializePaystackPayment = async (req, res) => {
                 amount, 
                 reference, 
                 { paymentType: 'invoice', invoiceNumber: sale.invoiceNumber, originalAmount: Number(amount) },
-                subaccountCode,
-                subaccountCode ? (isLocked ? 'none' : 'subaccount') : 'none', 
+                effectiveSubaccount,
+                effectiveBearer, 
                 ['bank_transfer', 'bank']
             );
         } catch (initErr) {

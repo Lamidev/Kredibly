@@ -135,6 +135,13 @@ const initiateTransfer = async (amount, recipientCode, reason = "") => {
     return paystackRequest('/transfer', 'POST', payload);
 };
 
+/**
+ * 7. Get Subaccount Status
+ */
+const getSubaccount = async (subaccountCode) => {
+    return paystackRequest(`/subaccount/${subaccountCode}`);
+};
+
 module.exports = {
     verifyPaystackReference,
     getBanks,
@@ -142,5 +149,6 @@ module.exports = {
     createSubaccount,
     initializePayment,
     createTransferRecipient,
-    initiateTransfer
+    initiateTransfer,
+    getSubaccount
 };

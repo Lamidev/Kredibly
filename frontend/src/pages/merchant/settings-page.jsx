@@ -789,17 +789,17 @@ const SettingsPage = () => {
                                         setShowCheckout(true);
                                     }}
                                     className="glass-card clickable-card"
-                                    style={{ padding: '24px', border: '1px solid var(--border)', background: 'white', cursor: 'pointer', textAlign: 'left', width: '100%', position: 'relative', overflow: 'hidden' }}
+                                    style={{ padding: '24px', border: '1px solid var(--primary)', background: 'white', cursor: 'pointer', textAlign: 'left', width: '100%', position: 'relative', overflow: 'hidden' }}
                                 >
                                     <div style={{ position: 'absolute', top: '0', left: '0', background: 'var(--primary)', color: 'white', fontSize: '0.6rem', fontWeight: 900, padding: '4px 12px', borderRadius: '0 0 12px 0', textTransform: 'uppercase' }}>50% OFF PIONEER</div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', marginTop: '8px' }}>
                                         <span style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--primary)' }}>OGA PLAN</span>
                                         <div style={{ textAlign: 'right' }}>
                                             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', textDecoration: 'line-through', marginRight: '6px' }}>₦6,000</span>
-                                            <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0F172A' }}>₦3,000/mo</span>
+                                            <span style={{ fontSize: '1rem', fontWeight: 900, color: '#0F172A' }}>₦3,000/mo</span>
                                         </div>
                                     </div>
-                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Voice Notes, Oga Reports & 1 Staff account. Pioneer Special active until May.</p>
+                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Voice Notes, Proactive Debt Reminders & 1 Staff. Pioneer Special active until May.</p>
                                 </button>
                             )}
 
@@ -812,17 +812,17 @@ const SettingsPage = () => {
                                         setShowCheckout(true);
                                     }}
                                     className="glass-card clickable-card"
-                                    style={{ padding: '24px', border: '1px solid #E9D5FF', background: 'linear-gradient(135deg, white, #FAF5FF)', cursor: 'pointer', textAlign: 'left', width: '100%', position: 'relative', overflow: 'hidden' }}
+                                    style={{ padding: '24px', border: '1px solid #8B5CF6', background: 'white', cursor: 'pointer', textAlign: 'left', width: '100%', position: 'relative', overflow: 'hidden' }}
                                 >
                                     <div style={{ position: 'absolute', top: '0', left: '0', background: '#8B5CF6', color: 'white', fontSize: '0.6rem', fontWeight: 900, padding: '4px 12px', borderRadius: '0 0 12px 0', textTransform: 'uppercase' }}>FOUNDER PRE-ORDER</div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', marginTop: '8px' }}>
                                         <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#8B5CF6' }}>CHAIRMAN</span>
                                         <div style={{ textAlign: 'right' }}>
                                             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', textDecoration: 'line-through', marginRight: '6px' }}>₦9,000</span>
-                                            <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0F172A' }}>₦4,500/mo</span>
+                                            <span style={{ fontSize: '1rem', fontWeight: 900, color: '#0F172A' }}>₦4,500/mo</span>
                                         </div>
                                     </div>
-                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Image Scanning, White-Label Receipts & Unlimited Staff. Best for Scale.</p>
+                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Image Recognition Receipts, White-Labeling & Unlimited Staff. Best for Scale.</p>
                                 </button>
                             )}
 
@@ -834,13 +834,16 @@ const SettingsPage = () => {
                                         setShowCheckout(true);
                                     }}
                                     className="glass-card clickable-card"
-                                    style={{ padding: '24px', border: '1px solid #E2E8F0', background: 'linear-gradient(135deg, white, #FAF5FF)', cursor: 'pointer', textAlign: 'left', width: '100%', position: 'relative', overflow: 'hidden' }}
+                                    style={{ padding: '24px', border: '1px solid #E2E8F0', background: 'white', cursor: 'pointer', textAlign: 'left', width: '100%', position: 'relative', overflow: 'hidden' }}
                                 >
-                                    <div style={{ position: 'absolute', top: '0', left: '0', background: 'var(--primary)', color: 'white', fontSize: '0.6rem', fontWeight: 900, padding: '4px 12px', borderRadius: '0 0 12px 0', textTransform: 'uppercase' }}>CONTINUE MEMBERSHIP</div>
+                                    <div style={{ position: 'absolute', top: '0', left: '0', background: '#334155', color: 'white', fontSize: '0.6rem', fontWeight: 900, padding: '4px 12px', borderRadius: '0 0 12px 0', textTransform: 'uppercase' }}>SPECIAL RENEWAL</div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', marginTop: '8px' }}>
-                                        <span style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--primary)' }}>RENEW {profile.plan.toUpperCase()}</span>
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#334155' }}>RENEW {profile.plan.toUpperCase()}</span>
                                         <div style={{ textAlign: 'right' }}>
-                                            <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0F172A' }}>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', textDecoration: 'line-through', marginRight: '6px' }}>
+                                                ₦{profile.plan === 'oga' ? '6,000' : '9,000'}
+                                            </span>
+                                            <span style={{ fontSize: '1rem', fontWeight: 900, color: '#0F172A' }}>
                                                 ₦{profile.plan === 'oga' ? '3,000' : '4,500'}/mo
                                             </span>
                                         </div>
