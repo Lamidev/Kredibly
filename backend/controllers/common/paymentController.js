@@ -394,7 +394,12 @@ exports.initializePaystackPayment = async (req, res) => {
         if (paymentChannel === 'card') return res.status(403).json({ message: "Card payments disabled." });
 
         const reference = `KREDDY_INV_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-        const safeEmail = (email && email.includes('@')) ? email : `customer_${sale.invoiceNumber.toLowerCase().replace(/-/g, '')}@usekredibly.com`;
+        
+        let safeEmail = (email || '').trim().toLowerCase();
+        if (!safeEmail || !safeEmail.includes('@') || safeEmail.includes(' ')) {
+            safeEmail = `customer_${sale.invoiceNumber.toLowerCase().replace(/[^a-z0-9]/g, '')}@usekredibly.com`;
+        }
+
         const { initializePayment } = require('../../utils/paystack');
         
         // 🔒 SECURITY CHECK: If bank details were recently changed, Kredibly HOLDS the money for 24h.

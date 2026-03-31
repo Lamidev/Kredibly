@@ -844,6 +844,57 @@ Upgrade here: ${APP_URL}/pricing`);
                         return await sendReply(from, finalMsg);
                     }
                     return await sendReply(from, `🤔 I couldn't find an active debt for *${cleanName}* to update.`);
+                } else if (session.type === 'recovery_followup') {
+                    if (lowerText.includes('yes') || lowerText.includes('y')) {
+                        // Ask if full or partial
+                        await WhatsAppSession.findOneAndUpdate(
+                            { _id: session._id },
+                            {
+                                type: 'recovery_payment_amount',
+                                data: { ...session.data }
+                            }
+                        );
+                        await sendReply(from, `Nice! 💎 Was it the full *₦${session.data.balance.toLocaleString()}* payment, or just a partial amount? \n\n_(Reply *"Full"* or just type the amount they paid)_`);
+                    } else {
+                        await WhatsAppSession.deleteOne({ _id: session._id });
+                        await sendReply(from, `No problem! 🛡️ Shall I resend the link to *${session.data.customerName}* for you, or should we give them another day? \n\n_(Tip: Just say "Send link to ${session.data.customerName}")_`);
+                    }
+                    return;
+                } else if (session.type === 'recovery_payment_amount') {
+                    let amountPaid = session.data.balance;
+                    const numMatch = lowerText.match(/\d+/);
+                    if (numMatch && !lowerText.includes('full')) {
+                        amountPaid = parseInt(numMatch[0]);
+                    }
+
+                    const sale = await Sale.findById(session.data.saleId);
+                    if (sale) {
+                        sale.payments.push({
+                            amount: amountPaid,
+                            date: new Date(),
+                            method: "Cash (Outside)",
+                            reference: "Logged via WhatsApp Followup"
+                        });
+                        await sale.save();
+
+                        const newBal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
+                        let msg = `🛡️ *Payment Recorded!* \n\nI've updated the ledger. `;
+                        if (newBal > 0) {
+                            msg += `*${sale.customerName}* still owes *₦${newBal.toLocaleString()}*. When should I ask about the balance again? 📅`;
+                            await WhatsAppSession.findOneAndUpdate(
+                                { _id: session._id },
+                                {
+                                    type: 'due_date_disambiguation',
+                                    data: { saleId: sale._id, customerName: sale.customerName }
+                                }
+                            );
+                        } else {
+                            msg += `*${sale.customerName}* is now fully paid up! 💎 Dashboard updated.`;
+                            await WhatsAppSession.deleteOne({ _id: session._id });
+                        }
+                        await sendReply(from, msg);
+                    }
+                    return;
                 } else if (session.type === 'alarm_confirmation') {
                     // Handle 'Yes' for Alarms
                     if (['yes', 'y', 'confirm', 'correct', 'true', 'sure'].includes(lowerText)) {
