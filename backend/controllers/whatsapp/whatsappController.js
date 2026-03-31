@@ -895,6 +895,28 @@ Upgrade here: ${APP_URL}/pricing`);
                         await sendReply(from, msg);
                     }
                     return;
+                } else if (session.type === 'intent_clarification') {
+                    const isFeedback = lowerText.includes('feedback') || lowerText.includes('suggestion') || lowerText.includes('idea') || lowerText.includes('admin');
+                    const isTask = lowerText.includes('reminder') || lowerText.includes('task') || lowerText.includes('debt') || lowerText.includes('delete') || lowerText.includes('sale') || lowerText.includes('record');
+
+                    if (isFeedback) {
+                        const feedbackMsgText = session.data.originalText;
+                        await Feedback.create({
+                            userId: profile.ownerId,
+                            businessId: profile._id,
+                            whatsappNumber: cleanFrom,
+                            message: feedbackMsgText,
+                            category: "Confirmed Suggestion via WhatsApp"
+                        });
+                        await WhatsAppSession.deleteOne({ _id: session._id });
+                        await sendReply(from, `✅ *Feedback Logged!* \n\nGot it, ${bossTitle}. I've sent that suggestion directly to the Dev Team. Thanks for helping us build Kredibly! 🛡️🚀`);
+                    } else if (isTask) {
+                        await WhatsAppSession.deleteOne({ _id: session._id });
+                        await sendReply(from, `🛡️ *Understood, Boss!* \n\nI catch that it's a core task. Please just say it again or send a new voice note so I can process it with 100% focus! 🫡`);
+                    } else {
+                        await sendReply(from, `🤔 I catch you, but I'm still not sure. \n\nReply *"Feedback"* to send it to the Admin, or *"Task"* if I should treat it as a reminder/record. 🛡️`);
+                    }
+                    return;
                 } else if (session.type === 'alarm_confirmation') {
                     // Handle 'Yes' for Alarms
                     if (['yes', 'y', 'confirm', 'correct', 'true', 'sure'].includes(lowerText)) {
@@ -1886,7 +1908,72 @@ Upgrade here: ${APP_URL}/pricing`);
                         await sendReply(from, "🛡️ *Support Ticket Opened*\n\nI'll have the team look into this for you! 🚀 (Ticket #" + newTicket._id.toString().slice(-6) + ")");
                     }
                     isProcessed = true;
+                } else if (aiResponseItem && aiResponseItem.intent === "delete_reminder") {
+                    const searchRef = (aiResponseItem.data.customerName || aiResponseItem.data.taskDescription || text).trim();
+                    const pendingReminders = await Reminder.find({ 
+                        businessId: profile._id, 
+                        status: 'pending' 
+                    }).sort({ triggerDate: 1 });
+
+                    if (pendingReminders.length === 0) {
+                        await sendReply(from, `🔍 ${bossTitle}, you don't have any pending reminders scheduled at the moment.`);
+                    } else {
+                        // Fuzzy search for the target reminder
+                        const matches = pendingReminders.filter(r => {
+                            const desc = r.description.toLowerCase();
+                            const query = searchRef.toLowerCase();
+                            return desc.includes(query) || query.includes(desc);
+                        });
+
+                        if (matches.length === 0) {
+                            let msg = `🤔 I catch that you want to delete a reminder, but I'm not sure which one. Here are your upcoming tasks:\n\n`;
+                            pendingReminders.slice(0, 5).forEach((r, i) => {
+                                msg += `${i+1}. *${r.description}* (${new Date(r.triggerDate).toLocaleString()})\n`;
+                            });
+                            msg += `\nWhich one should I remove? 🛡️`;
+                            await sendReply(from, msg);
+                        } else if (matches.length === 1) {
+                            const target = matches[0];
+                            const desc = target.description;
+                            await Reminder.deleteOne({ _id: target._id });
+                            await sendReply(from, `🛡️ *Reminder Cancelled!* \n\nI've cleared the task: *"${desc}"* from your schedule. ✅`);
+                        } else {
+                            let msg = `🤔 I found *${matches.length}* similar reminders. Which one should I cancel?\n\n`;
+                            matches.forEach((m, i) => {
+                                msg += `${i+1}. *${m.description}* (${new Date(m.triggerDate).toLocaleString()})\n`;
+                            });
+                            await WhatsAppSession.findOneAndUpdate(
+                                { whatsappNumber: cleanFrom },
+                                {
+                                    type: 'delete_reminder_disambiguation',
+                                    data: { options: matches.map(m => ({ id: m._id, name: m.description })) },
+                                    expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+                                },
+                                { upsert: true }
+                            );
+                            await sendReply(from, msg);
+                        }
+                    }
+                    isProcessed = true;
                 } else if (aiResponseItem && (aiResponseItem.intent === "support" || aiResponseItem.intent === "feedback")) {
+                    // 🚨 CLARIFICATION GUARD: If feedback contains core biz keywords, ask for confirmation
+                    const coreKeywords = ['reminder', 'debt', 'sale', 'invoice', 'delete', 'money', 'task', 'call'];
+                    const hasCoreKeywords = coreKeywords.some(k => text.toLowerCase().includes(k));
+
+                    if (hasCoreKeywords && (aiResponseItem.confidence || 1.0) < 0.95) {
+                         await sendReply(from, `🛡️ *Quick Question, ${bossTitle}:* \n\nI catch your message, but I'm not sure if you're giving me a **Suggestion for the App** or asking me to **Manage a Task/Debt**. \n\nWhich one is it? 🧐`);
+                         await WhatsAppSession.findOneAndUpdate(
+                             { whatsappNumber: cleanFrom },
+                             {
+                                 type: 'intent_clarification',
+                                 data: { originalText: text, aiChoice: aiResponseItem.intent },
+                                 expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+                             },
+                             { upsert: true }
+                         );
+                         return;
+                    }
+
                     // 🚀 FEEDBACK / BUG REPORT FORWARDER
                     const feedbackMsgText = aiResponseItem.data.reply || text;
 

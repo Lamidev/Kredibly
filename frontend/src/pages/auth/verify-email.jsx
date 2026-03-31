@@ -33,7 +33,7 @@ const VerifyEmail = () => {
             boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)'
         }}>
             <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-                <h2 className="premium-gradient" style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em' }}>Verify Account</h2>
+                <h2 style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>Verify Account</h2>
                 <p style={{ color: '#6B7280', fontWeight: 500, fontSize: '1.05rem' }}>Enter the 6-digit code we sent you</p>
                 <p style={{ fontSize: '0.85rem', color: '#EF4444', marginTop: '8px', fontWeight: 600 }}>
                     ⚠️ Not seeing it? Check your Spam or Promotions folder.
@@ -76,7 +76,7 @@ const VerifyEmail = () => {
 
             <div style={{ textAlign: 'center', marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #F3F4F6' }}>
                 <button
-                    style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', margin: '0 auto' }}
+                    style={{ background: 'none', border: 'none', color: '#000000', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', margin: '0 auto' }}
                     onClick={() => toast.info("New code sent!")}
                 >
                     <RefreshCcw size={18} /> Resend verification code

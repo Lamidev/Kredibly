@@ -62,15 +62,24 @@ INTENTS:
 14. "add_staff": Add a new staff member by providing a phone number.
 15. "check_staff": Query current staff list.
 16. "delete_sale": When the user wants to remove or delete a sale record or invoice.
-17. "general_chat": Greetings, math, business advice, or casual talk.
-17. "set_preferred_name": When the user asks to be called a specific name (e.g., "From now call me Papa").
-18. "feedback": New feature ideas, roadmap suggestions, or cool things to add for future versions.
-19. "delete_feedback": When the user says "cancel my idea", "delete my suggestion", or "I changed my mind about that feedback".
+17. "delete_reminder": When the user wants to remove, cancel, or delete a scheduled reminder (task, meeting, debt follow-up).
+18. "general_chat": Greetings, math, business advice, or casual talk.
+19. "set_preferred_name": When the user asks to be called a specific name (e.g., "From now call me Papa").
+20. "feedback": New feature ideas, roadmap suggestions, or UI/UX feedback for future versions. 
+    - CRITICAL: DO NOT use this for deleting records, tasks, or setting reminders.
+    - If the user says "remind me", "delete", "remove", "task", or "record", NEVER choose this intent.
+21. "delete_feedback": When the user says "cancel my idea", "delete my suggestion", or "I changed my mind about that feedback".
+
+NAME CORRECTIONS:
+- If a user says "No, the name is [Name]" or "I meant [Name]", use "update_record" intent.
+- Capture the old name in "customerName" and the correct one in "newName".
+- If it was a voice note, look for phonetically similar names in the 'Debtors' list.
 
 MULTI-INTENT RULE (CRITICAL):
 - If the user's message contains MULTIPLE distinct tasks, return a JSON array of intent objects.
 - Each object should be a complete valid intent.
 - If the user wants to delete a sale (e.g. "Delete the invoice for Victoria"), use "delete_sale" intent and capture "customerName" or "invoiceNumber".
+- If the user wants to delete a reminder (e.g. "Cancel my call with David"), use "delete_reminder" intent.
 - IMPORTANT: If a user records a sale AND asks for a reminder for it (e.g. "Remind me to call them next week"), return BOTH "create_sale" and "create_reminder". Ensure both the Sale and the Reminder have the SAME dueDate/reminderDate.
 
 REQUIRED JSON OUTPUT:
