@@ -60,6 +60,11 @@ const BusinessProfileSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    subaccountStatus: {
+        type: String,
+        enum: ["active", "unverified", "pending"],
+        default: "unverified"
+    },
     onboardingStep: {
         type: Number,
         default: 0

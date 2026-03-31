@@ -1,34 +1,24 @@
-const THEME_COLOR = "#000080"; // Navy Blue
+const THEME_COLOR = "#4C1D95"; // Kredibly Purple
 
 const VERIFICATION_EMAIL_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verify Your Email</title>
-</head>
-<body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 24px;">
   <div style="margin-bottom: 32px;">
-    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
   </div>
-  <div style="background-color: #ffffff; padding: 0;">
-    <p style="font-size: 16px;">Hello,</p>
-    <p style="font-size: 16px;">To secure your Kredibly account, please verify your email address. This step ensures that your business data remains private and valid.</p>
-    
-    <div style="margin: 32px 0;">
-      <p style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; color: #6B7280; margin-bottom: 8px;">Verification Code</p>
-      <span style="font-size: 36px; font-weight: 800; letter-spacing: 2px; color: ${THEME_COLOR};">{verificationCode}</span>
-    </div>
-
-    <p style="font-size: 14px; color: #6B7280;">This code will expire in 15 minutes. If you didn't create an account, you can safely ignore this email.</p>
-    
-    <div style="margin-top: 32px;">
-      <p style="font-weight: 700; margin: 0; font-size: 16px;">Oluwatosin</p>
-      <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder, Kredibly</p>
-    </div>
+  <p>Hello,</p>
+  <p>To secure your Kredibly account, please use the verification code below. This step ensures that your business data remains private and valid.</p>
+  <div style="margin: 32px 0;">
+    <p style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800; color: #6B7280; margin-bottom: 8px;">Verification Code</p>
+    <span style="font-size: 32px; font-weight: 800; letter-spacing: 2px; color: #111827;">{verificationCode}</span>
   </div>
-  <div style="margin-top: 40px; border-top: 1px solid #E5E7EB; padding-top: 20px; font-size: 12px; color: #9CA3AF;">
+  <p style="font-size: 14px; color: #6B7280;">This code will expire in 15 minutes. If you didn't create an account, you can safely ignore this email.</p>
+  <div style="margin-top: 48px;">
+    <p style="font-weight: 800; margin: 0; font-size: 16px; color: #111827;">Akinyemi Oluwatosin</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
+  </div>
+  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
     <p>© ${new Date().getFullYear()} Kredibly Inc. All rights reserved.</p>
   </div>
 </body>
@@ -38,33 +28,18 @@ const VERIFICATION_EMAIL_TEMPLATE = `
 const PASSWORD_RESET_SUCCESS_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Password Reset Successful</title>
-</head>
-<body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 24px;">
   <div style="margin-bottom: 32px;">
-    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
   </div>
-  <div style="background-color: #ffffff; padding: 0;">
-    <p style="font-size: 16px;">Hello,</p>
-    <p style="font-size: 16px;">This is a quick confirmation that your password has been successfully reset. You can now log back into your dashboard.</p>
-    
-    <div style="margin: 32px 0;">
-       <div style="background-color: #ECFDF5; color: #047857; width: fit-content; padding: 12px 24px; border-radius: 100px; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px;">
-        ✅ Password Updated
-      </div>
-    </div>
-
-    <p style="font-size: 16px;">If this wasn't you, please reply to this email immediately so we can secure your account.</p>
-    
-    <div style="margin-top: 32px;">
-      <p style="font-weight: 700; margin: 0; font-size: 16px;">Oluwatosin</p>
-      <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder, Kredibly</p>
-    </div>
+  <p>Hello,</p>
+  <p>I’m sending this quick note to confirm that your password was successfully reset. You can now log back into your dashboard using your new credentials.</p>
+  <p>Security is my top priority here at Kredibly, so if this change wasn't made by you, please reply to this email immediately so I can lock down your account.</p>
+  <div style="margin-top: 48px;">
+    <p style="font-weight: 800; margin: 0; font-size: 16px; color: #111827;">Akinyemi Oluwatosin</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
   </div>
-  <div style="margin-top: 40px; border-top: 1px solid #E5E7EB; padding-top: 20px; font-size: 12px; color: #9CA3AF;">
+  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
     <p>© ${new Date().getFullYear()} Kredibly Inc. All rights reserved.</p>
   </div>
 </body>
@@ -74,31 +49,19 @@ const PASSWORD_RESET_SUCCESS_TEMPLATE = `
 const PASSWORD_RESET_REQUEST_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reset Your Password</title>
-</head>
-<body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 24px;">
   <div style="margin-bottom: 32px;">
-    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
   </div>
-  <div style="background-color: #ffffff; padding: 0;">
-    <p style="font-size: 16px;">Hello,</p>
-    <p style="font-size: 16px;">We received a request to reset your password. No worries—it happens to the best of us.</p>
-    
-    <div style="margin: 32px 0;">
-      <a href="{resetURL}" style="background-color: ${THEME_COLOR}; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 16px; display: inline-block;">Reset Password</a>
-    </div>
-
-    <p style="font-size: 14px; color: #6B7280;">This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>
-    
-    <div style="margin-top: 32px;">
-      <p style="font-weight: 700; margin: 0; font-size: 16px;">The Kredibly Security Team</p>
-    </div>
+  <p>Hello,</p>
+  <p>We received a request to reset your password. It happens to the best of us, but I want to make sure your business data stays secure. You can reset your password by clicking the link below:</p>
+  <div style="margin: 32px 0;">
+    <a href="{resetURL}" style="background-color: #111827; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; display: inline-block;">Set New Password</a>
   </div>
-  <div style="margin-top: 40px; border-top: 1px solid #E5E7EB; padding-top: 20px; font-size: 12px; color: #9CA3AF;">
-    <p>© ${new Date().getFullYear()} Kredibly Inc. All rights reserved.</p>
+  <p style="font-size: 14px; color: #6B7280;">This link will expire in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+  <div style="margin-top: 48px;">
+    <p style="font-weight: 800; margin: 0; font-size: 16px; color: #111827;">Akinyemi Oluwatosin</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
   </div>
 </body>
 </html>
@@ -107,38 +70,18 @@ const PASSWORD_RESET_REQUEST_TEMPLATE = `
 const WELCOME_EMAIL_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to Kredibly</title>
-</head>
-<body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
-  
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.8; color: #374151; max-width: 600px; margin: 0 auto; padding: 24px;">
   <div style="margin-bottom: 32px;">
-    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
   </div>
-
-  <div style="background-color: #ffffff; padding: 0;">
-    <p style="font-size: 16px;">Hi {name},</p>
-    
-    <p style="font-size: 16px;">I’m Oluwatosin, the founder of Kredibly.</p>
-
-    <p style="font-size: 16px;">I built this platform because I believe growing a business shouldn’t mean drowning in chaos. Whether you're recording a quick sale on WhatsApp or tracking debtors who "promise next week," Kredibly is designed to give you peace of mind and professional power.</p>
-
-    <p style="font-size: 16px;">You’ve just taken the first step towards automating your trust and finances. My team and I are here to support your growth every inch of the way.</p>
-
-    <p style="font-size: 16px;">If you ever have feedback or just want to say hi, simply reply to this email. I read every single one.</p>
-
-    <p style="font-size: 16px; margin-top: 32px;">Welcome to the new standard.</p>
-
-    <div style="margin-top: 24px;">
-      <p style="font-weight: 700; margin: 0; font-size: 16px;">Oluwatosin</p>
-      <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder, Kredibly</p>
-    </div>
-  </div>
-
-  <div style="margin-top: 40px; border-top: 1px solid #E5E7EB; padding-top: 20px; font-size: 12px; color: #9CA3AF;">
-    <p>© ${new Date().getFullYear()} Kredibly Inc. All rights reserved.</p>
+  <p>Hi {name},</p>
+  <p>I’m Akinyemi Oluwatosin, the founder of Kredibly, and I wanted to personally welcome you to the family. I built this platform because I believe growing a business shouldn’t mean drowning in chaos or chasing debtors who "promise next week."</p>
+  <p>You’ve just taken the first step towards automating your trust and finances. Whether you're recording a quick sale via text, voice note, or even just uploading a photo of a paper invoice, Kredibly is designed to give you peace of mind and professional power. My team and I are here to support your growth every inch of the way.</p>
+  <p>If you ever have feedback or just want to say hi, simply reply to this email. I read every single one personally.</p>
+  <p>Welcome to the new standard.</p>
+  <div style="margin-top: 48px;">
+    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">Akinyemi Oluwatosin</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
   </div>
 </body>
 </html>
@@ -147,25 +90,19 @@ const WELCOME_EMAIL_TEMPLATE = `
 const NEW_TICKET_ALERT_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>New Support Ticket</title>
-</head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: ${THEME_COLOR}; padding: 30px 20px; text-align: center;">
-    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 160px; height: auto; margin: 0 auto 15px; display: block; filter: brightness(0) invert(1);">
-    <h1 style="color: white; margin: 0; font-size: 20px;">New Support Ticket</h1>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 24px;">
+  <div style="margin-bottom: 32px;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
   </div>
-  <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-    <p><strong>User:</strong> {userName}</p>
-    <p><strong>Message:</strong></p>
-    <blockquote style="background: white; border-left: 4px solid ${THEME_COLOR}; padding: 10px; margin: 10px 0;">
-        {message}
-    </blockquote>
-    <p>Ticket ID: {ticketId}</p>
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="https://usekredibly.com/admin" style="background-color: ${THEME_COLOR}; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Dashboard</a>
-    </div>
+  <h2 style="font-size: 18px; font-weight: 800; color: #111827;">New Support Ticket</h2>
+  <p>A user has just submitted a new ticket. Details below:</p>
+  <div style="background: #F9FAFB; padding: 20px; border-radius: 12px; margin: 20px 0;">
+    <p style="margin: 0 0 10px;"><strong>User:</strong> {userName}</p>
+    <p style="margin: 0;"><strong>Message:</strong> {message}</p>
+  </div>
+  <p style="font-size: 13px; color: #6B7280;">Ticket ID: {ticketId}</p>
+  <div style="margin-top: 32px;">
+    <a href="https://usekredibly.com/admin" style="font-weight: 700; color: #4C1D95; text-decoration: none;">Launch Admin Panel →</a>
   </div>
 </body>
 </html>
@@ -174,29 +111,17 @@ const NEW_TICKET_ALERT_TEMPLATE = `
 const WAITLIST_NOTIFICATION_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>New Waitlist Signup</title>
-</head>
-<body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 24px;">
   <div style="margin-bottom: 32px;">
-    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
   </div>
-  <div style="background-color: #ffffff; padding: 0;">
-    <h2 style="font-size: 20px; font-weight: 900; color: ${THEME_COLOR}; margin-top: 0;">New Founder Alert!</h2>
-    <p style="font-size: 16px;">A new merchant has just joined the Kredibly waitlist. Here are the details:</p>
-    
-    <div style="background: #F8FAFC; border-radius: 16px; padding: 24px; margin: 24px 0; border: 1px solid #E2E8F0;">
-        <p style="margin: 8px 0; font-size: 14px;"><strong>Name:</strong> {name}</p>
-        <p style="margin: 8px 0; font-size: 14px;"><strong>Email:</strong> {email}</p>
-        <p style="margin: 8px 0; font-size: 14px;"><strong>WhatsApp:</strong> {whatsappNumber}</p>
-        <p style="margin: 8px 0; font-size: 14px;"><strong>Industry:</strong> {industry}</p>
-    </div>
-    
-    <p style="font-size: 14px; color: #6B7280;">High-priority lead captured. Manual documentation may be required.</p>
-  </div>
-  <div style="margin-top: 40px; border-top: 1px solid #E5E7EB; padding-top: 20px; font-size: 12px; color: #9CA3AF;">
-    <p>© ${new Date().getFullYear()} Kredibly Inc. Internal Notification.</p>
+  <h2 style="font-size: 18px; font-weight: 800; color: #111827;">New Founder Alert!</h2>
+  <p>A new merchant has just joined the waitlist. High-priority lead captured:</p>
+  <div style="background: #F9FAFB; border-radius: 12px; padding: 20px; margin: 20px 0;">
+      <p style="margin: 8px 0;"><strong>Name:</strong> {name}</p>
+      <p style="margin: 8px 0;"><strong>Email:</strong> {email}</p>
+      <p style="margin: 8px 0;"><strong>WhatsApp:</strong> {whatsappNumber}</p>
+      <p style="margin: 8px 0;"><strong>Industry:</strong> {industry}</p>
   </div>
 </body>
 </html>
@@ -205,38 +130,20 @@ const WAITLIST_NOTIFICATION_TEMPLATE = `
 const WAITLIST_CONFIRMATION_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>I've reserved your spot</title>
-</head>
-<body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.8; color: #374151; max-width: 600px; margin: 0 auto; padding: 24px;">
   <div style="margin-bottom: 32px;">
-    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
   </div>
-  <div style="background-color: #ffffff; padding: 0;">
-    <p style="font-size: 18px; font-weight: 800; color: ${THEME_COLOR}; margin-top: 0;">You're in, {name}.</p>
-    
-    <p style="font-size: 16px;">I’m Oluwatosin, founder of Kredibly.</p>
-
-    <p style="font-size: 16px;">I’m personally writing to let you know that we’ve officially reserved your spot in our "Founding 100" group. We are currently polishing Kreddy AI to make sure that the moment you link your WhatsApp, your bookkeeping and inventory becomes effortless.</p>
-    
-    <p style="font-size: 16px; font-weight: 700;">Waitlists are boring, so I’ve made yours useful.</p>
-    
-    <div style="background: #F8FAFC; border-radius: 20px; padding: 28px; margin: 32px 0; border: 1px solid #E2E8F0; text-align: center;">
-        <p style="margin: 0 0 12px; font-size: 13px; font-weight: 800; color: ${THEME_COLOR}; text-transform: uppercase; letter-spacing: 0.05em;">Priority Access</p>
-        <p style="margin: 0 0 24px; font-size: 16px; color: #475569; font-weight: 500;">If you refer 3 fellow business owners, I’ll move you to the top of the queue immediately. Use your link below:</p>
-        <a href="{referralLink}" style="background-color: ${THEME_COLOR}; color: white; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 14px; display: inline-block; box-shadow: 0 4px 12px rgba(0,0,80,0.15);">Copy Invite Link</a>
-    </div>
-
-    <p style="font-size: 16px;">We’ll be reaching out via WhatsApp and email soon with your onboarding details. Welcome to the movement.</p>
-    
-    <div style="margin-top: 40px;">
-      <p style="font-weight: 800; margin: 0; font-size: 16px;">Oluwatosin</p>
-      <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder, Kredibly</p>
-    </div>
+  <p style="font-size: 18px; font-weight: 800; color: #111827; margin-top: 0;">You're in, {name}.</p>
+  <p>I’m Akinyemi Oluwatosin, founder of Kredibly, and I’m personally writing to let you know that we’ve officially reserved your spot in our "Founding Members" group. We are currently polishing the AI to make sure that the moment you link your WhatsApp, your bookkeeping and invoicing becomes effortless.</p>
+  <p>I don't like boring waitlists, so if you refer 3 fellow business owners, I’ll move you to the very top of the queue immediately. Use your unique invite link below to get started:</p>
+  <div style="margin: 32px 0;">
+      <a href="{referralLink}" style="background-color: #111827; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; display: inline-block;">Copy My Invite Link</a>
   </div>
-  <div style="margin-top: 40px; border-top: 1px solid #E5E7EB; padding-top: 20px; font-size: 12px; color: #9CA3AF;">
-    <p>© ${new Date().getFullYear()} Kredibly Inc. All rights reserved.</p>
+  <p>We’ll be reaching out via WhatsApp and email soon with your onboarding details. Welcome to the movement.</p>
+  <div style="margin-top: 48px;">
+    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">Akinyemi Oluwatosin</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
   </div>
 </body>
 </html>
@@ -245,34 +152,22 @@ const WAITLIST_CONFIRMATION_TEMPLATE = `
 const SUPPORT_REPLY_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Support Ticket Update</title>
-</head>
-<body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 24px;">
   <div style="margin-bottom: 32px;">
-    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
   </div>
-  <div style="background-color: #ffffff; padding: 0;">
-    <p style="font-size: 16px;">Hello {name},</p>
-    
-    <p style="font-size: 16px;">The Kredibly team has replied to your support ticket regarding <strong>"{ticketSubject}"</strong>.</p>
-    
-    <div style="background: #F8FAFC; border-radius: 16px; padding: 24px; margin: 24px 0; border: 1px solid #E2E8F0;">
-        <p style="margin: 0; font-size: 14px; color: #64748B; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 8px;">Admin Reply</p>
-        <p style="margin: 0; font-size: 16px; color: #1E293B;">"{message}"</p>
-    </div>
-    
-    <p style="font-size: 16px;">Please log in to your dashboard to continue the conversation or mark this ticket as resolved.</p>
-    
-    <div style="margin: 32px 0;">
-      <a href="https://usekredibly.com/dashboard" style="background-color: ${THEME_COLOR}; color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 14px; display: inline-block;">View Ticket</a>
-    </div>
-
-    <p style="font-size: 14px; color: #6B7280;">If you did not submit this request, please ignore this email.</p>
+  <p>Hello {name},</p>
+  <p>The Kredibly team has replied to your support ticket regarding <strong>"{ticketSubject}"</strong>. You can find the reply below:</p>
+  <div style="background: #F9FAFB; border-radius: 12px; padding: 20px; margin: 24px 0; border-left: 4px solid #111827;">
+      <p style="margin: 0; font-size: 15px; color: #111827;">"{message}"</p>
   </div>
-  <div style="margin-top: 40px; border-top: 1px solid #E5E7EB; padding-top: 20px; font-size: 12px; color: #9CA3AF;">
-    <p>© ${new Date().getFullYear()} Kredibly Inc. All rights reserved.</p>
+  <p>Please log in to your dashboard to continue the conversation or mark this ticket as resolved.</p>
+  <div style="margin: 32px 0;">
+    <a href="https://usekredibly.com/dashboard" style="background-color: #111827; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; display: inline-block;">Go to Dashboard</a>
+  </div>
+  <div style="margin-top: 48px;">
+    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">Akinyemi Oluwatosin</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
   </div>
 </body>
 </html>
@@ -281,94 +176,53 @@ const SUPPORT_REPLY_TEMPLATE = `
 const SUBSCRIPTION_CONFIRM_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>A Personal Note: Your Kredibly Legacy</title>
-</head>
-<body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
-  
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.8; color: #374151; max-width: 600px; margin: 0 auto; padding: 24px;">
   <div style="margin-bottom: 32px;">
-    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
   </div>
-
-  <div style="background-color: #ffffff; padding: 0;">
-    <p style="font-size: 18px; font-weight: 800; color: ${THEME_COLOR}; margin-top: 0; display: flex; align-items: center; gap: 8px;">
-       Payment Verified. Welcome home, Pioneer 🛡️
-    </p>
-    
-    <p style="font-size: 16px;">Hi {name},</p>
-    
-    <p style="font-size: 16px;">I’m Oluwatosin, and I wanted to personally reach out because your support today means more than a simple transaction. By securing your <strong>{planName} Plan</strong>, you’ve not just bought a tool; you’ve joined me in a mission to build a more professional, reliable future for your business.</p>
-    
-    <div style="background: #F8FAFC; border-radius: 20px; padding: 28px; margin: 32px 0; border: 1px solid #E2E8F0;">
-        <p style="margin: 0 0 12px; font-size: 13px; font-weight: 800; color: ${THEME_COLOR}; text-transform: uppercase; letter-spacing: 0.05em;">Your Order Details</p>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-            <p style="margin: 0; font-size: 15px; color: #475569;"><strong>Elite Plan:</strong> {planName}</p>
-            <p style="margin: 0; font-size: 15px; color: #475569;"><strong>Amount:</strong> {amount}</p>
-            <p style="margin: 0; font-size: 15px; color: #475569;"><strong>Status:</strong> <span style="color: #16A34A; font-weight: 800;">ACTIVE NOW</span></p>
-            <p style="margin: 0; font-size: 15px; color: #475569;"><strong>Next Renewal:</strong> {expiryDate}</p>
-        </div>
-    </div>
-
-    <p style="font-size: 16px; font-weight: 800; color: #0F172A; margin-bottom: 8px;">A Word on Your Advantage:</p>
-    <p style="font-size: 16px; color: #475569; line-height: 1.5; margin-top: 0;">{pioneerStatus}</p>
-    
-    <p style="font-size: 16px; margin-top: 32px;">I built Kredibly because I believe your shop boy shouldn't be late and your debtors shouldn't have excuses. Together, we are changing the standard.</p>
-    
-    <p style="font-size: 16px;">I’m with you on this journey. If you need anything, simply reply to this email. I read them all.</p>
-    
-    <div style="margin-top: 40px;">
-      <p style="font-weight: 800; margin: 0; font-size: 16px;">Oluwatosin</p>
-      <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">CEO & Founder, Kredibly</p>
-    </div>
+  <p style="font-size: 18px; font-weight: 800; color: #111827; margin-top: 0;">Payment Verified. Welcome home, Pioneer 🛡️</p>
+  <p>Hi {name},</p>
+  <p>I’m Akinyemi Oluwatosin, and I wanted to personally reach out because your support today means a lot to me. By securing your <strong>{planName} Plan</strong>, you’ve not just bought a tool; you’ve joined a mission to build a more professional and reliable future for your business.</p>
+  <div style="background: #F9FAFB; border-radius: 12px; padding: 20px; margin: 24px 0;">
+      <p style="margin: 0 0 8px;"><strong>Plan:</strong> {planName}</p>
+      <p style="margin: 0 0 8px;"><strong>Amount:</strong> {amount}</p>
+      <p style="margin: 0 0 8px;"><strong>Status:</strong> <span style="color: #16A34A; font-weight: 800;">ACTIVE</span></p>
+      <p style="margin: 0;"><strong>Next Renewal:</strong> {expiryDate}</p>
   </div>
-
-  <div style="margin-top: 40px; border-top: 1px solid #E5E7EB; padding-top: 20px; font-size: 12px; color: #9CA3AF;">
-    <p>© ${new Date().getFullYear()} Kredibly Inc. All rights reserved.</p>
+  <p>{pioneerStatus}</p>
+  <p>I built Kredibly because I believe your shop boy shouldn't be late and your debtors shouldn't have excuses. Together, we are changing the standard. If you need anything, simply reply to this email.</p>
+  <div style="margin-top: 48px;">
+    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">Akinyemi Oluwatosin</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
   </div>
 </body>
 </html>
 `;
 
-
 const BANK_CHANGE_ALERT_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Security Alert: Bank Details Changed</title>
-</head>
-<body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 24px;">
   <div style="margin-bottom: 32px;">
-    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
   </div>
-  <div style="background-color: #ffffff; padding: 0;">
-    <div style="background-color: #FFFBEB; border-left: 4px solid #F59E0B; padding: 16px; margin-bottom: 24px;">
-        <p style="margin: 0; font-size: 14px; color: #92400E; font-weight: 700;">🚨 SECURITY ALERT</p>
-    </div>
-    
-    <p style="font-size: 16px;">Hello {name},</p>
-    
-    <p style="font-size: 16px;">This is an automated security notification to let you know that the <strong>bank account details</strong> for your Kredibly business were just updated.</p>
-    
-    <div style="background: #F8FAFC; border-radius: 16px; padding: 24px; margin: 24px 0; border: 1px solid #E2E8F0;">
-        <p style="margin: 0; font-size: 14px; color: #64748B; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 8px;">New Destination Details</p>
-        <p style="margin: 4px 0; font-size: 16px; color: #1E293B;"><strong>Bank:</strong> {bankName}</p>
-        <p style="margin: 4px 0; font-size: 16px; color: #1E293B;"><strong>Account:</strong> {accountNumber}</p>
-        <p style="margin: 4px 0; font-size: 16px; color: #1E293B;"><strong>Holder:</strong> {accountName}</p>
-    </div>
-    
-    <p style="font-size: 16px; font-weight: 700; color: #EF4444;">If you DID NOT make this change:</p>
-    <p style="font-size: 16px;">Please reply to this email immediately or click the button below to secure your account. We have temporarily suspended automated payouts to the new account for the next 24 hours as a precaution.</p>
-    
-    <div style="margin: 32px 0;">
-      <a href="https://usekredibly.com/dashboard/support" style="background-color: #EF4444; color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 14px; display: inline-block;">This Wasn't Me!</a>
-    </div>
-
-    <p style="font-size: 14px; color: #6B7280;">If you made this change, you can safely ignore this email. No further action is required.</p>
+  <h2 style="font-size: 16px; font-weight: 800; color: #EF4444; margin-top: 0; text-transform: uppercase;">🚨 Security Alert</h2>
+  <p>Hello {name},</p>
+  <p>This is an automated security notification to let you know that the <strong>bank account details</strong> for your Kredibly business were just updated.</p>
+  <div style="background: #F9FAFB; border-radius: 12px; padding: 20px; margin: 24px 0;">
+      <p style="margin: 4px 0;"><strong>Bank:</strong> {bankName}</p>
+      <p style="margin: 4px 0;"><strong>Account:</strong> {accountNumber}</p>
+      <p style="margin: 4px 0;"><strong>Holder:</strong> {accountName}</p>
   </div>
-  <div style="margin-top: 40px; border-top: 1px solid #E5E7EB; padding-top: 20px; font-size: 12px; color: #9CA3AF;">
-    <p>© ${new Date().getFullYear()} Kredibly Security Team. All rights reserved.</p>
+  <p style="color: #EF4444; font-weight: 700;">If you DID NOT make this change:</p>
+  <p>Please reply to this email immediately. We have temporarily suspended automated payouts to the new account for the next 24 hours as a precaution.</p>
+  <div style="margin: 32px 0;">
+    <a href="https://usekredibly.com/dashboard/support" style="background-color: #EF4444; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; display: inline-block;">This Wasn't Me!</a>
+  </div>
+  <p style="font-size: 14px; color: #6B7280;">If you made this change, you can safely ignore this email.</p>
+  <div style="margin-top: 48px;">
+    <p style="font-weight: 800; margin: 0; font-size: 16px; color: #111827;">Akinyemi Oluwatosin</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
   </div>
 </body>
 </html>
@@ -377,49 +231,21 @@ const BANK_CHANGE_ALERT_TEMPLATE = `
 const ONBOARDING_SUCCESS_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your Business is Live!</title>
-</head>
-<body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #111827; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
-  
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.8; color: #374151; max-width: 600px; margin: 0 auto; padding: 24px;">
   <div style="margin-bottom: 32px;">
-    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly Logo" style="width: 140px; height: auto; display: block;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
   </div>
-
-  <div style="background-color: #ffffff; padding: 0;">
-    <p style="font-size: 18px; font-weight: 800; color: ${THEME_COLOR}; margin-top: 0;">Setup Complete. You are officially an Oga! 🛡️</p>
-    
-    <p style="font-size: 16px;">Hi {name},</p>
-    
-    <p style="font-size: 16px;">Congratulations! Your business, <strong>{businessName}</strong>, is now fully set up on Kredibly. Our system has verified your bank details, and you are officially ready to start building your professional legacy.</p>
-
-    <div style="background: #F8FAFC; border-radius: 20px; padding: 28px; margin: 32px 0; border: 1px solid #E2E8F0;">
-        <p style="margin: 0 0 12px; font-size: 13px; font-weight: 800; color: ${THEME_COLOR}; text-transform: uppercase; letter-spacing: 0.05em;">What's Next?</p>
-        <ul style="padding-left: 20px; margin: 0; color: #475569; font-size: 15px;">
-            <li style="margin-bottom: 12px;"><strong>Generate Invoices:</strong> Create professional payment links for your customers in 30 seconds.</li>
-            <li style="margin-bottom: 12px;"><strong>Link Kreddy:</strong> Just type (or speak!) to record sales directly from WhatsApp.</li>
-            <li style="margin-bottom: 12px;"><strong>Staff Control:</strong> Your staff can now record sales while you stay in control.</li>
-        </ul>
-    </div>
-
-    <p style="font-size: 16px;">Since you joined during our Grand Opening, your <strong>Oga Plan</strong> trial is active. Go ahead and commit your first transaction to the ledger—let’s grow your business together.</p>
-
-    <div style="margin: 32px 0;">
-      <a href="https://usekredibly.com/dashboard" style="background-color: ${THEME_COLOR}; color: white; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 14px; display: inline-block; box-shadow: 0 4px 12px rgba(0,0,80,0.15);">Enter My Dashboard</a>
-    </div>
-
-    <p style="font-size: 16px;">Welcome home.</p>
-
-    <div style="margin-top: 32px;">
-      <p style="font-weight: 700; margin: 0; font-size: 16px;">Oluwatosin</p>
-      <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder, Kredibly</p>
-    </div>
+  <p style="font-size: 18px; font-weight: 800; color: #111827; margin-top: 0;">Setup Complete. You are officially an Oga! 🛡️</p>
+  <p>Hi {name},</p>
+  <p>Congratulations! Your business, <strong>{businessName}</strong>, is now fully set up on Kredibly. Our system has verified your bank details, and you are officially ready to start building your professional legacy.</p>
+  <p>From today, you can generate professional invoices in 30 seconds, record sales via WhatsApp (voice, text, or photo), and stay in control while your staff handles the daily hustle. Since you joined during our Grand Opening, your <strong>Oga Plan</strong> trial is active. Go ahead and commit your first transaction—let’s grow your business together.</p>
+  <div style="margin: 32px 0;">
+    <a href="https://usekredibly.com/dashboard" style="background-color: #111827; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; display: inline-block;">Enter My Dashboard</a>
   </div>
-
-  <div style="margin-top: 40px; border-top: 1px solid #E5E7EB; padding-top: 20px; font-size: 12px; color: #9CA3AF;">
-    <p>© ${new Date().getFullYear()} Kredibly Inc. All rights reserved.</p>
+  <p>Welcome home.</p>
+  <div style="margin-top: 48px;">
+    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">Akinyemi Oluwatosin</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
   </div>
 </body>
 </html>
