@@ -47,9 +47,16 @@ const scheduleRemindersWorker = () => {
 
                 if (acquired.saleId) {
                     const sale = acquired.saleId;
-                    const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
+                    const bal = sale.totalAmount - (sale.payments?.reduce((s, p) => s + p.amount, 0) || 0);
                     const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
                     
+                    if (bal <= 0) {
+                        console.log(`✅ Skipping reminder for ${sale.invoiceNumber} as it is already paid.`);
+                        acquired.status = "delivered";
+                        await acquired.save();
+                        continue;
+                    }
+
                     msg += `💰 *Debt Details:* \n- Customer: ${sale.customerName}\n- Balance: ₦${bal.toLocaleString()}\n- Link: ${APP_URL}/i/${sale.invoiceNumber}\n\n`;
                     msg += `*Forward this link to them to collect payment!* 💸\n\n`;
                 }
@@ -108,14 +115,14 @@ const scheduleRemindersWorker = () => {
  * Sends a summary of yesterday's performance to the Business Owner.
  */
 const scheduleMorningSummary = () => {
-    // Schedule for 7:00 AM UTC (8:00 AM WAT) every day, 7 days a week
+    // Schedule for 7:00 AM UTC (8:00 AM WAT) every day
     cron.schedule("0 7 * * *", async () => {
         console.log("🌞 Running Morning Chief Summary (8AM WAT)...");
         
         try {
             const now = new Date();
 
-            // Start of today — used to exclude brand-new merchants who joined today
+            // Start of today — used to exclude brand-new merchants
             const startOfToday = new Date(now);
             startOfToday.setHours(0, 0, 0, 0);
 
@@ -127,7 +134,7 @@ const scheduleMorningSummary = () => {
             const endOfYesterday = new Date(yesterday);
             endOfYesterday.setHours(23, 59, 59, 999);
 
-            // ✅ GUARD: Skip merchants who joined TODAY — first summary fires tomorrow morning
+            // ✅ GUARD: Ensure we only message active merchants
             const profiles = await BusinessProfile.find({ 
                 whatsappNumber: { $exists: true, $ne: "" },
                 createdAt: { $lt: startOfToday }
@@ -140,7 +147,7 @@ const scheduleMorningSummary = () => {
                     createdAt: { $gte: startOfYesterday, $lte: endOfYesterday }
                 });
 
-                // Fetch total cash received yesterday (from any sale)
+                // Fetch total cash received yesterday
                 const allSalesWithPaymentsYesterday = await Sale.find({
                     businessId: profile._id,
                     "payments.date": { $gte: startOfYesterday, $lte: endOfYesterday }

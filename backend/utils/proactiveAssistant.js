@@ -141,6 +141,40 @@ const checkAndNotify = async () => {
                     }
                 );
 
+                // --- 4. OVERDUE FOLLOW-UP (Recovery Nudge) ---
+                // If a reminder was sent yesterday (18-36h ago) but it's still unpaid, ask if they paid outside.
+                const yesterdayStart = new Date(now);
+                yesterdayStart.setHours(yesterdayStart.getHours() - 36);
+                const yesterdayEnd = new Date(now);
+                yesterdayEnd.setHours(yesterdayEnd.getHours() - 18);
+
+                const followups = await Sale.find({
+                    businessId: business._id,
+                    status: { $ne: "paid" },
+                    lastAutoReminderSent: { $gte: yesterdayStart, $lte: yesterdayEnd },
+                    // Ensure we haven't asked about this one today already
+                    lastMessageSentAt: { $lt: todayStart }
+                }).lean();
+
+                for (const f of followups) {
+                    const bal = f.totalAmount - (f.payments?.reduce((sum, p) => sum + p.amount, 0) || 0);
+                    const nudgeMsg = `Hey ${bossTitle}, I noticed *${f.customerName}* haven't settled their *₦${bal.toLocaleString()}* balance since yesterday's reminder. \n\nDid they pay you outside yet? (Reply *"Yes"* or *"No"*) 🛡️`;
+                    
+                    await sendWhatsAppMessage(business.whatsappNumber, nudgeMsg);
+                    
+                    await WhatsAppSession.findOneAndUpdate(
+                        { whatsappNumber: business.whatsappNumber },
+                        {
+                            type: 'recovery_followup',
+                            data: { saleId: f._id, customerName: f.customerName, balance: bal },
+                            expiresAt: new Date(Date.now() + 60 * 60 * 1000) // 1 hour expiry
+                        },
+                        { upsert: true }
+                    );
+
+                    await Sale.updateOne({ _id: f._id }, { $set: { lastMessageSentAt: new Date() } });
+                }
+
             } catch (err) {
                 console.error(`Error processing business ${bId}:`, err);
                 // Continue to next business even if one fails

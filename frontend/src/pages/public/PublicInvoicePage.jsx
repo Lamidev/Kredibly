@@ -124,12 +124,18 @@ const PublicInvoicePage = () => {
             
             // Robust Email Fallback: Strip special characters and spaces
             const safeName = (sale.customerName || "Guest").toLowerCase().replace(/[^a-z0-9]/g, '');
-            const fallbackEmail = `${safeName || 'customer'}@kredibly.me`;
+            const fallbackEmail = `${safeName || 'customer'}@usekredibly.com`;
+            
+            // Clean the customer email: strip spaces. If it doesn't look like an email, use fallback.
+            let finalEmail = sale.customerEmail ? sale.customerEmail.trim() : "";
+            if (!finalEmail.includes('@') || finalEmail.includes(' ')) {
+                finalEmail = fallbackEmail;
+            }
 
             const res = await axios.post(`${API_URL}/business/paystack/initialize`, {
                 saleId: sale._id,
                 amount: amountToPay,
-                email: sale.customerEmail || fallbackEmail,
+                email: finalEmail,
                 paymentChannel: paymentChannel
             });
 
@@ -211,10 +217,10 @@ const PublicInvoicePage = () => {
                         <div>
                             {sale?.businessId?.plan === 'chairman' ? (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    {sale.businessId.logoUrl ? (
+                                    {sale?.businessId?.logoUrl ? (
                                         <img src={sale.businessId.logoUrl} alt={sale.businessId.displayName} style={{ height: '40px', objectFit: 'contain' }} />
                                     ) : (
-                                        <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 900 }}>{sale.businessId.displayName}</h3>
+                                        <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 900 }}>{sale?.businessId?.displayName}</h3>
                                     )}
                                 </div>
                             ) : (
@@ -253,18 +259,18 @@ const PublicInvoicePage = () => {
                             </div>
                             <div style={{ textAlign: 'right' }}>
                                 <p style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '4px' }}>Total Amount</p>
-                                <p style={{ fontSize: '15px', fontWeight: 900, color: '#0F172A', margin: 0 }}>₦{sale?.totalAmount.toLocaleString()}</p>
+                                <p style={{ fontSize: '15px', fontWeight: 900, color: '#0F172A', margin: 0 }}>₦{(sale?.totalAmount || 0).toLocaleString()}</p>
                             </div>
                         </div>
 
                         <div style={{ borderTop: '1px solid #E2E8F0', marginTop: '20px', paddingTop: '20px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                                 <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Total Paid</span>
-                                <span style={{ fontSize: '13px', fontWeight: 800, color: '#10B981' }}>₦{sale?.paidAmount.toLocaleString()}</span>
+                                <span style={{ fontSize: '13px', fontWeight: 800, color: '#10B981' }}>₦{(sale?.paidAmount || 0).toLocaleString()}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>Balance Due</span>
-                                <span style={{ fontSize: '18px', fontWeight: 800, color: balance > 0 ? '#EF4444' : '#10B981' }}>₦{balance.toLocaleString()}</span>
+                                <span style={{ fontSize: '18px', fontWeight: 800, color: balance > 0 ? '#EF4444' : '#10B981' }}>₦{(balance || 0).toLocaleString()}</span>
                             </div>
                         </div>
                     </div>
@@ -283,7 +289,7 @@ const PublicInvoicePage = () => {
                                         <p style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', margin: 0 }}>Payment Received</p>
                                         <p style={{ fontSize: '11px', color: '#94A3B8', margin: 0 }}>{new Date(p.date).toLocaleDateString()} ({p.method})</p>
                                     </div>
-                                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#10B981' }}>+ ₦{p.amount.toLocaleString()}</span>
+                                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#10B981' }}>+ ₦{(p.amount || 0).toLocaleString()}</span>
                                 </div>
                             ))}
                         </div>
@@ -312,12 +318,12 @@ const PublicInvoicePage = () => {
             {/* Navbar */}
             <nav style={{ maxWidth: '42rem', margin: '0 auto', width: '100%', position: 'relative', zIndex: 10, padding: '24px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                   {sale.businessId?.plan === 'chairman' ? (
+                   {sale?.businessId?.plan === 'chairman' ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            {sale.businessId.logoUrl ? (
+                            {sale?.businessId?.logoUrl ? (
                                 <img src={sale.businessId.logoUrl} style={{ height: '32px', objectFit: 'contain' }} />
                             ) : (
-                                <span style={{ fontSize: '18px', fontWeight: 900 }}>{sale.businessId.displayName}</span>
+                                <span style={{ fontSize: '18px', fontWeight: 900 }}>{sale?.businessId?.displayName}</span>
                             )}
                         </div>
                    ) : (
@@ -328,10 +334,10 @@ const PublicInvoicePage = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     {sale.businessId && sale.businessId.plan !== 'hustler' && sale.businessId.plan !== 'chairman' && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            {sale.businessId.logoUrl ? (
+                            {sale?.businessId?.logoUrl ? (
                                 <img src={sale.businessId.logoUrl} alt={sale.businessId.displayName} style={{ height: '32px', width: '32px', borderRadius: '50%', objectFit: 'cover', border: '2px solid white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
                             ) : (
-                                <span style={{ fontSize: '14px', fontWeight: 800, color: '#1E293B' }}>{sale.businessId.displayName}</span>
+                                <span style={{ fontSize: '14px', fontWeight: 800, color: '#1E293B' }}>{sale?.businessId?.displayName}</span>
                             )}
                         </div>
                     )}
@@ -450,7 +456,7 @@ const PublicInvoicePage = () => {
                                                 color: '#047857',
                                                 margin: 0
                                             }}>
-                                                ₦{displayAmount.toLocaleString()} paid on {displayDate.toLocaleDateString()} • Balance: ₦{balance.toLocaleString()}
+                                                ₦{(displayAmount || 0).toLocaleString()} paid on {displayDate.toLocaleDateString()} • Balance: ₦{(balance || 0).toLocaleString()}
                                             </p>
                                         </div>
                                     </div>
@@ -474,7 +480,7 @@ const PublicInvoicePage = () => {
                                 WebkitBackgroundClip: 'text', 
                                 WebkitTextFillColor: 'transparent' 
                             }}>
-                                ₦{isPaid ? sale.totalAmount.toLocaleString() : balance.toLocaleString()}
+                                ₦{isPaid ? (sale.totalAmount || 0).toLocaleString() : (balance || 0).toLocaleString()}
                             </span>
                         </h1>
                         <p style={{ color: '#94A3B8', fontWeight: 500, maxWidth: '320px', margin: '0 auto', fontSize: '14px', lineHeight: 1.6 }}>
@@ -493,7 +499,7 @@ const PublicInvoicePage = () => {
                         {/* Merchant Banner */}
                         <div style={{ padding: '32px', borderBottom: '1px solid #F8FAFC', display: 'flex', alignItems: 'center', gap: '20px' }}>
                              <div style={{ width: '64px', height: '64px', background: 'var(--primary)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', border: '2px solid white', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-                                {sale.businessId?.logoUrl ? <img src={sale.businessId.logoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Building2 size={32} />}
+                                {sale?.businessId?.logoUrl ? <img src={sale.businessId.logoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Building2 size={32} />}
                              </div>
                           <div style={{ flex: 1 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
@@ -567,7 +573,7 @@ const PublicInvoicePage = () => {
                                         style={{ flex: 1, padding: '16px', borderRadius: '14px', border: '1.5px solid', borderColor: paymentMode === 'full' ? 'var(--primary)' : '#E2E8F0', background: paymentMode === 'full' ? 'var(--primary-glow)' : 'white', cursor: 'pointer', transition: '0.2s' }}
                                     >
                                         <p style={{ margin: 0, fontSize: '10px', fontWeight: 900, color: paymentMode === 'full' ? 'var(--primary)' : '#94A3B8', textTransform: 'uppercase' }}>Full Balance</p>
-                                        <p style={{ margin: '4px 0 0 0', fontSize: '15px', fontWeight: 800, color: paymentMode === 'full' ? 'var(--primary)' : '#475569' }}>₦{balance.toLocaleString()}</p>
+                                        <p style={{ margin: '4px 0 0 0', fontSize: '15px', fontWeight: 800, color: paymentMode === 'full' ? 'var(--primary)' : '#475569' }}>₦{(balance || 0).toLocaleString()}</p>
                                     </button>
                                     <button 
                                         onClick={() => setPaymentMode('partial')}
