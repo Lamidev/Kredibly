@@ -26,7 +26,21 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // 🛡️ Skip caching for API calls to prevent 401 crashes
+  if (event.request.url.includes('/api/')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(event.request)
+      .catch(() => caches.match(event.request))
+      .then(response => {
+        if (!response) {
+            // Return a dummy offline page or just fail gracefully 
+            return new Response('Offline: Resource not in cache.', { status: 503, statusText: 'Service Unavailable' });
+        }
+        return response;
+      })
   );
 });

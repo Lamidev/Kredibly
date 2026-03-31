@@ -33,7 +33,7 @@ const ForgotPassword = () => {
       boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)'
     }}>
       <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-        <h2 className="premium-gradient" style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em' }}>Reset Password</h2>
+        <h2 style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>Reset Password</h2>
         <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '1.05rem' }}>Enter your email to receive a password reset code.</p>
       </div>
 

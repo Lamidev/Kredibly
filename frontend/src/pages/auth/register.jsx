@@ -54,7 +54,7 @@ const Register = () => {
       boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)'
     }}>
       <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-        <h2 className="premium-gradient" style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em' }}>Create Account</h2>
+        <h2 style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>Create Account</h2>
         <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '1.05rem' }}>Join Kredibly and start growing your business today.</p>
       </div>
 
@@ -137,7 +137,7 @@ const Register = () => {
       <div style={{ textAlign: 'center', marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--border)' }}>
         <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', fontWeight: 500 }}>
           Already have an account? {" "}
-          <Link to="/auth/login" style={{ color: 'var(--primary)', fontWeight: 700, textDecoration: 'none' }}>Login instead</Link>
+          <Link to="/auth/login" style={{ color: '#000000', fontWeight: 700, textDecoration: 'none' }}>Login instead</Link>
         </p>
       </div>
     </div>

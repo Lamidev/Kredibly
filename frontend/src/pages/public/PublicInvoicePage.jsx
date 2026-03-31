@@ -19,6 +19,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { toast } from 'sonner';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import PaymentSuccessModal from '../../components/payment/PaymentSuccessModal';
 
 const PublicInvoicePage = () => {
@@ -83,27 +85,70 @@ const PublicInvoicePage = () => {
     };
 
     const handleDownloadPDF = async () => {
+        const element = document.getElementById('receipt-download-target');
+        if (!element) return;
+        
         setGenerating('pdf');
+        toast.loading('Preparing official PDF...', { id: 'pdf-gen' });
+        
         try {
-            // Logic for PDF generation using html2canvas or similar
-            // For now, using window.print as fallback
-            window.print();
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#FFFFFF',
+                onclone: (clonedDoc) => {
+                    const el = clonedDoc.getElementById('receipt-download-target');
+                    if (el) el.style.position = 'static';
+                }
+            });
+            
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width / 2, canvas.height / 2]
+            });
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+            pdf.save(`Receipt_KR-${sale.invoiceNumber}.pdf`);
+            toast.success('Official PDF saved!', { id: 'pdf-gen' });
+        } catch (err) {
+            console.error("PDF Generate Error:", err);
+            toast.error("PDF generation failed: " + err.message, { id: 'pdf-gen' });
         } finally {
             setGenerating(false);
         }
     };
 
     const handleDownloadImage = async () => {
+        const element = document.getElementById('receipt-download-target');
+        if (!element) return;
+        
         setGenerating('image');
-        toast.loading('Preparing image...', { id: 'image-gen' });
+        toast.loading('Capturing invoice image...', { id: 'image-gen' });
+        
         try {
-            // Mock image gen
-            setTimeout(() => {
-                toast.success('Image saved to downloads!', { id: 'image-gen' });
-                setGenerating(false);
-            }, 1500);
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#FFFFFF',
+                onclone: (clonedDoc) => {
+                    const el = clonedDoc.getElementById('receipt-download-target');
+                    if (el) el.style.position = 'static';
+                }
+            });
+            
+            const link = document.createElement('a');
+            link.download = `Invoice_KR-${sale.invoiceNumber}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            toast.success('Image saved to downloads!', { id: 'image-gen' });
         } catch (err) {
-            toast.error('Image generation failed', { id: 'image-gen' });
+            console.error("Image Generate Error:", err);
+            toast.error("Image capture failed: " + err.message, { id: 'image-gen' });
+        } finally {
             setGenerating(false);
         }
     };
@@ -144,21 +189,35 @@ const PublicInvoicePage = () => {
 
             const handler = window.PaystackPop.setup({
                 key: res.data.publicKey,
+                email: res.data.email, // 💎 MUST MATCH BACKEND CHOICE
+                amount: Math.round(amountToPay * 100), // 💎 BACKUP VALIDATOR (Kobo)
                 accessCode: res.data.accessCode, // 💎 ALL-IN-ONE TOKEN (Fees, Settlements, Reference)
                 callback: function(response) {
-                    setLastPaymentAmount(res.data.originalAmount);
-                    setRecentPaymentDate(new Date());
-                    setShowSuccessModal(true);
-                    
-                    // Refresh sale data
                     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
-                    axios.get(`${API_URL}/sales/${id}`)
-                        .then(r => {
-                            if (r.data.success) {
-                                setSale(r.data.data);
-                            }
-                        })
-                        .finally(() => setVerifying(false));
+                    
+                    // 1. 🛡️ VERIFY ON BACKEND
+                    axios.post(`${API_URL}/payments/verify-invoice`, {
+                        reference: response.reference,
+                        invoiceId: id
+                    }).then((verifyRes) => {
+                        if (verifyRes.data.success) {
+                            setLastPaymentAmount(res.data.originalAmount);
+                            setRecentPaymentDate(new Date());
+                            setShowSuccessModal(true);
+                            
+                            // 2. 🔄 Refresh local sale data
+                            axios.get(`${API_URL}/sales/${id}`).then(refreshRes => {
+                                if (refreshRes.data.success) {
+                                    setSale(refreshRes.data.data);
+                                }
+                            });
+                        }
+                    }).catch(err => {
+                        console.error("Verification error:", err);
+                        toast.error("Payment verified, but refresh failed.");
+                    }).finally(() => {
+                        setVerifying(false);
+                    });
                 },
                 onClose: function() {
                     setVerifying(false);
@@ -720,7 +779,7 @@ const PublicInvoicePage = () => {
                                     style={{ 
                                         width: '100%', 
                                         padding: '20px', 
-                                        background: '#0F172A', 
+                                        background: 'var(--primary)', 
                                         color: 'white', 
                                         borderRadius: '16px', 
                                         border: 'none', 
@@ -731,34 +790,34 @@ const PublicInvoicePage = () => {
                                         alignItems: 'center', 
                                         justifyContent: 'center', 
                                         gap: '12px',
-                                        boxShadow: '0 10px 15px -3px rgba(15, 23, 42, 0.2)'
+                                        boxShadow: '0 10px 15px -3px var(--primary-glow)'
                                     }}
                                 >
                                     {generating === 'pdf' ? <Loader2 size={18} className="spin-animation" /> : <Download size={18} />}
                                     <span>{generating === 'pdf' ? 'Preparing PDF...' : 'Download Official Receipt'}</span>
                                 </button>
                                 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', marginTop: '12px' }}>
                                     <button 
                                         onClick={handleDownloadImage}
                                         disabled={!!generating}
-                                        style={{ padding: '14px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '13px', fontWeight: 800, color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                                    >
-                                        <ImageIcon size={16} /> Save Image
-                                    </button>
-                                    <button 
-                                        onClick={async () => {
-                                            const text = `Hi, I've just settled the invoice #${sale.invoiceNumber} from ${sale.businessId?.displayName}. You can view the verified receipt here:`;
-                                            const url = window.location.href;
-                                            if (navigator.share) {
-                                                try { await navigator.share({ title: `Paid: Invoice #${sale.invoiceNumber}`, text, url }); } catch (err) {}
-                                            } else {
-                                                window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
-                                            }
+                                        style={{ 
+                                            width: '100%',
+                                            padding: '18px', 
+                                            background: 'white', 
+                                            border: '1px solid var(--border)', 
+                                            borderRadius: '16px', 
+                                            fontSize: '16px', 
+                                            fontWeight: 800, 
+                                            color: '#000000', 
+                                            cursor: 'pointer', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center', 
+                                            gap: '10px' 
                                         }}
-                                        style={{ padding: '14px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '13px', fontWeight: 800, color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                                     >
-                                        <Share2 size={16} /> Share Proof
+                                        <ImageIcon size={18} /> Save as Image
                                     </button>
                                 </div>
                                 

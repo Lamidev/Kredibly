@@ -44,7 +44,7 @@ const Login = () => {
       boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)'
     }}>
       <div style={{ marginBottom: '32px' }}>
-        <h2 className="premium-gradient" style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em' }}>Welcome Back</h2>
+        <h2 style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>Welcome Back</h2>
         <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '1.05rem' }}>Login to your account to manage your business.</p>
       </div>
 
@@ -72,7 +72,7 @@ const Login = () => {
         <div className="input-group">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <label className="input-label" style={{ margin: 0, fontWeight: 600 }}>Password</label>
-            <Link to="/auth/forgot-password" style={{ color: 'var(--primary)', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600 }}>Forgot password?</Link>
+            <Link to="/auth/forgot-password" style={{ color: '#000000', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600 }}>Forgot password?</Link>
           </div>
           <div style={{ position: 'relative' }}>
             <input
@@ -123,7 +123,7 @@ const Login = () => {
       <div style={{ textAlign: 'center', marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--border)' }}>
         <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', fontWeight: 500 }}>
           New to Kredibly? {" "}
-          <Link to="/auth/register" style={{ color: 'var(--primary)', fontWeight: 700, textDecoration: 'none' }}>Create an Account</Link>
+          <Link to="/auth/register" style={{ color: '#000000', fontWeight: 700, textDecoration: 'none' }}>Create an Account</Link>
         </p>
       </div>
     </div>

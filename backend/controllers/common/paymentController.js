@@ -388,19 +388,26 @@ exports.verifyInvoicePayment = async (req, res) => {
 exports.initializePaystackPayment = async (req, res) => {
     try {
         const { saleId, amount, email, paymentChannel } = req.body;
-        const sale = await Sale.findById(saleId).populate('businessId');
+        const sale = await Sale.findById(saleId).populate({
+            path: 'businessId',
+            populate: { path: 'ownerId', select: 'email' }
+        });
         if (!sale) return res.status(404).json({ message: "Invoice not found" });
         
         if (paymentChannel === 'card') return res.status(403).json({ message: "Card payments disabled." });
 
         const reference = `KREDDY_INV_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
         
-        let safeEmail = (email || '').trim().toLowerCase();
-        if (!safeEmail || !safeEmail.includes('@') || safeEmail.includes(' ')) {
-            safeEmail = `customer_${sale.invoiceNumber.toLowerCase().replace(/[^a-z0-9]/g, '')}@usekredibly.com`;
-        }
-
         const { initializePayment } = require('../../utils/paystack');
+        
+        // 🔒 BULLETPROOF EMAIL STRATEGY:
+        // Use customer email if valid. Fallback to business email. Final fallback to support email.
+        const bizEmail = sale.businessId?.ownerId?.email || sale.businessId?.email;
+        let safeEmail = (email || '').trim().toLowerCase();
+        
+        if (!safeEmail || !safeEmail.includes('@') || safeEmail.length < 5) {
+            safeEmail = (bizEmail || 'support@usekredibly.com').toLowerCase().trim();
+        }
         
         // 🔒 SECURITY CHECK: If bank details were recently changed, Kredibly HOLDS the money for 24h.
         // We do this by omitting the subaccountCode from the Paystack initialization.
@@ -412,15 +419,35 @@ exports.initializePaystackPayment = async (req, res) => {
             console.log(`🛡️ Escrow Active for ${sale.businessId.displayName}. Redirecting payment to Main Account.`);
         }
 
-        const paystackInit = await initializePayment(
-            safeEmail, 
-            amount, 
-            reference, 
-            { paymentType: 'invoice', invoiceNumber: sale.invoiceNumber, originalAmount: Number(amount) },
-            subaccountCode,
-            isLocked ? 'none' : 'subaccount', 
-            ['bank_transfer']
-        );
+        let paystackInit;
+        try {
+            paystackInit = await initializePayment(
+                safeEmail, 
+                amount, 
+                reference, 
+                { paymentType: 'invoice', invoiceNumber: sale.invoiceNumber, originalAmount: Number(amount) },
+                subaccountCode,
+                subaccountCode ? (isLocked ? 'none' : 'subaccount') : 'none', 
+                ['bank_transfer', 'bank']
+            );
+        } catch (initErr) {
+            console.error("💡 Paystack Initialization Error (Subaccount Fail?):", initErr.message);
+            // 🛡️ FALLBACK: If Subaccount fails, try standard payment to Kredibly Main Account (automatic Escrow)
+            if (subaccountCode) {
+                 console.log("🛡️ Falling back to ESCROW payment for", sale.invoiceNumber);
+                 paystackInit = await initializePayment(
+                    safeEmail, 
+                    amount, 
+                    reference, 
+                    { paymentType: 'invoice', invoiceNumber: sale.invoiceNumber, originalAmount: Number(amount), subaccountError: true },
+                    null, // No subaccount
+                    'none', 
+                    ['bank_transfer', 'bank']
+                );
+            } else {
+                throw initErr; // Real error
+            }
+        }
 
         res.status(200).json({
             success: true,

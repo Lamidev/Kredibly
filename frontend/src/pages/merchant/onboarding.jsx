@@ -256,7 +256,7 @@ const Onboarding = () => {
                                         </div>
                                         <h2 style={{ fontSize: 'clamp(1.5rem, 6vw, 2rem)', fontWeight: 950, letterSpacing: '-0.04em', color: '#0F172A', marginBottom: '12px' }}>Welcome, Oga.</h2>
                                         <p style={{ color: '#0F172A', fontWeight: 600, fontSize: '1rem', lineHeight: 1.7 }}>
-                                            As a <span style={{ color: 'var(--primary)', fontWeight: 800 }}>Founding Member</span>, you've been granted <strong style={{ color: '#0F172A' }}>30 days</strong> of the <strong style={{ color: '#0F172A' }}>Oga Plan</strong> for free during this beta phase.
+                                            As a <span style={{ color: '#000000', fontWeight: 800 }}>Founding Member</span>, you've been granted <strong style={{ color: '#0F172A' }}>30 days</strong> of the <strong style={{ color: '#0F172A' }}>Oga Plan</strong> for free during this beta phase.
                                         </p>
                                     </div>
                                     <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1.5px solid #E2E8F0', marginBottom: '40px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
