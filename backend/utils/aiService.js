@@ -73,6 +73,9 @@ INTENTS:
     - CRITICAL: DO NOT use this for deleting records, tasks, or setting reminders.
     - If the user says "remind me", "delete", "remove", "task", or "record", NEVER choose this intent.
 21. "delete_feedback": When the user says "cancel my idea", "delete my suggestion", or "I changed my mind about that feedback".
+22. "list_sales": When the user asks for "all sales", "show me everything", "history", "what I sold today", or "everything recorded". 
+    - CRITICAL: "Show me all sales" MUST go to this intent. DO NOT use check_debt for history. 
+    - check_debt is ONLY for "who owes me".
 
 NAME CORRECTIONS:
 - If a user says "No, the name is [Name]" or "I meant [Name]", use "update_record" intent.

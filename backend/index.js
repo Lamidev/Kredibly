@@ -176,11 +176,17 @@ app.use((err, req, res, next) => {
   });
 });
 
+const http = require("http");
+const socketUtils = require("./utils/socket");
+
 // 6. Database Connection
 if (!process.env.MONGODB_URL) {
   console.error("❌ MONGODB_URL is missing in .env");
   process.exit(1);
 }
+
+const server = http.createServer(app);
+socketUtils.init(server);
 
 mongoose
   .connect(process.env.MONGODB_URL, {
@@ -193,19 +199,19 @@ mongoose
     startBackupScheduler();
     scheduleMorningSummary();
     scheduleRemindersWorker();
-        schedulePlanExpiryReminders();
-        scheduleProactiveFollowUps();
-        schedulePastDueEscalations();
-        scheduleEscrowPayouts();
-        scheduleMonthlyUsageReset();
-    })
-    .catch((error) => {
-        console.error("❌ MongoDB connection failed:", error);
-        process.exit(1);
-    });
+    schedulePlanExpiryReminders();
+    scheduleProactiveFollowUps();
+    schedulePastDueEscalations();
+    scheduleEscrowPayouts();
+    scheduleMonthlyUsageReset();
 
-// 7. Start Server
-app.listen(PORT, () => {
-  console.log(`🔥 Server running on port ${PORT}`);
-});
+    // 7. Start Server
+    server.listen(PORT, () => {
+      console.log(`🔥 Server + Sockets running on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error("❌ MongoDB connection failed:", error);
+    process.exit(1);
+  });
 

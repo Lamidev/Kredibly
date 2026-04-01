@@ -866,18 +866,6 @@ const PublicInvoicePage = () => {
                                 </div>
                                 
                                 <p style={{ fontSize: '11px', fontWeight: 750, color: '#94A3B8', marginTop: '24px' }}>Verified Settlement • Reference KR-{sale.invoiceNumber}</p>
-
-                                {!profile && (
-                                    <div style={{ marginTop: '48px', padding: '32px 24px', background: 'linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)', borderRadius: '28px', border: '1px solid #DDD6FE', textAlign: 'center' }}>
-                                        <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#4C1D95', marginBottom: '8px' }}>Do people owe YOU money too?</h3>
-                                        <p style={{ color: '#6D28D9', fontSize: '0.95rem', marginBottom: '24px', lineHeight: 1.5, fontWeight: 600 }}>Let Kreddy chase your debts automatically while you focus on growth.</p>
-                                        <Link to="/" style={{ textDecoration: 'none' }}>
-                                            <button className="hover-scale" style={{ padding: '16px 36px', background: '#4C1D95', color: 'white', border: 'none', borderRadius: '100px', fontWeight: 800, fontSize: '1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
-                                                Learn How It Works <ArrowRight size={18} />
-                                            </button>
-                                        </Link>
-                                    </div>
-                                )}
                             </motion.div>
                         )}
                     </div>

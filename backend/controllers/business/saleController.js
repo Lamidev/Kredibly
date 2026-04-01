@@ -9,7 +9,7 @@ exports.createSale = async (req, res) => {
     try {
         const {
             customerName, customerPhone, customerEmail,
-            description, totalAmount, amountPaid, dueDate
+            description, totalAmount, amountPaid, dueDate, invoiceType
         } = req.body;
 
         const business = await BusinessProfile.findOne({ ownerId: req.user._id });
@@ -34,7 +34,7 @@ exports.createSale = async (req, res) => {
             if (invoiceCount >= 10) {
                 return res.status(403).json({ 
                     success: false, 
-                    message: "Monthly Limit Reached: You've reached the 10-sale limit for your Hustler plan this month. Upgrade to 'Oga' for unlimited sales!",
+                    message: "Monthly Entry Limit Reached! Upgrade to Oga for unlimited records.",
                     code: "LIMIT_REACHED"
                 });
             }
@@ -48,14 +48,15 @@ exports.createSale = async (req, res) => {
             description,
             totalAmount,
             dueDate,
+            invoiceType: invoiceType || 'billing',
             payments: []
         };
 
         if (amountPaid > 0) {
             saleData.payments.push({
-                amount: amountPaid,
+                amount: parseFloat(amountPaid),
                 date: new Date(),
-                method: "Initial"
+                method: invoiceType === 'record' ? 'Past Settlement' : 'Initial'
             });
         }
 
@@ -378,7 +379,8 @@ exports.getDashboardStats = async (req, res) => {
             totalSales: sales.length,
             monthlySalesCount,
             revenue: 0,
-            kreddyRevenue: 0, // NEW: Only verified online payments
+            kreddyRevenue: 0, 
+            pendingSettlement: 0, // NEW: Money verified but in transit (last 24h Paystack payments)
             outstanding: 0,
             recentSales: sales.slice(0, 5),
             trustScore: 60,
@@ -389,14 +391,25 @@ exports.getDashboardStats = async (req, res) => {
         let paidFullCount = 0;
 
         sales.forEach(sale => {
+            const now = new Date();
+            const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
             const payments = (sale.payments || []);
             const paid = payments.reduce((sum, p) => sum + p.amount, 0);
+            
+            // Calculate total online revenue
             const kreddyPaid = payments
                 .filter(p => p.method === 'Paystack')
                 .reduce((sum, p) => sum + p.amount, 0);
 
+            // Calculate money "In Transit" (Paystack within 24h)
+            const pending = payments
+                .filter(p => (p.method === 'Paystack' || p.method === 'Kredibly Online') && new Date(p.date) > twentyFourHoursAgo)
+                .reduce((sum, p) => sum + p.amount, 0);
+
             stats.revenue += paid;
             stats.kreddyRevenue += kreddyPaid;
+            stats.pendingSettlement += pending;
             stats.outstanding += (sale.totalAmount - paid);
 
             if (sale.confirmed) confirmedCount++;

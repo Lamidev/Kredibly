@@ -121,8 +121,8 @@ SaleSchema.pre("save", async function (next) {
         let attempts = 0;
         // Limit attempts to avoid Event loop blocking. Use .exists() for faster lookup
         while (!isUnique && attempts < 3) {
-            let code = generateCode();
-            const existing = await this.constructor.exists({ invoiceNumber: code });
+            const code = generateCode();
+            const existing = await mongoose.model("Sale").exists({ invoiceNumber: code });
             if (!existing) {
                 this.invoiceNumber = code;
                 isUnique = true;
@@ -130,7 +130,7 @@ SaleSchema.pre("save", async function (next) {
             attempts++;
         }
         
-        // Final fallback to guarantee uniqueness without crashing
+        // Final fallback if collision continues (highly unlikely but for total safety)
         if (!this.invoiceNumber) {
              this.invoiceNumber = generateCode() + "-" + crypto.randomBytes(2).toString("hex").toUpperCase();
         }
