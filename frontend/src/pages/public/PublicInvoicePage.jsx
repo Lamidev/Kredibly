@@ -191,16 +191,14 @@ const PublicInvoicePage = () => {
                 email: res.data.email, // 💎 MUST MATCH BACKEND CHOICE
                 amount: Math.round(amountToPay * 100), // 💎 BACKUP VALIDATOR (Kobo)
                 accessCode: res.data.accessCode, // 💎 ALL-IN-ONE TOKEN (Fees, Settlements, Reference)
-                callback: async function(response) {
+                callback: function(response) {
                     setVerifying(true);
                     
-                    try {
-                        // 1. 🛡️ VERIFY ON BACKEND
-                        const verifyRes = await axios.post(`${API_URL}/payments/verify-invoice`, {
-                            reference: response.reference,
-                            invoiceId: id
-                        });
-
+                    // 1. 🛡️ VERIFY ON BACKEND
+                    axios.post(`${API_URL}/payments/verify-invoice`, {
+                        reference: response.reference,
+                        invoiceId: id
+                    }).then(function(verifyRes) {
                         if (verifyRes.data.success) {
                             // 🏆 SUCCESS: Show modal FIRST to build trust immediately
                             setLastPaymentAmount(verifyRes.data.originalAmount || amountToPay);
@@ -208,24 +206,23 @@ const PublicInvoicePage = () => {
                             setShowSuccessModal(true);
                             
                             // 2. 🔄 Refresh local sale data (Background Task)
-                            try {
-                                const refreshRes = await axios.get(`${API_URL}/sales/${id}`);
+                            axios.get(`${API_URL}/sales/${id}`).then(function(refreshRes) {
                                 if (refreshRes.data.success) {
                                     setSale(refreshRes.data.data);
                                 }
-                            } catch (refreshErr) {
+                            }).catch(function(refreshErr) {
                                 console.warn("Background refresh lagged, but payment is confirmed.");
-                            }
+                            });
                         } else {
                             toast.error(verifyRes.data.message || "Payment verification failed. Please contact the merchant! 🛡️");
                         }
-                    } catch (err) {
+                    }).catch(function(err) {
                         console.error("Verification error:", err);
                         // 🚨 REASSURANCE: Don't panic the customer
                         toast.error("Verification taking longer than usual... 🛡️ Don't worry, we are securing your payment. Please refresh the page in 10 seconds!", { duration: 6000 });
-                    } finally {
+                    }).finally(function() {
                         setVerifying(false);
-                    }
+                    });
                 },
                 onClose: function() {
                     setVerifying(false);
