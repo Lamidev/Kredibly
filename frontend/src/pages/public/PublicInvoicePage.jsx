@@ -67,6 +67,45 @@ const PublicInvoicePage = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, [id]);
 
+    // 🛡️ WEBHOOK POLLING: Automatically update UI when backend processing completes
+    useEffect(() => {
+        if (!sale || loading) return;
+        
+        const calcBalance = (s) => s.totalAmount - (s.paidAmount || s.payments?.reduce((sum, p) => sum + p.amount, 0) || 0);
+        const currentBalance = calcBalance(sale);
+        
+        if (currentBalance <= 0) return; // Stop polling if fully paid
+
+        const pollInterval = setInterval(async () => {
+            try {
+                const res = await axios.get(`${API_URL}/sales/${id}`);
+                if (res.data.success) {
+                    const latestSale = res.data.data;
+                    const newBalance = calcBalance(latestSale);
+                    
+                    // If balance decreased dynamically
+                    if (newBalance < currentBalance) {
+                        setSale(latestSale);
+                        if (newBalance <= 0 && !showSuccessModal) {
+                            setLastPaymentAmount(currentBalance - newBalance);
+                            setRecentPaymentDate(new Date());
+                            setShowSuccessModal(true);
+                        } else {
+                            toast.success("Payment verified successfully on the ledger! 🛡️");
+                        }
+                    } else if (latestSale.updatedAt !== sale.updatedAt) {
+                        // Only update state if something else changed (e.g. description)
+                        setSale(latestSale);
+                    }
+                }
+            } catch (err) {
+                // Silent catch for background polling
+            }
+        }, 8000); // Poll every 8 seconds
+
+        return () => clearInterval(pollInterval);
+    }, [id, sale, loading, showSuccessModal]);
+
     const handleShare = async () => {
         if (navigator.share) {
             try {

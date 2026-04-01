@@ -326,12 +326,22 @@ exports.verifyInvoicePayment = async (req, res) => {
         // This is equally secure because we generated the reference during initialization
         const refContainsInvoice = isKreddyRef && reference.toUpperCase().includes(targetSale.invoiceNumber.toUpperCase());
 
-        if (!metadataMatches && !refContainsInvoice) {
+        // Lock 3: Paystack Inline Referrer match (fallback for dropped metadata in Bank Transfers)
+        let referrerMatches = false;
+        if (paystackData.metadata?.referrer && paystackData.metadata.referrer.includes('/i/')) {
+            const parts = paystackData.metadata.referrer.split('/i/');
+            if (parts.length > 1) {
+                const urlInvoiceNumber = parts[1].split('?')[0].split('#')[0];
+                referrerMatches = urlInvoiceNumber.toUpperCase() === targetSale.invoiceNumber.toUpperCase();
+            }
+        }
+
+        if (!metadataMatches && !refContainsInvoice && !referrerMatches) {
             console.error(`🚨 Payment Mismatch Blocked: Ref=${reference}, Meta=${paystackInvoiceNo}, Invoice=${targetSale.invoiceNumber}`);
             return res.status(403).json({ message: "Payment reference mismatch." });
         }
 
-        console.log(`✅ Payment verified via: ${metadataMatches ? 'Metadata' : 'Reference String'} | Invoice: ${targetSale.invoiceNumber}`);
+        console.log(`✅ Payment verified via: ${metadataMatches ? 'Metadata' : (refContainsInvoice ? 'Reference String' : 'Referrer Check')} | Invoice: ${targetSale.invoiceNumber}`);
 
         // ⚖️ ATOMIC SAVE: Use .save() so the pre-save hooks flip the status to 'paid' correctly
         const sale = await Sale.findById(targetSale._id).populate('businessId');
@@ -436,29 +446,18 @@ exports.initializePaystackPayment = async (req, res) => {
         const isLocked = lockUntil && new Date() < new Date(lockUntil);
         
         const subaccountCode = isLocked ? null : sale.businessId.paystackSubaccountCode;
-        const subStatus = sale.businessId.subaccountStatus || 'unverified';
         
         // 🛡️ SUBACCOUNT STATUS SHIELD:
-        // If it's locked OR not explicitly "active," we force the payment into Escrow.
-        // This ensures the Customer NEVER sees an initialization error.
-        const effectiveSubaccount = (isLocked || subStatus !== 'active') ? null : subaccountCode;
-        const effectiveBearer = effectiveSubaccount ? (isLocked ? 'none' : 'subaccount') : 'none';
+        // If it's locked by a recent bank details change, we force Escrow.
+        // Otherwise, we always try to use the subaccount. If Paystack rejects it, the try/catch fallback kicks in.
+        const effectiveSubaccount = isLocked ? null : subaccountCode;
+        const effectiveBearer = effectiveSubaccount ? 'subaccount' : 'none';
 
         if (isLocked) {
             console.log(`🛡️ Escrow Active for ${sale.businessId.displayName}. Security Lock.`);
-        } else if (subStatus !== 'active' && subaccountCode) {
-            console.log(`🛡️ Escrow Active for ${sale.businessId.displayName}. Subaccount still Unverified.`);
         }
 
-        // 🛡️ DYNAMIC STATUS SYNC: Try to verify the subaccount on-the-fly
-        if (subaccountCode && subStatus !== 'active') {
-            try {
-                const subRes = await require('../../utils/paystack').getSubaccount(subaccountCode);
-                if (subRes && subRes.active) {
-                     await BusinessProfile.updateOne({ _id: sale.businessId._id }, { $set: { "subaccountStatus": "active" } });
-                }
-            } catch (e) { console.warn("Subaccount Sync Wait:", e.message); }
-        }
+        // 🛡️ Dynamic Status Sync removed - letting Paystack directly handle validation natively.
 
         let paystackInit;
         try {
