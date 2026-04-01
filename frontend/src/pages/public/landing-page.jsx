@@ -266,7 +266,7 @@ const LandingPage = () => {
                     </p>
 
                     <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '32px' }}>
-                        <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', fontSize: '1.1rem', borderRadius: '100px' }}>Get Early Access <ArrowRight size={20} /></button>
+                        <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', fontSize: '1.1rem', borderRadius: '100px' }}>Join the Vanguard <ArrowRight size={20} /></button>
                         <button onClick={() => scrollToSection('how-it-works')} className="btn-secondary" style={{ padding: '20px 48px', fontSize: '1.1rem', borderRadius: '100px', background: 'white', color: 'var(--primary)', borderColor: 'var(--primary)' }}>Meet Kreddy AI</button>
                     </div>
                 </motion.div>
@@ -551,7 +551,7 @@ const LandingPage = () => {
                         margin: 0 auto;
                     }
                     .lp-pricing-card--featured {
-                        order: -1;
+                        /* removed order: -1 to keep Hustler-first sequence */
                     }
                     .lp-pricing-badge {
                         font-size: 0.65rem;

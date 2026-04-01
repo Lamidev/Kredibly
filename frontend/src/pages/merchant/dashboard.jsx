@@ -106,10 +106,8 @@ const Dashboard = () => {
         );
     }
 
-    const aiRecovered = sales?.reduce((total, sale) => {
-        const onlinePayments = sale.payments?.filter(p => p.method !== 'Cash' && p.method !== 'Transfer') || [];
-        return total + onlinePayments.reduce((sum, p) => sum + p.amount, 0);
-    }, 0) || 0;
+    // 'Kreddy Settlements' is now calculated purely by the backend for maximum accuracy
+    const kreddySettlements = stats?.kreddyRevenue || 0;
 
     return (
         <div className="animate-fade-in" style={{ paddingBottom: '40px', position: 'relative' }}>
@@ -289,9 +287,9 @@ const Dashboard = () => {
                         </div>
                         <Sparkles size={18} color="var(--primary)" />
                     </div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Recovered by AI</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Kreddy Settlements</p>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-                        <h2 className="premium-gradient" style={{ fontSize: '2.5rem', fontWeight: 950, letterSpacing: '-0.03em' }}>₦{aiRecovered.toLocaleString()}</h2>
+                        <h2 className="premium-gradient" style={{ fontSize: '2.5rem', fontWeight: 950, letterSpacing: '-0.03em' }}>₦{kreddySettlements.toLocaleString()}</h2>
                     </div>
                 </motion.div>
             </div>

@@ -127,9 +127,17 @@ exports.handlePaystackWebhook = async (req, res) => {
                 console.log(`✅ Webhook: Business ${profile.displayName} upgraded to ${plan} via ${reference}`);
             } 
             else if (paymentType === 'invoice') {
-                const invoiceNumber = metadata?.invoiceNumber;
+                let invoiceNumber = metadata?.invoiceNumber;
+                
+                // 🛡️ FALLBACK: If metadata is stripped (common in Bank Transfers)
+                if (!invoiceNumber && reference && reference.startsWith("KREDDY_INV_")) {
+                    const parts = reference.split("_");
+                    invoiceNumber = parts[2]; // KR-XXXX
+                    console.log(`🛡️ Recovered Metadata-less payment via Ref Prefix: ${invoiceNumber}`);
+                }
+
                 if (!invoiceNumber) {
-                    console.warn(`⚠️ Webhook Warning: Invoice payment missing invoiceNumber in metadata.`);
+                    console.warn(`⚠️ Webhook Warning: Invoice payment missing invoiceNumber for ref ${reference}.`);
                     return res.sendStatus(200);
                 }
 
