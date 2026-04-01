@@ -404,7 +404,7 @@ exports.initializePaystackPayment = async (req, res) => {
         
         if (paymentChannel === 'card') return res.status(403).json({ message: "Card payments disabled." });
 
-        const reference = `KREDDY_INV_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        const reference = `KREDDY_INV_${sale.invoiceNumber}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
         
         const { initializePayment } = require('../../utils/paystack');
         

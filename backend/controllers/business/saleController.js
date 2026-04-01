@@ -378,6 +378,7 @@ exports.getDashboardStats = async (req, res) => {
             totalSales: sales.length,
             monthlySalesCount,
             revenue: 0,
+            kreddyRevenue: 0, // NEW: Only verified online payments
             outstanding: 0,
             recentSales: sales.slice(0, 5),
             trustScore: 60,
@@ -388,8 +389,14 @@ exports.getDashboardStats = async (req, res) => {
         let paidFullCount = 0;
 
         sales.forEach(sale => {
-            const paid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
+            const payments = (sale.payments || []);
+            const paid = payments.reduce((sum, p) => sum + p.amount, 0);
+            const kreddyPaid = payments
+                .filter(p => p.method === 'Paystack')
+                .reduce((sum, p) => sum + p.amount, 0);
+
             stats.revenue += paid;
+            stats.kreddyRevenue += kreddyPaid;
             stats.outstanding += (sale.totalAmount - paid);
 
             if (sale.confirmed) confirmedCount++;
