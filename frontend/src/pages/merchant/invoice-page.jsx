@@ -27,11 +27,14 @@ import {
     QrCode,
     User,
     AlertCircle,
-    Loader2
+    Loader2,
+    Activity,
+    Check
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { useSales } from "../../context/SaleContext";
+import { initiateSocketConnection, disconnectSocket, listenToEvent, stopListeningToEvent } from "../../utils/socket";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
@@ -39,8 +42,17 @@ const InvoicePage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
-    const { profile } = useAuth();
-    const { updateSale, addPayment, deleteSale } = useSales();
+    const auth = useAuth();
+    const salesContext = useSales();
+
+    // 🛡️ Safety Guard: Handle transient context loss during Hot Module Replacement (HMR)
+    if (!auth || !salesContext) {
+        console.warn("🛡️ Kreddy Guard: Context trace lost, waiting for React dispatcher...");
+        return null;
+    }
+
+    const { profile } = auth;
+    const { updateSale, addPayment, deleteSale } = salesContext;
 
     const [sale, setSale] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -70,6 +82,32 @@ const InvoicePage = () => {
             window.history.replaceState({}, document.title);
         }
     }, [id]);
+
+    // 🔌 Real-time Socket Setup for live payment verification
+    useEffect(() => {
+        if (sale?.businessId?._id) {
+            initiateSocketConnection(sale.businessId._id);
+            
+            listenToEvent("sale_updated", (data) => {
+                // If this is for the current sale, silent refresh to show new totals/status
+                if (data.saleId === sale._id) {
+                    console.log("⚡ Sale updated via socket, refreshing...");
+                    fetchSale();
+                    
+                    // If it was just paid fully, celebrate!
+                    if (data.balance <= 0) {
+                        setShowSuccessModal(true);
+                        setShowCelebration(true);
+                    }
+                }
+            });
+        }
+
+        return () => {
+            stopListeningToEvent("sale_updated");
+            disconnectSocket();
+        };
+    }, [sale?._id]);
 
     const fetchSale = async () => {
         setSale(null);
@@ -266,7 +304,7 @@ const InvoicePage = () => {
                 return new Promise(r => { img.onload = r; img.onerror = r; });
             }));
             
-            await new Promise(resolve => setTimeout(resolve, 500)); // slight buffer
+            await new Promise(resolve => setTimeout(resolve, 100)); // optimized buffer
 
             const canvas = await html2canvas(clone, {
                 scale: 3, 
@@ -314,7 +352,7 @@ const InvoicePage = () => {
                 pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             }
 
-            pdf.save(`Invoice_${sale.invoiceNumber}.pdf`);
+            pdf.save(`${balance <= 0 ? 'Receipt' : 'Invoice'}_${sale.invoiceNumber}.pdf`);
             
             toast.dismiss(toastId);
             toast.success("PDF Downloaded!");
@@ -360,7 +398,7 @@ const InvoicePage = () => {
                 return new Promise(r => { img.onload = r; img.onerror = r; });
             }));
             
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 100));
 
             const canvas = await html2canvas(clone, {
                 scale: 2,
@@ -380,7 +418,7 @@ const InvoicePage = () => {
 
             const link = document.createElement('a');
             link.href = image;
-            link.download = `Invoice_${sale.invoiceNumber}.png`;
+            link.download = `${balance <= 0 ? 'Receipt' : 'Invoice'}_${sale.invoiceNumber}.png`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -432,7 +470,7 @@ const InvoicePage = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         <Link to={isInternal ? "/sales" : "/"} style={{ color: 'inherit', textDecoration: 'none' }}>Records</Link>
                         <ChevronRight size={12} />
-                        <span style={{ color: 'var(--primary)' }}>Invoice {sale.invoiceNumber}</span>
+                        <span style={{ color: 'var(--primary)' }}>{balance <= 0 ? 'Digital Receipt' : 'Official Invoice'} {sale.invoiceNumber}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
                         <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 950, color: 'var(--text)', margin: 0, letterSpacing: '-0.05em' }}>
@@ -466,9 +504,19 @@ const InvoicePage = () => {
                     <button
                         onClick={() => setShowSuccessModal(true)}
                         className="btn-primary"
-                        style={{ padding: '14px 24px', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 900, fontSize: '0.95rem', boxShadow: '0 10px 25px -5px var(--primary-glow)' }}
+                        style={{ 
+                            padding: '14px 24px', 
+                            borderRadius: '18px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '8px', 
+                            fontWeight: 900, 
+                            fontSize: '0.95rem', 
+                            background: '#4C1D95',
+                            boxShadow: '0 10px 25px -5px rgba(76, 29, 149, 0.4)' 
+                        }}
                     >
-                        <Share2 size={18} strokeWidth={3} /> Share Receipt
+                        <Share2 size={18} strokeWidth={3} /> {balance <= 0 ? 'Share Receipt' : 'Share Invoice'}
                     </button>
                 </div>
             </div>
@@ -482,6 +530,7 @@ const InvoicePage = () => {
                 {/* Left Column: Core Data */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                     
+                    {/* High-Impact Info Cards */}
                     {/* High-Impact Info Cards */}
                     {/* High-Impact Info Cards */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '20px' }}>
@@ -506,11 +555,73 @@ const InvoicePage = () => {
                         </div>
                     </div>
 
+                    {/* 🚀 NEW: MONEY JOURNEY TRACKER */}
+                    {sale.payments.some(p => p.method === 'Paystack' || p.method === 'Kredibly Online') && (
+                        <div className="dashboard-glass" style={{ 
+                            background: 'white', border: '1px solid #E2E8F0', borderRadius: '32px', padding: '32px',
+                            boxShadow: '0 20px 50px -12px rgba(76, 29, 149, 0.05)'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+                                <div style={{ width: '40px', height: '40px', background: 'rgba(76, 29, 149, 0.1)', color: '#4C1D95', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Activity size={20} strokeWidth={2.5} />
+                                </div>
+                                <div>
+                                    <h3 style={{ fontWeight: 950, fontSize: '1.1rem', margin: 0, color: '#0F172A' }}>Money Journey</h3>
+                                    <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 700, color: '#64748B' }}>Verified Collection Pipeline</p>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '20px', position: 'relative' }}>
+                                {/* Connections */}
+                                <div style={{ position: 'absolute', top: '24px', left: '10%', right: '10%', height: '2px', background: '#F1F5F9', zIndex: 0 }} />
+                                
+                                {[
+                                    { step: 1, label: 'Verified', color: '#10B981', detail: 'Paystack Secured', active: true },
+                                    { 
+                                        step: 2, 
+                                        label: 'Processing', 
+                                        color: '#4C1D95', 
+                                        detail: 'Safe in Kredibly', 
+                                        active: true,
+                                        isProcessing: Date.now() - new Date(sale.payments.find(p => p.method === 'Paystack')?.date || 0).getTime() < 24 * 60 * 60 * 1000
+                                    },
+                                    { 
+                                        step: 3, 
+                                        label: 'Settled', 
+                                        color: '#64748B', 
+                                        detail: Date.now() - new Date(sale.payments.find(p => p.method === 'Paystack')?.date || 0).getTime() > 24 * 60 * 60 * 1000 ? 'In Bank' : 'Est: Tomorrow', 
+                                        active: Date.now() - new Date(sale.payments.find(p => p.method === 'Paystack')?.date || 0).getTime() > 24 * 60 * 60 * 1000 
+                                    }
+                                ].map((item, idx) => (
+                                    <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', zIndex: 1, textAlign: 'center' }}>
+                                        <div style={{ 
+                                            width: '48px', height: '48px', borderRadius: '100px', 
+                                            background: item.active ? item.color : '#F1F5F9', 
+                                            color: item.active ? 'white' : '#94A3B8',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            boxShadow: item.active ? `0 10px 20px -5px ${item.color}44` : 'none',
+                                            border: '4px solid white',
+                                            animation: item.isProcessing ? 'pulse 2s infinite' : 'none'
+                                        }}>
+                                            {item.active && (idx === 0 || idx === 2) ? <Check size={20} strokeWidth={3} /> : idx + 1}
+                                        </div>
+                                        <div>
+                                            <p style={{ margin: 0, fontWeight: 900, fontSize: '0.85rem', color: item.active ? '#0F172A' : '#94A3B8' }}>{item.label}</p>
+                                            <p style={{ margin: 0, fontSize: '0.65rem', fontWeight: 800, color: '#64748B' }}>{item.detail}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Official Description */}
                     <div className="dashboard-glass" style={{ background: 'white', borderRadius: '28px', border: '1px solid var(--border)', padding: '32px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
                             <FileText size={18} color="var(--primary)" strokeWidth={2.5} />
-                            <h3 style={{ fontWeight: 800, fontSize: '1rem', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Transaction Details</h3>
+                            <h3 style={{ fontWeight: 800, fontSize: '1rem', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                {balance <= 0 ? 'Receipt Details' : 'Invoice Details'}
+                            </h3>
                         </div>
 
                         <div style={{ fontSize: '1rem', color: 'var(--text)', lineHeight: 1.6, background: 'var(--background)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border)', position: 'relative' }}>
@@ -597,7 +708,9 @@ const InvoicePage = () => {
                         <div className="dashboard-glass" style={{ background: 'white', borderRadius: '32px', border: '1px solid var(--border)', padding: '32px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
                                 <Zap size={18} color="var(--primary)" fill="var(--primary)" />
-                                <span style={{ fontWeight: 900, fontSize: '0.9rem', color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Invoice Info</span>
+                                <span style={{ fontWeight: 900, fontSize: '0.9rem', color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    {balance <= 0 ? 'Receipt Info' : 'Invoice Info'}
+                                </span>
                             </div>
 
                             {balance > 0 ? (
@@ -714,17 +827,30 @@ const InvoicePage = () => {
                             <h3 style={{ fontWeight: 950, fontSize: '1.6rem', letterSpacing: '-0.04em', color: '#0F172A' }}>Edit Invoice</h3>
                             <button onClick={() => setShowEditModal(false)} style={{ background: '#F1F5F9', border: 'none', cursor: 'pointer', padding: '10px', borderRadius: '12px', display: 'flex' }}><X size={20} color="#334155" /></button>
                         </div>
-                        <form onSubmit={handleUpdateSale} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                            <div>
-                                <label style={{ display: 'block', fontWeight: 800, fontSize: '0.85rem', marginBottom: '8px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Customer Identity</label>
-                                <input className="input-field" style={{ borderRadius: '16px', background: '#F8FAFC', fontWeight: 700 }} value={editForm.customerName} onChange={e => setEditForm({ ...editForm, customerName: e.target.value })} />
+                        <form onSubmit={handleUpdateSale} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontWeight: 800, fontSize: '0.7rem', marginBottom: '8px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Customer Name</label>
+                                    <input className="input-field" style={{ borderRadius: '16px', background: '#F8FAFC', fontWeight: 700 }} value={editForm.customerName} onChange={e => setEditForm({ ...editForm, customerName: e.target.value })} />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontWeight: 800, fontSize: '0.7rem', marginBottom: '8px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Amount (₦)</label>
+                                    <input type="number" className="input-field" style={{ borderRadius: '16px', background: '#F8FAFC', fontWeight: 900, color: 'var(--primary)' }} value={editForm.totalAmount} onChange={e => setEditForm({ ...editForm, totalAmount: parseFloat(e.target.value) || 0 })} />
+                                </div>
                             </div>
+                            
                             <div>
-                                <label style={{ display: 'block', fontWeight: 800, fontSize: '0.85rem', marginBottom: '8px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Memo Change</label>
-                                <textarea className="input-field" style={{ minHeight: '120px', resize: 'none', borderRadius: '16px', background: '#F8FAFC', fontWeight: 600 }} value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} />
+                                <label style={{ display: 'block', fontWeight: 800, fontSize: '0.7rem', marginBottom: '8px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Transaction Memo</label>
+                                <textarea className="input-field" style={{ minHeight: '100px', resize: 'none', borderRadius: '16px', background: '#F8FAFC', fontWeight: 600 }} value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} />
                             </div>
-                            <button type="submit" disabled={processing} className="btn-primary" style={{ padding: '18px', borderRadius: '18px', fontWeight: 900, fontSize: '1rem' }}>
-                                {processing ? 'Saving...' : 'Update Details'}
+
+                            <div>
+                                <label style={{ display: 'block', fontWeight: 800, fontSize: '0.7rem', marginBottom: '8px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Settlement Deadline</label>
+                                <input type="date" className="input-field" style={{ borderRadius: '16px', background: '#F8FAFC', fontWeight: 700 }} value={editForm.dueDate} onChange={e => setEditForm({ ...editForm, dueDate: e.target.value })} />
+                            </div>
+
+                            <button type="submit" disabled={processing} className="btn-primary" style={{ padding: '18px', borderRadius: '18px', fontWeight: 900, fontSize: '1rem', marginTop: '10px' }}>
+                                {processing ? 'Updating Ledger...' : 'Save Changes'}
                             </button>
                         </form>
                     </motion.div>
@@ -852,7 +978,7 @@ const InvoicePage = () => {
                         </div>
                         
                         <h3 style={{ fontSize: '1.8rem', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.03em' }}>
-                            Receipt & Sharing
+                            {balance <= 0 ? 'Digital Receipt' : 'Official Invoice'}
                         </h3>
                         <p style={{ color: '#334155', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>
                             {showCelebration ? "Transaction secured! Share the link or download the receipt." : "View, share, or download the latest version of this invoice."}
@@ -861,10 +987,10 @@ const InvoicePage = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             <button 
                                 onClick={handleShare}
-                                style={{ padding: '20px', background: '#0F172A', color: 'white', borderRadius: '20px', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', border: 'none', cursor: 'pointer', boxShadow: '0 10px 20px -5px rgba(15, 23, 42, 0.2)' }}
+                                style={{ padding: '20px', background: '#4C1D95', color: 'white', borderRadius: '20px', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', border: 'none', cursor: 'pointer', boxShadow: '0 10px 25px -5px rgba(76, 29, 149, 0.4)' }}
                             >
                                 <Share2 size={22} />
-                                Share Invoice Link
+                                Share {balance <= 0 ? 'Receipt' : 'Invoice'} Link
                             </button>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                 <button 
@@ -930,7 +1056,7 @@ const InvoicePage = () => {
                             </div>
                         </div>
 
-                        <div style={{ borderTop: '1px solid #E2E8F0', marginTop: '20px', paddingTop: '20px' }}>
+                        <div style={{ borderTop: '1px solid #E2E8F0', marginTop: '20px', paddingTop: '20px', position: 'relative' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                                 <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Total Paid</span>
                                 <span style={{ fontSize: '13px', fontWeight: 800, color: '#10B981' }}>₦{paidAmount.toLocaleString()}</span>
@@ -939,6 +1065,34 @@ const InvoicePage = () => {
                                 <span style={{ fontSize: '15px', fontWeight: 900, color: '#0F172A' }}>Balance Due</span>
                                 <span style={{ fontSize: '18px', fontWeight: 950, color: balance > 0 ? '#EF4444' : '#10B981' }}>₦{balance.toLocaleString()}</span>
                             </div>
+
+                            {/* Paid Stamp */}
+                            {balance <= 0 && (
+                                <div style={{ 
+                                    position: 'absolute', 
+                                    right: '40px', 
+                                    top: '-40px', 
+                                    border: '4px solid #10B981', 
+                                    color: '#10B981', 
+                                    padding: '8px 16px', 
+                                    borderRadius: '12px', 
+                                    textTransform: 'uppercase', 
+                                    fontWeight: 950, 
+                                    fontSize: '14px', 
+                                    transform: 'rotate(-12deg)', 
+                                    opacity: 0.8, 
+                                    background: 'rgba(16, 185, 129, 0.05)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    lineHeight: 1,
+                                    letterSpacing: '0.1em'
+                                }}>
+                                    <span>OFFICIALLY</span>
+                                    <span style={{ fontSize: '20px', marginTop: '4px' }}>CLEARED</span>
+                                    <span style={{ fontSize: '8px', marginTop: '6px', opacity: 0.7 }}>{new Date().toLocaleDateString('en-GB')}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 

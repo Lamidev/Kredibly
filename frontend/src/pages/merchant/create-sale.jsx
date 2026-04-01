@@ -5,28 +5,45 @@ import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 import { 
     User, FileText, Check, Loader2, Sparkles, 
-    ArrowRight, Wallet, Calendar, AlertCircle
+    ArrowRight, Wallet, Calendar, AlertCircle, ChevronRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import PlanLimitModal from "../../components/payment/PlanLimitModal";
 
 const CreateSale = () => {
-    const [formData, setFormData] = useState({
-        customerName: "",
-        customerPhone: "",
-        description: "",
-        totalAmount: "",
-        amountPaid: "",
-        dueDate: "",
-        invoiceType: "billing" // "billing" or "record"
-    });
-    const [loading, setLoading] = useState(false);
-    const [showLimitModal, setShowLimitModal] = useState(false);
-    const { createSale } = useSales();
+    const { createSale, loading: globalLoading } = useSales();
     const { profile } = useAuth();
     const navigate = useNavigate();
 
-    const balance = (parseFloat(formData.totalAmount) || 0) - (parseFloat(formData.amountPaid) || 0);
+    const [formData, setFormData] = useState({
+        customerName: "",
+        customerPhone: "",
+        customerEmail: "",
+        description: "",
+        totalAmount: "",
+        amountPaid: "",
+        dueDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+    });
+
+    const [loading, setLoading] = useState(false);
+    const [showLimitModal, setShowLimitModal] = useState(false);
+
+    // Smart Calculations
+    const total = parseFloat(formData.totalAmount) || 0;
+    const paid = parseFloat(formData.amountPaid) || 0;
+    const balance = Math.max(0, total - paid);
+    
+    const isFullReceipt = paid >= total && total > 0;
+    const isPartial = paid > 0 && balance > 0;
+    const isFreshInvoice = paid === 0 && total > 0;
+
+    const formatNaira = (amt) => {
+        return new Intl.NumberFormat('en-NG', {
+            style: 'currency',
+            currency: 'NGN',
+            minimumFractionDigits: 0
+        }).format(amt || 0);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -36,18 +53,29 @@ const CreateSale = () => {
 
         setLoading(true);
         try {
+            // Smart Type Logic: Ensure we send clean decimals to backend
+            const invoiceType = isFullReceipt ? 'record' : 'billing';
+
             const res = await createSale({
                 ...formData,
-                totalAmount: parseFloat(formData.totalAmount),
-                amountPaid: parseFloat(formData.amountPaid) || 0
+                invoiceType,
+                totalAmount: total,
+                amountPaid: paid
             });
-            toast.success("Transaction Secured! 🚀");
-            navigate(`/dashboard/invoice/${res.data.invoiceNumber}`, { state: { showSuccessModal: true } }); 
+            
+            if (res.success) {
+                toast.success(isFullReceipt ? "Receipt Issued! 🎉" : "Invoice Secured! 🚀");
+                
+                // 300ms Delay for action smoothness: Let the user feel the victory
+                setTimeout(() => {
+                    navigate(`/sales/${res.data._id}`); 
+                }, 300);
+            }
         } catch (err) {
-            if (err.response?.data?.code === 'LIMIT_REACHED') {
+            if (err.response?.data?.errorCode === 'LIMIT_REACHED') {
                 setShowLimitModal(true);
             } else {
-                toast.error(err.response?.data?.message || "Failed to commit transaction to ledger");
+                toast.error(err.response?.data?.message || "Failed to finalize sale");
             }
         } finally {
             setLoading(false);
@@ -55,9 +83,10 @@ const CreateSale = () => {
     };
 
     return (
-        <div className="animate-fade-in" style={{ maxWidth: '900px', margin: '0 auto', paddingBottom: '100px' }}>
-            {/* Contextual Header */}
-            <div style={{ marginBottom: '48px', textAlign: 'center' }}>
+        <div className="animate-fade-in" style={{ maxWidth: '1000px', margin: '0 auto', paddingBottom: '60px' }}>
+            
+            {/* Actionable Header */}
+            <div style={{ marginBottom: '40px', textAlign: 'center' }}>
                 <div style={{ 
                     display: 'inline-flex', 
                     alignItems: 'center', 
@@ -67,205 +96,163 @@ const CreateSale = () => {
                     borderRadius: '100px',
                     marginBottom: '16px'
                 }}>
-                    <Sparkles size={16} color="var(--primary)" />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>New Entry</span>
+                    <Sparkles size={16} color="#4C1D95" />
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#4C1D95', textTransform: 'uppercase', letterSpacing: '0.05em' }}>New Entry</span>
                 </div>
-                <h1 style={{ fontSize: 'clamp(1.5rem, 8vw, 2.5rem)', fontWeight: 900, color: 'var(--text)', marginBottom: '12px', letterSpacing: '-0.04em', lineHeight: 1.1 }}>
-                    {formData.invoiceType === 'record' ? 'Record Past Payment' : 'Create New Invoice'}
+                <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.8rem)', fontWeight: 950, color: '#0F172A', letterSpacing: '-0.05em', marginBottom: '8px' }}>
+                    Record New Sale
                 </h1>
-                <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '1.1rem' }}>
-                    {formData.invoiceType === 'record' 
-                        ? 'Log a payment already made outside Kredibly to keep your ledger balanced.' 
-                        : 'Enter details to generate an official payment link for your client.'}
+                <p style={{ color: '#64748B', fontWeight: 600, fontSize: '0.95rem' }}>
+                    Capture a past sale or send a fresh bill to a customer instantly.
                 </p>
             </div>
 
-            {/* Implementation Type Toggle */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
-                <div style={{ background: '#F1F5F9', padding: '6px', borderRadius: '20px', display: 'flex', gap: '8px', border: '1px solid #E2E8F0' }}>
-                    <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, invoiceType: 'billing' })}
-                        style={{
-                            padding: '12px 24px', borderRadius: '14px', fontSize: '0.9rem', fontWeight: 800, border: 'none', cursor: 'pointer', transition: 'all 0.3s ease',
-                            background: formData.invoiceType === 'billing' ? 'white' : 'transparent',
-                            color: formData.invoiceType === 'billing' ? 'var(--primary)' : '#64748B',
-                            boxShadow: formData.invoiceType === 'billing' ? '0 4px 6px -1px rgba(0,0,0,0.1)' : 'none'
-                        }}
-                    >
-                        Official Invoice
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, invoiceType: 'record', amountPaid: formData.totalAmount })}
-                        style={{
-                            padding: '12px 24px', borderRadius: '14px', fontSize: '0.9rem', fontWeight: 800, border: 'none', cursor: 'pointer', transition: 'all 0.3s ease',
-                            background: formData.invoiceType === 'record' ? 'white' : 'transparent',
-                            color: formData.invoiceType === 'record' ? 'var(--primary)' : '#64748B',
-                            boxShadow: formData.invoiceType === 'record' ? '0 4px 6px -1px rgba(0,0,0,0.1)' : 'none'
-                        }}
-                    >
-                        Past Record (Receipt)
-                    </button>
-                </div>
-            </div>
-
-            <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '32px' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '32px' }}>
-                    {/* Left Side: Client & Details */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                        {/* Transaction Content */}
-                        <div className="dashboard-glass" style={{ padding: '32px', borderRadius: '32px', border: '1px solid var(--border)', background: 'white' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                                <div style={{ background: 'rgba(76, 29, 149, 0.1)', padding: '10px', borderRadius: '12px', color: 'var(--primary)' }}>
-                                    <FileText size={20} strokeWidth={2.5} />
-                                </div>
-                                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text)' }}>Sale Details</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
+                    
+                    {/* Left Panel: Transaction & Customer */}
+                    <div className="dashboard-glass" style={{ background: 'white', borderRadius: '32px', border: '1px solid #E2E8F0', padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid #F1F5F9', paddingBottom: '16px' }}>
+                            <div style={{ background: 'rgba(76, 29, 149, 0.1)', color: '#4C1D95', padding: '10px', borderRadius: '12px' }}>
+                                <FileText size={20} strokeWidth={2.5} />
                             </div>
+                            <h3 style={{ fontWeight: 800, fontSize: '0.9rem', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Sale Identity</h3>
+                        </div>
 
-                            <div style={{ display: 'grid', gap: '20px' }}>
-                                <div className="input-group">
-                                    <label style={{ display: 'block', fontWeight: 700, fontSize: '0.9rem', marginBottom: '8px', color: 'var(--text-muted)' }}>Transaction Description</label>
-                                    <textarea
-                                        className="input-field"
-                                        style={{ 
-                                            borderRadius: '16px', padding: '16px', border: '1px solid var(--border)', 
-                                            background: 'var(--background)', minHeight: '120px', resize: 'none',
-                                            fontSize: '1rem', fontWeight: 600
-                                        }}
-                                        placeholder="What are you selling? (e.g. 2x Designer Handbags)"
-                                        value={formData.description}
-                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                        required
-                                    />
-                                </div>
+                        <div className="input-group">
+                            <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', color: '#64748B', marginBottom: '8px' }}>Transaction Memo</label>
+                            <textarea 
+                                className="input-field" 
+                                style={{ minHeight: '120px', resize: 'none', borderRadius: '16px', padding: '16px', fontSize: '1rem', fontWeight: 600 }} 
+                                placeholder="What are you selling? (e.g. 2 x Leather Boots)" 
+                                required
+                                value={formData.description}
+                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            />
+                        </div>
 
-                                <div className="input-group">
-                                    <label style={{ display: 'block', fontWeight: 700, fontSize: '0.9rem', marginBottom: '8px', color: 'var(--text-muted)' }}>Customer Name</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
-                                        <input
-                                            type="text"
-                                            className="input-field"
-                                            style={{ borderRadius: '16px', padding: '14px 14px 14px 48px', border: '1px solid var(--border)', background: 'var(--background)', fontSize: '1rem', fontWeight: 600 }}
-                                            placeholder="Walk-in Customer"
-                                            value={formData.customerName}
-                                            onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
+                        <div className="input-group">
+                            <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', color: '#64748B', marginBottom: '8px' }}>Customer Name</label>
+                            <div style={{ position: 'relative' }}>
+                                <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+                                <input 
+                                    className="input-field" 
+                                    style={{ borderRadius: '16px', padding: '14px 14px 14px 48px', fontSize: '1rem', fontWeight: 600 }}
+                                    placeholder="e.g. Samuel Mills" 
+                                    value={formData.customerName}
+                                    onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                                />
                             </div>
                         </div>
                     </div>
 
-                    {/* Right Side: Financials */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                        <div className="dashboard-glass" style={{ padding: '32px', borderRadius: '32px', border: '1px solid var(--border)', background: 'white' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                                <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '10px', borderRadius: '12px', color: 'var(--success)' }}>
-                                    <Wallet size={20} strokeWidth={2.5} />
-                                </div>
-                                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text)' }}>Financial Split</h3>
+                    {/* Right Panel: Financial Logic */}
+                    <div className="dashboard-glass" style={{ background: 'white', borderRadius: '32px', border: '1px solid #E2E8F0', padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid #F1F5F9', paddingBottom: '16px' }}>
+                            <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', padding: '10px', borderRadius: '12px' }}>
+                                <Wallet size={20} strokeWidth={2.5} />
                             </div>
+                            <h3 style={{ fontWeight: 800, fontSize: '0.9rem', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Payment Status</h3>
+                        </div>
 
-                            <div style={{ display: 'grid', gap: '24px' }}>
-                                <div className="input-group">
-                                    <label style={{ display: 'block', fontWeight: 700, fontSize: '0.9rem', marginBottom: '8px', color: 'var(--text-muted)' }}>Total Amount to Pay</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text)', fontWeight: 800, fontSize: '1.1rem' }}>₦</span>
-                                        <input
-                                            type="number"
-                                            className="input-field"
-                                            style={{ borderRadius: '16px', padding: '16px 16px 16px 40px', border: '1px solid var(--border)', background: 'var(--background)', fontSize: '1.4rem', fontWeight: 900, color: 'var(--primary)' }}
-                                            placeholder="0.00"
-                                            value={formData.totalAmount}
-                                            onChange={(e) => setFormData({ ...formData, totalAmount: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                </div>
+                        <div className="input-group">
+                            <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', color: '#64748B', marginBottom: '4px' }}>Total Amount to Pay (₦)</label>
+                            <input 
+                                type="number" 
+                                className="input-field" 
+                                style={{ fontSize: '1.6rem', fontWeight: 950, color: '#0F172A', background: '#F8FAFC', borderRadius: '20px', padding: '20px', border: 'none' }}
+                                placeholder="0.00" 
+                                required
+                                value={formData.totalAmount}
+                                onChange={(e) => setFormData({ ...formData, totalAmount: e.target.value })}
+                            />
+                            {total > 0 && <p style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 700, margin: '4px 0 0 4px', letterSpacing: '0.02em' }}>{formatNaira(total)}</p>}
+                        </div>
 
-                                <div className="input-group">
-                                    <label style={{ display: 'block', fontWeight: 700, fontSize: '0.9rem', marginBottom: '8px', color: 'var(--text-muted)' }}>Amount Paid Now</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--success)', fontWeight: 800 }}>₦</span>
-                                        <input
-                                            type="number"
-                                            className="input-field"
-                                            style={{ borderRadius: '16px', padding: '14px 14px 14px 32px', border: '1px solid var(--border)', background: 'var(--background)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--success)' }}
-                                            placeholder="0.00"
-                                            value={formData.amountPaid}
-                                            onChange={(e) => setFormData({ ...formData, amountPaid: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-
-                                <AnimatePresence>
-                                    {balance > 0 && (
-                                        <motion.div 
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: 1, height: 'auto' }}
-                                            exit={{ opacity: 0, height: 0 }}
-                                            style={{ padding: '24px', background: 'rgba(249, 115, 22, 0.05)', borderRadius: '24px', border: '1px solid rgba(249, 115, 22, 0.1)' }}
-                                        >
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--warning)' }}>
-                                                    <AlertCircle size={18} />
-                                                    <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>Remaining Balance</span>
-                                                </div>
-                                                <span style={{ fontWeight: 900, color: 'var(--warning)', fontSize: 'clamp(1.1rem, 4vw, 1.3rem)' }}>₦{balance.toLocaleString()}</span>
-                                            </div>
-
-                                            <div className="input-group">
-                                                <label style={{ display: 'block', fontWeight: 700, fontSize: '0.8rem', marginBottom: '8px', color: 'var(--warning)', opacity: 0.8 }}>When should the balance be paid?</label>
-                                                <div style={{ position: 'relative' }}>
-                                                    <Calendar size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--warning)' }} />
-                                                    <input
-                                                        type="date"
-                                                        className="input-field"
-                                                        style={{ borderRadius: '12px', padding: '12px 12px 12px 40px', border: '1px solid rgba(249, 115, 22, 0.2)', background: 'white', color: 'var(--warning)', fontWeight: 700 }}
-                                                        value={formData.dueDate}
-                                                        onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                        <div className="input-group">
+                            <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', color: '#64748B', marginBottom: '4px' }}>How much did they pay already? (₦)</label>
+                            <input 
+                                type="number" 
+                                className="input-field" 
+                                style={{ fontSize: '1.2rem', fontWeight: 800, color: '#10B981', background: '#F0FDF4', borderRadius: '16px', padding: '16px', border: 'none' }}
+                                placeholder="0.00" 
+                                value={formData.amountPaid}
+                                onChange={(e) => setFormData({ ...formData, amountPaid: e.target.value })}
+                            />
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', padding: '0 4px' }}>
+                                <p style={{ fontSize: '0.75rem', color: '#10B981', fontWeight: 700 }}>{formatNaira(paid)}</p>
+                                {isFullReceipt && (
+                                    <p style={{ margin: 0, fontSize: '0.65rem', fontWeight: 900, color: '#10B981', display: 'flex', alignItems: 'center', gap: '3px', textTransform: 'uppercase' }}>
+                                        <Check size={12} strokeWidth={4} /> FULL RECEIPT
+                                    </p>
+                                )}
                             </div>
                         </div>
+
+                        <AnimatePresence>
+                            {balance > 0 && total > 0 && (
+                                <motion.div 
+                                    initial={{ opacity: 0, height: 0 }} 
+                                    animate={{ opacity: 1, height: 'auto' }} 
+                                    exit={{ opacity: 0, height: 0 }}
+                                    style={{ borderTop: '1px solid #F1F5F9', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}
+                                >
+                                    <div style={{ padding: '16px', background: '#FFF7ED', borderRadius: '20px', border: '1px solid #FFEDD5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#9A3412' }}>
+                                            <AlertCircle size={16} />
+                                            <span style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase' }}>Owed Balance</span>
+                                        </div>
+                                        <span style={{ fontWeight: 950, color: '#EA580C', fontSize: '1.25rem' }}>{formatNaira(balance)}</span>
+                                    </div>
+
+                                    <div className="input-group">
+                                        <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', color: '#64748B', marginBottom: '8px' }}>Payment Deadline</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <Calendar size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+                                            <input
+                                                type="date"
+                                                className="input-field"
+                                                style={{ paddingLeft: '40px', borderRadius: '12px', fontWeight: 700 }}
+                                                value={formData.dueDate}
+                                                onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
 
-                <div style={{ 
-                    marginTop: '20px', 
-                    display: 'flex', 
-                    justifyContent: 'center' 
-                }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
                     <button
                         type="submit"
-                        className="btn-primary"
+                        className={`btn-primary ${loading ? 'loading-pulse' : ''}`}
                         style={{ 
-                            padding: 'clamp(16px, 4vw, 20px) 20px', 
+                            padding: '24px 40px', 
                             display: 'flex', 
                             alignItems: 'center', 
                             justifyContent: 'center', 
                             gap: '12px', 
-                            fontSize: 'clamp(1rem, 4vw, 1.2rem)', 
-                            borderRadius: '24px', 
-                            fontWeight: 900,
-                            boxShadow: '0 20px 40px -10px var(--primary-glow)',
+                            fontSize: '1.25rem', 
+                            borderRadius: '32px', 
+                            fontWeight: 950,
+                            boxShadow: '0 25px 50px -12px rgba(76, 29, 149, 0.4)',
                             width: '100%',
-                            maxWidth: '430px',
-                            opacity: loading ? 0.7 : 1
+                            maxWidth: '450px',
+                            opacity: (loading || !formData.totalAmount) ? 0.7 : 1, 
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            cursor: (loading || !formData.totalAmount) ? 'not-allowed' : 'pointer'
                         }}
-                        disabled={loading}
+                        disabled={loading || !formData.totalAmount}
                     >
-                        {loading ? <Loader2 className="animate-spin" /> : (
-                            formData.invoiceType === 'record' 
-                                ? <>Finalize & Issue Receipt <ArrowRight size={20} strokeWidth={3} /></>
-                                : <>Record & Send Invoice <ArrowRight size={20} strokeWidth={3} /></>
+                        {loading ? <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><Loader2 className="animate-spin" /> <span>Securing Ledger...</span></div> : (
+                            isFullReceipt 
+                                ? <>Issue Full Receipt <ArrowRight size={22} strokeWidth={3} /></>
+                                : isPartial 
+                                ? <>Record & Track Debt <ArrowRight size={22} strokeWidth={3} /></>
+                                : <>Send Payment Link <ArrowRight size={22} strokeWidth={3} /></>
                         )}
                     </button>
                 </div>

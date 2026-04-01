@@ -227,6 +227,21 @@ exports.handlePaystackWebhook = async (req, res) => {
                         
                         await sendWhatsAppMessage(business.whatsappNumber, msg).catch(err => console.error(`❌ WhatsApp fail:`, err.message));
                     }
+
+                    // ⚡ REAL-TIME DASHBOARD UPDATE (Sockets)
+                    const { getIO } = require('../../utils/socket');
+                    const io = getIO();
+                    if (io) {
+                        console.log(`🔌 Emitting sale_updated for business: ${business._id}`);
+                        io.to(business._id.toString()).emit('sale_updated', {
+                            saleId: sale._id,
+                            invoiceNumber: invoiceNumber,
+                            amount: actualCreditAmount,
+                            customerName: sale.customerName,
+                            status: sale.status,
+                            balance: sale.totalAmount - sale.payments.reduce((sum, p) => sum + p.amount, 0)
+                        });
+                    }
                 }
             }
         }

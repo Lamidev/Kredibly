@@ -50,6 +50,66 @@ const getTodayRevenue = async (businessId) => {
 const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
 const BACKEND_URL = process.env.BACKEND_URL || "https://api.usekredibly.com";
 
+const HUMANIZE = {
+    greetings: {
+        hustler: [
+            "Boss {name}! 🫡 How can I help your hustle today?",
+            "Good to see you, {name}! 🚀 Ready to record some wins?",
+            "Kreddy is online, {name}. What's the latest update?"
+        ],
+        oga: [
+            "Good day, Oga {name}! 💼 Your smart assistant is ready. What are we tracking today?",
+            "Oga {name}! 🚀 High power! Kreddy is online and locked in for your business.",
+            "Welcome back, Oga {name}! 🛡️ Need to track a payment or record a sale?"
+        ],
+        chairman: [
+            "Good morning, Chairman {name}! 👑 Your empire is growing. I'm standing by for your instructions.",
+            "Chairman {name}! 💎 Respect! Your business is moving fast. How can I help you lead today?",
+            "Greetings, Chairman {name}! 🦁 Your records are safe and the ledger is ready for more wins."
+        ]
+    },
+    debtors: [
+        "Omo, debtors plenty for street! 😅",
+        "Chai, people owe you o! Let's get your money back. 🛡️",
+        "Oga, the debt list is long but we'll collect every kobo! 💰",
+        "See as your money hang for outside... Don't worry, Kreddy is here. 🧐",
+        "Wait, let me pull the list. These people must pay! 😤"
+    ],
+    history: [
+        "Let's see what you've been cooking! Here's your full record history: 📊",
+        "Tracking your progress... You're doing well! Here is everything recorded: 🚀",
+        "Your business story is looking good! Check your full history: 🧾",
+        "Searching the archives... Found your records! See them below: 📦"
+    ],
+    success: [
+        "Nice one! 🎈 I've logged that for you.",
+        "Got it, Chief! ✅ Record is safe and sound.",
+        "Record saved! 🚀 Keep that momentum going.",
+        "Done! 🛡️ I've updated your ledger."
+    ],
+    celebration: [
+        "🔥 *Woah, that's a big one! Congrats!* 🥂",
+        "🚀 *Absolute win! Your business is moving fast!*",
+        "💎 *That's what I like to see! Profit secured!*",
+        "🌟 *Big energy! Keep scaling!*",
+        "Chairman move! 🚀",
+        "Bag secured! 💰",
+        "Level up! 📈",
+        "You're doing well! 🎩",
+        "Odogwu! 👑"
+    ]
+};
+
+const getRandom = (arr, data = {}, plan = "hustler") => {
+    let pool = Array.isArray(arr) ? arr : (arr[plan] || arr["hustler"]);
+    let pick = pool[Math.floor(Math.random() * pool.length)];
+    if (typeof pick !== 'string') return "";
+    for (let [k, v] of Object.entries(data)) {
+        pick = pick.replace(new RegExp(`{${k}}`, 'g'), v);
+    }
+    return pick;
+};
+
 /**
  * SMART LOGIC: Rule-based parser for when AI is offline.
  * Imitates "Kreddy's" street-smart personality.
@@ -89,8 +149,12 @@ const extractInfoRobust = (text, context = {}) => {
         return null;
     };
 
-    // 1. Intent Detection
-    if (lower.includes("who owe") || lower.includes("who is owing") || lower.includes("list my debtor") || lower.includes("total debt") || lower.includes("show me who owe")) {
+    if (lower.includes("all sales") || lower.includes("show me everything") || lower.includes("full history") || lower.includes("all my records") || (lower.includes("history") && !lower.includes("debt"))) {
+        result.intent = "list_sales";
+        return result;
+    }
+
+    if (lower.includes("who owe") || lower.includes("who is owing") || lower.includes("list my debtor") || lower.includes("total debt") || lower.includes("show me who owe") || lower.includes("debt list") || lower.includes("debtors")) {
         result.intent = "check_debt";
         return result;
     }
@@ -164,14 +228,14 @@ const extractInfoRobust = (text, context = {}) => {
         result.intent = "snooze_reminder";
         const minMatch = text.match(/(\d+)/);
         result.data.snoozeDuration = minMatch ? parseInt(minMatch[1]) : 30;
-    } else if (lower.includes(" paid") || lower.includes(" pay") || lower.includes(" brought") || lower.includes(" sent") || lower.includes("received") || lower.includes("collect")) {
+    } else if (lower.includes(" paid") || lower.includes(" pay") || lower.includes(" brought") || lower.includes(" sent") || lower.includes("received") || lower.includes("collect") || lower.includes("already paid")) {
         result.intent = "update_record";
-        if (lower.includes("paid outside") || lower.includes("outside") || lower.includes("already")) {
+        if (lower.includes("paid outside") || lower.includes("outside") || lower.includes("already") || lower.includes("money received already") || lower.includes("cash in hand")) {
             result.data.invoiceType = "record";
         }
-    } else if (lower.includes("sold") || lower.includes("selling") || lower.includes("sale") || lower.includes("record") || lower.includes("bought")) {
+    } else if (lower.includes("sold") || lower.includes("selling") || lower.includes("sale") || lower.includes("record") || lower.includes("bought") || lower.includes("asking for money")) {
         result.intent = "create_sale";
-        if (lower.includes("already paid") || lower.includes("record past") || lower.includes("ledger only")) {
+        if (lower.includes("already paid") || lower.includes("record past") || lower.includes("ledger only") || lower.includes("money received already")) {
             result.data.invoiceType = "record";
         }
     }
@@ -299,46 +363,7 @@ const cleanPhone = (num) => {
     return clean;
 };
 
-const HUMANIZE = {
-    greetings: {
-        hustler: [
-            "Boss {name}! 🫡 How can I help your hustle today?",
-            "Good to see you, {name}! 🚀 Ready to record some wins?",
-            "Kreddy is online, {name}. What's the latest update?"
-        ],
-        oga: [
-            "Good day, Oga {name}! 💼 Your smart assistant is ready. What are we tracking today?",
-            "Oga {name}! 🚀 High power! Kreddy is online and locked in for your business.",
-            "Welcome back, Oga {name}! 🛡️ Need to track a payment or record a sale?"
-        ],
-        chairman: [
-            "Good morning, Chairman {name}! 👑 Your empire is growing. I'm standing by for your instructions.",
-            "Chairman {name}! 💎 Respect! Your business is moving fast. How can I help you lead today?",
-            "Greetings, Chairman {name}! 🦁 Your records are safe and the ledger is ready for more wins."
-        ]
-    },
-    success: [
-        "Nice one! 🎈 I've logged that for you.",
-        "Got it, Chief! ✅ Record is safe and sound.",
-        "Record saved! 🚀 Keep that momentum going.",
-        "Done! 🛡️ I've updated your ledger."
-    ],
-    celebration: [
-        "🔥 *Woah, that's a big one! Congrats!* 🥂",
-        "🚀 *Absolute win! Your business is moving fast!*",
-        "💎 *That's what I like to see! Profit secured!*",
-        "🌟 *Big energy! Keep scaling!*"
-    ]
-};
-
-const getRandom = (arr, data = {}, plan = "hustler") => {
-    let pool = Array.isArray(arr) ? arr : (arr[plan] || arr["hustler"]);
-    let pick = pool[Math.floor(Math.random() * pool.length)];
-    for (let [k, v] of Object.entries(data)) {
-        pick = pick.replace(new RegExp(`{${k}}`, 'g'), v);
-    }
-    return pick;
-};
+// Date utilities follow...
 
 const KREDDY_FAQS = [
     {
@@ -577,13 +602,18 @@ exports.handleIncoming = async (req, res) => {
                 { whatsappNumber: cleanFrom },
                 { staffNumbers: cleanFrom }
             ]
-        });
+        }).populate("ownerId", "name");
 
         // 🧠 SMART NAMING LOGIC: Determine how Kreddy should address this user
-        // Priority: Preferred Name > WhatsApp Profile Name > Plan Tier > "Boss"
+        // Priority: Preferred Name > Registered Name > WhatsApp Profile Name > Plan Tier > "Boss"
         const resolvedPlan = profile?.plan || "hustler";
         const tierTitle = resolvedPlan === "chairman" ? "Chairman" : (resolvedPlan === "oga" ? "Oga" : "Boss");
-        const merchantFirstName = whatsappProfileName ? whatsappProfileName.split(' ')[0] : tierTitle;
+        
+        // Extract first name from various sources
+        const registeredName = profile?.ownerId?.name ? profile.ownerId.name.split(' ')[0] : null;
+        const profileName = whatsappProfileName ? whatsappProfileName.split(' ')[0] : null;
+        
+        const merchantFirstName = registeredName || profileName || tierTitle;
         const bossTitle = profile?.assistantSettings?.preferredName || merchantFirstName;
 
         if (!profile) {
@@ -797,10 +827,10 @@ Upgrade here: ${APP_URL}/pricing`);
                     
                     const paymentLink = `${FRONTEND_URL}/i/${newSale.publicSlug || newSale.invoiceNumber}`;
                     const template = newSale.invoiceType === 'record' 
-                        ? `Hello ${customerName}, here is your verified receipt for the payment of ₦${totalAmount.toLocaleString()} to ${profile.displayName}. View/Download here: ${paymentLink}`
-                        : `Hello ${customerName}, this is your official invoice from ${profile.displayName} for ₦${totalAmount.toLocaleString()}. You can view and pay securely here: ${paymentLink}`;
+                        ? `Hello ${customerName}, here is your verified digital receipt for the payment of ₦${totalAmount.toLocaleString()} to ${profile.displayName}. View/Download here: ${paymentLink}`
+                        : `Hello ${customerName}, this is your official digital invoice from ${profile.displayName} for ₦${totalAmount.toLocaleString()}. You can view and pay securely here: ${paymentLink}`;
 
-                    await sendReply(from, `${successMsg} \n\nI've logged Invoice *#${newSale.invoiceNumber}* for *${customerName}*.\n💰 Paid: ₦${paidAmount.toLocaleString()}\n⏳ Balance: ₦${bal.toLocaleString()}\n\n📝 *Draft Message for Customer* (Copy & Send): \n\n_"${template}"_`);
+                    await sendReply(from, `${successMsg} \n\nI've logged Invoice *#${newSale.invoiceNumber}* for *${customerName}*.\n💰 Status: ${newSale.invoiceType === 'record' ? '*FULLY PAID (Receipt)*' : '*PENDING (Invoice)*'}\n⏳ Balance: ₦${bal.toLocaleString()}\n\n📝 *Draft Message for Customer* (Copy & Send): \n\n_"${template}"_`);
                     
                     return await sendReply(from, `🛡️ *Note:* I didn't send this to them directly to avoid spam. You hold the power, Boss!`);
                 } else if (intent === 'update_record') {
@@ -1325,7 +1355,7 @@ Upgrade here: ${APP_URL}/pricing`);
                     
                     if (!searchName || searchName.toLowerCase() === "customer") {
                         const sales = await Sale.find({ businessId: profile._id });
-                        let msg = `Omo, debtors plenty for street! 😅 \n\n⏳ *Outstanding Balances:*\n\n`;
+                        let msg = `${getRandom(HUMANIZE.debtors)}\n\n⏳ *Outstanding Balances:*\n\n`;
                         let count = 0;
                         sales.forEach(s => {
                             const bal = s.totalAmount - s.payments.reduce((sum, p) => sum + p.amount, 0);
@@ -1354,6 +1384,24 @@ Upgrade here: ${APP_URL}/pricing`);
                             await sendReply(from, msg1);
                             await sendReply(from, msg2);
                         }
+                    }
+                    isProcessed = true;
+                } else if (aiResponseItem && aiResponseItem.intent === "list_sales") {
+                    // 📜 FULL HISTORY: Show all sales, categorized
+                    const sales = await Sale.find({ businessId: profile._id }).sort({ createdAt: -1 }).limit(15);
+                    
+                    if (sales.length === 0) {
+                        await sendReply(from, "Boss, the records are empty! Let's record your first sale today. 🚀");
+                    } else {
+                        let msg = `${getRandom(HUMANIZE.history)}\n\n`;
+                        
+                        sales.forEach((s, i) => {
+                            const bal = s.totalAmount - s.payments.reduce((sum, p) => sum + p.amount, 0);
+                            const status = bal <= 0 ? "✅ Paid" : `⏳ Owes ₦${bal.toLocaleString()}`;
+                            msg += `${i+1}. *${s.customerName}* - ₦${s.totalAmount.toLocaleString()}\n   (${status})\n\n`;
+                        });
+                        
+                        await sendReply(from, msg);
                     }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "confirm_record") {
