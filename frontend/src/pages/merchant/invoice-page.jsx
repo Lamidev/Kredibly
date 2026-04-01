@@ -35,6 +35,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { useSales } from "../../context/SaleContext";
 import { initiateSocketConnection, disconnectSocket, listenToEvent, stopListeningToEvent } from "../../utils/socket";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
@@ -500,23 +502,65 @@ const InvoicePage = () => {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                     <button
                         onClick={() => setShowSuccessModal(true)}
                         className="btn-primary"
                         style={{ 
-                            padding: '14px 24px', 
-                            borderRadius: '18px', 
+                            padding: '12px 24px', 
+                            borderRadius: '16px', 
                             display: 'flex', 
                             alignItems: 'center', 
                             gap: '8px', 
                             fontWeight: 900, 
-                            fontSize: '0.95rem', 
+                            fontSize: '0.9rem', 
                             background: '#4C1D95',
-                            boxShadow: '0 10px 25px -5px rgba(76, 29, 149, 0.4)' 
+                            color: 'white',
+                            border: 'none',
+                            cursor: 'pointer',
+                            boxShadow: '0 8px 16px -4px rgba(76, 29, 149, 0.4)' 
                         }}
                     >
-                        <Share2 size={18} strokeWidth={3} /> {balance <= 0 ? 'Share Receipt' : 'Share Invoice'}
+                        <Share2 size={16} strokeWidth={3} /> {balance <= 0 ? 'Share Receipt' : 'Share Link'}
+                    </button>
+                    <button
+                        onClick={handleDownloadPDF}
+                        disabled={generating === 'pdf'}
+                        style={{ 
+                            padding: '12px 20px', 
+                            borderRadius: '16px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '8px', 
+                            fontWeight: 800, 
+                            fontSize: '0.9rem', 
+                            background: 'white',
+                            color: '#1E293B',
+                            border: '1px solid #E2E8F0',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        {generating === 'pdf' ? <Loader2 size={16} className="spin-animation" /> : <Download size={16} />}
+                        PDF
+                    </button>
+                    <button
+                        onClick={handleDownloadImage}
+                        disabled={generating === 'image'}
+                        style={{ 
+                            padding: '12px 20px', 
+                            borderRadius: '16px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '8px', 
+                            fontWeight: 800, 
+                            fontSize: '0.9rem', 
+                            background: 'white',
+                            color: '#1E293B',
+                            border: '1px solid #E2E8F0',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <ImageIcon size={16} /> Image
                     </button>
                 </div>
             </div>
@@ -545,7 +589,34 @@ const InvoicePage = () => {
                                 </h3>
                             </div>
                         </div>
-                        <div className="dashboard-glass" style={{ padding: '20px', borderRadius: '24px', border: '1px solid var(--border)', background: 'white' }}>
+                        <div className="dashboard-glass" style={{ padding: '20px', borderRadius: '24px', border: '1px solid var(--border)', background: 'white', position: 'relative', overflow: 'hidden' }}>
+                            {balance <= 0 && (
+                                <div style={{ 
+                                    position: 'absolute', 
+                                    right: '-12px', 
+                                    top: '-12px', 
+                                    width: '90px',
+                                    height: '90px',
+                                    border: '4px double #10B981', 
+                                    borderRadius: '50%', 
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transform: 'rotate(-15deg)', 
+                                    opacity: 1,
+                                    background: 'white',
+                                    zIndex: 10
+                                }}>
+                                    <span style={{ color: '#10B981', fontSize: '6.5px', fontWeight: 900, textTransform: 'uppercase' }}>OFFICIALLY</span>
+                                    <span style={{ color: '#10B981', fontSize: '13px', fontWeight: 950, textTransform: 'uppercase', margin: '-2px 0' }}>SETTLED</span>
+                                    <div style={{ height: '1.5px', width: '60%', background: '#10B981', margin: '3px 0' }} />
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <span style={{ color: '#10B981', fontSize: '5px', fontWeight: 800 }}>{new Date().toLocaleDateString('en-GB')}</span>
+                                        <span style={{ color: '#10B981', fontSize: '4.5px', fontWeight: 700, opacity: 0.8 }}>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    </div>
+                                </div>
+                            )}
                             <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Paid Amount</p>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--success)', margin: 0 }}>₦{paidAmount.toLocaleString()}</h3>
                         </div>
@@ -1028,7 +1099,32 @@ const InvoicePage = () => {
             <div style={{ position: 'fixed', left: '-9999px', top: 0 }}>
                 <div id="receipt-download-target" className="printable-receipt" style={{ width: '600px', background: 'white', padding: '48px', fontFamily: "'Inter', sans-serif" }}>
                     {/* Receipt Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', borderBottom: '2px solid #F1F5F9', paddingBottom: '32px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', borderBottom: '2px solid #F1F5F9', paddingBottom: '32px', position: 'relative' }}>
+                        {(balance <= 0 || sale.invoiceType === 'record') && (
+                            <div style={{ 
+                                position: 'absolute', 
+                                right: '-20px', 
+                                top: '-20px', 
+                                width: '130px',
+                                height: '130px',
+                                border: '6px double #10B981', 
+                                borderRadius: '50%', 
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transform: 'rotate(-15deg)', 
+                                opacity: 0.9,
+                                background: 'rgba(255, 255, 255, 0.95)',
+                                zIndex: 10,
+                                boxShadow: '0 4px 10px rgba(16, 185, 129, 0.1)'
+                            }}>
+                                <span style={{ color: '#10B981', fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>OFFICIALLY</span>
+                                <span style={{ color: '#10B981', fontSize: '22px', fontWeight: 950, textTransform: 'uppercase', margin: '-4px 0' }}>SETTLED</span>
+                                <div style={{ height: '2px', width: '70%', background: '#10B981', margin: '4px 0' }} />
+                                <span style={{ color: '#10B981', fontSize: '9px', fontWeight: 800 }}>{new Date().toLocaleDateString()}</span>
+                            </div>
+                        )}
                         <div>
                             <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '32px' }} />
                         </div>
@@ -1065,34 +1161,6 @@ const InvoicePage = () => {
                                 <span style={{ fontSize: '15px', fontWeight: 900, color: '#0F172A' }}>Balance Due</span>
                                 <span style={{ fontSize: '18px', fontWeight: 950, color: balance > 0 ? '#EF4444' : '#10B981' }}>₦{balance.toLocaleString()}</span>
                             </div>
-
-                            {/* Paid Stamp */}
-                            {balance <= 0 && (
-                                <div style={{ 
-                                    position: 'absolute', 
-                                    right: '40px', 
-                                    top: '-40px', 
-                                    border: '4px solid #10B981', 
-                                    color: '#10B981', 
-                                    padding: '8px 16px', 
-                                    borderRadius: '12px', 
-                                    textTransform: 'uppercase', 
-                                    fontWeight: 950, 
-                                    fontSize: '14px', 
-                                    transform: 'rotate(-12deg)', 
-                                    opacity: 0.8, 
-                                    background: 'rgba(16, 185, 129, 0.05)',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    lineHeight: 1,
-                                    letterSpacing: '0.1em'
-                                }}>
-                                    <span>OFFICIALLY</span>
-                                    <span style={{ fontSize: '20px', marginTop: '4px' }}>CLEARED</span>
-                                    <span style={{ fontSize: '8px', marginTop: '6px', opacity: 0.7 }}>{new Date().toLocaleDateString('en-GB')}</span>
-                                </div>
-                            )}
                         </div>
                     </div>
 

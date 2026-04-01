@@ -316,7 +316,32 @@ const PublicInvoicePage = () => {
                 {/* This hidden copy is what actually gets captured for PDF/Image */}
                 <div id="receipt-download-target" style={{ width: '600px', background: 'white', padding: '48px', fontFamily: "'Inter', sans-serif" }}>
                     {/* Receipt Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', borderBottom: '2px solid #F1F5F9', paddingBottom: '32px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', borderBottom: '2px solid #F1F5F9', paddingBottom: '32px', position: 'relative' }}>
+                        {(isPaid || sale.invoiceType === 'record') && (
+                            <div style={{ 
+                                position: 'absolute', 
+                                right: '-20px', 
+                                top: '-20px', 
+                                width: '130px',
+                                height: '130px',
+                                border: '6px double #10B981', 
+                                borderRadius: '50%', 
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transform: 'rotate(-15deg)', 
+                                opacity: 0.9,
+                                background: 'rgba(255, 255, 255, 0.95)',
+                                zIndex: 10,
+                                boxShadow: '0 4px 10px rgba(16, 185, 129, 0.1)'
+                            }}>
+                                <span style={{ color: '#10B981', fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>OFFICIALLY</span>
+                                <span style={{ color: '#10B981', fontSize: '22px', fontWeight: 950, textTransform: 'uppercase', margin: '-4px 0' }}>SETTLED</span>
+                                <div style={{ height: '2px', width: '70%', background: '#10B981', margin: '4px 0' }} />
+                                <span style={{ color: '#10B981', fontSize: '9px', fontWeight: 800 }}>{new Date().toLocaleDateString()}</span>
+                            </div>
+                        )}
                         <div>
                             {sale?.businessId?.plan === 'chairman' ? (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -638,7 +663,6 @@ const PublicInvoicePage = () => {
                                 </div>
                                 <p style={{ fontSize: isMobile ? '14px' : '15px', fontWeight: 600, color: '#475569', lineHeight: 1.6, fontStyle: 'italic', margin: 0 }}>"{sale.description}"</p>
                             </div>
-
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderTop: '1px solid #F8FAFC', borderBottom: '1px solid #F8FAFC', marginBottom: '32px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                      <div style={{ padding: '8px', background: 'rgba(124, 58, 237, 0.08)', borderRadius: '8px' }}><Calendar size={14} color="#7C3AED" /></div>
@@ -657,6 +681,33 @@ const PublicInvoicePage = () => {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Payment History (Timeline) - ALWAYS VISIBLE */}
+                            {(sale?.payments?.length > 0 || sale?.invoiceType === 'record') && (
+                                <div style={{ background: '#F8FAFC', borderRadius: '24px', padding: isMobile ? '20px' : '28px', border: '1px solid #F1F5F9', marginBottom: '32px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                                        <div style={{ padding: '6px', background: '#ECFDF5', borderRadius: '8px' }}>
+                                            <Clock size={14} color="#10B981" />
+                                        </div>
+                                        <span style={{ fontSize: '11px', fontWeight: 900, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Payment Ledger</span>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px dashed #E2E8F0' }}>
+                                            <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748B' }}>Invoice Created</span>
+                                            <span style={{ fontSize: '13px', fontWeight: 700 }}>{new Date(sale.createdAt).toLocaleDateString()}</span>
+                                        </div>
+                                        {(sale?.payments || []).map((p, idx) => (
+                                            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: idx === (sale.payments.length - 1) ? 0 : '12px', borderBottom: idx === (sale.payments.length - 1) ? 'none' : '1px dashed #E2E8F0' }}>
+                                                <div>
+                                                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#10B981', margin: 0 }}>Verified Payment</p>
+                                                    <p style={{ fontSize: '10px', color: '#64748B', margin: 0 }}>{new Date(p.date).toLocaleDateString()} via {p.method}</p>
+                                                </div>
+                                                <span style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>+₦{p.amount.toLocaleString()}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* ACTION AREA */}
@@ -784,36 +835,38 @@ const PublicInvoicePage = () => {
                                 style={{ textAlign: 'center', padding: isMobile ? '0 24px 32px' : '0 40px 48px' }}
                             >
                                 <div style={{ 
-                                    background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)', 
-                                    borderRadius: '24px', 
                                     padding: isMobile ? '32px 16px' : '48px 24px', 
-                                    border: '2px solid #10B981',
-                                    marginBottom: '24px',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
-                                    gap: '20px',
-                                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.1)'
+                                    gap: '24px'
                                 }}>
                                     <div style={{ 
-                                        width: isMobile ? '56px' : '72px', 
-                                        height: isMobile ? '56px' : '72px', 
+                                        width: '130px', 
+                                        height: '130px', 
+                                        border: '6px double #10B981', 
                                         borderRadius: '50%', 
-                                        background: '#10B981', 
                                         display: 'flex', 
+                                        flexDirection: 'column', 
                                         alignItems: 'center', 
                                         justifyContent: 'center', 
-                                        color: 'white', 
-                                        boxShadow: '0 8px 16px rgba(16, 185, 129, 0.25)' 
+                                        transform: 'rotate(-15deg)', 
+                                        opacity: 0.95, 
+                                        background: 'rgba(255, 255, 255, 0.95)', 
+                                        zIndex: 10,
+                                        boxShadow: '0 4px 10px rgba(16, 185, 129, 0.1)',
+                                        marginBottom: '32px'
                                     }}>
-                                        <CheckCircle2 size={isMobile ? 32 : 40} />
+                                        <span style={{ color: '#10B981', fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>OFFICIALLY</span>
+                                        <span style={{ color: '#10B981', fontSize: '22px', fontWeight: 950, textTransform: 'uppercase', margin: '-4px 0' }}>SETTLED</span>
+                                        <div style={{ height: '2px', width: '70%', background: '#10B981', margin: '4px 0' }} />
+                                        <span style={{ color: '#10B981', fontSize: '9px', fontWeight: 800 }}>{new Date().toLocaleDateString()}</span>
                                     </div>
-                                    <div>
-                                        <h4 style={{ margin: '0 0 6px 0', fontSize: isMobile ? '20px' : '24px', fontWeight: 800, color: '#065F46' }}>Invoice Fully Settled</h4>
-                                        <p style={{ margin: 0, fontSize: isMobile ? '13px' : '15px', fontWeight: 500, color: '#047857', opacity: 0.8, lineHeight: 1.5 }}>Payments have been verified and logged successfully on the ledger.</p>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(255,255,255,0.6)', borderRadius: '100px', fontSize: '11px', fontWeight: 900, color: '#065F46', textTransform: 'uppercase', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                                        <ShieldCheck size={14} /> Verified Settlement
+                                    <div style={{ textAlign: 'center' }}>
+                                        <h4 style={{ margin: '0 0 8px 0', fontSize: isMobile ? '22px' : '28px', fontWeight: 950, color: '#0F172A', letterSpacing: '-0.02em' }}>Payment Fully Settled</h4>
+                                        <p style={{ margin: 0, fontSize: isMobile ? '14px' : '16px', fontWeight: 600, color: '#64748B', maxWidth: '320px', margin: '0 auto' }}>
+                                            Your transaction has been verified and permanently logged on the Kredibly ledger.
+                                        </p>
                                     </div>
                                 </div>
 
