@@ -50,11 +50,13 @@ const Dashboard = () => {
                     icon: '💰'
                 });
                 
-                // Live Refresh
-                fetchSales();
-                fetchStats();
-                fetchAnalytics();
-                fetchActivities();
+                // Live Refresh with short delay to allow DB consistency for stats/aggregations
+                setTimeout(() => {
+                    fetchSales();
+                    fetchStats();
+                    fetchAnalytics();
+                    fetchActivities();
+                }, 1000);
             });
         }
 

@@ -268,7 +268,32 @@ const PublicReceiptPage = () => {
                 <div id="receipt-download-target" style={{ width: '600px', background: 'white', padding: '48px', fontFamily: "'Inter', sans-serif" }}>
                     {/* Receipt Header */}
                     {/* Receipt Header & Branding Tiers */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', borderBottom: '2px solid #F1F5F9', paddingBottom: '32px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', borderBottom: '2px solid #F1F5F9', paddingBottom: '32px', position: 'relative' }}>
+                        {isPaid && (
+                                <div style={{ 
+                                    position: 'absolute', 
+                                    right: '-20px', 
+                                    top: '-20px', 
+                                    width: '130px',
+                                    height: '130px',
+                                    border: '6px double #10B981', 
+                                    borderRadius: '50%', 
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transform: 'rotate(-15deg)', 
+                                    opacity: 0.9,
+                                    background: 'rgba(255, 255, 255, 0.95)',
+                                    zIndex: 10,
+                                    boxShadow: '0 4px 10px rgba(16, 185, 129, 0.1)'
+                                }}>
+                                    <span style={{ color: '#10B981', fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>OFFICIALLY</span>
+                                    <span style={{ color: '#10B981', fontSize: '22px', fontWeight: 950, textTransform: 'uppercase', margin: '-4px 0' }}>SETTLED</span>
+                                    <div style={{ height: '2px', width: '70%', background: '#10B981', margin: '4px 0' }} />
+                                    <span style={{ color: '#10B981', fontSize: '9px', fontWeight: 800 }}>{new Date().toLocaleDateString()}</span>
+                                </div>
+                        )}
                         <div>
                             {/* Branding Tier: Chairman gets NO Kredibly logo in header, Oga gets co-branded, Hustler gets Kredibly-focused */}
                             {(sale?.businessId?.plan === 'hustler' || !sale?.businessId?.plan) && (
@@ -294,19 +319,6 @@ const PublicReceiptPage = () => {
                         </div>
                     </div>
 
-                    {/* Verified Ledger Seal (Printable) */}
-                    <div style={{ position: 'relative', marginBottom: '32px' }}>
-                        <div style={{ 
-                            position: 'absolute', right: '0', top: '-10px', 
-                            border: '3px solid #10B981', color: '#10B981', 
-                            padding: '8px 16px', borderRadius: '12px', 
-                            transform: 'rotate(5deg)', fontWeight: 900, 
-                            fontSize: '14px', textTransform: 'uppercase',
-                            opacity: 0.8
-                        }}>
-                            Verified Ledger
-                        </div>
-                    </div>
 
                     {/* Financial Summary */}
                     <div style={{ background: '#F8FAFC', padding: '32px', borderRadius: '24px', marginBottom: '32px' }}>
@@ -428,19 +440,45 @@ const PublicReceiptPage = () => {
                         Invoice #{sale.invoiceNumber} • {sale.businessId?.displayName}
                     </p>
                 </div>
+                {/* Receipt Card Container */}
+                <div style={{ position: 'relative' }}>
+                    {isPaid && (
+                        <div style={{ 
+                            position: 'absolute', 
+                            right: isMobile ? '10px' : '-20px', 
+                            top: isMobile ? '-10px' : '-30px', 
+                            width: isMobile ? '100px' : '130px',
+                            height: isMobile ? '100px' : '130px',
+                            border: '6px double #10B981', 
+                            borderRadius: '50%', 
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transform: 'rotate(-15deg)', 
+                            opacity: 0.95,
+                            background: 'white',
+                            zIndex: 20,
+                            boxShadow: '0 4px 10px rgba(16, 185, 129, 0.1)'
+                        }}>
+                            <span style={{ color: '#10B981', fontSize: isMobile ? '8px' : '11px', fontWeight: 900, textTransform: 'uppercase' }}>OFFICIALLY</span>
+                            <span style={{ color: '#10B981', fontSize: isMobile ? '16px' : '22px', fontWeight: 950, textTransform: 'uppercase', margin: '-4px 0' }}>SETTLED</span>
+                            <div style={{ height: '2px', width: '70%', background: '#10B981', margin: '4px 0' }} />
+                            <span style={{ color: '#10B981', fontSize: isMobile ? '7px' : '9px', fontWeight: 800 }}>{new Date().toLocaleDateString()}</span>
+                        </div>
+                    )}
 
-                {/* Main Card */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    style={{
-                        background: 'white',
-                        borderRadius: '32px',
-                        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.04)',
-                        border: '1px solid #F1F5F9',
-                        overflow: 'hidden'
-                    }}
-                >
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        style={{
+                            background: 'white',
+                            borderRadius: '32px',
+                            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.04)',
+                            border: '1px solid #F1F5F9',
+                            overflow: 'hidden'
+                        }}
+                    >
                     {/* Merchant Info */}
                     <div style={{ padding: '32px', borderBottom: '1px solid #F8FAFC', display: 'flex', alignItems: 'center', gap: '20px' }}>
                         <div style={{ width: '64px', height: '64px', background: 'var(--primary)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', overflow: 'hidden' }}>
@@ -561,6 +599,7 @@ const PublicReceiptPage = () => {
                         </div>
                     </div>
                 </motion.div>
+                </div>
 
                 {/* Viral Loop Call-To-Action - Only show for potential customers (not logged in merchants) */}
                 {!profile && (
