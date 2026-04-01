@@ -23,6 +23,15 @@ const register = async (req, res) => {
       return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
+    // VANGUARD SECURITY: Strong Password Check
+    const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$/;
+    if (!passwordRegex.test(password)) {
+        return res.status(400).json({ 
+            success: false, 
+            message: "Password must be at least 8 characters long and include at least one number and one special character (!@#$%^&*)." 
+        });
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ success: false, message: "User with this email already exists" });
@@ -227,6 +236,15 @@ const resetPassword = async (req, res) => {
 
     if (!user) {
       return res.status(400).json({ success: false, message: "Invalid or expired reset token" });
+    }
+
+    // VANGUARD SECURITY: Strong Password Check
+    const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$/;
+    if (!passwordRegex.test(password)) {
+        return res.status(400).json({ 
+            success: false, 
+            message: "Password must be at least 8 characters long and include at least one number and one special character (!@#$%^&*)." 
+        });
     }
 
     // Update password

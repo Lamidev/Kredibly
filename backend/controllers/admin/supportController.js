@@ -146,7 +146,7 @@ exports.replyToTicket = async (req, res) => {
                     const isHustler = plan === 'hustler';
 
                     if (isHustler) {
-                         // Email Only for Hustlers
+                         // Email Only for Hustlers (Protect Premium Exclusivity)
                          if (biz.ownerId && biz.ownerId.email) {
                              await sendSupportReplyEmail(
                                  biz.ownerId.email, 
@@ -156,9 +156,18 @@ exports.replyToTicket = async (req, res) => {
                              );
                          }
                     } else {
-                         // WhatsApp for Oga/Chairman
+                         // Premium WhatsApp Alerts for Oga/Chairman
                          if (biz.whatsappNumber) {
-                             const text = `👋 Hi ${biz.displayName}, Admin just replied to your support ticket! \n\n" ${message} "\n\nCheck your dashboard Support Hub to continue the conversation. 🚀`;
+                             const planTitle = plan === 'chairman' ? 'Chairman' : 'Oga';
+                             const nameToUse = biz.assistantSettings?.preferredName || biz.displayName;
+                             
+                             let text = "";
+                             if (plan === 'chairman') {
+                                 text = `🦁 *Chairman ${nameToUse}, Urgent Support Update!* \n\nI have a priority response from the team regarding your ticket: \n\n" *${message}* "\n\nYou can reply directly to me here, or check your Support Hub! 💎`;
+                             } else {
+                                 text = `🚀 *High power, Oga ${nameToUse}!* \n\nThe team has sent a sharp response to your issue: \n\n" *${message}* "\n\nRecord is safe and we're moving! Check your Support Hub for more. 🛡️`;
+                             }
+                             
                              await whatsappController.sendWhatsAppMessage(biz.whatsappNumber, text);
                          }
                     }
