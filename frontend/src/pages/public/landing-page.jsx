@@ -265,9 +265,14 @@ const LandingPage = () => {
                         Plan your day, track what you're owed, send professional invoices, and get paid seamlessly, all inside your WhatsApp.
                     </p>
 
-                    <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '32px' }}>
-                        <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', fontSize: '1.1rem', borderRadius: '100px' }}>Join the Vanguard <ArrowRight size={20} /></button>
-                        <button onClick={() => scrollToSection('how-it-works')} className="btn-secondary" style={{ padding: '20px 48px', fontSize: '1.1rem', borderRadius: '100px', background: 'white', color: 'var(--primary)', borderColor: 'var(--primary)' }}>Meet Kreddy AI</button>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
+                        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', fontSize: '1.2rem', borderRadius: '100px' }}>Start for ₦0 <ArrowRight size={20} /></button>
+                            <button onClick={() => scrollToSection('how-it-works')} className="btn-secondary" style={{ padding: '20px 48px', fontSize: '1.2rem', borderRadius: '100px', background: 'white', color: 'var(--primary)', borderColor: 'var(--primary)' }}>Meet Kreddy AI</button>
+                        </div>
+                        <p style={{ color: '#475569', fontSize: '0.95rem', fontWeight: 600, margin: 0 }}>
+                            No charge tonight. Setup in under 2 minutes.
+                        </p>
                     </div>
                 </motion.div>
             </header>
