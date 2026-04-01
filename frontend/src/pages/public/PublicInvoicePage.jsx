@@ -37,6 +37,7 @@ const PublicInvoicePage = () => {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [generating, setGenerating] = useState(false);
     const [profile, setProfile] = useState(null);
+    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -44,7 +45,6 @@ const PublicInvoicePage = () => {
         
         const fetchSale = async () => {
             try {
-                const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
                 const res = await axios.get(`${API_URL}/sales/${id}`);
                 
                 if (res.data.success) {
@@ -165,7 +165,6 @@ const PublicInvoicePage = () => {
 
         try {
             setVerifying(true);
-            const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
             
             // Robust Email Fallback: Strip special characters and spaces
             const safeName = (sale.customerName || "Guest").toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -192,32 +191,41 @@ const PublicInvoicePage = () => {
                 email: res.data.email, // 💎 MUST MATCH BACKEND CHOICE
                 amount: Math.round(amountToPay * 100), // 💎 BACKUP VALIDATOR (Kobo)
                 accessCode: res.data.accessCode, // 💎 ALL-IN-ONE TOKEN (Fees, Settlements, Reference)
-                callback: function(response) {
-                    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+                callback: async function(response) {
+                    setVerifying(true);
                     
-                    // 1. 🛡️ VERIFY ON BACKEND
-                    axios.post(`${API_URL}/payments/verify-invoice`, {
-                        reference: response.reference,
-                        invoiceId: id
-                    }).then((verifyRes) => {
+                    try {
+                        // 1. 🛡️ VERIFY ON BACKEND
+                        const verifyRes = await axios.post(`${API_URL}/payments/verify-invoice`, {
+                            reference: response.reference,
+                            invoiceId: id
+                        });
+
                         if (verifyRes.data.success) {
-                            setLastPaymentAmount(res.data.originalAmount);
+                            // 🏆 SUCCESS: Show modal FIRST to build trust immediately
+                            setLastPaymentAmount(verifyRes.data.originalAmount || amountToPay);
                             setRecentPaymentDate(new Date());
                             setShowSuccessModal(true);
                             
-                            // 2. 🔄 Refresh local sale data
-                            axios.get(`${API_URL}/sales/${id}`).then(refreshRes => {
+                            // 2. 🔄 Refresh local sale data (Background Task)
+                            try {
+                                const refreshRes = await axios.get(`${API_URL}/sales/${id}`);
                                 if (refreshRes.data.success) {
                                     setSale(refreshRes.data.data);
                                 }
-                            });
+                            } catch (refreshErr) {
+                                console.warn("Background refresh lagged, but payment is confirmed.");
+                            }
+                        } else {
+                            toast.error(verifyRes.data.message || "Payment verification failed. Please contact the merchant! 🛡️");
                         }
-                    }).catch(err => {
+                    } catch (err) {
                         console.error("Verification error:", err);
-                        toast.error("Payment verified, but refresh failed.");
-                    }).finally(() => {
+                        // 🚨 REASSURANCE: Don't panic the customer
+                        toast.error("Verification taking longer than usual... 🛡️ Don't worry, we are securing your payment. Please refresh the page in 10 seconds!", { duration: 6000 });
+                    } finally {
                         setVerifying(false);
-                    });
+                    }
                 },
                 onClose: function() {
                     setVerifying(false);
