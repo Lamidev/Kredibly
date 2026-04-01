@@ -123,7 +123,10 @@ const PublicNavbar = () => {
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <Link to="/auth/login" className="hidden md:flex" style={{ 
                             padding: '10px 20px', borderRadius: '100px',
-                            color: '#0F172A', fontSize: '0.92rem', fontWeight: 800, textDecoration: 'none', transition: '0.2s'
+                            color: '#0F172A', fontSize: '0.92rem', fontWeight: 800, textDecoration: 'none', transition: '0.2s',
+                            border: '1px solid rgba(15, 23, 42, 0.1)',
+                            background: 'rgba(255,255,255,0.5)',
+                            marginRight: '4px'
                         }}>
                             Login
                         </Link>

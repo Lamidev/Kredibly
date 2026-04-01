@@ -99,6 +99,7 @@ const LandingPage = () => {
             name: "Oga Plan",
             slug: "oga",
             tagline: "The Business Leader",
+            isPopular: true,
             description: "Step up to professional branding and lower fees for your growing business.",
             originalPrice: "₦6,000",
             price: "₦3,000", // 50% Slash
@@ -247,7 +248,7 @@ const LandingPage = () => {
                         }}>
                              <Typewriter phrases={[
                                 "Ditch the notebooks.",
-                                "Get paid next-day.",
+                                "Get paid 3x faster.",
                                 "Do business better."
                             ]} />
                         </div>
@@ -271,7 +272,7 @@ const LandingPage = () => {
                             <button onClick={() => scrollToSection('how-it-works')} className="btn-secondary" style={{ padding: '20px 48px', fontSize: '1.2rem', borderRadius: '100px', background: 'white', color: 'var(--primary)', borderColor: 'var(--primary)' }}>Meet Kreddy AI</button>
                         </div>
                         <p style={{ color: '#475569', fontSize: '0.95rem', fontWeight: 600, margin: 0 }}>
-                            No charge tonight. Setup in under 2 minutes.
+                            No charge today. Setup in under 2 minutes.
                         </p>
                     </div>
                 </motion.div>
@@ -396,8 +397,27 @@ const LandingPage = () => {
 
                     <div className="lp-pricing-grid">
                         {plans.map((plan, i) => (
-                            <div key={i} className={`lp-pricing-card ${plan.highlight ? 'lp-pricing-card--featured' : ''}`}>
+                             <div key={i} className={`lp-pricing-card ${plan.highlight ? 'lp-pricing-card--featured' : ''}`} style={{ position: 'relative' }}>
                                 {/* Badge ABOVE plan name */}
+                                {plan.isPopular && (
+                                    <div style={{ 
+                                        position: 'absolute', 
+                                        top: '-16px', 
+                                        left: '50%', 
+                                        transform: 'translateX(-50%)',
+                                        background: '#fff',
+                                        color: '#000',
+                                        border: '1px solid #E2E8F0',
+                                        padding: '6px 16px',
+                                        borderRadius: '100px',
+                                        fontSize: '0.7rem',
+                                        fontWeight: 900,
+                                        boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                                        zIndex: 10,
+                                        letterSpacing: '0.05em',
+                                        whiteSpace: 'nowrap'
+                                    }}>MOST POPULAR</div>
+                                )}
 
                                 <h3 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', fontWeight: 900, marginBottom: '6px' }}>{plan.name}</h3>
                                 <p style={{ opacity: 0.7, fontSize: '0.9rem', fontWeight: 500, marginBottom: '24px' }}>{plan.description}</p>
@@ -452,8 +472,9 @@ const LandingPage = () => {
                                 { date: "SEPT '25", title: "Strategic Architecture", desc: "Core blueprinting of the Kredibly workspace and AI interface flow.", status: "completed" },
                                 { date: "DEC '25", title: "Kreddy AI Core", desc: "Intelligence engine development. Teaching Kreddy to understand merchant slang and complex debts.", status: "completed" },
                                 { date: "JAN '26", title: "Premium Platform UX", desc: "Rollout of smart telemetry, professional document generators, and cross-device syncing.", status: "completed" },
-                                { date: "FEBRUARY - PRESENT", title: "Founding Member Waitlist", desc: "Onboarding our first 1,000 pioneers. Early access rewards and lifetime status for active participants.", status: "active" },
-                                { date: "Q2 2026", title: "Global Marketplace Launch", desc: "Opening the ecosystem for public merchant registration and global transactions.", status: "future" },
+                                { date: "JAN 23 – MARCH 31 '26", title: "The Waitlist Phase", desc: "Over 66 days, our first wave of merchants signed up, gave feedback, and shaped what Kredibly became. The community made this real.", status: "completed" },
+                                { date: "APRIL 1ST '26", title: "The Grand Pre-Launch", desc: "Exclusive early access for our first 1,000 pioneers. 50% discount for May & June for those who join today.", status: "active" },
+                                { date: "MAY 1ST '26", title: "Global Grand Opening", desc: "Public registration opens to the world. Marketplace expansion and automated credit scoring rollouts.", status: "future" },
                                 { date: "Q3 2026", title: "Kredibly Mobile (Native)", desc: "Your entire business in your pocket. Offline-first, biometric security, and instant push intelligence.", status: "future" }
                             ].map((m, i) => (
                                 <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false, amount: 0.1 }} style={{ marginBottom: '64px', position: 'relative' }}>
@@ -469,6 +490,20 @@ const LandingPage = () => {
                                 </motion.div>
                             ))}
                         </div>
+                    </div>
+                </motion.div>
+            </section>
+            
+            {/* 6. Final Conversion Section (Pioneer Edition) - Oga Dark Theme */}
+            <section style={{ padding: 'clamp(80px, 12vw, 150px) 24px', background: '#0F172A', textAlign: 'center', color: 'white' }}>
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} style={{ maxWidth: '900px', margin: '0 auto' }}>
+                    <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '100px', marginBottom: '32px', color: 'var(--primary-light)', fontWeight: 800, fontSize: '0.85rem', letterSpacing: '0.05em' }}>EXCLUSIVE PRE-LAUNCH ACCESS</div>
+                    <h2 style={{ fontSize: 'clamp(2.1rem, 7vw, 4.5rem)', fontWeight: 950, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: '32px', color: 'white' }}>Claim your <span className="premium-gradient">Pre-Launch Status.</span></h2>
+                    <p style={{ color: '#94A3B8', fontSize: 'clamp(1.1rem, 2.5vw, 1.35rem)', fontWeight: 500, maxWidth: '650px', margin: '0 auto 48px', lineHeight: 1.6 }}>Join 1,000+ Nigerian merchants scaling with AI. Get your first 2 months at 50% off by joining the pre-launch today.</p>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                        <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '24px 64px', fontSize: '1.25rem', borderRadius: '100px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)' }}>Start for ₦0 <ArrowRight size={24} /></button>
+                        <p style={{ color: '#64748B', fontSize: '0.9rem', fontWeight: 600 }}>No charge today. Setup in under 2 minutes.</p>
                     </div>
                 </motion.div>
             </section>

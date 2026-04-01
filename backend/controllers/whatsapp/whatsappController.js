@@ -1955,7 +1955,35 @@ Upgrade here: ${APP_URL}/pricing`);
                         }
                     }
                     isProcessed = true;
-                } else if (aiResponseItem && (aiResponseItem.intent === "support" || aiResponseItem.intent === "feedback")) {
+                    isProcessed = true;
+                } else if (aiResponseItem && aiResponseItem.intent === "support") {
+                    // 🛡️ FORMAL SUPPORT TICKET (From WhatsApp Support Intent)
+                    const supportMsgText = aiResponseItem.data?.reply || text;
+                    
+                    const newTicket = new SupportTicket({
+                        userId: profile.ownerId,
+                        businessId: profile._id,
+                        message: supportMsgText,
+                        status: "open"
+                    });
+                    await newTicket.save();
+                    
+                    try {
+                        const { sendNewTicketEmail } = require("../../emailLogic/emails");
+                        const adminEmail = process.env.ADMIN_EMAIL || "support@usekredibly.com"; 
+                        await sendNewTicketEmail(adminEmail, profile.displayName, supportMsgText, newTicket._id);
+                    } catch (e) { console.error("Support Email fail", e); }
+
+                    await Notification.create({
+                        businessId: profile._id,
+                        title: "Support Ticket Logged 🛡️",
+                        message: `Ticket #${newTicket._id.toString().slice(-6)} opened via WhatsApp.`,
+                        type: "system"
+                    });
+
+                    await sendReply(from, `🛡️ *Support Ticket Opened*\n\nI've logged this as an official ticket (#${newTicket._id.toString().slice(-6)}) for the team to look into immediately. You can track its status on your Dashboard! 🚀`);
+                    isProcessed = true;
+                } else if (aiResponseItem && aiResponseItem.intent === "feedback") {
                     // 🚨 CLARIFICATION GUARD: If feedback contains core biz keywords, ask for confirmation
                     const coreKeywords = ['reminder', 'debt', 'sale', 'invoice', 'delete', 'money', 'task', 'call'];
                     const hasCoreKeywords = coreKeywords.some(k => text.toLowerCase().includes(k));
