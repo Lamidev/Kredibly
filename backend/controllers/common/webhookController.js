@@ -31,8 +31,17 @@ exports.handlePaystackWebhook = async (req, res) => {
         // 2. Handle successful payment
         if (event.event === 'charge.success') {
             const { reference, metadata, amount, customer, currency } = event.data;
-            const paymentType = metadata?.paymentType || (metadata?.invoiceNumber ? 'invoice' : 'unknown');
+            let paymentType = metadata?.paymentType || (metadata?.invoiceNumber ? 'invoice' : 'unknown');
             
+            // 🛡️ RECOVER PAYMENT TYPE FROM METADATA-LESS TRANSFERS
+            if (paymentType === 'unknown') {
+                if (reference && reference.startsWith('KREDDY_INV_')) {
+                    paymentType = 'invoice';
+                } else if (metadata?.referrer && metadata.referrer.includes('/i/')) {
+                    paymentType = 'invoice';
+                }
+            }
+
             console.log(`💰 Charge Success Type: ${paymentType}, Ref=${reference}, Customer=${customer?.email}`);
 
             if (paymentType === 'subscription') {
@@ -134,6 +143,15 @@ exports.handlePaystackWebhook = async (req, res) => {
                     const parts = reference.split("_");
                     invoiceNumber = parts[2]; // KR-XXXX
                     console.log(`🛡️ Recovered Metadata-less payment via Ref Prefix: ${invoiceNumber}`);
+                }
+
+                // 🛡️ FALLBACK 2: Recover from Paystack Inline Referrer
+                if (!invoiceNumber && metadata?.referrer && metadata.referrer.includes('/i/')) {
+                    const parts = metadata.referrer.split('/i/');
+                    if (parts.length > 1) {
+                         invoiceNumber = parts[1].split('?')[0].split('#')[0];
+                         console.log(`🛡️ Recovered Metadata-less payment via Referrer: ${invoiceNumber}`);
+                    }
                 }
 
                 if (!invoiceNumber) {

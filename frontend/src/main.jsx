@@ -14,6 +14,18 @@ if (import.meta.env.VITE_SENTRY_DSN) {
       Sentry.browserTracingIntegration(),
       Sentry.replayIntegration(),
     ],
+    // 🛡️ Noise Cancellation: Silence in-app browser 'ghost' errors and external scripts
+    ignoreErrors: [
+      'window.webkit.messageHandlers', // Facebook/Instagram in-app browser error
+      'webkit.messageHandlers',
+      'Non-Error promise rejection captured',
+      'The expression cannot be converted to a number',
+    ],
+    denyUrls: [
+      /graph\.facebook\.com/i,
+      /connect\.facebook\.net/i,
+      /googletagmanager\.com/i,
+    ],
     // Performance Monitoring
     tracesSampleRate: 1.0, 
     // Session Replay

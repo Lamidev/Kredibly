@@ -17,5 +17,8 @@ router.get("/coupons", adminController.getCoupons);
 router.post("/coupons", adminController.createCoupon);
 router.delete("/coupons/:id", adminController.deleteCoupon);
 router.get("/payments", adminController.getPayments);
+router.delete("/payments/:id", adminController.deletePayment);
+router.get("/invoice-payments", adminController.getInvoicePayments);
+router.delete("/invoice-payments/:saleId/:paymentId", adminController.deleteInvoicePayment);
 
 module.exports = router;
