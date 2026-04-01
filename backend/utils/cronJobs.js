@@ -115,9 +115,10 @@ const scheduleRemindersWorker = () => {
  * Sends a summary of yesterday's performance to the Business Owner.
  */
 const scheduleMorningSummary = () => {
-    // Schedule for 7:00 AM UTC (8:00 AM WAT) every day
-    cron.schedule("0 7 * * *", async () => {
-        console.log("🌞 Running Morning Chief Summary (8AM WAT)...");
+    // 🛡️ LOCKED TO NIGERIA TIME: 8:00 AM WAT (Africa/Lagos) regardless of server timezone
+    cron.schedule("0 8 * * *", async () => {
+        console.log("🌞 Running Morning Chief Summary (8AM WAT - Nigeria Time)...");
+
         
         try {
             const now = new Date();
@@ -239,7 +240,7 @@ const scheduleMorningSummary = () => {
         } catch (err) {
             console.error("Cron Job Error (Morning Summary):", err);
         }
-    });
+    }, { timezone: "Africa/Lagos" });
 
 };
 
