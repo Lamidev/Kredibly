@@ -399,7 +399,9 @@ exports.initializePaystackPayment = async (req, res) => {
         });
         if (!sale) return res.status(404).json({ message: "Invoice not found" });
         
-        if (paymentChannel === 'card') return res.status(403).json({ message: "Card payments disabled." });
+        // Log initialization intent
+        console.log(`Initializing payment for invoice ${sale.invoiceNumber} | Amount: ${amount} | Mode: ${paymentChannel || 'default'}`);
+
 
         const reference = `KREDDY_INV_${sale.invoiceNumber}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
         
@@ -442,7 +444,7 @@ exports.initializePaystackPayment = async (req, res) => {
                 { paymentType: 'invoice', invoiceNumber: sale.invoiceNumber, originalAmount: Number(amount) },
                 effectiveSubaccount,
                 effectiveBearer, 
-                ['bank_transfer', 'bank']
+                ['bank_transfer', 'opay']
             );
         } catch (initErr) {
             console.error("💡 Paystack Initialization Error (Subaccount Fail?):", initErr.message);
@@ -456,7 +458,7 @@ exports.initializePaystackPayment = async (req, res) => {
                     { paymentType: 'invoice', invoiceNumber: sale.invoiceNumber, originalAmount: Number(amount), subaccountError: true },
                     null, // No subaccount
                     'none', 
-                    ['bank_transfer', 'bank']
+                    ['bank_transfer', 'opay']
                 );
             } else {
                 throw initErr; // Real error

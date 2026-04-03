@@ -814,55 +814,34 @@ const PublicInvoicePage = () => {
                                     {paymentMethod === 'squad_disabled' ? ( // Hidden
                                         <div></div>
                                     ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                             <button 
                                                 onClick={() => handlePaystackPayment('transfer')}
                                                 disabled={verifying}
                                                 style={{ 
                                                     width: '100%', 
-                                                    padding: isMobile ? '16px' : '18px', 
-                                                    background: 'white',
-                                                    color: '#4C1D95', 
-                                                    borderRadius: '16px', 
-                                                    border: '2px solid #EEE', 
-                                                    fontWeight: 800, 
-                                                    fontSize: isMobile ? '15px' : '16px', 
-                                                    cursor: verifying ? 'not-allowed' : 'pointer', 
-                                                    display: 'flex', 
-                                                    alignItems: 'center', 
-                                                    justifyContent: 'center', 
-                                                    gap: '12px', 
-                                                    transition: '0.2s'
-                                                }}
-                                            >
-                                                {verifying ? <Loader2 size={18} className="spin-animation" /> : <Building2 size={20} />}
-                                                <span>Collect Bank Details (Paystack)</span>
-                                            </button>
-
-                                            <button 
-                                                onClick={() => handlePaystackPayment('card')}
-                                                disabled={verifying}
-                                                style={{ 
-                                                    width: '100%', 
-                                                    padding: isMobile ? '16px' : '18px', 
+                                                    padding: isMobile ? '18px' : '22px', 
                                                     background: isOverdue ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)' : 'linear-gradient(135deg, #4C1D95 0%, #2E1065 100%)',
                                                     color: 'white', 
                                                     borderRadius: '16px', 
                                                     border: 'none', 
-                                                    fontWeight: 700, 
-                                                    fontSize: isMobile ? '15px' : '16px', 
+                                                    fontWeight: 800, 
+                                                    fontSize: isMobile ? '16px' : '18px', 
                                                     cursor: verifying ? 'not-allowed' : 'pointer', 
                                                     display: 'flex', 
                                                     alignItems: 'center', 
                                                     justifyContent: 'center', 
                                                     gap: '12px', 
-                                                    boxShadow: isOverdue ? '0 8px 12px rgba(239, 68, 68, 0.2)' : '0 8px 12px rgba(76, 29, 149, 0.25)',
+                                                    boxShadow: isOverdue ? '0 12px 20px rgba(239, 68, 68, 0.25)' : '0 12px 20px rgba(76, 29, 149, 0.3)',
+                                                    transition: '0.3s transform, 0.3s box-shadow',
                                                 }}
+                                                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                                             >
-                                                {verifying ? <Loader2 size={18} className="spin-animation" /> : <CreditCard size={20} />}
-                                                <span>Pay with Card / QR</span>
+                                                {verifying ? <Loader2 size={22} className="spin-animation" /> : <Building2 size={24} />}
+                                                <span>Pay via Transfer / OPay</span>
                                             </button>
-                                        </div>
+
+
                                     )}
                                 </div>
 
