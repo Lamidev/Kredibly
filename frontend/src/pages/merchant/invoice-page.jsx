@@ -627,64 +627,74 @@ const InvoicePage = () => {
                     </div>
 
                     {/* 🚀 NEW: MONEY JOURNEY TRACKER */}
-                    {sale.payments.some(p => p.method === 'Paystack' || p.method === 'Kredibly Online') && (
-                        <div className="dashboard-glass" style={{ 
-                            background: 'white', border: '1px solid #E2E8F0', borderRadius: '32px', padding: '32px',
-                            boxShadow: '0 20px 50px -12px rgba(76, 29, 149, 0.05)'
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-                                <div style={{ width: '40px', height: '40px', background: 'rgba(76, 29, 149, 0.1)', color: '#4C1D95', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Activity size={20} strokeWidth={2.5} />
-                                </div>
-                                <div>
-                                    <h3 style={{ fontWeight: 950, fontSize: '1.1rem', margin: 0, color: '#0F172A' }}>Money Journey</h3>
-                                    <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 700, color: '#64748B' }}>Verified Collection Pipeline</p>
-                                </div>
-                            </div>
+                    {(() => {
+                        const onlinePayment = sale.payments.find(p => p.method === 'Paystack' || p.method === 'Kredibly Online' || p.method === 'Transfer');
+                        if (!onlinePayment) return null;
+                        
+                        const timeSincePayment = Date.now() - new Date(onlinePayment.date).getTime();
+                        const isSettled = timeSincePayment > 24 * 60 * 60 * 1000;
+                        
+                        // Hide the journey if it's already settled (Money is in their bank)
+                        if (isSettled) return null;
 
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '20px', position: 'relative' }}>
-                                {/* Connections */}
-                                <div style={{ position: 'absolute', top: '24px', left: '10%', right: '10%', height: '2px', background: '#F1F5F9', zIndex: 0 }} />
-                                
-                                {[
-                                    { step: 1, label: 'Verified', color: '#10B981', detail: 'Paystack Secured', active: true },
-                                    { 
-                                        step: 2, 
-                                        label: 'Processing', 
-                                        color: '#4C1D95', 
-                                        detail: 'Safe in Kredibly', 
-                                        active: true,
-                                        isProcessing: Date.now() - new Date(sale.payments.find(p => p.method === 'Paystack')?.date || 0).getTime() < 24 * 60 * 60 * 1000
-                                    },
-                                    { 
-                                        step: 3, 
-                                        label: 'Settled', 
-                                        color: '#64748B', 
-                                        detail: Date.now() - new Date(sale.payments.find(p => p.method === 'Paystack')?.date || 0).getTime() > 24 * 60 * 60 * 1000 ? 'In Bank' : 'Est: Tomorrow', 
-                                        active: Date.now() - new Date(sale.payments.find(p => p.method === 'Paystack')?.date || 0).getTime() > 24 * 60 * 60 * 1000 
-                                    }
-                                ].map((item, idx) => (
-                                    <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', zIndex: 1, textAlign: 'center' }}>
-                                        <div style={{ 
-                                            width: '48px', height: '48px', borderRadius: '100px', 
-                                            background: item.active ? item.color : '#F1F5F9', 
-                                            color: item.active ? 'white' : '#94A3B8',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            boxShadow: item.active ? `0 10px 20px -5px ${item.color}44` : 'none',
-                                            border: '4px solid white',
-                                            animation: item.isProcessing ? 'pulse 2s infinite' : 'none'
-                                        }}>
-                                            {item.active && (idx === 0 || idx === 2) ? <Check size={20} strokeWidth={3} /> : idx + 1}
-                                        </div>
-                                        <div>
-                                            <p style={{ margin: 0, fontWeight: 900, fontSize: '0.85rem', color: item.active ? '#0F172A' : '#94A3B8' }}>{item.label}</p>
-                                            <p style={{ margin: 0, fontSize: '0.65rem', fontWeight: 800, color: '#64748B' }}>{item.detail}</p>
-                                        </div>
+                        return (
+                            <div className="dashboard-glass" style={{ 
+                                background: 'white', border: '1px solid #E2E8F0', borderRadius: '32px', padding: '32px',
+                                boxShadow: '0 20px 50px -12px rgba(76, 29, 149, 0.05)'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+                                    <div style={{ width: '40px', height: '40px', background: 'rgba(76, 29, 149, 0.1)', color: '#4C1D95', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Activity size={20} strokeWidth={2.5} />
                                     </div>
-                                ))}
+                                    <div>
+                                        <h3 style={{ fontWeight: 950, fontSize: '1.1rem', margin: 0, color: '#0F172A' }}>Money Journey</h3>
+                                        <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 700, color: '#64748B' }}>Verified Collection Pipeline</p>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '20px', position: 'relative' }}>
+                                    <div style={{ position: 'absolute', top: '24px', left: '10%', right: '10%', height: '2px', background: '#F1F5F9', zIndex: 0 }} />
+                                    
+                                    {[
+                                        { step: 1, label: 'Verified', color: '#10B981', detail: 'Payment Secured', active: true },
+                                        { 
+                                            step: 2, 
+                                            label: 'Processing', 
+                                            color: '#4C1D95', 
+                                            detail: 'Safe in Kredibly', 
+                                            active: true,
+                                            isProcessing: !isSettled
+                                        },
+                                        { 
+                                            step: 3, 
+                                            label: 'Settled', 
+                                            color: '#64748B', 
+                                            detail: isSettled ? 'In Bank' : 'Est: Tomorrow', 
+                                            active: isSettled 
+                                        }
+                                    ].map((item, idx) => (
+                                        <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', zIndex: 1, textAlign: 'center' }}>
+                                            <div style={{ 
+                                                width: '48px', height: '48px', borderRadius: '100px', 
+                                                background: item.active ? item.color : '#F1F5F9', 
+                                                color: item.active ? 'white' : '#94A3B8',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                boxShadow: item.active ? `0 10px 20px -5px ${item.color}44` : 'none',
+                                                border: '4px solid white',
+                                                animation: item.isProcessing && item.step === 2 ? 'pulse 2s infinite' : 'none'
+                                            }}>
+                                                {item.active && (idx === 0 || idx === 2) ? <Check size={20} strokeWidth={3} /> : idx + 1}
+                                            </div>
+                                            <div>
+                                                <p style={{ margin: 0, fontWeight: 900, fontSize: '0.85rem', color: item.active ? '#0F172A' : '#94A3B8' }}>{item.label}</p>
+                                                <p style={{ margin: 0, fontSize: '0.65rem', fontWeight: 800, color: '#64748B' }}>{item.detail}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
 
                     {/* Official Description */}
                     <div className="dashboard-glass" style={{ background: 'white', borderRadius: '28px', border: '1px solid var(--border)', padding: '32px' }}>
@@ -849,7 +859,7 @@ const InvoicePage = () => {
                                 </div>
                             </div>
 
-                            {sale.payments.map((payment, idx) => (
+                            {(sale.payments || []).filter(p => p.amount > 0).map((payment, idx) => (
                                 <div key={idx} style={{ display: 'flex', gap: '20px', marginBottom: '32px' }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                         <div className="timeline-dot" style={{ background: 'var(--success)' }}></div>

@@ -36,7 +36,7 @@ const PublicInvoicePage = () => {
     const [recentPaymentDate, setRecentPaymentDate] = useState(null);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [generating, setGenerating] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState('squad'); // 'squad' or 'paystack'
+    const [paymentMethod, setPaymentMethod] = useState('paystack'); // Default to Paystack to hide Squad 403 errors for now
     const [squadData, setSquadData] = useState(null);
     const [loadingSquad, setLoadingSquad] = useState(false);
     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
@@ -216,7 +216,8 @@ const PublicInvoicePage = () => {
             }
         } catch (err) {
             console.error("Squad Initialization failed:", err);
-            toast.error("Failed to load transfer details. Please try Card payment.");
+            const msg = err.response?.data?.squad_error || err.response?.data?.message || "Failed to load transfer details. Please try Card payment.";
+            toast.error(msg);
         } finally {
             setLoadingSquad(false);
         }
@@ -736,8 +737,8 @@ const PublicInvoicePage = () => {
                                             <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748B' }}>Invoice Created</span>
                                             <span style={{ fontSize: '13px', fontWeight: 700 }}>{new Date(sale.createdAt).toLocaleDateString()}</span>
                                         </div>
-                                        {(sale?.payments || []).map((p, idx) => (
-                                            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: idx === (sale.payments.length - 1) ? 0 : '12px', borderBottom: idx === (sale.payments.length - 1) ? 'none' : '1px dashed #E2E8F0' }}>
+                                        {(sale?.payments || []).filter(p => p.amount > 0).map((p, idx, filteredArr) => (
+                                            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: idx === (filteredArr.length - 1) ? 0 : '12px', borderBottom: idx === (filteredArr.length - 1) ? 'none' : '1px dashed #E2E8F0' }}>
                                                 <div>
                                                     <p style={{ fontSize: '13px', fontWeight: 700, color: '#10B981', margin: 0 }}>Verified Payment</p>
                                                     <p style={{ fontSize: '10px', color: '#64748B', margin: 0 }}>{new Date(p.date).toLocaleDateString()} via {p.method}</p>
@@ -807,78 +808,11 @@ const PublicInvoicePage = () => {
 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                     {/* Tab Selector */}
-                                    <div style={{ display: 'flex', background: '#F1F5F9', padding: '4px', borderRadius: '12px', marginBottom: '8px' }}>
-                                        <button 
-                                            onClick={() => setPaymentMethod('squad')}
-                                            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: paymentMethod === 'squad' ? 'white' : 'transparent', color: paymentMethod === 'squad' ? '#4C1D95' : '#64748B', fontWeight: 800, fontSize: '13px', cursor: 'pointer', boxShadow: paymentMethod === 'squad' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none', transition: '0.2s' }}
-                                        >
-                                            ⚡ Instant Transfer
-                                        </button>
-                                        <button 
-                                            onClick={() => setPaymentMethod('paystack')}
-                                            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: paymentMethod === 'paystack' ? 'white' : 'transparent', color: paymentMethod === 'paystack' ? '#4C1D95' : '#64748B', fontWeight: 800, fontSize: '13px', cursor: 'pointer', boxShadow: paymentMethod === 'paystack' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none', transition: '0.2s' }}
-                                        >
-                                            💳 Card / Other
-                                        </button>
-                                    </div>
+                                    {/* 🛡️ TAB SELECTOR REMOVED UNTIL SQUAD IS READY */}
 
-                                    {paymentMethod === 'squad' ? (
-                                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                                            {!squadData || loadingSquad ? (
-                                                <div style={{ padding: '40px', textAlign: 'center', background: '#F8FAFC', borderRadius: '24px', border: '2px dashed #E2E8F0' }}>
-                                                    <Loader2 className="spin-animation" size={32} color="#4C1D95" style={{ margin: '0 auto 12px' }} />
-                                                    <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#64748B' }}>Generating Secure GTBank Account...</p>
-                                                </div>
-                                            ) : (
-                                                <div style={{ background: 'linear-gradient(135deg, #4C1D95 0%, #2E1065 100%)', padding: '32px', borderRadius: '24px', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(76, 29, 149, 0.2)' }}>
-                                                    <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
-                                                    
-                                                    <div style={{ position: 'relative', zIndex: 2 }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                                                            <div>
-                                                                <p style={{ margin: 0, fontSize: '10px', fontWeight: 900, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Bank Transfer Settlement</p>
-                                                                <h4 style={{ margin: '4px 0 0 0', color: 'white', fontWeight: 900, fontSize: '18px' }}>{squadData.bankName}</h4>
-                                                            </div>
-                                                            <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                                <Building2 color="white" size={24} />
-                                                            </div>
-                                                        </div>
 
-                                                        <div style={{ marginBottom: '24px' }}>
-                                                            <p style={{ margin: 0, fontSize: '10px', fontWeight: 900, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Account Number</p>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                                <h2 style={{ margin: '4px 0 0 0', color: 'white', fontWeight: 950, fontSize: 'clamp(24px, 8vw, 36px)', letterSpacing: '0.05em' }}>{squadData.accountNumber}</h2>
-                                                                <button 
-                                                                    onClick={() => {
-                                                                        navigator.clipboard.writeText(squadData.accountNumber);
-                                                                        toast.success("Account copied!");
-                                                                    }}
-                                                                    style={{ background: 'white', color: '#4C1D95', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 900, cursor: 'pointer' }}
-                                                                >
-                                                                    COPY
-                                                                </button>
-                                                            </div>
-                                                        </div>
-
-                                                        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '16px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '16px' }}>
-                                                            <div>
-                                                                <p style={{ margin: 0, fontSize: '9px', fontWeight: 850, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Beneficiary Name</p>
-                                                                <p style={{ margin: '2px 0 0 0', fontSize: '11px', fontWeight: 800, color: 'white' }}>{squadData.accountName}</p>
-                                                            </div>
-                                                            <div style={{ textAlign: 'right' }}>
-                                                                <p style={{ margin: 0, fontSize: '9px', fontWeight: 850, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Amount to Pay</p>
-                                                                <p style={{ margin: '2px 0 0 0', fontSize: '14px', fontWeight: 900, color: '#10B981' }}>₦{parseFloat(squadData.amount || 0).toLocaleString()}</p>
-                                                            </div>
-                                                        </div>
-
-                                                        <div style={{ marginTop: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                            <div className="pulse-dot" />
-                                                            <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>Awaiting your transfer... This page will update automatically once received. 🔒</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </motion.div>
+                                    {paymentMethod === 'squad_disabled' ? ( // Hidden
+                                        <div></div>
                                     ) : (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                             <button 

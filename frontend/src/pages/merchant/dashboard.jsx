@@ -316,9 +316,15 @@ const Dashboard = () => {
                     </div>
                     
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 700, color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Clock size={12} /> Est. Arrival: Tomorrow
-                        </p>
+                        {stats?.pendingSettlement > 0 ? (
+                            <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 700, color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <Clock size={12} /> Est. Arrival: Tomorrow
+                            </p>
+                        ) : (
+                            <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 700, color: '#10B981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <CheckCircle size={12} /> All settlements cleared
+                            </p>
+                        )}
                         <ArrowUpRight size={14} color="#64748B" />
                     </div>
 
