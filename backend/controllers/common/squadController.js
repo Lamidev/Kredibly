@@ -70,6 +70,7 @@ exports.initializeSquadAccount = async (req, res) => {
         
         const squadData = await generateVirtualAccount({
             amount: amountToCharge,
+            invoiceId: sale._id,
             customerName: sale.customerName || 'Merchant Customer',
             email: sale.customerEmail || 'payments@usekredibly.com',
             invoiceNumber: sale.invoiceNumber,
@@ -107,11 +108,11 @@ exports.initializeSquadAccount = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Squad Initialization Error:", error.message);
+        console.error("🚨 Squad Initialization Critical Error:", error.message);
         res.status(500).json({ 
-            message: error.message.includes('not profiled') 
-                ? error.message 
-                : "Failed to generate transfer details. Please use Card/Transfer (Paystack) instead." 
+            success: false,
+            message: error.message,
+            squad_error: error.response?.data?.message || "No response text from Squad"
         });
     }
 };
