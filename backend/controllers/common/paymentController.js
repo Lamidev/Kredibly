@@ -102,35 +102,9 @@ exports.initializeVirtualAccountPayment = async (req, res) => {
              return res.status(200).json({ success: true, data: existing });
         }
 
-        // 3. GENERATE VIRTUAL ACCOUNT (VIA PROVIDER)
-        // PLACEHOLDER for Monnify/Paystack Integration
-        console.log(`💎 Initializing Instant Cash VA for ${business.displayName}`);
-        
-        const reference = `KREDDY_VA_${Date.now()}`;
-        const accountNumber = `90${Math.floor(Math.random() * 100000000)}`; 
-        
-        const vaRecord = await VirtualAccount.create({
-            businessId: business._id,
-            saleId: sale._id,
-            invoiceNumber: sale.invoiceNumber,
-            accountNumber: accountNumber,
-            bankName: "Wema Bank",
-            reference: reference,
-            amount: amount || (sale.totalAmount - sale.payments.reduce((s,p) => s + p.amount, 0)),
-            status: "active"
-        });
-
-        res.status(201).json({
-            success: true,
-            data: {
-                accountNumber: vaRecord.accountNumber,
-                bankName: vaRecord.bankName,
-                accountName: `Kredibly / ${business.displayName.substring(0, 15)}`,
-                amount: vaRecord.amount,
-                reference: vaRecord.reference,
-                expiresIn: "60 minutes"
-            }
-        });
+        // 3. GENERATE SQUAD ACCOUNT (VIA SQUAD CONTROLLER LOGIC)
+        const { initializeSquadAccount } = require('./squadController');
+        return initializeSquadAccount(req, res);
 
     } catch (error) {
         console.error("Initialize VA Error:", error);
