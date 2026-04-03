@@ -36,7 +36,9 @@ const PublicInvoicePage = () => {
     const [recentPaymentDate, setRecentPaymentDate] = useState(null);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [generating, setGenerating] = useState(false);
-    const [profile, setProfile] = useState(null);
+    const [paymentMethod, setPaymentMethod] = useState('squad'); // 'squad' or 'paystack'
+    const [squadData, setSquadData] = useState(null);
+    const [loadingSquad, setLoadingSquad] = useState(false);
     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
     useEffect(() => {
@@ -192,9 +194,44 @@ const PublicInvoicePage = () => {
         }
     };
 
+    const handleSquadInitialization = async () => {
+        const amountToPay = paymentMode === 'full' 
+            ? (sale.totalAmount - (sale.paidAmount || 0)) 
+            : parseFloat(customAmount);
+
+        if (!amountToPay || amountToPay <= 0) {
+            toast.error("Please enter a valid amount");
+            return;
+        }
+
+        try {
+            setLoadingSquad(true);
+            const res = await axios.post(`${API_URL}/payments/initialize-squad-account`, {
+                invoiceId: id,
+                amount: amountToPay
+            });
+
+            if (res.data.success) {
+                setSquadData(res.data.data);
+            }
+        } catch (err) {
+            console.error("Squad Initialization failed:", err);
+            toast.error("Failed to load transfer details. Please try Card payment.");
+        } finally {
+            setLoadingSquad(false);
+        }
+    };
+
+    // Auto-init Squad if it's the selected mode
+    useEffect(() => {
+        if (paymentMethod === 'squad' && sale && !isPaid && !squadData) {
+            handleSquadInitialization();
+        }
+    }, [paymentMethod, sale, isPaid]);
+
     const handlePaystackPayment = async (paymentChannel) => {
         const amountToPay = paymentMode === 'full' 
-            ? (sale.totalAmount - sale.paidAmount) 
+            ? (sale.totalAmount - (sale.paidAmount || 0)) 
             : parseFloat(customAmount);
 
         if (!amountToPay || amountToPay <= 0) {
@@ -765,41 +802,131 @@ const PublicInvoicePage = () => {
                                     )}
                                 </AnimatePresence>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    <button 
-                                        onClick={() => handlePaystackPayment('transfer')}
-                                        disabled={verifying}
-                                        style={{ 
-                                            width: '100%', 
-                                            padding: isMobile ? '16px' : '18px', 
-                                            background: isOverdue ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)' : 'linear-gradient(135deg, #4C1D95 0%, #2E1065 100%)',
-                                            color: 'white', 
-                                            borderRadius: '16px', 
-                                            border: 'none', 
-                                            fontWeight: 700, 
-                                            fontSize: isMobile ? '15px' : '16px', 
-                                            cursor: verifying ? 'not-allowed' : 'pointer', 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            justifyContent: 'center', 
-                                            gap: '12px', 
-                                            boxShadow: isOverdue ? '0 8px 12px rgba(239, 68, 68, 0.2)' : '0 8px 12px rgba(76, 29, 149, 0.25)',
-                                            transition: 'all 0.3s ease'
-                                        }}
-                                    >
-                                        {verifying ? (
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <Loader2 size={18} className="spin-animation" /> 
-                                                <span>Connecting...</span>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <Building2 size={20} /> 
-                                                <span>Direct Bank Transfer (Zero Fee)</span>
-                                            </>
-                                        )}
-                                    </button>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                    {/* Tab Selector */}
+                                    <div style={{ display: 'flex', background: '#F1F5F9', padding: '4px', borderRadius: '12px', marginBottom: '8px' }}>
+                                        <button 
+                                            onClick={() => setPaymentMethod('squad')}
+                                            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: paymentMethod === 'squad' ? 'white' : 'transparent', color: paymentMethod === 'squad' ? '#4C1D95' : '#64748B', fontWeight: 800, fontSize: '13px', cursor: 'pointer', boxShadow: paymentMethod === 'squad' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none', transition: '0.2s' }}
+                                        >
+                                            ⚡ Instant Transfer
+                                        </button>
+                                        <button 
+                                            onClick={() => setPaymentMethod('paystack')}
+                                            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: paymentMethod === 'paystack' ? 'white' : 'transparent', color: paymentMethod === 'paystack' ? '#4C1D95' : '#64748B', fontWeight: 800, fontSize: '13px', cursor: 'pointer', boxShadow: paymentMethod === 'paystack' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none', transition: '0.2s' }}
+                                        >
+                                            💳 Card / Other
+                                        </button>
+                                    </div>
 
+                                    {paymentMethod === 'squad' ? (
+                                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+                                            {!squadData || loadingSquad ? (
+                                                <div style={{ padding: '40px', textAlign: 'center', background: '#F8FAFC', borderRadius: '24px', border: '2px dashed #E2E8F0' }}>
+                                                    <Loader2 className="spin-animation" size={32} color="#4C1D95" style={{ margin: '0 auto 12px' }} />
+                                                    <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#64748B' }}>Generating Secure GTBank Account...</p>
+                                                </div>
+                                            ) : (
+                                                <div style={{ background: 'linear-gradient(135deg, #4C1D95 0%, #2E1065 100%)', padding: '32px', borderRadius: '24px', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(76, 29, 149, 0.2)' }}>
+                                                    <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
+                                                    
+                                                    <div style={{ position: 'relative', zIndex: 2 }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                                                            <div>
+                                                                <p style={{ margin: 0, fontSize: '10px', fontWeight: 900, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Bank Transfer Settlement</p>
+                                                                <h4 style={{ margin: '4px 0 0 0', color: 'white', fontWeight: 900, fontSize: '18px' }}>{squadData.bankName}</h4>
+                                                            </div>
+                                                            <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                <Building2 color="white" size={24} />
+                                                            </div>
+                                                        </div>
+
+                                                        <div style={{ marginBottom: '24px' }}>
+                                                            <p style={{ margin: 0, fontSize: '10px', fontWeight: 900, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Account Number</p>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                                <h2 style={{ margin: '4px 0 0 0', color: 'white', fontWeight: 950, fontSize: 'clamp(24px, 8vw, 36px)', letterSpacing: '0.05em' }}>{squadData.accountNumber}</h2>
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        navigator.clipboard.writeText(squadData.accountNumber);
+                                                                        toast.success("Account copied!");
+                                                                    }}
+                                                                    style={{ background: 'white', color: '#4C1D95', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 900, cursor: 'pointer' }}
+                                                                >
+                                                                    COPY
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '16px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '16px' }}>
+                                                            <div>
+                                                                <p style={{ margin: 0, fontSize: '9px', fontWeight: 850, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Beneficiary Name</p>
+                                                                <p style={{ margin: '2px 0 0 0', fontSize: '11px', fontWeight: 800, color: 'white' }}>{squadData.accountName}</p>
+                                                            </div>
+                                                            <div style={{ textAlign: 'right' }}>
+                                                                <p style={{ margin: 0, fontSize: '9px', fontWeight: 850, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Amount to Pay</p>
+                                                                <p style={{ margin: '2px 0 0 0', fontSize: '14px', fontWeight: 900, color: '#10B981' }}>₦{parseFloat(squadData.amount || 0).toLocaleString()}</p>
+                                                            </div>
+                                                        </div>
+
+                                                        <div style={{ marginTop: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                            <div className="pulse-dot" />
+                                                            <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>Awaiting your transfer... This page will update automatically once received. 🔒</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </motion.div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            <button 
+                                                onClick={() => handlePaystackPayment('transfer')}
+                                                disabled={verifying}
+                                                style={{ 
+                                                    width: '100%', 
+                                                    padding: isMobile ? '16px' : '18px', 
+                                                    background: 'white',
+                                                    color: '#4C1D95', 
+                                                    borderRadius: '16px', 
+                                                    border: '2px solid #EEE', 
+                                                    fontWeight: 800, 
+                                                    fontSize: isMobile ? '15px' : '16px', 
+                                                    cursor: verifying ? 'not-allowed' : 'pointer', 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    justifyContent: 'center', 
+                                                    gap: '12px', 
+                                                    transition: '0.2s'
+                                                }}
+                                            >
+                                                {verifying ? <Loader2 size={18} className="spin-animation" /> : <Building2 size={20} />}
+                                                <span>Collect Bank Details (Paystack)</span>
+                                            </button>
+
+                                            <button 
+                                                onClick={() => handlePaystackPayment('card')}
+                                                disabled={verifying}
+                                                style={{ 
+                                                    width: '100%', 
+                                                    padding: isMobile ? '16px' : '18px', 
+                                                    background: isOverdue ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)' : 'linear-gradient(135deg, #4C1D95 0%, #2E1065 100%)',
+                                                    color: 'white', 
+                                                    borderRadius: '16px', 
+                                                    border: 'none', 
+                                                    fontWeight: 700, 
+                                                    fontSize: isMobile ? '15px' : '16px', 
+                                                    cursor: verifying ? 'not-allowed' : 'pointer', 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    justifyContent: 'center', 
+                                                    gap: '12px', 
+                                                    boxShadow: isOverdue ? '0 8px 12px rgba(239, 68, 68, 0.2)' : '0 8px 12px rgba(76, 29, 149, 0.25)',
+                                                }}
+                                            >
+                                                {verifying ? <Loader2 size={18} className="spin-animation" /> : <CreditCard size={20} />}
+                                                <span>Pay with Card / QR</span>
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -864,7 +991,7 @@ const PublicInvoicePage = () => {
                                     </div>
                                     <div style={{ textAlign: 'center' }}>
                                         <h4 style={{ margin: '0 0 8px 0', fontSize: isMobile ? '22px' : '28px', fontWeight: 950, color: '#0F172A', letterSpacing: '-0.02em' }}>Payment Fully Settled</h4>
-                                        <p style={{ margin: 0, fontSize: isMobile ? '14px' : '16px', fontWeight: 600, color: '#64748B', maxWidth: '320px', margin: '0 auto' }}>
+                                        <p style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: 600, color: '#64748B', maxWidth: '320px', margin: '0 auto' }}>
                                             Your transaction has been verified and permanently logged on the Kredibly ledger.
                                         </p>
                                     </div>

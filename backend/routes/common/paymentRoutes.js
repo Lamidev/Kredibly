@@ -18,6 +18,13 @@ router.get('/upgrade-quote', protect, getUpgradeQuote);
 router.post('/verify-invoice', verifyInvoicePayment);
 router.post('/initialize-transfer', initializeVirtualAccountPayment);
 
+const { initializeSquadAccount, handleSquadWebhook } = require('../../controllers/common/squadController');
+
+// Squad Payments (Instant Settlement)
+router.get('/webhook/squad', (req, res) => res.status(200).send('Squad Webhook Endpoint Active! ⚡'));
+router.post('/initialize-squad-account', initializeSquadAccount);
+router.post('/webhook/squad', handleSquadWebhook);
+
 // Webhook for invoice payments and other Paystack events
 router.post('/webhook', handlePaystackWebhook);
 

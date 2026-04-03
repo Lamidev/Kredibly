@@ -20,14 +20,18 @@ const VirtualAccountSchema = new mongoose.Schema({
         required: true,
         index: true
     },
+    accountName: {
+        type: String,
+        default: ""
+    },
     bankName: {
         type: String,
-        default: "Wema Bank" // Common for Monnify/Paystack
+        default: "GTBank"
     },
     provider: {
         type: String,
-        enum: ["monnify", "paystack"],
-        default: "monnify"
+        enum: ["monnify", "paystack", "squad"],
+        default: "squad"
     },
     reference: {
         type: String,
@@ -38,14 +42,14 @@ const VirtualAccountSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    expiresAt: {
+        type: Date,
+        default: () => new Date(Date.now() + 24 * 60 * 60 * 1000) // 24-hour expiry for Squad DVA
+    },
     status: {
         type: String,
         enum: ["active", "used", "expired"],
         default: "active"
-    },
-    expiresAt: {
-        type: Date,
-        default: () => new Date(Date.now() + 60 * 60 * 1000) // 1 hour expiry
     },
     createdAt: {
         type: Date,
@@ -53,7 +57,11 @@ const VirtualAccountSchema = new mongoose.Schema({
     }
 });
 
-// TTL Index for expired accounts
+// TTL Index: MongoDB auto-removes expired VA records
 VirtualAccountSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+// Lookup index for webhook matching
+VirtualAccountSchema.index({ invoiceNumber: 1 });
+VirtualAccountSchema.index({ saleId: 1, status: 1 });
 
 module.exports = mongoose.model("VirtualAccount", VirtualAccountSchema);
