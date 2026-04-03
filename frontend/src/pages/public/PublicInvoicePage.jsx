@@ -222,12 +222,18 @@ const PublicInvoicePage = () => {
         }
     };
 
+    // Derived State
+    const balance = sale ? (sale.totalAmount - (sale.paidAmount || sale.payments?.reduce((s, p) => s + p.amount, 0) || 0)) : 0;
+    const isPaid = sale ? balance <= 0 : false;
+    const isOverdue = sale && !isPaid && sale.dueDate && new Date(sale.dueDate) < new Date();
+    const isDebtRecovery = sale && !isPaid && (sale.status === 'partial' || isOverdue);
+
     // Auto-init Squad if it's the selected mode
     useEffect(() => {
         if (paymentMethod === 'squad' && sale && !isPaid && !squadData) {
             handleSquadInitialization();
         }
-    }, [paymentMethod, sale, isPaid]);
+    }, [paymentMethod, sale, isPaid, squadData]);
 
     const handlePaystackPayment = async (paymentChannel) => {
         const amountToPay = paymentMode === 'full' 
@@ -342,10 +348,7 @@ const PublicInvoicePage = () => {
         </div>
     );
 
-    const balance = sale.totalAmount - (sale.paidAmount || sale.payments?.reduce((s, p) => s + p.amount, 0) || 0);
-    const isPaid = balance <= 0;
-    const isOverdue = !isPaid && sale.dueDate && new Date(sale.dueDate) < new Date();
-    const isDebtRecovery = !isPaid && (sale.status === 'partial' || isOverdue);
+
 
     return (
         <div style={{ minHeight: '100vh', background: '#FDFCFE', color: '#0F172A', fontFamily: "'Inter', sans-serif", paddingBottom: '100px' }}>
