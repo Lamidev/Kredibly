@@ -459,7 +459,8 @@ const sendReply = async (to, text) => {
 
         if (!accessToken || !phoneId) return;
 
-        let cleanTo = String(to).replace(/[\s+]/g, '');
+        // Use robust cleaning to ensure only digits are sent to the API
+        let cleanTo = String(to).replace(/\D/g, ''); 
         if (cleanTo.startsWith('0') && cleanTo.length === 11) {
             cleanTo = '234' + cleanTo.slice(1);
         }
