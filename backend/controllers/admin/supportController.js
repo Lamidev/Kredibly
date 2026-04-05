@@ -218,3 +218,15 @@ exports.markSeen = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+exports.deleteTicket = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const ticket = await SupportTicket.findByIdAndDelete(id);
+        if (!ticket) return res.status(404).json({ message: "Ticket not found" });
+
+        res.status(200).json({ success: true, message: "Ticket deleted permanently." });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

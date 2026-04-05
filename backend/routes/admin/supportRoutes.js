@@ -15,5 +15,6 @@ router.get("/tickets/all", adminMiddleware, supportController.getAllTickets);
 router.patch("/tickets/:id/resolve", adminMiddleware, supportController.resolveTicket);
 router.patch("/tickets/:id/reply", supportController.replyToTicket);
 router.patch("/tickets/:id/seen", supportController.markSeen);
+router.delete("/tickets/:id", adminMiddleware, supportController.deleteTicket);
 
 module.exports = router;
