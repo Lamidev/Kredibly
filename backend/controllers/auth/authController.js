@@ -24,11 +24,13 @@ const register = async (req, res) => {
     }
 
     // VANGUARD SECURITY: Strong Password Check
-    const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$/;
+    // VANGUARD SECURITY: More inclusive but strong password check
+    // Requires at least 8 chars, one number, and one special character (any non-alphanumeric)
+    const passwordRegex = /^(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{8,}$/;
     if (!passwordRegex.test(password)) {
         return res.status(400).json({ 
             success: false, 
-            message: "Password must be at least 8 characters long and include at least one number and one special character (!@#$%^&*)." 
+            message: "Password must be at least 8 characters long and include at least one number and one special character (e.g. !@#$%^&*)." 
         });
     }
 
@@ -239,11 +241,12 @@ const resetPassword = async (req, res) => {
     }
 
     // VANGUARD SECURITY: Strong Password Check
-    const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$/;
+    // VANGUARD SECURITY: More inclusive but strong password check
+    const passwordRegex = /^(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{8,}$/;
     if (!passwordRegex.test(password)) {
         return res.status(400).json({ 
             success: false, 
-            message: "Password must be at least 8 characters long and include at least one number and one special character (!@#$%^&*)." 
+            message: "Password must be at least 8 characters long and include at least one number and one special character (e.g. !@#$%^&*)." 
         });
     }
 
