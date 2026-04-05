@@ -86,6 +86,7 @@ const createSubaccount = async (businessName, bankCode, accountNumber, successFe
         bank_code: bankCode, 
         account_number: accountNumber, 
         percentage_charge: successFee, 
+        primary_contact_at: 'paystack', // 🛡️ Kredibly covers the gateway fees
         primary_contact_email: "support@usekredibly.com", 
     };
     return paystackRequest('/subaccount', 'POST', payload);
@@ -101,7 +102,7 @@ const initializePayment = async (email, amount, reference, metadata = {}, subacc
         reference,
         metadata,
         callback_url: `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/dashboard/payment/success`,
-        ...(subaccount ? { subaccount, bearer: bearer || 'subaccount' } : {}), // 🛡️ Paystack settlement on merchant money
+        ...(subaccount ? { subaccount, ...(bearer ? { bearer } : {}) } : {}), // 💰 Relies on Dashboard setting if bearer is empty
         ...(channels.length > 0 ? { channels } : {}) // 🛡️ Restrict payment channels if specified
     };
     return paystackRequest('/transaction/initialize', 'POST', payload);

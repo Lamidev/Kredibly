@@ -255,11 +255,6 @@ const HelpPage = () => {
                                     <button onClick={() => setView('tickets')} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         ← Back to List
                                     </button>
-                                    {activeTicket.status !== 'resolved' && (
-                                        <button onClick={() => handleResolve(activeTicket._id)} style={{ background: '#F5F3FF', border: 'none', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 800, padding: '8px 16px', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <CheckCircle2 size={16} /> Mark Resolved
-                                        </button>
-                                    )}
                                 </div>
 
                                 <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', paddingRight: '12px' }} className="no-scrollbar">
