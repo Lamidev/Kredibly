@@ -27,10 +27,11 @@ const Register = () => {
 
     setLoading(true);
 
-    // Simple Password Validation
-    if (formData.password.length < 8) {
+    // Strong Password Validation
+    const passwordRegex = /^(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
       setLoading(false);
-      return toast.error("Password must be at least 8 characters long.");
+      return toast.error("Password must be at least 8 characters long and include at least one number and one special character (e.g. !@#$%^&*).");
     }
 
     try {

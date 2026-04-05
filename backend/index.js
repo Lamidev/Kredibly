@@ -65,7 +65,7 @@ app.use(helmet({
 // 2. Security Middleware: Rate Limiting
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 500, // Increased from 100
   message: { message: "Too many requests from this IP, please try again after 15 minutes" },
   standardHeaders: true,
   legacyHeaders: false,
@@ -73,8 +73,8 @@ const generalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 15,
-  message: { message: "Too many login/auth attempts. Please wait 15 minutes." },
+  max: 50, // Increased from 15
+  message: { message: "Too many auth attempts. Please wait 15 minutes." },
 });
 
 // Apply rate limiting
