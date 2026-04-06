@@ -118,13 +118,16 @@ const scheduleMorningSummary = () => {
     // Helper function for the core logic so we can call it on cron AND on startup check
     const runSummaryLogic = async (isManual = false) => {
         const type = isManual ? "Catch-up" : "Scheduled";
+        const now = new Date();
+        const startOfToday = new Date(now);
+        startOfToday.setHours(0, 0, 0, 0);
+
         console.log(`🌞 Running Morning Chief Summary (${type} - 8AM WAT)...`);
         
         try {
-            const now = new Date();
-            const startOfToday = new Date(now);
-            startOfToday.setHours(0, 0, 0, 0);
-
+            // Check if we even need to run (for Global Task Logging)
+            const ActivityLog = require("../models/ActivityLog");
+            
             const yesterday = new Date(now);
             yesterday.setDate(yesterday.getDate() - 1);
             yesterday.setHours(0, 0, 0, 0);
@@ -133,16 +136,22 @@ const scheduleMorningSummary = () => {
             const endOfYesterday = new Date(yesterday);
             endOfYesterday.setHours(23, 59, 59, 999);
 
-            // ✅ GUARD: Ensure we only message active merchants
             const profiles = await BusinessProfile.find({ 
                 whatsappNumber: { $exists: true, $ne: "" },
                 createdAt: { $lt: startOfToday }
             });
 
+            console.log(`🔍 Summary Task: Processing ${profiles.length} businesses...`);
+
+            let sentCount = 0;
+            let skipCount = 0;
+            let errorCount = 0;
+
             for (const profile of profiles) {
                 try {
-                    // Skip if already sent today (to prevent duplicates on server restarts)
+                    // Skip if already sent today
                     if (profile.lastSummaryAt && profile.lastSummaryAt >= startOfToday) {
+                        skipCount++;
                         continue;
                     }
 
@@ -168,10 +177,8 @@ const scheduleMorningSummary = () => {
                         });
                     });
 
-                    let totalBilled = 0;
                     let pendingFromYesterday = 0;
                     salesYesterday.forEach(s => {
-                        totalBilled += s.totalAmount;
                         const paid = s.payments.reduce((sum, p) => sum + p.amount, 0);
                         pendingFromYesterday += Math.max(0, s.totalAmount - paid);
                     });
@@ -183,12 +190,9 @@ const scheduleMorningSummary = () => {
                         const isHustler = profile.plan === 'hustler';
                         
                         let msg = "";
-
                         if (isHustler) {
-                            // 🎭 THE HUSTLER TEASE: Give them the count, hide the kobo.
                             msg = `🌞 *Rise and Grind, ${bossTitle}!* \n\nYou recorded *${salesYesterday.length || 0} sales* yesterday! 🚀 \n\nTo see your total *Cash Collected*, *Outstanding Credit*, and *Today's Agenda*, upgrade to the *Oga Plan* now. Don't leave your money hanging! 🛡️\n\n`;
                         } else {
-                            // 💎 THE PREMIUM SUMMARY: Full Intelligence.
                             msg = `🌞 *Rise and Grind, ${bossTitle}!* \n\nHere is your *Kredibly Intelligence Summary* for yesterday:\n\n`;
                             msg += `💰 *Cash Collected:* ₦${totalCashIn.toLocaleString()}\n`;
                             msg += `📑 *New Sales:* ${salesYesterday.length}\n`;
@@ -200,31 +204,21 @@ const scheduleMorningSummary = () => {
                                 msg += `💡 *No new sales recorded yesterday. Remember to track every kobo today!* 🛡️\n\n`;
                             }
 
-                            // ADD OUTSTANDING DEBTS (Top 3)
-                            const topDebtors = await Sale.find({
-                                businessId: profile._id,
-                                status: { $ne: "paid" }
-                            }).sort({ totalAmount: -1 }).limit(3);
-
+                            // Top Debts
+                            const topDebtors = await Sale.find({ businessId: profile._id, status: { $ne: "paid" } }).sort({ totalAmount: -1 }).limit(3);
                             if (topDebtors.length > 0) {
                                 msg += `🔴 *Top Outstanding Balances:*\n`;
                                 topDebtors.forEach(d => {
                                     const bal = d.totalAmount - d.payments.reduce((sum, p) => sum + p.amount, 0);
-                                    const dueStr = d.dueDate ? ` (Due: ${new Date(d.dueDate).toLocaleDateString('en-NG', { timeZone: 'Africa/Lagos' })})` : "";
-                                    msg += `• ${d.customerName}: ₦${bal.toLocaleString()}${dueStr}\n`;
+                                    msg += `• ${d.customerName}: ₦${bal.toLocaleString()}\n`;
                                 });
                                 msg += `\n`;
                             }
 
-                            // ADD AGENDA
+                            // Agenda
                             const todayStart = new Date(); todayStart.setHours(0,0,0,0);
                             const todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
-                            const todaysReminders = await Reminder.find({
-                                businessId: profile._id,
-                                triggerDate: { $gte: todayStart, $lte: todayEnd },
-                                status: "pending"
-                            });
-                            
+                            const todaysReminders = await Reminder.find({ businessId: profile._id, triggerDate: { $gte: todayStart, $lte: todayEnd }, status: "pending" });
                             if (todaysReminders.length > 0) {
                                 msg += `📅 *Today's Agenda:*\n`;
                                 todaysReminders.forEach(r => {
@@ -237,32 +231,45 @@ const scheduleMorningSummary = () => {
 
                         msg += `Check full details on your dashboard: ${process.env.FRONTEND_URL || 'https://usekredibly.com'}`;
 
-                        await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => {
-                            console.error(`Failed to send summary to ${profile.displayName}:`, e.message);
-                        });
-
-                        profile.lastSummaryAt = new Date();
-                        await profile.save();
-                        console.log(`✅ Summary sent to ${profile.displayName}`);
+                        const sent = await sendWhatsAppMessage(profile.whatsappNumber, msg);
+                        
+                        if (sent) {
+                            profile.lastSummaryAt = new Date();
+                            await profile.save();
+                            sentCount++;
+                        } else {
+                            errorCount++;
+                        }
+                    } else {
+                        skipCount++;
                     }
                 } catch (userErr) {
                     console.error(`❌ Failed summary for ${profile.displayName}:`, userErr.message);
+                    errorCount++;
                 }
             }
+
+            await ActivityLog.create({
+                action: "SYSTEM_TASK",
+                entityType: "SYSTEM",
+                details: `Morning Summary (${type}) finished. Sent: ${sentCount}, Skipped: ${skipCount}, Errors: ${errorCount}`
+            });
+            console.log(`✅ Morning Summary Task Finished: Sent ${sentCount}, Skipped ${skipCount}, Errors ${errorCount}`);
+
         } catch (err) {
             console.error("Cron Job Error (Morning Summary Global):", err);
         }
     };
 
-    // 1. Schedule the daily task (8:00 AM WAT)
+    // 1. Schedule for 8:00 AM Lagos
     cron.schedule("0 8 * * *", () => runSummaryLogic(false), { timezone: "Africa/Lagos" });
 
-    // 2. CATCH-UP LOGIC: If server starts after 8 AM and hasn't run today, run it now
+    // 2. Catch-up Logic on server start
     const now = new Date();
-    const lagosHour = new Intl.DateTimeFormat('en-US', { hour: '2-digit', hour12: false, timeZone: 'Africa/Lagos' }).format(now);
+    const lagosTimeStr = new Intl.DateTimeFormat('en-US', { hour: '2-digit', hour12: false, timeZone: 'Africa/Lagos' }).format(now);
+    const lagosHour = parseInt(lagosTimeStr);
     
-    if (parseInt(lagosHour) >= 8) {
-        // Delay slightly on startup to let DB stabilize
+    if (lagosHour >= 8 && lagosHour < 22) { // Only catch up if it's past 8 AM but before 10 PM
         setTimeout(() => runSummaryLogic(true), 15000); 
     }
 };
