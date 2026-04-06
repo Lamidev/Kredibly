@@ -12,7 +12,6 @@ const { processMessageWithAI, processAudioWithAI, processImageWithAI } = require
 const { logUsage } = require("../../utils/usageTracker");
 const { initializePayment } = require("../../utils/paystack");
 const { getPlanPrice } = require("../../config/pricing");
-const { sendWhatsAppMessage } = require("./whatsappController"); // For recursive calls if needed, though we are in the file. Wait. 
 // Note: sendWhatsAppMessage is exported below, but for internal use, we use it directly.
 
 
@@ -452,14 +451,16 @@ const sendReadReceipt = async (messageId) => {
     }
 };
 
-const sendReply = async (to, text) => {
+const sendReply = async (to, text, retryCount = 0) => {
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 3000; // 3 seconds
+
     try {
         const phoneId = process.env.WHATSAPP_PHONE_ID || process.env.PHONE_ID;
         const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN || process.env.ACCESS_TOKEN;
 
-        if (!accessToken || !phoneId) return;
+        if (!accessToken || !phoneId) return false;
 
-        // Use robust cleaning to ensure only digits are sent to the API
         let cleanTo = String(to).replace(/\D/g, ''); 
         if (cleanTo.startsWith('0') && cleanTo.length === 11) {
             cleanTo = '234' + cleanTo.slice(1);
@@ -471,21 +472,34 @@ const sendReply = async (to, text) => {
                 messaging_product: "whatsapp",
                 to: cleanTo,
                 type: "text",
-                text: { 
-                    body: text,
-                    preview_url: true
-                },
+                text: { body: text, preview_url: true },
             },
             {
                 headers: { Authorization: `Bearer ${accessToken}` },
+                timeout: 10000 // 10s safety timeout
             }
         );
 
-        // LOG USAGE (Async, don't wait for it)
-        logUsage("whatsapp").catch(e => console.error("Logger fail:", e));
+        logUsage("whatsapp").catch(e => {});
+        return true;
 
     } catch (error) {
-        console.error("WhatsApp Send Error:", error.response?.data || error.message);
+        const status = error.response?.status;
+        const errorData = error.response?.data;
+
+        // Retry on 429 (Rate Limit) or 500+ (Server Error) or Network Timeout
+        const isNetworkError = !status || status >= 500;
+        const isRateLimited = status === 429;
+        
+        if (retryCount < MAX_RETRIES && (isNetworkError || isRateLimited)) {
+            const nextDelay = RETRY_DELAY * (retryCount + 1);
+            console.warn(`⏳ WhatsApp Delay (Attempt ${retryCount + 1}): Retrying ${to} in ${nextDelay/1000}s...`);
+            await new Promise(res => setTimeout(res, nextDelay));
+            return await sendReply(to, text, retryCount + 1);
+        }
+
+        console.error("❌ WhatsApp Final Failure:", errorData || error.message);
+        return false;
     }
 };
 
