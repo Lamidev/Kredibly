@@ -15,11 +15,11 @@ const VERIFICATION_EMAIL_TEMPLATE = `
   </div>
   <p style="font-size: 14px; color: #6B7280;">This code will expire in 15 minutes. If you didn't create an account, you can safely ignore this email.</p>
   <div style="margin-top: 48px;">
-    <p style="font-weight: 800; margin: 0; font-size: 16px; color: #111827;">Akinyemi Oluwatosin</p>
-    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
+    <p style="font-weight: 800; margin: 0; font-size: 16px; color: #111827;">The Kredibly Team</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">hello@usekredibly.com</p>
   </div>
   <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
-    <p>© ${new Date().getFullYear()} Kredibly Inc. All rights reserved.</p>
+    <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
   </div>
 </body>
 </html>
@@ -36,11 +36,11 @@ const PASSWORD_RESET_SUCCESS_TEMPLATE = `
   <p>I’m sending this quick note to confirm that your password was successfully reset. You can now log back into your dashboard using your new credentials.</p>
   <p>Security is my top priority here at Kredibly, so if this change wasn't made by you, please reply to this email immediately so I can lock down your account.</p>
   <div style="margin-top: 48px;">
-    <p style="font-weight: 800; margin: 0; font-size: 16px; color: #111827;">Akinyemi Oluwatosin</p>
-    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
+    <p style="font-weight: 800; margin: 0; font-size: 16px; color: #111827;">The Kredibly Team</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">hello@usekredibly.com</p>
   </div>
   <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
-    <p>© ${new Date().getFullYear()} Kredibly Inc. All rights reserved.</p>
+    <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
   </div>
 </body>
 </html>
@@ -60,8 +60,11 @@ const PASSWORD_RESET_REQUEST_TEMPLATE = `
   </div>
   <p style="font-size: 14px; color: #6B7280;">This link will expire in 1 hour. If you didn't request this, you can safely ignore this email.</p>
   <div style="margin-top: 48px;">
-    <p style="font-weight: 800; margin: 0; font-size: 16px; color: #111827;">Akinyemi Oluwatosin</p>
-    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
+    <p style="font-weight: 800; margin: 0; font-size: 16px; color: #111827;">The Kredibly Team</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">hello@usekredibly.com</p>
+  </div>
+  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
+    <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
   </div>
 </body>
 </html>
@@ -75,13 +78,16 @@ const WELCOME_EMAIL_TEMPLATE = `
     <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
   </div>
   <p>Hi {name},</p>
-  <p>I’m Akinyemi Oluwatosin, the founder of Kredibly, and I wanted to personally welcome you to the family. I built this platform because I believe growing a business shouldn’t mean drowning in chaos or chasing debtors who "promise next week."</p>
-  <p>You’ve just taken the first step towards automating your trust and finances. Whether you're recording a quick sale via text, voice note, or even just uploading a photo of a paper invoice, Kredibly is designed to give you peace of mind and professional power. My team and I are here to support your growth every inch of the way.</p>
-  <p>If you ever have feedback or just want to say hi, simply reply to this email. I read every single one personally.</p>
+  <p>Welcome to the family! We built Kredibly because we believe growing a business shouldn't mean drowning in chaos or chasing debtors who "promise next week."</p>
+  <p>You've just taken the first step towards automating your trust and finances. Whether you're recording a quick sale via text, voice note, or even just uploading a photo of a paper invoice, Kredibly is designed to give you peace of mind and professional power. Our team is here to support your growth every inch of the way.</p>
+  <p>If you ever have feedback or just want to say hi, simply reply to this email. We read every single one personally.</p>
   <p>Welcome to the new standard.</p>
   <div style="margin-top: 48px;">
-    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">Akinyemi Oluwatosin</p>
-    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
+    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">The Kredibly Team</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">hello@usekredibly.com</p>
+  </div>
+  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
+    <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
   </div>
 </body>
 </html>
@@ -104,6 +110,9 @@ const NEW_TICKET_ALERT_TEMPLATE = `
   <div style="margin-top: 32px;">
     <a href="https://usekredibly.com/admin" style="font-weight: 700; color: #4C1D95; text-decoration: none;">Launch Admin Panel →</a>
   </div>
+  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
+    <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
+  </div>
 </body>
 </html>
 `;
@@ -123,6 +132,9 @@ const WAITLIST_NOTIFICATION_TEMPLATE = `
       <p style="margin: 8px 0;"><strong>WhatsApp:</strong> {whatsappNumber}</p>
       <p style="margin: 8px 0;"><strong>Industry:</strong> {industry}</p>
   </div>
+  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
+    <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
+  </div>
 </body>
 </html>
 `;
@@ -135,15 +147,18 @@ const WAITLIST_CONFIRMATION_TEMPLATE = `
     <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
   </div>
   <p style="font-size: 18px; font-weight: 800; color: #111827; margin-top: 0;">You're in, {name}.</p>
-  <p>I’m Akinyemi Oluwatosin, founder of Kredibly, and I’m personally writing to let you know that we’ve officially reserved your spot in our "Founding Members" group. We are currently polishing the AI to make sure that the moment you link your WhatsApp, your bookkeeping and invoicing becomes effortless.</p>
-  <p>I don't like boring waitlists, so if you refer 3 fellow business owners, I’ll move you to the very top of the queue immediately. Use your unique invite link below to get started:</p>
+  <p>We've officially reserved your spot in our "Founding Members" group. We are currently polishing the AI to make sure that the moment you link your WhatsApp, your bookkeeping and invoicing becomes effortless.</p>
+  <p>We don't like boring waitlists, so if you refer 3 fellow business owners, we'll move you to the very top of the queue immediately. Use your unique invite link below to get started:</p>
   <div style="margin: 32px 0;">
       <a href="{referralLink}" style="background-color: #111827; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; display: inline-block;">Copy My Invite Link</a>
   </div>
   <p>We’ll be reaching out via WhatsApp and email soon with your onboarding details. Welcome to the movement.</p>
   <div style="margin-top: 48px;">
-    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">Akinyemi Oluwatosin</p>
-    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
+    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">The Kredibly Team</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">hello@usekredibly.com</p>
+  </div>
+  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
+    <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
   </div>
 </body>
 </html>
@@ -166,8 +181,11 @@ const SUPPORT_REPLY_TEMPLATE = `
     <a href="https://usekredibly.com/dashboard" style="background-color: #111827; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; display: inline-block;">Go to Dashboard</a>
   </div>
   <div style="margin-top: 48px;">
-    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">Akinyemi Oluwatosin</p>
-    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
+    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">The Kredibly Team</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">hello@usekredibly.com</p>
+  </div>
+  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
+    <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
   </div>
 </body>
 </html>
@@ -182,7 +200,7 @@ const SUBSCRIPTION_CONFIRM_TEMPLATE = `
   </div>
   <p style="font-size: 18px; font-weight: 800; color: #111827; margin-top: 0;">Payment Verified. Welcome home, Pioneer 🛡️</p>
   <p>Hi {name},</p>
-  <p>I’m Akinyemi Oluwatosin, and I wanted to personally reach out because your support today means a lot to me. By securing your <strong>{planName} Plan</strong>, you’ve not just bought a tool; you’ve joined a mission to build a more professional and reliable future for your business.</p>
+  <p>Your support today means a lot to us. By securing your <strong>{planName} Plan</strong>, you’ve not just bought a tool; you’ve joined a mission to build a more professional and reliable future for your business.</p>
   <div style="background: #F9FAFB; border-radius: 12px; padding: 20px; margin: 24px 0;">
       <p style="margin: 0 0 8px;"><strong>Plan:</strong> {planName}</p>
       <p style="margin: 0 0 8px;"><strong>Amount:</strong> {amount}</p>
@@ -190,10 +208,13 @@ const SUBSCRIPTION_CONFIRM_TEMPLATE = `
       <p style="margin: 0;"><strong>Next Renewal:</strong> {expiryDate}</p>
   </div>
   <p>{pioneerStatus}</p>
-  <p>I built Kredibly because I believe your shop boy shouldn't be late and your debtors shouldn't have excuses. Together, we are changing the standard. If you need anything, simply reply to this email.</p>
+  <p>We built Kredibly because we believe your shop boy shouldn't be late and your debtors shouldn't have excuses. Together, we are changing the standard. If you need anything at all, simply reply to this email.</p>
   <div style="margin-top: 48px;">
-    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">Akinyemi Oluwatosin</p>
-    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
+    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">The Kredibly Team</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">hello@usekredibly.com</p>
+  </div>
+  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
+    <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
   </div>
 </body>
 </html>
@@ -221,8 +242,11 @@ const BANK_CHANGE_ALERT_TEMPLATE = `
   </div>
   <p style="font-size: 14px; color: #6B7280;">If you made this change, you can safely ignore this email.</p>
   <div style="margin-top: 48px;">
-    <p style="font-weight: 800; margin: 0; font-size: 16px; color: #111827;">Akinyemi Oluwatosin</p>
-    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
+    <p style="font-weight: 800; margin: 0; font-size: 16px; color: #111827;">The Kredibly Team</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">hello@usekredibly.com</p>
+  </div>
+  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
+    <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
   </div>
 </body>
 </html>
@@ -244,8 +268,11 @@ const ONBOARDING_SUCCESS_TEMPLATE = `
   </div>
   <p>Welcome home.</p>
   <div style="margin-top: 48px;">
-    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">Akinyemi Oluwatosin</p>
-    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder & CEO, Kredibly</p>
+    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">The Kredibly Team</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">hello@usekredibly.com</p>
+  </div>
+  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
+    <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
   </div>
 </body>
 </html>

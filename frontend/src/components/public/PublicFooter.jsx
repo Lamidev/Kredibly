@@ -129,7 +129,7 @@ const PublicFooter = () => {
                     gap: '20px'
                 }}>
                     <p style={{ fontWeight: 600, fontSize: 'clamp(0.75rem, 1.5vw, 0.85rem)', color: '#64748B', margin: 0 }}>
-                        © 2026 Kredibly Technologies Inc.
+                        © {new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.
                     </p>
                     <div style={{ display: 'flex', gap: '32px' }}>
                         <span style={{ color: '#64748B', fontSize: 'clamp(0.75rem, 1.5vw, 0.85rem)', fontWeight: 700 }}>Built for Global Commerce</span>
