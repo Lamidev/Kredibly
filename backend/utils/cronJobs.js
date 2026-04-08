@@ -3,6 +3,7 @@ const BusinessProfile = require("../models/BusinessProfile");
 const Sale = require("../models/Sale");
 const Reminder = require("../models/Reminder");
 const { sendWhatsAppMessage } = require("../controllers/whatsapp/whatsappController");
+const { sendActivationNudgeEmail, sendFinishSetupEmail } = require("../emailLogic/emails");
 
 /**
  * TASK REMINDERS WORKER (Runs every minute)
@@ -136,12 +137,19 @@ const scheduleMorningSummary = () => {
             const endOfYesterday = new Date(yesterday);
             endOfYesterday.setHours(23, 59, 59, 999);
 
+            const nowTime = new Date();
+            const LAUNCH_DATE = new Date('2026-05-01T00:00:00Z');
+            const isPreLaunch = nowTime < LAUNCH_DATE;
+
+            // Step 1: Query profiles that have a WhatsApp number and are NOT skipped for today
             const profiles = await BusinessProfile.find({ 
                 whatsappNumber: { $exists: true, $ne: "" },
-                createdAt: { $lt: startOfToday }
+                // During pre-launch, we allow same-day summaries for new joins to wow them
+                // Post-launch, we stick to the 1-day lag
+                ...(isPreLaunch ? {} : { createdAt: { $lt: startOfToday } })
             });
 
-            console.log(`🔍 Summary Task: Processing ${profiles.length} businesses...`);
+            console.log(`🔍 Summary Task: Processing ${profiles.length} businesses... (Pre-Launch: ${isPreLaunch})`);
 
             let sentCount = 0;
             let skipCount = 0;
@@ -151,6 +159,13 @@ const scheduleMorningSummary = () => {
                 try {
                     // Skip if already sent today
                     if (profile.lastSummaryAt && profile.lastSummaryAt >= startOfToday) {
+                        skipCount++;
+                        continue;
+                    }
+
+                    // 🛡️ ACTIVATION LOCK: Only send if they have messaged Kreddy!
+                    // If not connected, we don't send summaries yet to respect the dashboard activation flow.
+                    if (!profile.isKreddyConnected) {
                         skipCount++;
                         continue;
                     }
@@ -183,14 +198,17 @@ const scheduleMorningSummary = () => {
                         pendingFromYesterday += Math.max(0, s.totalAmount - paid);
                     });
 
-                    // Only send if there was activity OR if it's a Chairman/Oga
-                    if (salesYesterday.length > 0 || totalCashIn > 0 || profile.plan === 'chairman' || profile.plan === 'oga') {
-                        const planTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
+                    // PRE-LAUNCH RULE: Everyone gets the full summary experience
+                    const effectivePlan = isPreLaunch ? 'oga' : profile.plan;
+                    
+                    // Only send if there was activity OR if it's a Chairman/Oga OR if it's Pre-Launch
+                    if (salesYesterday.length > 0 || totalCashIn > 0 || effectivePlan === 'chairman' || effectivePlan === 'oga') {
+                        const planTitle = effectivePlan === "chairman" ? "Chairman" : (effectivePlan === "oga" ? "Oga" : "Boss");
                         const bossTitle = profile.assistantSettings?.preferredName || planTitle;
-                        const isHustler = profile.plan === 'hustler';
+                        const isHustler = effectivePlan === 'hustler';
                         
                         let msg = "";
-                        if (isHustler) {
+                        if (isHustler && !isPreLaunch) {
                             msg = `🌞 *Rise and Grind, ${bossTitle}!* \n\nYou recorded *${salesYesterday.length || 0} sales* yesterday! 🚀 \n\nTo see your total *Cash Collected*, *Outstanding Credit*, and *Today's Agenda*, upgrade to the *Oga Plan* now. Don't leave your money hanging! 🛡️\n\n`;
                         } else {
                             msg = `🌞 *Rise and Grind, ${bossTitle}!* \n\nHere is your *Kredibly Intelligence Summary* for yesterday:\n\n`;
@@ -249,6 +267,54 @@ const scheduleMorningSummary = () => {
                 }
             }
 
+            // 📧 NEW: Automated Daily Nudges for unconnected/unonboarded users
+            console.log(`📧 Checking for users who need a gentle nudge...`);
+            let nudgeCount = 0;
+            
+            // 🛡️ GRACE PERIOD: Only nudge if registered > 24 hours ago
+            const gracePeriodLimit = new Date();
+            gracePeriodLimit.setHours(gracePeriodLimit.getHours() - 24);
+
+            const potentialNudges = await BusinessProfile.find({
+                createdAt: { $lt: gracePeriodLimit }, // Wait 24h
+                $or: [
+                    { isKreddyConnected: false },
+                    { onboardingStep: 0 }
+                ],
+                $or: [
+                    { lastActivationNudgeAt: { $lt: startOfToday } },
+                    { lastActivationNudgeAt: { $exists: false } },
+                    { lastActivationNudgeAt: null }
+                ]
+            }).populate('ownerId');
+
+            for (const profile of potentialNudges) {
+                try {
+                    if (profile.ownerId && profile.ownerId.email) {
+                        const email = profile.ownerId.email;
+                        const name = profile.ownerId.name || profile.displayName;
+
+                        // Case A: Not even finished Dashboard setup
+                        if (profile.onboardingStep === 0) {
+                            await sendFinishSetupEmail(email, name);
+                            console.log(`👉 Sent Finish Setup Nudge to ${email}`);
+                        } 
+                        // Case B: Finished Dashboard but not activated Kreddy
+                        else if (!profile.isKreddyConnected) {
+                            await sendActivationNudgeEmail(email, name);
+                            console.log(`👉 Sent Activation Nudge to ${email}`);
+                        }
+
+                        profile.lastActivationNudgeAt = new Date();
+                        await profile.save();
+                        nudgeCount++;
+                    }
+                } catch (nudgeErr) {
+                    console.error(`❌ Failed nudge for ${profile.displayName}:`, nudgeErr.message);
+                }
+            }
+            if (nudgeCount > 0) console.log(`✅ Automated Daily Task: Sent ${nudgeCount} Nudges via Email.`);
+
             await ActivityLog.create({
                 action: "SYSTEM_TASK",
                 entityType: "SYSTEM",
@@ -272,6 +338,8 @@ const scheduleMorningSummary = () => {
     if (lagosHour >= 8 && lagosHour < 22) { // Only catch up if it's past 8 AM but before 10 PM
         setTimeout(() => runSummaryLogic(true), 15000); 
     }
+
+    return { runSummaryLogic };
 };
 
 
@@ -561,6 +629,7 @@ const scheduleMonthlyUsageReset = () => {
         }
     });
 };
+
 
 module.exports = { 
     scheduleMorningSummary, 

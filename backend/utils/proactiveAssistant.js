@@ -4,18 +4,16 @@ const WhatsAppSession = require("../models/WhatsAppSession");
 const { sendWhatsAppMessage } = require("../controllers/whatsapp/whatsappController");
 const { sendEmail } = require("./emailService");
 
-/**
- * 🚀 High-Efficiency Proactive Assistant
- * Optimized for lean performance without Redis.
- * - Intelligent grouping to reduce API calls
- * - Morning Briefing feature for high engagement
- * - Individual business failure isolation
- */
-
 const checkAndNotify = async () => {
     try {
         const now = new Date();
-        const currentHour = now.getHours();
+        // Fix: Use Africa/Lagos Timezone for current hour check
+        const lagosTime = new Intl.DateTimeFormat('en-GB', {
+            hour: 'numeric',
+            hour12: false,
+            timeZone: 'Africa/Lagos'
+        }).format(now);
+        const currentHour = parseInt(lagosTime);
         
         // Define Day Boundaries
         const todayStart = new Date(now);
@@ -26,10 +24,11 @@ const checkAndNotify = async () => {
         tomorrowEnd.setHours(23, 59, 59, 999);
 
         /**
-         * 1. MORNING BRIEFING (8 AM - 9 AM)
+         * 1. MORNING BRIEFING (8:30 AM - 9:30 AM)
+         * Slightly delayed to allow the Cron Summary (8:00 AM) to fire first.
          * Only happens once per day per business.
          */
-        const isMorningWindow = currentHour >= 8 && currentHour < 9;
+        const isMorningWindow = currentHour === 8 && now.getMinutes() >= 30;
         
         /**
          * 2. BATCH FETCH ALL RELEVANT SALES
@@ -60,7 +59,7 @@ const checkAndNotify = async () => {
         for (const bId in groupedByBusiness) {
             try {
                 const { business, sales } = groupedByBusiness[bId];
-                if (!business || !business.whatsappNumber || business.assistantSettings?.enableReminders === false) continue;
+                if (!business || !business.whatsappNumber || !business.isKreddyConnected || business.assistantSettings?.enableReminders === false) continue;
 
                 let message = "";
                 let subject = "";

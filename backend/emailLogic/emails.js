@@ -9,7 +9,9 @@ const {
   WAITLIST_CONFIRMATION_TEMPLATE,
   SUPPORT_REPLY_TEMPLATE,
   SUBSCRIPTION_CONFIRM_TEMPLATE,
-  BANK_CHANGE_ALERT_TEMPLATE
+  BANK_CHANGE_ALERT_TEMPLATE,
+  ACTIVATION_NUDGE_TEMPLATE,
+  FINISH_SETUP_TEMPLATE
 } = require("./emailTemplates.js");
 const { resendClient, sender } = require("./emailConfig.js");
 
@@ -203,6 +205,32 @@ exports.sendSubscriptionConfirmEmail = async (email, userData) => {
         });
     } catch (error) {
         console.error("Error sending subscription confirmation email:", error);
+    }
+};
+
+exports.sendActivationNudgeEmail = async (email, userName) => {
+    try {
+        await resendClient.emails.send({
+            from: `${sender.name} <${sender.email}>`,
+            to: email,
+            subject: `Help me get to work, ${userName.split(' ')[0]}? 🛡️`,
+            html: ACTIVATION_NUDGE_TEMPLATE.replace(/{name}/g, userName.split(' ')[0])
+        });
+    } catch (error) {
+        console.error("Error sending activation nudge email:", error);
+    }
+};
+
+exports.sendFinishSetupEmail = async (email, userName) => {
+    try {
+        await resendClient.emails.send({
+            from: `${sender.name} <${sender.email}>`,
+            to: email,
+            subject: `Don't leave your shop boy hanging, ${userName.split(' ')[0]}? 🛡️`,
+            html: FINISH_SETUP_TEMPLATE.replace(/{name}/g, userName.split(' ')[0])
+        });
+    } catch (error) {
+        console.error("Error sending finish setup email:", error);
     }
 };
 

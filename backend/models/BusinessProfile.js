@@ -146,6 +146,10 @@ const BusinessProfileSchema = new mongoose.Schema({
         type: Date,
         default: null
     },
+    lastActivationNudgeAt: {
+        type: Date,
+        default: null
+    },
     createdAt: {
         type: Date,
         default: Date.now
