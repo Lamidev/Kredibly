@@ -278,6 +278,58 @@ const ONBOARDING_SUCCESS_TEMPLATE = `
 </html>
 `;
 
+const ACTIVATION_NUDGE_TEMPLATE = `
+<!DOCTYPE html>
+<html lang="en">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.8; color: #374151; max-width: 600px; margin: 0 auto; padding: 24px;">
+  <div style="margin-bottom: 32px;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
+  </div>
+  <p style="font-size: 18px; font-weight: 800; color: #111827; margin-top: 0;">Help me get to work, {name}? 🛡️</p>
+  <p>I noticed you registered your business on Kredibly, but your Digital Chief of Staff (Kreddy) is still waiting for the green light to start working.</p>
+  <p>Without activation, I can't track your sales, automatically chase your debtors, or give you the daily intelligence summaries you need to stay in control.</p>
+  <p>It takes less than 60 seconds to finish. Once you're done, just message me <strong>"Hi Kreddy"</strong> on WhatsApp, and I'll take it from there.</p>
+  <div style="margin: 32px 0;">
+    <a href="https://usekredibly.com/dashboard" style="background-color: #4C1D95; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; display: inline-block;">Finish My Activation 🚀</a>
+  </div>
+  <p>I built Kredibly so you can focus on growing your business while I handle the chaos. Let's get started.</p>
+  <div style="margin-top: 48px;">
+    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">Oluwatosin</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder, Kredibly</p>
+  </div>
+  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
+    <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
+  </div>
+</body>
+</html>
+`;
+
+const FINISH_SETUP_TEMPLATE = `
+<!DOCTYPE html>
+<html lang="en">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.8; color: #374151; max-width: 600px; margin: 0 auto; padding: 24px;">
+  <div style="margin-bottom: 32px;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
+  </div>
+  <p style="font-size: 18px; font-weight: 800; color: #111827; margin-top: 0;">Don't leave your shop boy hanging, {name}! 🛡️</p>
+  <p>I noticed you started your Kredibly journey, but your business profile is still missing some key details.</p>
+  <p>To start recording sales, sending professional invoices, and tracking your debts automatically, you need to finish your dashboard setup.</p>
+  <p>It’s fast, simple, and the final step before you can activate Kreddy, your Digital Chief of Staff, on WhatsApp.</p>
+  <div style="margin: 32px 0;">
+    <a href="https://usekredibly.com/onboarding" style="background-color: #4C1D95; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; display: inline-block;">Complete My Setup 🚀</a>
+  </div>
+  <p>Let's get your business automated so you can spend less time bookkeeping and more time growing.</p>
+  <div style="margin-top: 48px;">
+    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">Oluwatosin</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">Founder, Kredibly</p>
+  </div>
+  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
+    <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
+  </div>
+</body>
+</html>
+`;
+
 module.exports = {
   VERIFICATION_EMAIL_TEMPLATE,
   PASSWORD_RESET_SUCCESS_TEMPLATE,
@@ -289,5 +341,7 @@ module.exports = {
   WAITLIST_CONFIRMATION_TEMPLATE,
   SUPPORT_REPLY_TEMPLATE,
   SUBSCRIPTION_CONFIRM_TEMPLATE,
-  BANK_CHANGE_ALERT_TEMPLATE
+  BANK_CHANGE_ALERT_TEMPLATE,
+  ACTIVATION_NUDGE_TEMPLATE,
+  FINISH_SETUP_TEMPLATE
 };
