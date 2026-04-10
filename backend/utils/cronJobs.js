@@ -149,7 +149,7 @@ const scheduleMorningSummary = () => {
                 ...(isPreLaunch ? {} : { createdAt: { $lt: startOfToday } })
             });
 
-            console.log(`🔍 Summary Task: Processing ${profiles.length} businesses... (Pre-Launch: ${isPreLaunch})`);
+
 
             let sentCount = 0;
             let skipCount = 0;
@@ -267,60 +267,13 @@ const scheduleMorningSummary = () => {
                 }
             }
 
-            // 📧 NEW: Automated Daily Nudges for unconnected/unonboarded users
-            console.log(`📧 Checking for users who need a gentle nudge...`);
-            let nudgeCount = 0;
-            
-            // 🛡️ GRACE PERIOD: Only nudge if registered > 24 hours ago
-            const gracePeriodLimit = new Date();
-            gracePeriodLimit.setHours(gracePeriodLimit.getHours() - 24);
-
-            const potentialNudges = await BusinessProfile.find({
-                createdAt: { $lt: gracePeriodLimit }, // Wait 24h
-                $or: [
-                    { isKreddyConnected: false },
-                    { onboardingStep: 0 }
-                ],
-                $or: [
-                    { lastActivationNudgeAt: { $lt: startOfToday } },
-                    { lastActivationNudgeAt: { $exists: false } },
-                    { lastActivationNudgeAt: null }
-                ]
-            }).populate('ownerId');
-
-            for (const profile of potentialNudges) {
-                try {
-                    if (profile.ownerId && profile.ownerId.email) {
-                        const email = profile.ownerId.email;
-                        const name = profile.ownerId.name || profile.displayName;
-
-                        // Case A: Not even finished Dashboard setup
-                        if (profile.onboardingStep === 0) {
-                            await sendFinishSetupEmail(email, name);
-                            console.log(`👉 Sent Finish Setup Nudge to ${email}`);
-                        } 
-                        // Case B: Finished Dashboard but not activated Kreddy
-                        else if (!profile.isKreddyConnected) {
-                            await sendActivationNudgeEmail(email, name);
-                            console.log(`👉 Sent Activation Nudge to ${email}`);
-                        }
-
-                        profile.lastActivationNudgeAt = new Date();
-                        await profile.save();
-                        nudgeCount++;
-                    }
-                } catch (nudgeErr) {
-                    console.error(`❌ Failed nudge for ${profile.displayName}:`, nudgeErr.message);
-                }
-            }
-            if (nudgeCount > 0) console.log(`✅ Automated Daily Task: Sent ${nudgeCount} Nudges via Email.`);
 
             await ActivityLog.create({
                 action: "SYSTEM_TASK",
                 entityType: "SYSTEM",
                 details: `Morning Summary (${type}) finished. Sent: ${sentCount}, Skipped: ${skipCount}, Errors: ${errorCount}`
             });
-            console.log(`✅ Morning Summary Task Finished: Sent ${sentCount}, Skipped ${skipCount}, Errors ${errorCount}`);
+
 
         } catch (err) {
             console.error("Cron Job Error (Morning Summary Global):", err);

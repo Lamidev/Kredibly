@@ -36,7 +36,7 @@ const PublicInvoicePage = () => {
     const [recentPaymentDate, setRecentPaymentDate] = useState(null);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [generating, setGenerating] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState('paystack'); // Default to Paystack to hide Squad 403 errors for now
+    const [paymentMethod, setPaymentMethod] = useState('paystack'); // Default to Paystack
     const [squadData, setSquadData] = useState(null);
     const [loadingSquad, setLoadingSquad] = useState(false);
     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
@@ -229,7 +229,7 @@ const PublicInvoicePage = () => {
     const isOverdue = sale && !isPaid && sale.dueDate && new Date(sale.dueDate) < new Date();
     const isDebtRecovery = sale && !isPaid && (sale.status === 'partial' || isOverdue);
 
-    // Auto-init Squad if it's the selected mode
+    // Auto-init for Transfer modes
     useEffect(() => {
         if (paymentMethod === 'squad' && sale && !isPaid && !squadData) {
             handleSquadInitialization();
@@ -286,6 +286,8 @@ const PublicInvoicePage = () => {
                             // 🏆 SUCCESS: Show modal FIRST to build trust immediately
                             setLastPaymentAmount(verifyRes.data.originalAmount || amountToPay);
                             setRecentPaymentDate(new Date());
+                            setCustomAmount('');
+                            setCustomAmountDisplay('');
                             setShowSuccessModal(true);
                             
                             // 2. 🔄 Refresh local sale data (Background Task)
@@ -806,43 +808,33 @@ const PublicInvoicePage = () => {
                                     )}
                                 </AnimatePresence>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                    {/* Tab Selector */}
-                                    {/* 🛡️ TAB SELECTOR REMOVED UNTIL SQUAD IS READY */}
-
-
-                                    {paymentMethod === 'squad_disabled' ? ( // Hidden
-                                        <div></div>
-                                    ) : (
-                                            <button 
-                                                onClick={() => handlePaystackPayment('transfer')}
-                                                disabled={verifying}
-                                                style={{ 
-                                                    width: '100%', 
-                                                    padding: isMobile ? '18px' : '22px', 
-                                                    background: isOverdue ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)' : 'linear-gradient(135deg, #4C1D95 0%, #2E1065 100%)',
-                                                    color: 'white', 
-                                                    borderRadius: '16px', 
-                                                    border: 'none', 
-                                                    fontWeight: 800, 
-                                                    fontSize: isMobile ? '16px' : '18px', 
-                                                    cursor: verifying ? 'not-allowed' : 'pointer', 
-                                                    display: 'flex', 
-                                                    alignItems: 'center', 
-                                                    justifyContent: 'center', 
-                                                    gap: '12px', 
-                                                    boxShadow: isOverdue ? '0 12px 20px rgba(239, 68, 68, 0.25)' : '0 12px 20px rgba(76, 29, 149, 0.3)',
-                                                    transition: '0.3s transform, 0.3s box-shadow',
-                                                }}
-                                                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                                                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                                            >
-                                                {verifying ? <Loader2 size={22} className="spin-animation" /> : <Building2 size={24} />}
-                                                <span>Pay via Transfer / OPay</span>
-                                            </button>
-
-
-                                    )}
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                        <button 
+                                            onClick={() => handlePaystackPayment('transfer')}
+                                            disabled={verifying}
+                                            style={{ 
+                                                width: '100%', 
+                                                padding: isMobile ? '18px' : '22px', 
+                                                background: isOverdue ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)' : 'linear-gradient(135deg, #4C1D95 0%, #2E1065 100%)',
+                                                color: 'white', 
+                                                borderRadius: '16px', 
+                                                border: 'none', 
+                                                fontWeight: 800, 
+                                                fontSize: isMobile ? '16px' : '18px', 
+                                                cursor: verifying ? 'not-allowed' : 'pointer', 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'center', 
+                                                gap: '12px', 
+                                                boxShadow: isOverdue ? '0 12px 20px rgba(239, 68, 68, 0.25)' : '0 12px 20px rgba(76, 29, 149, 0.3)',
+                                                transition: '0.3s transform, 0.3s box-shadow',
+                                            }}
+                                            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                                        >
+                                            {verifying ? <Loader2 size={22} className="spin-animation" /> : <CreditCard size={24} />}
+                                            <span>{verifying ? 'Securing Payment...' : 'Pay via Transfer/Opay'}</span>
+                                        </button>
                                 </div>
 
                                 <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
