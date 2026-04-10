@@ -44,13 +44,13 @@ const {
 
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
-const mongoSanitize = require("express-mongo-sanitize"); // Replaces custom loop
+const mongoSanitize = require("express-mongo-sanitize"); 
 const xss = require("xss");
 
 const app = express();
 const PORT = process.env.PORT || 7050;
 
-// 1. Security Headers (Helmet) - Configured for External Assets (Cloudinary)
+// 1. Security Headers (Helmet)
 app.use(helmet({
   contentSecurityPolicy: {
     useDefaults: true,
@@ -68,7 +68,7 @@ app.use(helmet({
 // 2. Security Middleware: Rate Limiting
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 500, // Increased from 100
+  max: 500, 
   message: { message: "Too many requests from this IP, please try again after 15 minutes" },
   standardHeaders: true,
   legacyHeaders: false,
@@ -76,15 +76,13 @@ const generalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 50, // Increased from 15
+  max: 50, 
   message: { message: "Too many auth attempts. Please wait 15 minutes." },
 });
 
-// Apply rate limiting
 app.use("/api/", generalLimiter);
 app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/register", authLimiter);
-app.use("/api/business/payout-settings", authLimiter);
 
 // 3. Data Sanitization
 app.use(
@@ -97,7 +95,7 @@ app.use(
 );
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
-// Fix for Express 4.x req.query getter issue with express-mongo-sanitize
+// 🛑 FIX: Express 4.x/5.x req.query getter issue with express-mongo-sanitize
 app.use((req, res, next) => {
   if (req.query) {
     Object.defineProperty(req, 'query', {
@@ -110,7 +108,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// NoSQL Injection Protection (Fast & Non-Blocking)
 app.use(mongoSanitize());
 
 // 4. CORS & Cookies
@@ -118,17 +115,12 @@ app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
-
       const allowedOrigins = [
         "http://localhost:5173",
         "https://usekredibly.com",
         "https://www.usekredibly.com",
       ];
-
-      const isAllowed =
-        allowedOrigins.includes(origin) ||
-        (origin && origin.includes("ngrok-free.dev"));
-
+      const isAllowed = allowedOrigins.includes(origin) || (origin && origin.includes("ngrok-free.dev"));
       if (isAllowed) callback(null, true);
       else callback(new Error("Not allowed by CORS"));
     },
@@ -142,14 +134,8 @@ app.use(cookieParser());
 
 // 3. Health Check
 app.get("/api/health-check", (req, res) => {
-  const dbStatus =
-    mongoose.connection.readyState === 1 ? "connected" : "disconnected";
-
-  res.status(200).json({
-    status: "alive",
-    database: dbStatus,
-    timestamp: new Date(),
-  });
+  const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+  res.status(200).json({ status: "alive", database: dbStatus, timestamp: new Date() });
 });
 
 // 4. Routes
@@ -167,7 +153,7 @@ app.use("/api/waitlist", waitlistRoutes);
 app.use("/api/admin/feedback", require("./routes/admin/feedbackRoutes"));
 app.use("/api/coupons", require("./routes/common/couponRoutes"));
 
-// 5. Sentry Error Handler (Must be before any other error middleware)
+// 5. Sentry Error Handler
 setupSentryErrorHandler(app);
 
 // 6. Global Error Handler
@@ -220,4 +206,3 @@ mongoose
     console.error("❌ MongoDB connection failed:", error);
     process.exit(1);
   });
-

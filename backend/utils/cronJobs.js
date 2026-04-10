@@ -18,7 +18,6 @@ const scheduleRemindersWorker = () => {
             }).populate("businessId").populate("saleId");
 
             for (const reminder of pendingReminders) {
-                // Atomic check-and-set
                 const acquired = await Reminder.findOneAndUpdate(
                     { _id: reminder._id, status: "pending" },
                     { status: "processing" }
@@ -76,7 +75,6 @@ const scheduleRemindersWorker = () => {
                 acquired.deliveredAt = new Date();
                 await acquired.save();
 
-                // Recurrence
                 if (acquired.recurrence && acquired.recurrence !== "none") {
                     const nextDate = new Date(acquired.triggerDate);
                     if (acquired.recurrence === "daily") nextDate.setDate(nextDate.getDate() + 1);
@@ -153,15 +151,11 @@ const schedulePlanExpiryReminders = () => {
     cron.schedule("0 9 * * *", async () => {
         try {
             const now = new Date();
-            const threeDaysLimit = new Date(); threeDaysLimit.setDate(threeDaysLimit.getDate() + 3);
-            
-            // Logic for active_expiry, grace_choice, trial_lock
             const query = await BusinessProfile.find({
                 planStatus: { $in: ["trialing", "active", "past_due"] }
             });
 
             for (const profile of query) {
-                // Simplified queuing logic for the worker to handle details
                 await BackgroundJob.create({
                     type: "TRIAL_EXPIRY",
                     businessId: profile._id,
@@ -269,9 +263,6 @@ const scheduleMonthlyUsageReset = () => {
             await BusinessProfile.updateMany({}, { 
                 $set: { 
                     "monthlyUsage.messages": 0,
-                    "monthlyUsage.images": 0,
-                    "monthlyUsage.voiceNotes": 0,
-                    "monthlyUsage.reminders": 0,
                     "monthlyUsage.lastReset": new Date()
                 }
             });
