@@ -4,9 +4,10 @@ const Sale = require("../models/Sale");
 const Reminder = require("../models/Reminder");
 const { sendWhatsAppMessage } = require("../controllers/whatsapp/whatsappController");
 const { sendActivationNudgeEmail, sendFinishSetupEmail } = require("../emailLogic/emails");
+const BackgroundJob = require("../models/BackgroundJob");
 
 /**
- * TASK REMINDERS WORKER (Runs every minute)
+ * 1. TASK REMINDERS WORKER (Runs every minute)
  */
 const scheduleRemindersWorker = () => {
     cron.schedule("* * * * *", async () => {
@@ -17,13 +18,12 @@ const scheduleRemindersWorker = () => {
             }).populate("businessId").populate("saleId");
 
             for (const reminder of pendingReminders) {
-                // Atomic check-and-set to avoid duplicates if workers run concurrently
                 const acquired = await Reminder.findOneAndUpdate(
                     { _id: reminder._id, status: "pending" },
                     { status: "processing" }
                 ).populate("businessId").populate("saleId");
                 
-                if (!acquired) continue; // Already processed by another tick
+                if (!acquired) continue;
 
                 if (!acquired.businessId) {
                     acquired.status = "delivered";
@@ -36,12 +36,7 @@ const scheduleRemindersWorker = () => {
                 const planTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
                 const title = acquired.businessId.assistantSettings?.preferredName || planTitle;
 
-                const typeIcons = {
-                    debt: "⏳",
-                    task: "📝",
-                    meeting: "🤝",
-                    personal: "💡"
-                };
+                const typeIcons = { debt: "⏳", task: "📝", meeting: "🤝", personal: "💡" };
                 const icon = typeIcons[reminder.type] || "🔔";
 
                 let msg = `${icon} *Kreddy Reminder!* \n\n${title}, you asked me to remind you to:\n*"${acquired.description}"*\n\n`;
@@ -52,7 +47,6 @@ const scheduleRemindersWorker = () => {
                     const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
                     
                     if (bal <= 0) {
-                        console.log(`✅ Skipping reminder for ${sale.invoiceNumber} as it is already paid.`);
                         acquired.status = "delivered";
                         await acquired.save();
                         continue;
@@ -62,22 +56,16 @@ const scheduleRemindersWorker = () => {
                     msg += `*Forward this link to them to collect payment!* 💸\n\n`;
                 }
 
-                msg += `Let's get it done! 🚀\n\n_Reply "snooze 10 mins" if you are running late, or type a new time (e.g. "Tomorrow at 2pm")._`;
+                msg += `Let's get it done! 🚀\n\n_Reply "snooze 10 mins" if you are running late!_`;
 
-                await sendWhatsAppMessage(acquired.whatsappNumber, msg).catch(e => {
-                    console.error(`Failed to send reminder to ${acquired.whatsappNumber}:`, e.message);
-                });
+                await sendWhatsAppMessage(acquired.whatsappNumber, msg).catch(e => {});
 
-                // 2. SEPARATE DRAFT MESSAGE: If it's a debt, send a forwardable message
                 if (acquired.saleId) {
                     const sale = acquired.saleId;
                     const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                     const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
-                    const link = `${APP_URL}/i/${sale.invoiceNumber}`;
+                    const draftMsg = `Hi ${sale.customerName}, this is a friendly reminder regarding your balance of ₦${bal.toLocaleString()} with ${acquired.businessId.displayName}. You can view and pay here: ${APP_URL}/i/${sale.invoiceNumber}`;
                     
-                    const draftMsg = `Hi ${sale.customerName}, this is a friendly reminder regarding your balance of ₦${bal.toLocaleString()} with ${acquired.businessId.displayName}. You can view and pay here: ${link}`;
-                    
-                    // Small delay to ensure it arrives second
                     setTimeout(async () => {
                         await sendWhatsAppMessage(acquired.whatsappNumber, draftMsg).catch(e => {});
                     }, 1000);
@@ -87,7 +75,6 @@ const scheduleRemindersWorker = () => {
                 acquired.deliveredAt = new Date();
                 await acquired.save();
 
-                // --- RECURRENCE LOGIC ---
                 if (acquired.recurrence && acquired.recurrence !== "none") {
                     const nextDate = new Date(acquired.triggerDate);
                     if (acquired.recurrence === "daily") nextDate.setDate(nextDate.getDate() + 1);
@@ -112,477 +99,257 @@ const scheduleRemindersWorker = () => {
 };
 
 /**
- * MORNING CHIEF SUMMARY (8:00 AM Daily)
- * Sends a summary of yesterday's performance to the Business Owner.
+ * 2. MORNING CHIEF SUMMARY (8:00 AM Lagos)
  */
 const scheduleMorningSummary = () => {
-    // Helper function for the core logic so we can call it on cron AND on startup check
-    const runSummaryLogic = async (isManual = false) => {
+    const generateMorningSummaryJobs = async (isManual = false) => {
         const type = isManual ? "Catch-up" : "Scheduled";
         const now = new Date();
-        const startOfToday = new Date(now);
-        startOfToday.setHours(0, 0, 0, 0);
-
-        console.log(`🌞 Running Morning Chief Summary (${type} - 8AM WAT)...`);
+        const startOfToday = new Date(now); startOfToday.setHours(0, 0, 0, 0);
         
         try {
-            // Check if we even need to run (for Global Task Logging)
             const ActivityLog = require("../models/ActivityLog");
-            
-            const yesterday = new Date(now);
-            yesterday.setDate(yesterday.getDate() - 1);
-            yesterday.setHours(0, 0, 0, 0);
-            
-            const startOfYesterday = new Date(yesterday);
-            const endOfYesterday = new Date(yesterday);
-            endOfYesterday.setHours(23, 59, 59, 999);
+            const profiles = await BusinessProfile.find({ isKreddyConnected: true });
 
-            const nowTime = new Date();
-            const LAUNCH_DATE = new Date('2026-05-01T00:00:00Z');
-            const isPreLaunch = nowTime < LAUNCH_DATE;
-
-            // Step 1: Query profiles that have a WhatsApp number and are NOT skipped for today
-            const profiles = await BusinessProfile.find({ 
-                whatsappNumber: { $exists: true, $ne: "" },
-                // During pre-launch, we allow same-day summaries for new joins to wow them
-                // Post-launch, we stick to the 1-day lag
-                ...(isPreLaunch ? {} : { createdAt: { $lt: startOfToday } })
-            });
-
-
-
-            let sentCount = 0;
-            let skipCount = 0;
-            let errorCount = 0;
-
+            let queuedCount = 0;
             for (const profile of profiles) {
-                try {
-                    // Skip if already sent today
-                    if (profile.lastSummaryAt && profile.lastSummaryAt >= startOfToday) {
-                        skipCount++;
-                        continue;
-                    }
+                if (profile.lastSummaryAt && profile.lastSummaryAt >= startOfToday) continue;
+                
+                const existingJob = await BackgroundJob.findOne({
+                    businessId: profile._id,
+                    type: "MORNING_SUMMARY",
+                    createdAt: { $gte: startOfToday }
+                });
 
-                    // 🛡️ ACTIVATION LOCK: Only send if they have messaged Kreddy!
-                    // If not connected, we don't send summaries yet to respect the dashboard activation flow.
-                    if (!profile.isKreddyConnected) {
-                        skipCount++;
-                        continue;
-                    }
+                if (existingJob) continue;
 
-                    // Fetch sales made yesterday
-                    const salesYesterday = await Sale.find({
-                        businessId: profile._id,
-                        createdAt: { $gte: startOfYesterday, $lte: endOfYesterday }
-                    });
-
-                    // Fetch total cash received yesterday
-                    const allSalesWithPaymentsYesterday = await Sale.find({
-                        businessId: profile._id,
-                        "payments.date": { $gte: startOfYesterday, $lte: endOfYesterday }
-                    });
-
-                    let totalCashIn = 0;
-                    allSalesWithPaymentsYesterday.forEach(sale => {
-                        sale.payments.forEach(p => {
-                            const pDate = new Date(p.date);
-                            if (pDate >= startOfYesterday && pDate <= endOfYesterday) {
-                                totalCashIn += p.amount;
-                            }
-                        });
-                    });
-
-                    let pendingFromYesterday = 0;
-                    salesYesterday.forEach(s => {
-                        const paid = s.payments.reduce((sum, p) => sum + p.amount, 0);
-                        pendingFromYesterday += Math.max(0, s.totalAmount - paid);
-                    });
-
-                    // PRE-LAUNCH RULE: Everyone gets the full summary experience
-                    const effectivePlan = isPreLaunch ? 'oga' : profile.plan;
-                    
-                    // Only send if there was activity OR if it's a Chairman/Oga OR if it's Pre-Launch
-                    if (salesYesterday.length > 0 || totalCashIn > 0 || effectivePlan === 'chairman' || effectivePlan === 'oga') {
-                        const planTitle = effectivePlan === "chairman" ? "Chairman" : (effectivePlan === "oga" ? "Oga" : "Boss");
-                        const bossTitle = profile.assistantSettings?.preferredName || planTitle;
-                        const isHustler = effectivePlan === 'hustler';
-                        
-                        let msg = "";
-                        if (isHustler && !isPreLaunch) {
-                            msg = `🌞 *Rise and Grind, ${bossTitle}!* \n\nYou recorded *${salesYesterday.length || 0} sales* yesterday! 🚀 \n\nTo see your total *Cash Collected*, *Outstanding Credit*, and *Today's Agenda*, upgrade to the *Oga Plan* now. Don't leave your money hanging! 🛡️\n\n`;
-                        } else {
-                            msg = `🌞 *Rise and Grind, ${bossTitle}!* \n\nHere is your *Kredibly Intelligence Summary* for yesterday:\n\n`;
-                            msg += `💰 *Cash Collected:* ₦${totalCashIn.toLocaleString()}\n`;
-                            msg += `📑 *New Sales:* ${salesYesterday.length}\n`;
-                            msg += `⏳ *New Credit:* ₦${pendingFromYesterday.toLocaleString()}\n\n`;
-
-                            if (totalCashIn > 50000) {
-                                msg += `🔥 *Yesterday was a strong day! Keep that energy up today.* 🚀\n\n`;
-                            } else if (salesYesterday.length === 0) {
-                                msg += `💡 *No new sales recorded yesterday. Remember to track every kobo today!* 🛡️\n\n`;
-                            }
-
-                            // Top Debts
-                            const topDebtors = await Sale.find({ businessId: profile._id, status: { $ne: "paid" } }).sort({ totalAmount: -1 }).limit(3);
-                            if (topDebtors.length > 0) {
-                                msg += `🔴 *Top Outstanding Balances:*\n`;
-                                topDebtors.forEach(d => {
-                                    const bal = d.totalAmount - d.payments.reduce((sum, p) => sum + p.amount, 0);
-                                    msg += `• ${d.customerName}: ₦${bal.toLocaleString()}\n`;
-                                });
-                                msg += `\n`;
-                            }
-
-                            // Agenda
-                            const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-                            const todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
-                            const todaysReminders = await Reminder.find({ businessId: profile._id, triggerDate: { $gte: todayStart, $lte: todayEnd }, status: "pending" });
-                            if (todaysReminders.length > 0) {
-                                msg += `📅 *Today's Agenda:*\n`;
-                                todaysReminders.forEach(r => {
-                                    const timeStr = new Date(r.triggerDate).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Africa/Lagos' });
-                                    msg += `• ${timeStr}: ${r.description}\n`;
-                                });
-                                msg += `\n`;
-                            }
-                        }
-
-                        msg += `Check full details on your dashboard: ${process.env.FRONTEND_URL || 'https://usekredibly.com'}`;
-
-                        const sent = await sendWhatsAppMessage(profile.whatsappNumber, msg);
-                        
-                        if (sent) {
-                            profile.lastSummaryAt = new Date();
-                            await profile.save();
-                            sentCount++;
-                        } else {
-                            errorCount++;
-                        }
-                    } else {
-                        skipCount++;
-                    }
-                } catch (userErr) {
-                    console.error(`❌ Failed summary for ${profile.displayName}:`, userErr.message);
-                    errorCount++;
-                }
+                await BackgroundJob.create({
+                    type: "MORNING_SUMMARY",
+                    businessId: profile._id,
+                    status: "pending",
+                    scheduledFor: now
+                });
+                queuedCount++;
             }
-
 
             await ActivityLog.create({
                 action: "SYSTEM_TASK",
                 entityType: "SYSTEM",
-                details: `Morning Summary (${type}) finished. Sent: ${sentCount}, Skipped: ${skipCount}, Errors: ${errorCount}`
+                details: `Morning Summary Queue Generated (${type}). Queued: ${queuedCount}`
             });
-
-
-        } catch (err) {
-            console.error("Cron Job Error (Morning Summary Global):", err);
-        }
+        } catch (err) { console.error("Error generating morning summary jobs:", err); }
     };
 
-    // 1. Schedule for 8:00 AM Lagos
-    cron.schedule("0 8 * * *", () => runSummaryLogic(false), { timezone: "Africa/Lagos" });
-
-    // 2. Catch-up Logic on server start
-    const now = new Date();
-    const lagosTimeStr = new Intl.DateTimeFormat('en-US', { hour: '2-digit', hour12: false, timeZone: 'Africa/Lagos' }).format(now);
-    const lagosHour = parseInt(lagosTimeStr);
-    
-    if (lagosHour >= 8 && lagosHour < 22) { // Only catch up if it's past 8 AM but before 10 PM
-        setTimeout(() => runSummaryLogic(true), 15000); 
-    }
-
-    return { runSummaryLogic };
+    cron.schedule("0 8 * * *", () => generateMorningSummaryJobs(false), { timezone: "Africa/Lagos" });
+    return { generateMorningSummaryJobs };
 };
 
-
-
 /**
- * PLAN & TRIAL EXPIRY REMINDERS (10:00 AM WAT / 9:00 AM UTC Daily)
+ * 3. PLAN & TRIAL EXPIRY (9:00 AM Lagos)
  */
 const schedulePlanExpiryReminders = () => {
     cron.schedule("0 9 * * *", async () => {
-        // console.log("💳 Checking for expiring plans and trials...");
         try {
             const now = new Date();
-            const threeDaysLimit = new Date(); threeDaysLimit.setDate(threeDaysLimit.getDate() + 3);
-            
-            // 1. Check ACTIVE Plans expiring soon
-            const expiringSoon = await BusinessProfile.find({
-                plan: { $in: ["oga", "chairman"] },
-                planStatus: "active",
-                nextBillingDate: { $lte: threeDaysLimit, $gt: now }
+            const query = await BusinessProfile.find({
+                planStatus: { $in: ["trialing", "active", "past_due"] }
             });
 
-            for (const profile of expiringSoon) {
-                const diffTime = new Date(profile.nextBillingDate).getTime() - now.getTime();
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                const bossTitle = profile.assistantSettings?.preferredName || (profile.plan === "chairman" ? "Chairman" : "Oga");
-                
-                let msg = "";
-                if (diffDays === 3) msg = `💳 *Plan Update, ${bossTitle}!* \n\nYour *${profile.plan.toUpperCase()}* plan expires in 3 days. Renew now to keep your Kreddy AI powered up! 🚀\n\n🔗 *Quick Renew:* Just say _"I want to renew my plan"_!`;
-                else if (diffDays === 1) msg = `⚠️ *Final Reminder, ${bossTitle}!* \n\nYour *${profile.plan.toUpperCase()}* plan expires tomorrow. Don't let your business automation pause! 🛡️\n\n🔗 *Quick Renew:* Just say _"Pay for my ${profile.plan}"_!`;
-
-                if (msg && profile.whatsappNumber) await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Expiry Alert Fail:", e));
+            for (const profile of query) {
+                await BackgroundJob.create({
+                    type: "TRIAL_EXPIRY",
+                    businessId: profile._id,
+                    status: "pending",
+                    data: { checkDate: now }
+                });
             }
-
-            // 2. Check Expiring TRIALS (7-Day Limit)
-            const trialsExpiringSoon = await BusinessProfile.find({
-                planStatus: "trialing",
-                trialExpiresAt: { $lte: threeDaysLimit, $gt: now }
-            });
-
-            for (const profile of trialsExpiringSoon) {
-                const diffTime = new Date(profile.trialExpiresAt).getTime() - now.getTime();
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                const bossTitle = profile.assistantSettings?.preferredName || "Chief";
-                
-                let msg = "";
-                if (diffDays === 1) {
-                    msg = `🚀 *Trial Ending Alert, ${bossTitle}!* \n\nYour 7-Day Chairman Trial ends tomorrow. You've seen what I can do! 🛡️\n\n🎁 *Launch Promo:* Pay tomorrow to get **50% OFF** for your first few months. \n\nJust say _"I want to stay Chairman"_ or _"Switch to Oga"_ to continue!`;
-                }
-                if (msg && profile.whatsappNumber) await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Trial Expiry Alert Fail:", e));
-            }
-
-            // 3. Handle JUST EXPIRED Trials (Day 8 Hard Fallback)
-            const justExpiredTrials = await BusinessProfile.find({
-                planStatus: "trialing",
-                trialExpiresAt: { $lte: now }
-            });
-
-            for (const profile of justExpiredTrials) {
-                // Move to Hustler if no payment, but give 3-Day Grace for the "Conversion Choice"
-                const graceExpiry = new Date(profile.trialExpiresAt); 
-                graceExpiry.setDate(graceExpiry.getDate() + 3);
-
-                if (now > graceExpiry) {
-                    profile.planStatus = 'inactive';
-                    profile.plan = 'hustler';
-                    await profile.save();
-                    const bossTitle = profile.assistantSettings?.preferredName || "Boss";
-                    const msg = `🛑 *Trial Over, ${bossTitle}.* \n\nYour trial has ended and the grace period is over. I've moved you to the *Hustler Plan* (Basic Text Only). \n\nScan and Voice features are now locked. Upgrade anytime to get them back! 🛡️`;
-                    if (profile.whatsappNumber) await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Trial Lock Alert Fail:", e));
-                } else {
-                    // Still in Grace, send the Payment Choice Link
-                    const bossTitle = profile.assistantSettings?.preferredName || "Chairman";
-                    const msg = `📢 *Last Call, ${bossTitle}!* \n\nYour trial is over. Choose your plan now to keep your Scan and Voice powers at the **50% Launch Discount**: \n\n1️⃣ *Stay Chairman* (₦4,250/mo)\n2️⃣ *Switch to Oga* (₦2,500/mo)\n\nJust say _"Pay for Oga"_ or _"Pay for Chairman"_ right here! 🛡️`;
-                    if (profile.whatsappNumber) await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Grace Choice Alert Fail:", e));
-                }
-            }
-
-            // 4. Handle EXPIRED Active Plans (Past Due / Downgrade)
-            const justExpiredActive = await BusinessProfile.find({
-                planStatus: "active",
-                nextBillingDate: { $lte: now }
-            });
-
-            for (const profile of justExpiredActive) {
-                profile.planStatus = 'past_due';
-                await profile.save();
-                const bossTitle = profile.assistantSettings?.preferredName || (profile.plan === "chairman" ? "Chairman" : "Oga");
-                const msg = `🚨 *Plan Expired, ${bossTitle}!* \n\nYour premium features have paused. Renew now to continue tracking debt with AI without limits! 💰\n\n🔗 *Renew:* Just say _"Pay for ${profile.plan}"_`;
-                if (profile.whatsappNumber) await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Expired Alert Fail:", e));
-            }
-
-            // 5. Hard Revert Past Due to Hustler (After 1 Cycle of Past Due)
-            const overdueForDays = await BusinessProfile.find({
-                planStatus: "past_due",
-                nextBillingDate: { $lte: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) } // 3-Day Grace for active plans
-            });
-
-            for (const profile of overdueForDays) {
-                profile.planStatus = 'inactive';
-                profile.plan = 'hustler';
-                await profile.save();
-                const bossTitle = profile.assistantSettings?.preferredName || "Boss";
-                const msg = `🛑 *Benefit Lock, ${bossTitle}.* \n\nYour premium features have been locked because your plan is overdue. I've moved you back to the *Hustler Plan*. \n\n_Upgrade anytime to restore your Scan & Voice powers!_ 🦁`;
-                if (profile.whatsappNumber) await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Downgrade Alert Fail:", e));
-            }
-        } catch (error) {
-            console.error("Cron Job Error (Plan/Trial Expiry):", error);
-        }
-    });
+        } catch (error) { console.error("Cron Job Error (Plan Expiry):", error); }
+    }, { timezone: "Africa/Lagos" });
 };
 
 /**
- * PROACTIVE "DID THEY PAY?" CHECK (Runs Hourly)
- * Checks reminders from 24 hours ago. If the debt is still UNPAID, it prompts the merchant.
+ * 4. PROACTIVE "DID THEY PAY?" (Hourly)
  */
 const scheduleProactiveFollowUps = () => {
     cron.schedule("0 * * * *", async () => {
-        // console.log("🕵️‍♀️ Running Proactive Follow-up Check...");
         try {
-            const twentyFourHoursAgoStart = new Date(Date.now() - 25 * 60 * 60 * 1000); // 25 hours ago
-            const twentyFourHoursAgoEnd = new Date(Date.now() - 24 * 60 * 60 * 1000);   // 24 hours ago
+            const rangeStart = new Date(Date.now() - 25 * 60 * 60 * 1000);
+            const rangeEnd = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-            // Find reminders that fired exactly between 24-25 hours ago
             const pastReminders = await Reminder.find({
                 status: "delivered",
                 type: "debt",
                 saleId: { $ne: null },
-                deliveredAt: { $gte: twentyFourHoursAgoStart, $lte: twentyFourHoursAgoEnd }
-            }).populate("businessId").populate("saleId");
+                deliveredAt: { $gte: rangeStart, $lte: rangeEnd }
+            });
 
             for (const reminder of pastReminders) {
-                const sale = reminder.saleId;
-                if (!sale || sale.status === "paid" || !reminder.businessId) continue;
-
-                const profile = reminder.businessId;
-                const planFTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
-                const bossTitle = profile.assistantSettings?.preferredName || planFTitle;
-                const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-
-                const msg = `🤔 *Did They Pay, ${bossTitle}?*\n\nYesterday, you had a reminder to collect from *${sale.customerName}*.\n\nMy records show they still owe *₦${bal.toLocaleString()}*. \n\nDid they pay offline? If yes, just say: _"${sale.customerName} paid"_. \n\nIf not, would you like me to snooze this reminder for later, or send them another message?`;
-                
-                if (reminder.whatsappNumber) {
-                    await sendWhatsAppMessage(reminder.whatsappNumber, msg).catch(e => console.error("Proactive Alert Fail:", e));
-                }
+                 await BackgroundJob.create({
+                    type: "DEBT_NUDGE",
+                    businessId: reminder.businessId,
+                    status: "pending",
+                    data: { type: "proactive_followup", reminderId: reminder._id, whatsappNumber: reminder.whatsappNumber }
+                });
             }
-        } catch (error) {
-            console.error("Cron Job Error (Proactive Check):", error);
-        }
+        } catch (error) { console.error("Cron Error (Follow-up Queuer):", error); }
     });
 };
 
 /**
- * DAILY PAST DUE ESCALATION (Runs Daily at Noon)
- * Catch debts that were due exactly 1 day ago.
+ * 5. PAST DUE ESCALATION (12:00 PM Lagos)
  */
 const schedulePastDueEscalations = () => {
     cron.schedule("0 12 * * *", async () => {
-        // console.log("🚩 Running Daily Past-Due Escalation Check...");
         try {
-            const yesterdayStart = new Date(); 
-            yesterdayStart.setDate(yesterdayStart.getDate() - 1);
-            yesterdayStart.setHours(0,0,0,0);
-            
-            const yesterdayEnd = new Date(yesterdayStart);
-            yesterdayEnd.setHours(23,59,59,999);
+            const yesterdayStart = new Date(); yesterdayStart.setDate(yesterdayStart.getDate() - 1); yesterdayStart.setHours(0,0,0,0);
+            const yesterdayEnd = new Date(yesterdayStart); yesterdayEnd.setHours(23,59,59,999);
 
-            // Find unpaid sales that were due exactly 1 day ago
             const overdueSales = await Sale.find({
                 status: "unpaid",
                 dueDate: { $gte: yesterdayStart, $lte: yesterdayEnd }
             }).populate("businessId");
 
             for (const sale of overdueSales) {
-                const profile = sale.businessId;
-                if (!profile || profile.plan === "hustler" || !profile.whatsappNumber) continue;
-
-                const planETitle = profile.plan === "chairman" ? "Chairman" : "Oga";
-                const bossTitle = profile.assistantSettings?.preferredName || planETitle;
-                const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-                
-                const msg = `🚩 *Overdue Alert, ${bossTitle}!*\n\n*${sale.customerName}* was supposed to pay ₦${bal.toLocaleString()} yesterday, but the record is still unpaid.\n\nShould I draft a follow-up link for you to forward to them? \n\n_Type: "Send link to ${sale.customerName}"_`;
-                
-                await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Escalation Alert Fail:", e));
+                if (!sale.businessId || sale.businessId.plan === "hustler" || !sale.businessId.whatsappNumber) continue;
+                await BackgroundJob.create({
+                    type: "DEBT_NUDGE",
+                    businessId: sale.businessId._id,
+                    status: "pending",
+                    data: { type: "past_due_escalation", saleId: sale._id, whatsappNumber: sale.businessId.whatsappNumber }
+                });
             }
-        } catch (error) {
-            console.error("Cron Job Error (Escalation):", error);
-        }
-    });
+        } catch (error) { console.error("Cron Error (Escalation Queuer):", error); }
+    }, { timezone: "Africa/Lagos" });
 };
 
 /**
- * AUTOMATIC ESCROW RELEASE (Runs Hourly)
- * Checks for escrowed payments whose security lock has expired.
- * Only releases if the account is NOT flagged as compromised.
+ * 6. ESCROW RELEASE (Hourly)
  */
 const scheduleEscrowPayouts = () => {
     cron.schedule("0 * * * *", async () => {
-        // console.log("🔓 Running Automatic Escrow Release Check...");
         try {
             const EscrowPayment = require("../models/EscrowPayment");
-            const { createTransferRecipient, initiateTransfer } = require("./paystack");
-
-            // Find all pending escrow payments where releaseDate has passed
             const readyToRelease = await EscrowPayment.find({
                 status: "pending",
                 releaseDate: { $lte: new Date() }
-            }).populate("businessId");
+            });
 
             for (const escrow of readyToRelease) {
-                const profile = escrow.businessId;
-                
-                // 🛑 SAFETY VALVE: If the account was flagged, DO NOT release automatically!
-                if (!profile || profile.isCompromised) {
-                    console.warn(`🛑 Skipping Escrow Release for ${profile?.displayName || 'Unknown'}: Account Flagged or Missing.`);
-                    escrow.status = "frozen";
-                    await escrow.save();
-                    continue;
-                }
+                const existing = await BackgroundJob.findOne({
+                    type: "ESCROW_PAYOUT",
+                    "data.escrowId": escrow._id.toString(),
+                    status: { $in: ["pending", "processing"] }
+                });
 
-                try {
-                    // 1. Ensure we have a bank to send to
-                    if (!profile.bankDetails?.accountNumber || !profile.bankDetails?.bankCode) {
-                        console.error(`❌ No bank details for ${profile.displayName} to release escrow ${escrow.reference}`);
-                        continue;
-                    }
-
-                    // 2. Create Transfer Recipient
-                    const recipient = await createTransferRecipient(
-                        profile.bankDetails.accountName || profile.displayName,
-                        profile.bankDetails.accountNumber,
-                        profile.bankDetails.bankCode
-                    );
-
-                    // 3. Initiate Transfer
-                    const transfer = await initiateTransfer(
-                        escrow.amount,
-                        recipient.recipient_code,
-                        `Escrow Release: ${escrow.reference}`
-                    );
-
-                    // 4. Update Status
-                    escrow.status = "released";
-                    escrow.transferReference = transfer.reference;
-                    await escrow.save();
-
-                    // 5. Notify Merchant
-                    const msg = `🔓 *Escrow Released, Chairman!*\n\nYour security lock has expired, and I've just pushed *₦${escrow.amount.toLocaleString()}* to your bank account (${profile.bankDetails.bankName}).\n\n_Ref: ${transfer.reference}_`;
-                    await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Escrow Notify Fail:", e));
-
-                    console.log(`✅ Released Escrow ${escrow.reference} to ${profile.displayName}`);
-
-                } catch (transferErr) {
-                    console.error(`❌ Transfer Failed for Escrow ${escrow.reference}:`, transferErr.message);
-                    escrow.status = "failed";
-                    await escrow.save();
+                if (!existing) {
+                    await BackgroundJob.create({
+                        type: "ESCROW_PAYOUT",
+                        businessId: escrow.businessId,
+                        status: "pending",
+                        data: { escrowId: escrow._id.toString() }
+                    });
                 }
             }
-        } catch (error) {
-            console.error("Cron Job Error (Escrow Release):", error);
-        }
+        } catch (error) { console.error("Cron Error (Escrow Queuer):", error); }
     });
 };
 
 /**
- * MONTHLY USAGE RESET (Runs on the 1st of every month at midnight)
- * Resets AI message counters for all businesses.
+ * 7. MONTHLY USAGE RESET (1st of Month)
  */
 const scheduleMonthlyUsageReset = () => {
     cron.schedule("0 0 1 * *", async () => {
         try {
-            console.log("🧹 Running Monthly Usage Reset...");
-            await BusinessProfile.updateMany(
-                {}, // All businesses
-                { 
-                    $set: { 
-                        "monthlyUsage.messages": 0,
-                        "monthlyUsage.images": 0,
-                        "monthlyUsage.voiceNotes": 0,
-                        "monthlyUsage.reminders": 0,
-                        "monthlyUsage.lastReset": new Date()
-                    }
+            await BusinessProfile.updateMany({}, { 
+                $set: { 
+                    "monthlyUsage.messages": 0,
+                    "monthlyUsage.lastReset": new Date()
                 }
-            );
-            console.log("✅ All Monthly Quotas Reset Successfully.");
-        } catch (error) {
-            console.error("Cron Job Error (Usage Reset):", error);
-        }
+            });
+        } catch (error) { console.error("Cron Error (Usage Reset):", error); }
     });
 };
 
+/**
+ * 8. QUEUE HOUSEKEEPING (Daily Midnight)
+ */
+const scheduleQueueHousekeeping = () => {
+    cron.schedule("0 0 * * *", async () => {
+        try {
+            const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 14);
+            await BackgroundJob.deleteMany({
+                status: { $in: ["completed", "cancelled"] },
+                createdAt: { $lt: cutoff }
+            });
+        } catch (error) { console.error("Cron Error (Housekeeping):", error); }
+    }, { timezone: "Africa/Lagos" });
+};
+
+/**
+ * 9. UPCOMING SALES NUDGES (10:00 AM Lagos)
+ */
+const scheduleUpcomingNudges = () => {
+    cron.schedule("0 10 * * *", async () => {
+        try {
+            const now = new Date();
+            const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
+            const tomorrowEnd = new Date(now); tomorrowEnd.setDate(now.getDate() + 1); tomorrowEnd.setHours(23, 59, 59, 999);
+
+            const upcomingSales = await Sale.find({
+                status: { $ne: "paid" },
+                dueDate: { $gte: todayStart, $lte: tomorrowEnd },
+                $or: [{ lastAutoReminderSent: { $lt: todayStart } }, { lastAutoReminderSent: { $exists: false } }]
+            }).populate("businessId");
+
+            const grouped = upcomingSales.reduce((acc, sale) => {
+                const bId = sale.businessId?._id?.toString();
+                if (bId) {
+                    if (!acc[bId]) acc[bId] = [];
+                    acc[bId].push(sale);
+                }
+                return acc;
+            }, {});
+
+            for (const bId in grouped) {
+                const sales = grouped[bId];
+                const business = sales[0].businessId;
+                if (!business || !business.whatsappNumber || !business.isKreddyConnected) continue;
+
+                await BackgroundJob.create({
+                    type: "DEBT_NUDGE",
+                    businessId: bId,
+                    status: "pending",
+                    data: { type: "upcoming_summary", saleIds: sales.map(s => s._id), whatsappNumber: business.whatsappNumber }
+                });
+            }
+        } catch (error) { console.error("Cron Error (Upcoming Queuer):", error); }
+    }, { timezone: "Africa/Lagos" });
+};
+
+/**
+ * 10. BANK SECURITY LOCK CHECKER (Hourly)
+ */
+const scheduleBankLockChecker = () => {
+    cron.schedule("0 * * * *", async () => {
+        try {
+            const now = new Date();
+            const profilesToUnlock = await BusinessProfile.find({
+                "bankDetails.bankDetailsLockUntil": { $lte: now, $ne: null }
+            });
+
+            for (const profile of profilesToUnlock) {
+                profile.bankDetails.bankDetailsLockUntil = null;
+                await profile.save();
+
+                const planTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
+                const bossTitle = profile.assistantSettings?.preferredName || planTitle;
+                const msg = `🔓 *Security Update: Lock Lifted!*\n\n${bossTitle}, your bank detail security lock has expired. \n\n⚡ *Instant Settlements* have been resumed for your account. Every payment will now go directly to your bank account again.\n\n_Kreddy is keeping your money moving safely!_ 🛡️`;
+                
+                await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => {});
+            }
+        } catch (error) { console.error("Cron Error (Bank Lock Checker):", error); }
+    });
+};
 
 module.exports = { 
     scheduleMorningSummary, 
@@ -591,5 +358,8 @@ module.exports = {
     scheduleProactiveFollowUps, 
     schedulePastDueEscalations,
     scheduleEscrowPayouts,
-    scheduleMonthlyUsageReset
+    scheduleMonthlyUsageReset,
+    scheduleQueueHousekeeping,
+    scheduleUpcomingNudges,
+    scheduleBankLockChecker
 };

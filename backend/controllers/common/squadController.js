@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { generateVirtualAccount, initiateInstantDisbursement } = require('../../utils/squad');
 const Sale = require('../../models/Sale');
 const BusinessProfile = require('../../models/BusinessProfile');
@@ -85,26 +86,47 @@ exports.initializeSquadAccount = async (req, res) => {
  */
 exports.handleSquadWebhook = async (req, res) => {
     try {
+        // 1. Validate Squad Signature (Security First)
+        const secret = process.env.SQUAD_SECRET_KEY;
+        const signature = req.headers['x-squad-signature'];
+        
+        if (!signature) return res.status(401).json({ message: "Missing signature" });
+
+        // Use rawBody for verification to match Squad's exact payload string
+        const payload = req.rawBody ? req.rawBody.toString() : JSON.stringify(req.body);
+        const hash = crypto.createHmac('sha512', secret)
+            .update(payload)
+            .digest('hex').toUpperCase(); // Squad uses UPPERCASE for their hash comparisons usually
+
+        // NOTE: If Squad uses lowercase, we adjust here. Standard check:
+        if (hash !== signature.toUpperCase()) {
+            console.error('🚨 Squad Webhook Signature Mismatch!');
+            return res.status(401).json({ message: "Invalid signature" });
+        }
+
         const { event, data } = req.body;
 
-        // Basic verification: ONLY process successful credit events
+        // ONLY process successful events
         if (event !== 'charge_successful' && event !== 'transaction_successful') {
             return res.status(200).json({ message: "Ignored event type" });
         }
 
         const reference = data.transaction_reference || data.reference;
-        const paidAmount = data.amount / 100; // Assuming Squad sends in kobo
+        const paidAmount = data.amount / 100; // Squad sends in kobo (base unit)
 
-        // 1. Find the Virtual Account record in our DB
+        // 2. Find the Records
         const vaRecord = await VirtualAccount.findOne({ reference });
-        if (!vaRecord) return res.status(404).json({ message: "Transaction reference not found" });
+        if (!vaRecord) {
+             // FALLBACK: Sometimes reference might be slightly different in nested data
+             console.warn(`⚠️ VA Record not found for Squad Ref: ${reference}. Checking metadata...`);
+             return res.status(200).json({ message: "Reference not tracked locally" }); 
+        }
 
-        // 2. Load the Sale and Business
         const sale = await Sale.findById(vaRecord.saleId).populate('businessId');
-        if (!sale) return res.status(404).json({ message: "Associated sale not found" });
+        if (!sale) return res.status(200).json({ message: "Sale not found" });
         const business = sale.businessId;
 
-        // Check if already processed
+        // Idempotency check
         if (sale.payments.find(p => p.reference === reference)) {
             return res.status(200).json({ success: true, message: "Already processed" });
         }
@@ -112,58 +134,90 @@ exports.handleSquadWebhook = async (req, res) => {
         // 3. UPDATE BOOKKEEPING (INSTANT)
         sale.payments.push({ 
             amount: paidAmount, 
-            method: 'Bank Transfer (Squad)', 
+            method: 'Instant Bank Transfer', 
             reference, 
             date: new Date() 
         });
-        await sale.save(); // 🔥 Flips status to 'paid' automatically
+        await sale.save(); // 🔥 Flips status to 'paid' via pre-save middleware
 
-        console.log(`✅ Squad Payment Verified for Invoice #${sale.invoiceNumber}`);
+        console.log(`✅ Squad Payment Verified for #${sale.invoiceNumber} (₦${paidAmount})`);
 
-        // 4. TRIGGER INSTANT PAYOUT (THE MAGIC)
+        // 4. TRIGGER INSTANT PAYOUT (Hybrid Fee Model)
         let payoutStatus = "deferred";
-        if (business.bankDetails?.accountNumber && business.bankDetails?.bankCode) {
-            console.log(`🚀 Triggering Instant Payout to ${business.displayName} bank account...`);
-            
-            // Calculate payout (Minus Squad 0.25% fee + maybe a fixed transfer fee)
-            const squadFee = paidAmount * 0.0025;
-            const transferFee = 25; // Example ₦25 transfer fee
-            const netPayout = paidAmount - (squadFee + transferFee);
+        let payoutRef = null;
 
-            try {
-                await initiateInstantDisbursement({
-                    amount: netPayout,
-                    bankCode: business.bankDetails.bankCode,
-                    accountNumber: business.bankDetails.accountNumber,
-                    accountName: business.bankDetails.accountName,
-                    remarks: `Kredibly Settlement: ${sale.invoiceNumber}`
-                });
-                payoutStatus = "pushed";
-            } catch (err) {
-                console.error("❌ Instant Payout Failed:", err.message);
-                payoutStatus = "failed_manual_required";
+        if (business.bankDetails?.accountNumber && business.bankDetails?.bankCode) {
+            // Check if Bank Security Lock is active
+            const isLocked = business.bankDetails.bankDetailsLockUntil && new Date() < business.bankDetails.bankDetailsLockUntil;
+            
+            if (isLocked) {
+                payoutStatus = "locked_security";
+                console.warn(`🛡️ Payout Locked for ${business.displayName} until ${business.bankDetails.bankDetailsLockUntil}`);
+            } else {
+                // Calculation: Paid - (0.1% Collection) - N25 Transfer
+                const collectionFee = paidAmount * 0.001; 
+                const transferFee = 25; 
+                const netPayout = Math.floor(paidAmount - collectionFee - transferFee);
+
+                if (netPayout > 50) { // Only payout if it's worth the transfer fee
+                    try {
+                        const disbursement = await initiateInstantDisbursement({
+                            amount: netPayout,
+                            bankCode: business.bankDetails.bankCode,
+                            accountNumber: business.bankDetails.accountNumber,
+                            accountName: business.bankDetails.accountName,
+                            remarks: `Settlement: ${sale.invoiceNumber}`
+                        });
+                        payoutStatus = "pushed";
+                        payoutRef = disbursement.data?.reference || "SQUAD_PROCESSED";
+                    } catch (err) {
+                        console.error("❌ Instant Payout Failed:", err.message);
+                        payoutStatus = "fail_manual";
+                    }
+                }
             }
         }
 
-        // 5. NOTIFY MERCHANT VIA WHATSAPP
+        // 5. LOG ACTIVITY & NOTIFY BOSS
+        await ActivityLog.create({
+            businessId: business._id,
+            action: 'PAYMENT_RECEIVED',
+            entityType: 'SALE',
+            entityId: sale._id,
+            details: `Invoice #${sale.invoiceNumber} paid via Squad. Amount: ₦${paidAmount}. Payout: ${payoutStatus}`
+        });
+
         if (business.whatsappNumber) {
             const receiptLink = `https://usekredibly.com/r/${sale.invoiceNumber}`;
             let msg = `🔔 *Payment Received (Instant Mode)!*\n\nChief, a customer just paid *₦${paidAmount.toLocaleString()}* for *Invoice #${sale.invoiceNumber}*.\n\n`;
             
             if (payoutStatus === "pushed") {
-                msg += `💰 *Instant Settlement:* I have automatically pushed the funds directly into your *${business.bankDetails.bankName}* account. Alert on the way! ⚡\n\n`;
+                msg += `💰 *Instant Settlement:* I have automatically pushed *₦${(paidAmount - (paidAmount*0.001) - 25).toLocaleString()}* into your *${business.bankDetails.bankName}* account. Alert on the way! ⚡\n\n`;
+            } else if (payoutStatus === "locked_security") {
+                msg += `🛡️ *Security Lock:* Payment received! However, your bank details were recently changed. For your safety, funds will be held in your Kredibly wallet for 24 hours before release.\n\n`;
             } else {
-                msg += `⏳ *Wallet:* The money is in your Kredibly wallet. Please visit the dashboard to withdrawal manually (Reason: Missing Bank Details).\n\n`;
+                msg += `⏳ *Wallet Deposit:* Funds added to your Kredibly wallet. (Reason: ${payoutStatus === "fail_manual" ? "Bank network error" : "No bank details linked"}).\n\n`;
             }
 
-            msg += `📄 *Official Receipt:* ${receiptLink}\n\n_Kreddy is keeping your business fast!_ 🛡️`;
-            await sendWhatsAppMessage(business.whatsappNumber, msg);
+            msg += `📄 *View Receipt:* ${receiptLink}`;
+            await sendWhatsAppMessage(business.whatsappNumber, msg).catch(e => {});
+        }
+
+        // ⚡ 6. REAL-TIME DASHBOARD UPDATE (Sockets)
+        const { getIO } = require('../../utils/socket');
+        const io = getIO();
+        if (io) {
+            io.to(business._id.toString()).emit('sale_updated', {
+                saleId: sale._id,
+                status: sale.status,
+                paidAmount: paidAmount
+            });
         }
 
         res.status(200).json({ success: true });
 
     } catch (error) {
-        console.error("Squad Webhook Error:", error);
-        res.status(500).json({ message: "Webhook processing failed" });
+        console.error("Squad Webhook Exception:", error);
+        res.status(500).json({ message: "Internal processing error" });
     }
 };

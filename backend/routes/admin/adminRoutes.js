@@ -21,4 +21,10 @@ router.delete("/payments/:id", adminController.deletePayment);
 router.get("/invoice-payments", adminController.getInvoicePayments);
 router.delete("/invoice-payments/:saleId/:paymentId", adminController.deleteInvoicePayment);
 
+// New Mission Control Routes
+router.get("/mission-control/feed", adminController.getMissionControlFeed);
+router.post("/background-jobs/:id/retry", adminController.retryBackgroundJob);
+router.patch("/background-jobs/:id/cancel", adminController.cancelBackgroundJob);
+router.delete("/background-jobs/:id", adminController.deleteBackgroundJob);
+
 module.exports = router;

@@ -236,3 +236,142 @@ exports.createCoupon = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// MISSION CONTROL & BACKGROUND JOBS
+exports.getMissionControlFeed = async (req, res) => {
+    try {
+        const BackgroundJob = require("../../models/BackgroundJob");
+        const Payment = require("../../models/Payment");
+        const Sale = require("../../models/Sale");
+        const ActivityLog = require("../../models/ActivityLog");
+
+        // 1. Fetch Stats for Hero Section
+        const jobStats = await BackgroundJob.aggregate([
+            { $group: { _id: "$status", count: { $sum: 1 } } }
+        ]);
+        
+        const statsObj = { pending: 0, completed: 0, failed: 0, processing: 0 };
+        jobStats.forEach(s => { statsObj[s._id] = s.count; });
+
+        // 2. Fetch Aggregated Feed (Last 100 items)
+        const [jobs, logs, subs, sales] = await Promise.all([
+            BackgroundJob.find().sort({ createdAt: -1 }).limit(15).populate("businessId", "displayName"),
+            ActivityLog.find().sort({ createdAt: -1 }).limit(15).populate("businessId", "displayName"),
+            Payment.find({ status: 'success' }).sort({ createdAt: -1 }).limit(10).populate("businessId", "displayName"),
+            Sale.find({ "payments.0": { $exists: true } }).sort({ "payments.date": -1 }).limit(10).populate("businessId", "displayName")
+        ]);
+
+        // 3. Format Unified Feed
+        const feed = [];
+
+        // Add Background Jobs (Purple)
+        jobs.forEach(j => {
+            feed.push({
+                _id: j._id,
+                type: 'JOB',
+                event: j.type,
+                status: j.status,
+                merchant: j.businessId?.displayName || "System",
+                details: j.error ? `Error: ${j.error}` : `Attempt ${j.attempts}`,
+                timestamp: j.createdAt,
+                color: 'purple'
+            });
+        });
+
+        // Add Merchant Logs (Gray)
+        logs.forEach(l => {
+            feed.push({
+                _id: l._id,
+                type: 'LOG',
+                event: l.action,
+                merchant: l.businessId?.displayName || "Admin",
+                details: l.details,
+                timestamp: l.createdAt,
+                color: 'gray'
+            });
+        });
+
+        // Add Subscriptions (Blue)
+        subs.forEach(p => {
+            feed.push({
+                _id: p._id,
+                type: 'SUB',
+                event: 'SUBSCRIPTION_PAID',
+                merchant: p.businessId?.displayName || "Unknown",
+                details: `Plan: ${p.plan} (₦${p.amount.toLocaleString()})`,
+                timestamp: p.paidAt || p.createdAt,
+                color: 'blue'
+            });
+        });
+
+        // Add Customer Payments (Green)
+        sales.forEach(s => {
+            s.payments.forEach(p => {
+                feed.push({
+                    _id: p._id,
+                    type: 'SALE',
+                    event: 'CUSTOMER_PAYMENT',
+                    merchant: s.businessId?.displayName || "Unknown",
+                    details: `Amount: ₦${p.amount.toLocaleString()} for Invoice ${s.invoiceNumber}`,
+                    timestamp: p.date,
+                    color: 'green'
+                });
+            });
+        });
+
+        // Final Sort
+        feed.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        res.status(200).json({
+            success: true,
+            stats: statsObj,
+            feed: feed.slice(0, 100)
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.retryBackgroundJob = async (req, res) => {
+    try {
+        const BackgroundJob = require("../../models/BackgroundJob");
+        const job = await BackgroundJob.findById(req.params.id);
+        if (!job) return res.status(404).json({ message: "Job not found" });
+
+        job.status = "pending";
+        job.attempts = 0;
+        job.error = null;
+        job.scheduledFor = new Date();
+        await job.save();
+
+        res.status(200).json({ success: true, message: "Job scheduled for immediate retry" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.cancelBackgroundJob = async (req, res) => {
+    try {
+        const BackgroundJob = require("../../models/BackgroundJob");
+        const job = await BackgroundJob.findById(req.params.id);
+        if (!job) return res.status(404).json({ message: "Job not found" });
+
+        job.status = "failed";
+        job.error = "Cancelled by Admin";
+        await job.save();
+
+        res.status(200).json({ success: true, message: "Job cancelled" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.deleteBackgroundJob = async (req, res) => {
+    try {
+        const BackgroundJob = require("../../models/BackgroundJob");
+        await BackgroundJob.findByIdAndDelete(req.params.id);
+        res.status(200).json({ success: true, message: "Job record deleted" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
