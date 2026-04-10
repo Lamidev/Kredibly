@@ -12,6 +12,7 @@ import {
   CreditCard,
   Globe,
   Lightbulb,
+  Zap
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
@@ -35,6 +36,11 @@ const AdminLayout = () => {
       path: "/admin",
       icon: LayoutDashboard,
       end: true,
+    },
+    {
+      label: "Mission Control",
+      path: "/admin/mission-control",
+      icon: Zap,
     },
     { label: "Merchant Directory", path: "/admin/merchants", icon: Users },
     { label: "Waitlist Pipeline", path: "/admin/waitlist", icon: Globe },

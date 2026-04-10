@@ -36,7 +36,10 @@ const {
   scheduleProactiveFollowUps, 
   schedulePastDueEscalations, 
   scheduleEscrowPayouts, 
-  scheduleMonthlyUsageReset 
+  scheduleMonthlyUsageReset,
+  scheduleQueueHousekeeping,
+  scheduleUpcomingNudges,
+  scheduleBankLockChecker
 } = require("./utils/cronJobs");
 
 const rateLimit = require("express-rate-limit");
@@ -204,6 +207,9 @@ mongoose
     schedulePastDueEscalations();
     scheduleEscrowPayouts();
     scheduleMonthlyUsageReset();
+    scheduleQueueHousekeeping();
+    scheduleUpcomingNudges();
+    scheduleBankLockChecker();
 
     // 7. Start Server
     server.listen(PORT, () => {
