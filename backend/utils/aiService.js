@@ -364,4 +364,78 @@ const processImageWithAI = async (imageBuffer, mimeType, context = {}) => {
     }
 };
 
-module.exports = { processMessageWithAI, processAudioWithAI, processImageWithAI };
+/**
+ * MODE B Assistant: Generate a proactive "Growth Coach" nudge for inactive users.
+ */
+const generateMorningNudge = async (context = {}) => {
+    if (!process.env.KREDDY_API_KEY) return `🌞 Good morning, ${context.bossTitle}! Ready for another productive day? Let's track some sales!`;
+
+    try {
+        const model = genAI.getGenerativeModel({ model: MODELS.FLASH });
+        const prompt = `
+        Kreddy, act as a Street-Smart Nigerian Business Coach. 
+        Merchant Name: ${context.bossTitle}
+        Plan: ${context.plan}
+        Outstanding Debts: ${context.debtContext}
+        Last Activity: ${context.lastSummaryDate || "Never"}
+
+        Today is a fresh start and the merchant had zero recorded activity yesterday.
+        Task: Write a short, high-energy 8:00 AM WhatsApp nudge to encourage them to use Kreddy today.
+        Rules:
+        1. Start with a greeting.
+        2. Remind them of ONE specific Kreddy benefit (e.g. tracking credit, voice note recording, professional invoices).
+        3. If they have debts (₦), mention that we should chase them today.
+        4. Keep it under 60 words. Use emojis.
+        5. Tone: Motivating, helpful, and "One of their own".
+        
+        Example: "Rise and Grind, ${context.bossTitle}! Yesterday was quiet, but today we scale. 🚀 Remember, I'm here to chase those debts like ${context.debtContext} so you don't lose money. Just hold the mic and tell me what you sold! 🎤💸"
+        `;
+
+        const result = await model.generateContent(prompt);
+        return result.response.text().trim();
+    } catch (error) {
+        console.error("Coach Nudge AI Error:", error);
+        return `🌞 Good morning, ${context.bossTitle}! Every day is a new chance to grow your business. Log a sale today and let's keep your records tidy! 🛡️`;
+    }
+};
+
+/**
+ * DYNAMIC VIBE ENGINE: Generate a short, contextual intro for a WhatsApp message.
+ */
+const generateWittyIntro = async (intent, context = {}) => {
+    if (!process.env.KREDDY_API_KEY) return "Got it, Chief! 🫡";
+
+    try {
+        const model = genAI.getGenerativeModel({ model: MODELS.FLASH });
+        const now = new Date();
+        const hour = (now.getHours() + 1) % 24; // WAT
+        const timeOfDay = hour < 12 ? "Morning" : (hour < 17 ? "Afternoon" : "Evening");
+
+        const prompt = `
+        Kreddy, act as a Street-Smart Nigerian Business Partner.
+        Merchant: ${context.bossTitle || "Boss"}
+        Time: ${timeOfDay}
+        Intent: ${intent}
+        Context Details: ${context.extra || "General"}
+
+        Task: Write a ONE-SENTENCE (max 15 words) contextual intro/reaction to this intent.
+        Rules:
+        1. Mix professional partner vibes with Nigerian street smarts (Pidgin allowed).
+        2. DO NOT be repetitive. 
+        3. Match the time of day.
+        4. Focus on the user's win or the business priority.
+        5. DO NOT use generic phrases like "I am an AI".
+        
+        Example for 'check_debt': "Chai, these people are holding your capital o! Let's see the list. 🛡️"
+        Example for 'create_sale': "Sharp move, ${context.bossTitle}! 🚀 Getting this sale into the ledger now."
+        Example for 'list_sales': "Checking the history... you've been cooking! Here's the record. 📊"
+        `;
+
+        const result = await model.generateContent(prompt);
+        return result.response.text().trim();
+    } catch (error) {
+        return "Acknowledged, Chief! 🫡";
+    }
+};
+
+module.exports = { processMessageWithAI, processAudioWithAI, processImageWithAI, generateMorningNudge, generateWittyIntro };

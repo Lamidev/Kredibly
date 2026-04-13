@@ -8,15 +8,18 @@ const axios = require('axios');
 
 const SQUAD_SECRET_KEY = process.env.SQUAD_SECRET_KEY;
 const SQUAD_BASE_URL = process.env.SQUAD_ENV === 'production' 
-    ? 'https://api-service.squadco.com' 
-    : 'https://sandbox-api-service.squadco.com';
+    ? 'https://api-d.squadco.com' 
+    : 'https://sandbox-api-d.squadco.com';
 
 const squad = axios.create({
     baseURL: SQUAD_BASE_URL,
+    timeout: 10000,
     headers: {
         Authorization: `Bearer ${SQUAD_SECRET_KEY}`,
         'Content-Type': 'application/json'
-    }
+    },
+    // 🛡️ SECURITY: Don't throw for 4xx/5xx so we can handle fallback logic within the function
+    validateStatus: (status) => status < 500 
 });
 
 /**
@@ -25,29 +28,55 @@ const squad = axios.create({
  */
 const generateVirtualAccount = async ({ amount, customerName, email, invoiceNumber, merchantBusinessName }) => {
     try {
-        const response = await squad.post('/virtual-account/business', {
-            amount: Math.round(amount * 100), // Squad usually works in kobo/minor units like Paystack
+        const response = await squad.post('/virtual-account/initiate-dynamic-v-a', {
+            amount: Math.round(amount * 100), // Kobo
             email: email || 'payments@usekredibly.com',
-            first_name: 'Kredibly',
-            last_name: merchantBusinessName.substring(0, 15), // Combined name: Kredibly - Merchant
-            metadata: {
-                invoiceNumber,
-                type: 'direct_invoice_payment'
-            }
+            transaction_ref: `INV-${invoiceNumber}-${Date.now()}`,
+            duration: 3600 // 1 hour expiry
         });
 
         if (response.data.status !== 200) {
-            throw new Error(response.data.message || 'Squad Virtual Account creation failed');
+            // Fallback to /virtual-account/business if DVA fails (might not be profiled yet)
+            console.warn(`⚠️ Squad DVA failed (${response.data.message}), attempting Variable Business VA fallback...`);
+            
+            const fallbackResponse = await squad.post('/virtual-account/business', {
+                amount: Math.round(amount * 100),
+                email: email || 'payments@usekredibly.com',
+                first_name: 'Kredibly',
+                last_name: (merchantBusinessName || 'Merchant').substring(0, 15),
+                customer_identifier: invoiceNumber
+            });
+
+            if (fallbackResponse.data.status !== 200) {
+                console.error('❌ Squad Fallback Error:', fallbackResponse.data);
+                throw new Error(fallbackResponse.data.message || 'Squad Virtual Account creation failed');
+            }
+
+            return {
+                accountNumber: fallbackResponse.data.data.account_number,
+                accountName: fallbackResponse.data.data.account_name,
+                bankName: 'Guaranty Trust Bank (GTBank)',
+                transactionReference: fallbackResponse.data.data.transaction_reference
+            };
         }
 
         return {
             accountNumber: response.data.data.account_number,
             accountName: response.data.data.account_name,
-            bankName: 'Guaranty Trust Bank (GTBank)',
+            bankName: response.data.data.bank_name || 'Guaranty Trust Bank (GTBank)',
             transactionReference: response.data.data.transaction_reference
         };
     } catch (error) {
-        console.error('❌ Squad Virtual Account Error:', error.response?.data || error.message);
+        console.error('❌ Squad Virtual Account Error Debug:', {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status,
+            config: {
+                url: error.config?.url,
+                method: error.config?.method,
+                data: error.config?.data
+            }
+        });
         throw error;
     }
 };

@@ -1,7 +1,7 @@
 const Sale = require("../../models/Sale");
 const BusinessProfile = require("../../models/BusinessProfile");
 const Notification = require("../../models/Notification");
-const { sendWhatsAppMessage } = require("../whatsapp/whatsappController");
+const { sendWhatsAppMessage, sendWhatsAppAlert, sendWhatsAppTemplate } = require("../whatsapp/whatsappController");
 const { logActivity } = require("../../utils/activityLogger");
 
 // Create a new sale
@@ -184,7 +184,7 @@ exports.addPayment = async (req, res) => {
             const balance = sale.totalAmount - paid;
             
             // Smart message logic based on balance
-            let msg = `🔔 *Payment Alert!*\n\nChief, I've just recorded a payment of *₦${Number(amount).toLocaleString()}* for *${sale.customerName}*.\n\n`;
+            let msg = `I've just recorded a payment of *₦${Number(amount).toLocaleString()}* for *${sale.customerName}*.\n\n`;
             
             if (balance <= 0) {
                 msg += `✅ *Fully Paid!* This debt is now cleared from the ledger. Well done!`;
@@ -192,7 +192,7 @@ exports.addPayment = async (req, res) => {
                 msg += `⏳ *Balance Expected:* ₦${balance.toLocaleString()}\n*Action:* I've updated the invoice status to ${sale.status.toUpperCase()}.`;
             }
 
-            await sendWhatsAppMessage(sale.businessId.whatsappNumber, msg).catch(e => {
+            await sendWhatsAppAlert(sale.businessId.whatsappNumber, "Chief", msg).catch(e => {
                 console.error("WhatsApp Notify Error (non-blocking):", e.message);
             });
 
@@ -277,8 +277,8 @@ exports.confirmSale = async (req, res) => {
             // Notify Business Owner on WhatsApp
             if (business && business.whatsappNumber) {
 
-                const adminMsg = `🛡️ *Verification Alert!*\n\n${customer || 'A customer'} has just confirmed receipt of *Invoice #${invoiceNum}*.\n\nYour digital record is now verified! ✅`;
-                await sendWhatsAppMessage(business.whatsappNumber, adminMsg);
+                const adminMsg = `${customer || 'A customer'} has just confirmed receipt of *Invoice #${invoiceNum}*.\n\nYour digital record is now verified! ✅`;
+                await sendWhatsAppAlert(business.whatsappNumber, "Verification Alert", adminMsg);
             } else {
             }
         }
@@ -541,24 +541,39 @@ exports.sendReminder = async (req, res) => {
 
         if (tone === "formal") {
             message = `*OFFICIAL PAYMENT NOTICE*\n\n` +
-                      `Dear ${sale.customerName},\n\n` +
-                      `This is a formal reminder regarding your outstanding balance with *${business.displayName}*.\n\n` +
+                      `This is a formal reminder regarding your outstanding balance.\n\n` +
                       `*Invoice:* #${sale.invoiceNumber}\n` +
                       `*Balance Due:* ₦${balance.toLocaleString()}\n\n` +
-                      `Please use the secure link below to clear this payment immediately:\n` +
-                      `${paymentLink}\n\n` +
                       `Ignore if payment has already been made.`;
         } else {
-            message = `Hi ${sale.customerName}! 👋\n\n` +
-                      `Friendly nudge from *${business.displayName}* regarding your invoice (#${sale.invoiceNumber}).\n\n` +
-                      `There's a remaining balance of *₦${balance.toLocaleString()}*. You can easily settle it here:\n` +
-                      `${paymentLink}\n\n` +
+            message = `Friendly nudge regarding your invoice (#${sale.invoiceNumber}).\n\n` +
+                      `There's a remaining balance of *₦${balance.toLocaleString()}*.\n\n` +
                       `Thank you!`;
         }
 
         // Send to customer if phone exists
         if (sale.customerPhone) {
-            await sendWhatsAppMessage(sale.customerPhone, message);
+            const components = [
+                {
+                    type: "body",
+                    parameters: [
+                        { type: "text", text: business.displayName },
+                        { type: "text", text: sale.customerName || "Customer" },
+                        { type: "text", text: message }
+                    ]
+                },
+                {
+                    type: "button",
+                    sub_type: "url",
+                    index: "0",
+                    parameters: [
+                        { type: "text", text: sale.invoiceNumber }
+                    ]
+                }
+            ];
+            await sendWhatsAppTemplate(sale.customerPhone, 'kreddy_customer_invoice', components).catch(e => {
+                console.error("WhatsApp Link Error:", e.message);
+            });
         }
 
         sale.reminderSentAt = new Date();

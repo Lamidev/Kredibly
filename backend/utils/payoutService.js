@@ -1,6 +1,6 @@
 const EscrowPayment = require("../models/EscrowPayment");
 const { createTransferRecipient, initiateTransfer } = require("./paystack");
-const { sendWhatsAppMessage } = require("../controllers/whatsapp/whatsappController");
+const { sendWhatsAppMessage, sendWhatsAppAlert } = require("../controllers/whatsapp/whatsappController");
 
 /**
  * Processes an individual escrow payout.
@@ -49,7 +49,7 @@ const processIndividualEscrowPayout = async (escrowId) => {
 
         // 5. Notify Merchant
         const msg = `🔓 *Escrow Released, Chairman!*\n\nYour security lock has expired, and I've just pushed *₦${escrow.amount.toLocaleString()}* to your bank account (${profile.bankDetails.bankName}).\n\n_Ref: ${transfer.reference}_`;
-        await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => console.error("Escrow Notify Fail:", e));
+        await sendWhatsAppAlert(profile.whatsappNumber, "Chairman", msg).catch(e => console.error("Escrow Notify Fail:", e));
 
         console.log(`✅ Released Escrow ${escrow.reference} to ${profile.displayName}`);
         return { status: "completed", reference: transfer.reference };

@@ -285,10 +285,10 @@ exports.saveBankDetails = async (req, res) => {
         // 5. SEND SECURITY NOTIFICATION (Only for Changes)
         if (!isInitialSetup) {
             const bossTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
-            const securityMsg = `⚠️ *SECURITY ALERT: Bank Details Changed*\n\n${bossTitle}, your payout bank account was just updated to *${resolvedDetails.account_name}* (${bankName}).\n\n🛡️ *Safety Lock:* For your security, instant payouts are paused for 24 hours. They will resume automatically tomorrow.\n\n_If you did not make this change, please contact support immediately!_`;
+            const securityMsg = `Your payout bank account was just updated to ${resolvedDetails.account_name} (${bankName}).\n\n🛡️ *Safety Lock:* For your security, instant payouts are paused for 24 hours. They will resume automatically tomorrow.\n\n_If you did not make this change, please contact support immediately!_`;
             
-            const { sendWhatsAppMessage } = require("../whatsapp/whatsappController");
-            await sendWhatsAppMessage(profile.whatsappNumber, securityMsg).catch(e => console.error("Security WA Fail:", e.message));
+            const { sendWhatsAppAlert } = require("../whatsapp/whatsappController");
+            await sendWhatsAppAlert(profile.whatsappNumber, bossTitle, securityMsg).catch(e => console.error("Security WA Fail:", e.message));
 
             const { sendSecurityAlertEmail } = require("../../emailLogic/emails");
             await sendSecurityAlertEmail(user.email, user.name, `${resolvedDetails.account_name} (${bankName})`).catch(e => console.error("Security Email Fail:", e.message));

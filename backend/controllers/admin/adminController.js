@@ -30,8 +30,11 @@ exports.getGlobalStats = async (req, res) => {
         const allPayments = await Payment.find({ status: 'success' });
         const totalKrediblyRevenue = allPayments.reduce((sum, p) => sum + p.amount, 0);
 
-        // Get latest 50 activities across the entire platform
-        const globalActivities = await ActivityLog.find({})
+        // Filter Pulse for high-value activities only
+        const importantActions = ['SIGNUP', 'WHATSAPP_SALE_CREATED', 'PAYMENT_RECEIVED', 'SUBSCRIPTION_PAID', 'SUPPORT_TICKET_CREATED', 'PROFILE_UPDATED'];
+        const globalActivities = await ActivityLog.find({ 
+            action: { $in: importantActions } 
+        })
             .sort({ createdAt: -1 })
             .limit(50);
 
@@ -253,10 +256,16 @@ exports.getMissionControlFeed = async (req, res) => {
         const statsObj = { pending: 0, completed: 0, failed: 0, processing: 0 };
         jobStats.forEach(s => { statsObj[s._id] = s.count; });
 
-        // 2. Fetch Aggregated Feed (Last 100 items)
+        // 2. Fetch Aggregated Feed (Filtered for Significance)
         const [jobs, logs, subs, sales] = await Promise.all([
-            BackgroundJob.find().sort({ createdAt: -1 }).limit(15).populate("businessId", "displayName"),
-            ActivityLog.find().sort({ createdAt: -1 }).limit(15).populate("businessId", "displayName"),
+            // Show only Failed or Processing jobs (The ones needing attention)
+            BackgroundJob.find({ status: { $in: ['failed', 'processing'] } }).sort({ createdAt: -1 }).limit(20).populate("businessId", "displayName"),
+            
+            // Show only high-value logs
+            ActivityLog.find({ 
+                action: { $in: ['SIGNUP', 'PROFILE_UPDATED', 'ACCOUNT_VERIFIED'] } 
+            }).sort({ createdAt: -1 }).limit(15).populate("businessId", "displayName"),
+            
             Payment.find({ status: 'success' }).sort({ createdAt: -1 }).limit(10).populate("businessId", "displayName"),
             Sale.find({ "payments.0": { $exists: true } }).sort({ "payments.date": -1 }).limit(10).populate("businessId", "displayName")
         ]);

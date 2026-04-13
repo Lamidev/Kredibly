@@ -1,7 +1,7 @@
 const Sale = require("../models/Sale");
 const Reminder = require("../models/Reminder");
 const BusinessProfile = require("../models/BusinessProfile");
-const { sendWhatsAppMessage } = require("../controllers/whatsapp/whatsappController");
+const { sendWhatsAppAlert } = require("../controllers/whatsapp/whatsappController");
 
 /**
  * Sends a nudge message (DEBT_NUDGE) based on the provided context.
@@ -24,7 +24,7 @@ const sendIndividualDebtNudge = async (data) => {
 
             const msg = `🤔 *Did They Pay, ${bossTitle}?*\n\nYesterday, you had a reminder to collect from *${sale.customerName}*.\n\nMy records show they still owe *₦${bal.toLocaleString()}*. \n\nDid they pay offline? If yes, just say: _"${sale.customerName} paid"_. \n\nIf not, would you like me to snooze this reminder for later, or send them another message?`;
             
-            await sendWhatsAppMessage(whatsappNumber, msg);
+            await sendWhatsAppAlert(whatsappNumber, bossTitle, msg);
             return { status: "completed" };
 
         } else if (type === "past_due_escalation") {
@@ -38,7 +38,7 @@ const sendIndividualDebtNudge = async (data) => {
             
             const msg = `🚩 *Overdue Alert, ${bossTitle}!*\n\n*${sale.customerName}* was supposed to pay ₦${bal.toLocaleString()} yesterday, but the record is still unpaid.\n\nShould I draft a follow-up link for you to forward to them? \n\n_Type: "Send link to ${sale.customerName}"_`;
             
-            await sendWhatsAppMessage(whatsappNumber, msg);
+            await sendWhatsAppAlert(whatsappNumber, bossTitle, msg);
             return { status: "completed" };
         } else if (type === "upcoming_summary") {
             const { saleIds } = data;
@@ -55,7 +55,7 @@ const sendIndividualDebtNudge = async (data) => {
                 ? `🌞 *Good Morning ${bossTitle}!* \n\nYou have *${sales.length}* sales expected to be paid today or tomorrow, totaling *₦${totalBal.toLocaleString()}*.\n\nI'm monitoring them for you! 🛡️`
                 : `📊 *Receivables Intelligence Summary*\n\nInfrastructure is monitoring *${sales.length}* sales due in this 48h period. \n\nTotal value: *₦${totalBal.toLocaleString()}*. \n\nStanding by for collection instructions. 🛡️`;
 
-            await sendWhatsAppMessage(whatsappNumber, msg);
+            await sendWhatsAppAlert(whatsappNumber, bossTitle, msg);
             return { status: "completed" };
         }
 

@@ -11,13 +11,21 @@ const { sendIndividualPlanAlert } = require("./planAlertService");
 
 const processBackgroundJobs = async () => {
     try {
+        // 1. Recover "Zombie" Jobs (Stuck in processing for > 15 mins)
+        const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+        await BackgroundJob.updateMany(
+            { status: "processing", updatedAt: { $lt: fifteenMinsAgo } },
+            { status: "pending", error: "Job timed out, resetting for retry" }
+        );
+
         const jobs = await BackgroundJob.find({ status: "pending" })
-            .limit(50)
+            .limit(20) // Smaller chunks for tighter pacing
             .populate("businessId");
 
         if (jobs.length === 0) return;
 
-        console.log(`⚙️ Processing ${jobs.length} background jobs...`);
+        // Only log if something is actually happening
+        // console.log(`⚙️ Processing ${jobs.length} background jobs...`); 
 
         for (const job of jobs) {
             job.status = "processing";
@@ -59,6 +67,12 @@ const processBackgroundJobs = async () => {
                 }
                 
                 await job.save();
+
+                // 2. PACING: Wait 15 seconds if there are more jobs in this batch
+                if (jobs.indexOf(job) < jobs.length - 1) {
+                    await new Promise(res => setTimeout(res, 15000));
+                }
+
             } catch (jobErr) {
                 console.error(`❌ Job Error [${job._id}]:`, jobErr.message);
                 job.status = "failed";

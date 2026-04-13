@@ -145,9 +145,17 @@ const AdminMissionControl = () => {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '16px', 
+                    maxHeight: '700px', 
+                    overflowY: 'auto', 
+                    paddingRight: '12px',
+                    scrollbarWidth: 'thin'
+                }}>
                     <AnimatePresence mode="popLayout">
-                        {feed.slice(0, 15).map((item) => (
+                        {feed.map((item) => (
                             <motion.div 
                                 layout
                                 key={item._id + item.timestamp}

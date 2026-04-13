@@ -12,6 +12,7 @@ const { sendWhatsAppMessage } = require('../whatsapp/whatsappController');
 const { sendSubscriptionConfirmEmail } = require('../../emailLogic/emails');
 
 const { verifyPaystackReference } = require('../../utils/paystack');
+const { generateVirtualAccount } = require('../../utils/squad');
 const { getPlanPrice, PRICING_PLANS, LAUNCH_DATE } = require('../../config/pricing');
 
 exports.getUpgradeQuote = async (req, res) => {
@@ -102,20 +103,32 @@ exports.initializeVirtualAccountPayment = async (req, res) => {
              return res.status(200).json({ success: true, data: existing });
         }
 
-        // 3. GENERATE VIRTUAL ACCOUNT (VIA PROVIDER)
-        // PLACEHOLDER for Monnify/Paystack Integration
+        // 3. GENERATE VIRTUAL ACCOUNT VIA SQUAD
         console.log(`💎 Initializing Instant Cash VA for ${business.displayName}`);
         
-        const reference = `KREDDY_VA_${Date.now()}`;
-        const accountNumber = `90${Math.floor(Math.random() * 100000000)}`; 
+        let squadResponse;
+        try {
+            const customerEmail = sale.customerEmail || business.ownerId.email || 'payments@usekredibly.com';
+            squadResponse = await generateVirtualAccount({
+                amount: amount || (sale.totalAmount - sale.payments.reduce((s,p) => s + p.amount, 0)),
+                customerName: sale.customerName || 'Customer',
+                email: customerEmail,
+                invoiceNumber: sale.invoiceNumber,
+                merchantBusinessName: business.displayName
+            });
+        } catch (squadErr) {
+            console.error("Squad VA Generation failed:", squadErr);
+            return res.status(500).json({ message: "Failed to generate dynamic account. Please try again." });
+        }
         
         const vaRecord = await VirtualAccount.create({
             businessId: business._id,
             saleId: sale._id,
             invoiceNumber: sale.invoiceNumber,
-            accountNumber: accountNumber,
-            bankName: "Wema Bank",
-            reference: reference,
+            accountNumber: squadResponse.accountNumber,
+            bankName: squadResponse.bankName,
+            provider: "squad",
+            reference: squadResponse.transactionReference,
             amount: amount || (sale.totalAmount - sale.payments.reduce((s,p) => s + p.amount, 0)),
             status: "active"
         });
@@ -125,7 +138,7 @@ exports.initializeVirtualAccountPayment = async (req, res) => {
             data: {
                 accountNumber: vaRecord.accountNumber,
                 bankName: vaRecord.bankName,
-                accountName: `Kredibly / ${business.displayName.substring(0, 15)}`,
+                accountName: squadResponse.accountName,
                 amount: vaRecord.amount,
                 reference: vaRecord.reference,
                 expiresIn: "60 minutes"
@@ -425,7 +438,7 @@ exports.initializePaystackPayment = async (req, res) => {
         });
         if (!sale) return res.status(404).json({ message: "Invoice not found" });
         
-        if (paymentChannel === 'card') return res.status(403).json({ message: "Card payments disabled." });
+        // All paymentChannel types are permitted — card, bank_transfer, etc.
 
         const reference = `KREDDY_INV_${sale.invoiceNumber}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
         

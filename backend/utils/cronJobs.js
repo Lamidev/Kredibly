@@ -2,7 +2,7 @@ const cron = require("node-cron");
 const BusinessProfile = require("../models/BusinessProfile");
 const Sale = require("../models/Sale");
 const Reminder = require("../models/Reminder");
-const { sendWhatsAppMessage } = require("../controllers/whatsapp/whatsappController");
+const { sendWhatsAppMessage, sendWhatsAppAlert } = require("../controllers/whatsapp/whatsappController");
 const { sendActivationNudgeEmail, sendFinishSetupEmail } = require("../emailLogic/emails");
 const BackgroundJob = require("../models/BackgroundJob");
 
@@ -58,7 +58,7 @@ const scheduleRemindersWorker = () => {
 
                 msg += `Let's get it done! 🚀\n\n_Reply "snooze 10 mins" if you are running late!_`;
 
-                await sendWhatsAppMessage(acquired.whatsappNumber, msg).catch(e => {});
+                await sendWhatsAppAlert(acquired.whatsappNumber, title, msg).catch(e => {});
 
                 if (acquired.saleId) {
                     const sale = acquired.saleId;
@@ -67,7 +67,7 @@ const scheduleRemindersWorker = () => {
                     const draftMsg = `Hi ${sale.customerName}, this is a friendly reminder regarding your balance of ₦${bal.toLocaleString()} with ${acquired.businessId.displayName}. You can view and pay here: ${APP_URL}/i/${sale.invoiceNumber}`;
                     
                     setTimeout(async () => {
-                        await sendWhatsAppMessage(acquired.whatsappNumber, draftMsg).catch(e => {});
+                        await sendWhatsAppAlert(acquired.whatsappNumber, title, draftMsg).catch(e => {});
                     }, 1000);
                 }
 
@@ -111,17 +111,29 @@ const scheduleMorningSummary = () => {
             const ActivityLog = require("../models/ActivityLog");
             const profiles = await BusinessProfile.find({ isKreddyConnected: true });
 
+            // Use Lagos timezone midnight for "start of today" comparison
+            const lagosNow = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Lagos' }));
+            const startOfTodayLagos = new Date(lagosNow);
+            startOfTodayLagos.setHours(0, 0, 0, 0);
+
             let queuedCount = 0;
+            let skippedCount = 0;
             for (const profile of profiles) {
-                if (profile.lastSummaryAt && profile.lastSummaryAt >= startOfToday) continue;
+                // Skip if already sent today (compare using Lagos time)
+                if (profile.lastSummaryAt) {
+                    const lastSentLagos = new Date(profile.lastSummaryAt.toLocaleString('en-US', { timeZone: 'Africa/Lagos' }));
+                    if (lastSentLagos >= startOfTodayLagos) { skippedCount++; continue; }
+                }
                 
+                // Skip ONLY if a pending or completed job already exists today (ignore failed ones)
                 const existingJob = await BackgroundJob.findOne({
                     businessId: profile._id,
                     type: "MORNING_SUMMARY",
+                    status: { $in: ["pending", "processing", "completed"] },
                     createdAt: { $gte: startOfToday }
                 });
 
-                if (existingJob) continue;
+                if (existingJob) { skippedCount++; continue; }
 
                 await BackgroundJob.create({
                     type: "MORNING_SUMMARY",
@@ -132,10 +144,12 @@ const scheduleMorningSummary = () => {
                 queuedCount++;
             }
 
+            console.log(`🌅 Morning Summary Cron (${type}): Queued ${queuedCount}, Skipped ${skippedCount}/${profiles.length}`);
+
             await ActivityLog.create({
                 action: "SYSTEM_TASK",
                 entityType: "SYSTEM",
-                details: `Morning Summary Queue Generated (${type}). Queued: ${queuedCount}`
+                details: `Morning Summary Queue Generated (${type}). Queued: ${queuedCount} | Skipped: ${skippedCount}`
             });
         } catch (err) { console.error("Error generating morning summary jobs:", err); }
     };
@@ -345,7 +359,7 @@ const scheduleBankLockChecker = () => {
                 const bossTitle = profile.assistantSettings?.preferredName || planTitle;
                 const msg = `🔓 *Security Update: Lock Lifted!*\n\n${bossTitle}, your bank detail security lock has expired. \n\n⚡ *Instant Settlements* have been resumed for your account. Every payment will now go directly to your bank account again.\n\n_Kreddy is keeping your money moving safely!_ 🛡️`;
                 
-                await sendWhatsAppMessage(profile.whatsappNumber, msg).catch(e => {});
+                await sendWhatsAppAlert(profile.whatsappNumber, bossTitle, msg).catch(e => {});
             }
         } catch (error) { console.error("Cron Error (Bank Lock Checker):", error); }
     });

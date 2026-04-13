@@ -7,7 +7,7 @@ const Payment = require('../../models/Payment');
 const User = require('../../models/User');
 const VirtualAccount = require('../../models/VirtualAccount');
 const Coupon = require('../../models/Coupon');
-const { sendWhatsAppMessage } = require('../whatsapp/whatsappController');
+const { sendWhatsAppMessage, sendWhatsAppTemplate } = require('../whatsapp/whatsappController');
 const { getPlanPrice } = require('../../config/pricing');
 
 exports.handlePaystackWebhook = async (req, res) => {
@@ -218,14 +218,24 @@ exports.handlePaystackWebhook = async (req, res) => {
                     if (business && business.whatsappNumber) {
                         const totalPaid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
                         const balance = sale.totalAmount - totalPaid;
-                        const receiptLink = `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/i/${invoiceNumber}`;
                         
-                        let msg = `🔔 *Payment Alert!*\n\nChief, I've just verified an online payment of *₦${paidAmount.toLocaleString()}* for *Invoice #${invoiceNumber}* (${sale.customerName}).\n\n`;
-                        if (balance <= 0) msg += `✅ *Fully Paid!* This debt is now cleared.\n\n`;
-                        else msg += `⏳ *Balance Remaining:* ₦${balance.toLocaleString()}\n\n`;
-                        msg += `📄 *View/Share Receipt:* ${receiptLink}`;
+                        let customText = "";
+                        if (balance <= 0) customText = `✅ Fully Paid! This debt is now cleared.`;
+                        else customText = `⏳ Balance Remaining: ₦${balance.toLocaleString()}`;
                         
-                        await sendWhatsAppMessage(business.whatsappNumber, msg).catch(err => console.error(`❌ WhatsApp fail:`, err.message));
+                        const components = [
+                            {
+                                type: "body",
+                                parameters: [
+                                    { type: "text", text: paidAmount.toLocaleString() },
+                                    { type: "text", text: invoiceNumber },
+                                    { type: "text", text: sale.customerName },
+                                    { type: "text", text: customText }
+                                ]
+                            }
+                        ];
+                        
+                        await sendWhatsAppTemplate(business.whatsappNumber, 'kreddy_payment_alert', components).catch(err => console.error(`❌ WhatsApp fail:`, err.message));
                     }
 
                     // ⚡ REAL-TIME DASHBOARD UPDATE (Sockets)
