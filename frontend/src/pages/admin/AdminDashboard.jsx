@@ -132,27 +132,35 @@ const AdminDashboard = () => {
                                     <RefreshCw size={16} className={isRefreshing ? 'spin-animation' : ''} /> <span className="hidden-mobile">Sync</span>
                                 </button>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                                {activities.slice(0, visibleActivities).map((log, i) => (
-                                    <div key={log._id} style={{ display: 'flex', gap: '16px', position: 'relative' }}>
-                                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
-                                            {log.action.includes('SALE') ? <TrendingUp size={18} /> : log.action.includes('USER') ? <Users size={18} /> : <Zap size={18} />}
-                                        </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px', gap: '8px' }}>
-                                                <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 850 }}>{log.details.replace(/"/g, '')}</p>
-                                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}>
-                                                    {new Date(log.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} • {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </span>
-                                            </div>
-                                            <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{log.action.replace(/_/g, ' ')}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                                {activities.length > visibleActivities && (
-                                    <button onClick={() => setVisibleActivities(v => v + 10)} style={{ width: '100%', padding: '16px', borderRadius: '16px', background: '#F8FAFC', border: '1px dashed #E2E8F0', cursor: 'pointer', fontWeight: 800, color: 'var(--text-muted)', fontSize: '0.9rem' }}>Load More History</button>
-                                )}
-                            </div>
+                             <div style={{ 
+                                 display: 'flex', 
+                                 flexDirection: 'column', 
+                                 gap: '24px', 
+                                 maxHeight: '520px', 
+                                 overflowY: 'auto', 
+                                 paddingRight: '12px',
+                                 scrollbarWidth: 'thin'
+                             }}>
+                                 {activities.slice(0, visibleActivities).map((log, i) => (
+                                     <div key={log._id} style={{ display: 'flex', gap: '16px', position: 'relative' }}>
+                                         <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
+                                             {log.action.includes('SALE') ? <TrendingUp size={18} /> : log.action.includes('USER') ? <Users size={18} /> : <Zap size={18} />}
+                                         </div>
+                                         <div style={{ flex: 1 }}>
+                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px', gap: '8px' }}>
+                                                 <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 850 }}>{log.details.replace(/"/g, '')}</p>
+                                                 <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}>
+                                                     {new Date(log.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} • {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                 </span>
+                                             </div>
+                                             <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{log.action.replace(/_/g, ' ')}</p>
+                                         </div>
+                                     </div>
+                                 ))}
+                                 {activities.length > visibleActivities && (
+                                     <button onClick={() => setVisibleActivities(v => v + 10)} style={{ width: '100%', padding: '16px', borderRadius: '16px', background: '#F8FAFC', border: '1px dashed #E2E8F0', cursor: 'pointer', fontWeight: 800, color: 'var(--text-muted)', fontSize: '0.9rem' }}>Load More History</button>
+                                 )}
+                             </div>
                         </div>
                     </div>
 

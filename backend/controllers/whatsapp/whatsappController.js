@@ -12,6 +12,7 @@ const { processMessageWithAI, processAudioWithAI, processImageWithAI } = require
 const { logUsage } = require("../../utils/usageTracker");
 const { initializePayment } = require("../../utils/paystack");
 const { getPlanPrice } = require("../../config/pricing");
+const { generateWittyIntro } = require("../../utils/aiService");
 // Note: sendWhatsAppMessage is exported below, but for internal use, we use it directly.
 
 
@@ -503,6 +504,67 @@ const sendReply = async (to, text, retryCount = 0) => {
     }
 };
 
+const sendTemplateMessage = async (to, templateName, components = [], retryCount = 0) => {
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 3000;
+
+    try {
+        const phoneId = process.env.WHATSAPP_PHONE_ID || process.env.PHONE_ID;
+        const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN || process.env.ACCESS_TOKEN;
+
+        if (!accessToken || !phoneId) return false;
+
+        let cleanTo = String(to).replace(/\D/g, ''); 
+        if (cleanTo.startsWith('0') && cleanTo.length === 11) {
+            cleanTo = '234' + cleanTo.slice(1);
+        }
+
+        const payload = {
+            messaging_product: "whatsapp",
+            to: cleanTo,
+            type: "template",
+            template: {
+                name: templateName,
+                language: { code: "en" }
+            }
+        };
+
+        if (components && components.length > 0) {
+            payload.template.components = components;
+        }
+
+        await axios.post(
+            `https://graph.facebook.com/v21.0/${phoneId}/messages`,
+            payload,
+            {
+                headers: { Authorization: `Bearer ${accessToken}` },
+                timeout: 10000
+            }
+        );
+
+        logUsage("whatsapp").catch(e => {});
+        return true;
+
+    } catch (error) {
+        const status = error.response?.status;
+        const errorData = error.response?.data;
+
+        // Retry on 429 (Rate Limit) or 500+ (Server Error) or Network Timeout
+        const isNetworkError = !status || status >= 500;
+        const isRateLimited = status === 429;
+        
+        if (retryCount < MAX_RETRIES && (isNetworkError || isRateLimited)) {
+            const nextDelay = RETRY_DELAY * (retryCount + 1);
+            console.warn(`⏳ WhatsApp Template Delay (Attempt ${retryCount + 1}): Retrying ${to} in ${nextDelay/1000}s...`);
+            await new Promise(res => setTimeout(res, nextDelay));
+            return await sendTemplateMessage(to, templateName, components, retryCount + 1);
+        }
+
+        console.error(`❌ WhatsApp Template [${templateName}] Final Failure:`, errorData || error.message);
+        return false;
+    }
+};
+
 const sendTypingIndicator = async (to) => {
     try {
         const phoneId = process.env.WHATSAPP_PHONE_ID || process.env.PHONE_ID;
@@ -533,6 +595,21 @@ const sendTypingIndicator = async (to) => {
 };
 
 exports.sendWhatsAppMessage = sendReply;
+exports.sendWhatsAppTemplate = sendTemplateMessage;
+
+const sendWhatsAppAlert = async (to, bossTitle, textMessage) => {
+    const components = [
+        {
+            type: "body",
+            parameters: [
+                { type: "text", text: bossTitle },
+                { type: "text", text: textMessage }
+            ]
+        }
+    ];
+    return await sendTemplateMessage(to, 'kreddy_system_alert', components);
+};
+exports.sendWhatsAppAlert = sendWhatsAppAlert;
 
 exports.verifyWebhook = (req, res) => {
     const mode = req.query["hub.mode"];
@@ -998,11 +1075,11 @@ Upgrade here: ${APP_URL}/pricing`);
             const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
             const bossTitle = profile.assistantSettings?.preferredName || planDefaultTitle;
             
-            const personalizedGreeting = getRandom(HUMANIZE.greetings, { name: bossTitle }, plan);
+            const wittyGreeting = await generateWittyIntro("greeting", { bossTitle });
             const statusLabel = plan === "chairman" ? "📊 *EMPIRE STATUS*" : "📊 *STATS*";
             const bossRole = plan === "chairman" ? "your Digital Chief of Staff" : "your Kredibly partner";
 
-            await sendReply(from, `${personalizedGreeting} \n\nI'm *Kreddy*, ${bossRole}. \n\n*What's the plan for today?*\n${statusLabel}: Type *S*\n⏳ *DEBTS*: Type *D*\n💡 *HELP*: Type *HELP*`);
+            await sendReply(from, `${wittyGreeting} \n\nI'm *Kreddy*, ${bossRole}. \n\n*What's the plan for today?*\n${statusLabel}: Type *S*\n⏳ *DEBTS*: Type *D*\n💡 *HELP*: Type *HELP*`);
             return;
         } else if (isThanks) {
             const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
@@ -1329,10 +1406,10 @@ Upgrade here: ${APP_URL}/pricing`);
                     saleId: newSale._id
                 });
 
-                const celebration = totalAmount >= 50000 ? getRandom(HUMANIZE.celebration) + "\n\n" : "Nice one! 🚀\n\n";
-                let reply = `✅ *Record Saved!* (#${newSale.invoiceNumber})\n\n${celebration}I've logged *₦${totalAmount.toLocaleString()}* for ${newSale.customerName}.\n`;
-                if (bal > 0) reply += `⏳ They still owe you *₦${bal.toLocaleString()}*`;
-                else reply += `✅ *Fully Paid!*`;
+                const wittyIntro = await generateWittyIntro("create_sale", { bossTitle, extra: `₦${totalAmount.toLocaleString()} to ${newSale.customerName}` });
+                let reply = `✅ *Record Saved!* (#${newSale.invoiceNumber})\n\n${wittyIntro}\n`;
+                if (bal > 0) reply += `\n⏳ They still owe you *₦${bal.toLocaleString()}*`;
+                else reply += `\n✅ *Fully Paid!*`;
                 
                 await sendReply(from, reply);
                 
@@ -1370,16 +1447,23 @@ Upgrade here: ${APP_URL}/pricing`);
                     
                     if (!searchName || searchName.toLowerCase() === "customer") {
                         const sales = await Sale.find({ businessId: profile._id });
-                        let msg = `${getRandom(HUMANIZE.debtors)}\n\n⏳ *Outstanding Balances:*\n\n`;
+                        let debtLines = "";
                         let count = 0;
                         sales.forEach(s => {
                             const bal = s.totalAmount - s.payments.reduce((sum, p) => sum + p.amount, 0);
                             if (bal > 0) {
-                                msg += `• *${s.customerName}*: ₦${bal.toLocaleString()} (#${s.invoiceNumber})\n`;
+                                debtLines += `• *${s.customerName}*: ₦${bal.toLocaleString()} (#${s.invoiceNumber})\n`;
                                 count++;
                             }
                         });
-                        await sendReply(from, count === 0 ? "🎉 Amazing! Nobody owes you any money right now." : msg);
+
+                        if (count === 0) {
+                            return await sendReply(from, `🎉 Amazing, ${bossTitle}! Nobody owes you any money right now. Your ledger is 100% clean!`);
+                        }
+
+                        const wittyIntro = await generateWittyIntro("check_debt", { bossTitle, extra: `Found ${count} debtors` });
+                        let msg = `${wittyIntro}\n\n⏳ *Outstanding Balances:*\n\n${debtLines}`;
+                        await sendReply(from, msg);
                     } else {
                         const matches = await Sale.find({ 
                             businessId: profile._id, 
@@ -1408,7 +1492,8 @@ Upgrade here: ${APP_URL}/pricing`);
                     if (sales.length === 0) {
                         await sendReply(from, "Boss, the records are empty! Let's record your first sale today. 🚀");
                     } else {
-                        let msg = `${getRandom(HUMANIZE.history)}\n\n`;
+                        const wittyIntro = await generateWittyIntro("list_sales", { bossTitle, extra: `Last 15 records` });
+                        let msg = `${wittyIntro}\n\n`;
                         
                         sales.forEach((s, i) => {
                             const bal = s.totalAmount - s.payments.reduce((sum, p) => sum + p.amount, 0);
@@ -1878,7 +1963,7 @@ Upgrade here: ${APP_URL}/pricing`);
                                     await sendReply(from, `✅ *Staff Added!* \n\nI've successfully added ${staffName} (${formattedNewPhone}) to your team. They can now record sales and update receipts by chatting with me directly! 🤝`);
                                     
                                     // Send welcome message to new staff
-                                    await sendWhatsAppMessage(formattedNewPhone, `👋 Hello! Your boss (${profile.displayName}) has added you to their Kredibly team.\n\nYou can now chat with me (Kreddy AI) here to record sales and check records on their behalf!\n\n_Try saying: "I just sold a pair of shoes to David for 20k"_`);
+                                    await sendWhatsAppAlert(formattedNewPhone, "Team Member", `Your boss (${profile.displayName}) has added you to their Kredibly team.\n\nYou can now chat with me (Kreddy AI) here to record sales and check records on their behalf!\n\n_Try saying: "I just sold a pair of shoes to David for 20k"_`);
                                 }
                             }
                         }

@@ -5,7 +5,7 @@ const BusinessProfile = require('../../models/BusinessProfile');
 const ActivityLog = require('../../models/ActivityLog');
 const Notification = require('../../models/Notification');
 const VirtualAccount = require('../../models/VirtualAccount');
-const { sendWhatsAppMessage } = require('../whatsapp/whatsappController');
+const { sendWhatsAppMessage, sendWhatsAppTemplate } = require('../whatsapp/whatsappController');
 
 /**
  * ⚡ INITIALIZE SQUAD ACCOUNT
@@ -58,7 +58,7 @@ exports.initializeSquadAccount = async (req, res) => {
             accountName: squadData.accountName,
             bankName: squadData.bankName,
             reference: squadData.transactionReference,
-            totalAmount: amount,
+            amount: amount,
             status: "active"
         });
 
@@ -188,19 +188,28 @@ exports.handleSquadWebhook = async (req, res) => {
         });
 
         if (business.whatsappNumber) {
-            const receiptLink = `https://usekredibly.com/r/${sale.invoiceNumber}`;
-            let msg = `🔔 *Payment Received (Instant Mode)!*\n\nChief, a customer just paid *₦${paidAmount.toLocaleString()}* for *Invoice #${sale.invoiceNumber}*.\n\n`;
-            
+            let statusText = "";
             if (payoutStatus === "pushed") {
-                msg += `💰 *Instant Settlement:* I have automatically pushed *₦${(paidAmount - (paidAmount*0.001) - 25).toLocaleString()}* into your *${business.bankDetails.bankName}* account. Alert on the way! ⚡\n\n`;
+                statusText = `Instant Settlement! I have automatically pushed ₦${(paidAmount - (paidAmount*0.001) - 25).toLocaleString()} into your ${business.bankDetails.bankName} account. Alert on the way! ⚡`;
             } else if (payoutStatus === "locked_security") {
-                msg += `🛡️ *Security Lock:* Payment received! However, your bank details were recently changed. For your safety, funds will be held in your Kredibly wallet for 24 hours before release.\n\n`;
+                statusText = `Security Lock: Funds will be held in your Kredibly wallet for 24h because your bank details were recently changed. 🛡️`;
             } else {
-                msg += `⏳ *Wallet Deposit:* Funds added to your Kredibly wallet. (Reason: ${payoutStatus === "fail_manual" ? "Bank network error" : "No bank details linked"}).\n\n`;
+                statusText = `Wallet Deposit: Funds added to your Kredibly wallet. (Reason: ${payoutStatus === "fail_manual" ? "Bank network error" : "No bank details linked"}).`;
             }
 
-            msg += `📄 *View Receipt:* ${receiptLink}`;
-            await sendWhatsAppMessage(business.whatsappNumber, msg).catch(e => {});
+            const components = [
+                {
+                    type: "body",
+                    parameters: [
+                        { type: "text", text: paidAmount.toLocaleString() },
+                        { type: "text", text: sale.invoiceNumber },
+                        { type: "text", text: sale.customerName },
+                        { type: "text", text: statusText }
+                    ]
+                }
+            ];
+
+            await sendWhatsAppTemplate(business.whatsappNumber, 'kreddy_payment_alert', components).catch(e => {});
         }
 
         // ⚡ 6. REAL-TIME DASHBOARD UPDATE (Sockets)

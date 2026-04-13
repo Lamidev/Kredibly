@@ -2,8 +2,7 @@ const BusinessProfile = require("../models/BusinessProfile");
 const Sale = require("../models/Sale");
 const Reminder = require("../models/Reminder");
 const ActivityLog = require("../models/ActivityLog");
-const { sendWhatsAppMessage } = require("../controllers/whatsapp/whatsappController");
-
+const { sendWhatsAppMessage, sendWhatsAppTemplate } = require("../controllers/whatsapp/whatsappController");
 /**
  * Core logic to generate and send a morning summary for a specific business profile.
  * @param {Object} profile - The BusinessProfile document.
@@ -70,50 +69,20 @@ const sendIndividualMorningSummary = async (profile, now = new Date()) => {
         if (salesYesterday.length > 0 || totalCashIn > 0 || effectivePlan === 'chairman' || effectivePlan === 'oga') {
             const planTitle = effectivePlan === "chairman" ? "Chairman" : (effectivePlan === "oga" ? "Oga" : "Boss");
             const bossTitle = profile.assistantSettings?.preferredName || planTitle;
-            const isHustler = effectivePlan === 'hustler';
-            
-            let msg = "";
-            if (isHustler && !isPreLaunch) {
-                msg = `🌞 *Rise and Grind, ${bossTitle}!* \n\nYou recorded *${salesYesterday.length || 0} sales* yesterday! 🚀 \n\nTo see your total *Cash Collected*, *Outstanding Credit*, and *Today's Agenda*, upgrade to the *Oga Plan* now. Don't leave your money hanging! 🛡️\n\n`;
-            } else {
-                msg = `🌞 *Rise and Grind, ${bossTitle}!* \n\nHere is your *Kredibly Intelligence Summary* for yesterday:\n\n`;
-                msg += `💰 *Cash Collected:* ₦${totalCashIn.toLocaleString()}\n`;
-                msg += `📑 *New Sales:* ${salesYesterday.length}\n`;
-                msg += `⏳ *New Credit:* ₦${pendingFromYesterday.toLocaleString()}\n\n`;
 
-                if (totalCashIn > 50000) {
-                    msg += `🔥 *Yesterday was a strong day! Keep that energy up today.* 🚀\n\n`;
-                } else if (salesYesterday.length === 0) {
-                    msg += `💡 *No new sales recorded yesterday. Remember to track every kobo today!* 🛡️\n\n`;
+            const components = [
+                {
+                    type: "body",
+                    parameters: [
+                        { type: "text", text: bossTitle },
+                        { type: "text", text: totalCashIn.toLocaleString() },
+                        { type: "text", text: salesYesterday.length.toString() },
+                        { type: "text", text: pendingFromYesterday.toLocaleString() }
+                    ]
                 }
+            ];
 
-                // Top Debts
-                const topDebtors = await Sale.find({ businessId: profile._id, status: { $ne: "paid" } }).sort({ totalAmount: -1 }).limit(3);
-                if (topDebtors.length > 0) {
-                    msg += `🔴 *Top Outstanding Balances:*\n`;
-                    topDebtors.forEach(d => {
-                        const bal = d.totalAmount - d.payments.reduce((sum, p) => sum + p.amount, 0);
-                        msg += `• ${d.customerName}: ₦${bal.toLocaleString()}\n`;
-                    });
-                    msg += `\n`;
-                }
-
-                // Agenda
-                const todayEnd = new Date(now); todayEnd.setHours(23,59,59,999);
-                const todaysReminders = await Reminder.find({ businessId: profile._id, triggerDate: { $gte: startOfToday, $lte: todayEnd }, status: "pending" });
-                if (todaysReminders.length > 0) {
-                    msg += `📅 *Today's Agenda:*\n`;
-                    todaysReminders.forEach(r => {
-                        const timeStr = new Date(r.triggerDate).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Africa/Lagos' });
-                        msg += `• ${timeStr}: ${r.description}\n`;
-                    });
-                    msg += `\n`;
-                }
-            }
-
-            msg += `Check full details on your dashboard: ${process.env.FRONTEND_URL || 'https://usekredibly.com'}`;
-
-            const sent = await sendWhatsAppMessage(profile.whatsappNumber, msg);
+            const sent = await sendWhatsAppTemplate(profile.whatsappNumber, 'kreddy_morning_summary', components);
             
             if (sent) {
                 profile.lastSummaryAt = new Date();
@@ -123,14 +92,42 @@ const sendIndividualMorningSummary = async (profile, now = new Date()) => {
                     businessId: profile._id,
                     action: "SYSTEM_TASK",
                     entityType: "SYSTEM",
-                    details: `Morning Summary delivered to ${profile.displayName} (${profile.whatsappNumber}) via Queue`
+                    details: `Morning Accountant Summary (Template) delivered to ${profile.displayName}`
                 });
                 return { status: "sent" };
             } else {
-                return { status: "error", reason: "WhatsApp API returned fail" };
+                return { status: "error", reason: "WhatsApp API returned fail on summary template" };
             }
         } else {
-            return { status: "skipped", reason: "No activity and basic plan" };
+            // MODE B: THE GROWTH COACH (For Inactive Users)
+            const planTitle = effectivePlan === "chairman" ? "Chairman" : (effectivePlan === "oga" ? "Oga" : "Boss");
+            const bossTitle = profile.assistantSettings?.preferredName || planTitle;
+
+            const components = [
+                {
+                    type: "body",
+                    parameters: [
+                        { type: "text", text: bossTitle }
+                    ]
+                }
+            ];
+
+            const sent = await sendWhatsAppTemplate(profile.whatsappNumber, 'kreddy_growth_coach', components);
+            
+            if (sent) {
+                profile.lastSummaryAt = new Date();
+                await profile.save();
+                
+                await ActivityLog.create({
+                    businessId: profile._id,
+                    action: "SYSTEM_TASK",
+                    entityType: "SYSTEM",
+                    details: `Morning Coach Nudge (Template) delivered to ${profile.displayName} (Inactive Yesterday)`
+                });
+                return { status: "sent" };
+            } else {
+                return { status: "error", reason: "WhatsApp API returned fail on nudge template" };
+            }
         }
     } catch (err) {
         console.error(`❌ Summary Error for ${profile?.displayName}:`, err.message);

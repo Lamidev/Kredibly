@@ -91,6 +91,8 @@ const PublicInvoicePage = () => {
                         if (newBalance <= 0 && !showSuccessModal) {
                             setLastPaymentAmount(currentBalance - newBalance);
                             setRecentPaymentDate(new Date());
+                            setCustomAmount('');
+                            setCustomAmountDisplay('');
                             setShowSuccessModal(true);
                         } else {
                             toast.success("Payment verified successfully on the ledger! 🛡️");
@@ -808,33 +810,95 @@ const PublicInvoicePage = () => {
                                     )}
                                 </AnimatePresence>
 
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                        <button 
-                                            onClick={() => handlePaystackPayment('transfer')}
-                                            disabled={verifying}
-                                            style={{ 
-                                                width: '100%', 
-                                                padding: isMobile ? '18px' : '22px', 
-                                                background: isOverdue ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)' : 'linear-gradient(135deg, #4C1D95 0%, #2E1065 100%)',
-                                                color: 'white', 
-                                                borderRadius: '16px', 
-                                                border: 'none', 
-                                                fontWeight: 800, 
-                                                fontSize: isMobile ? '16px' : '18px', 
-                                                cursor: verifying ? 'not-allowed' : 'pointer', 
-                                                display: 'flex', 
-                                                alignItems: 'center', 
-                                                justifyContent: 'center', 
-                                                gap: '12px', 
-                                                boxShadow: isOverdue ? '0 12px 20px rgba(239, 68, 68, 0.25)' : '0 12px 20px rgba(76, 29, 149, 0.3)',
-                                                transition: '0.3s transform, 0.3s box-shadow',
-                                            }}
-                                            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                                            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                                        >
-                                            {verifying ? <Loader2 size={22} className="spin-animation" /> : <CreditCard size={24} />}
-                                            <span>{verifying ? 'Securing Payment...' : 'Pay via Transfer/Opay'}</span>
-                                        </button>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        <AnimatePresence mode="wait">
+                                            {squadData ? (
+                                                <motion.div 
+                                                    initial={{ opacity: 0, scale: 0.95 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    style={{ background: '#F8FAFC', padding: '24px', borderRadius: '16px', border: '2px dashed #10B981', textAlign: 'center', boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.1)' }}
+                                                >
+                                                    <p style={{ margin: 0, fontSize: '11px', fontWeight: 900, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Please transfer exactly</p>
+                                                    <h2 style={{ fontSize: '28px', fontWeight: 900, color: '#0F172A', margin: '4px 0 16px' }}>₦{(squadData.amount || 0).toLocaleString()}</h2>
+                                                    
+                                                    <div style={{ background: 'white', padding: '16px', borderRadius: '12px', border: '1px solid #E2E8F0', marginBottom: '16px' }}>
+                                                        <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Account Number</p>
+                                                        <h1 style={{ margin: 0, fontSize: '36px', fontWeight: 950, color: '#4C1D95', letterSpacing: '2px', userSelect: 'all' }}>{squadData.accountNumber}</h1>
+                                                        <p style={{ margin: '8px 0 0', fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>{squadData.bankName}</p>
+                                                        <p style={{ margin: '4px 0 0', fontSize: '12px', fontWeight: 600, color: '#64748B' }}>{squadData.accountName}</p>
+                                                    </div>
+
+                                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                                        <button 
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText(squadData.accountNumber);
+                                                                toast.success("Account Number Copied!");
+                                                            }}
+                                                            style={{ flex: 1, padding: '12px', background: '#F1F5F9', border: 'none', borderRadius: '8px', fontWeight: 800, color: '#475569', cursor: 'pointer' }}
+                                                        >
+                                                            Copy Account No
+                                                        </button>
+                                                    </div>
+
+                                                    <div style={{ marginTop: '16px', padding: '12px', background: '#ECFDF5', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                                        <Loader2 size={16} className="spin-animation" color="#10B981" />
+                                                        <span style={{ fontSize: '12px', fontWeight: 800, color: '#047857' }}>Awaiting Transfer... Page will auto-update</span>
+                                                    </div>
+                                                </motion.div>
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                    <motion.button 
+                                                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                                        onClick={handleSquadInitialization}
+                                                        disabled={loadingSquad}
+                                                        style={{ 
+                                                            width: '100%', 
+                                                            padding: isMobile ? '18px' : '22px', 
+                                                            background: isOverdue ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)' : 'linear-gradient(135deg, #4C1D95 0%, #2E1065 100%)',
+                                                            color: 'white', 
+                                                            borderRadius: '16px', 
+                                                            border: 'none', 
+                                                            fontWeight: 800, 
+                                                            fontSize: isMobile ? '16px' : '18px', 
+                                                            cursor: loadingSquad ? 'not-allowed' : 'pointer', 
+                                                            display: 'flex', 
+                                                            alignItems: 'center', 
+                                                            justifyContent: 'center', 
+                                                            gap: '12px', 
+                                                            boxShadow: isOverdue ? '0 12px 20px rgba(239, 68, 68, 0.25)' : '0 12px 20px rgba(76, 29, 149, 0.3)',
+                                                        }}
+                                                    >
+                                                        {loadingSquad ? <Loader2 size={24} className="spin-animation" /> : <Building2 size={24} />}
+                                                        <span>{loadingSquad ? 'Generating Bank Details...' : 'Pay via Bank Transfer'}</span>
+                                                    </motion.button>
+                                                    
+                                                    {/* Fallback Paystack Button */}
+                                                    <button 
+                                                        onClick={() => handlePaystackPayment('bank_transfer')}
+                                                        disabled={verifying}
+                                                        style={{ 
+                                                            width: '100%', 
+                                                            padding: '14px', 
+                                                            background: 'white', 
+                                                            color: '#475569', 
+                                                            borderRadius: '12px', 
+                                                            border: '1px solid #E2E8F0', 
+                                                            fontWeight: 700, 
+                                                            fontSize: '14px', 
+                                                            cursor: verifying ? 'not-allowed' : 'pointer', 
+                                                            display: 'flex', 
+                                                            alignItems: 'center', 
+                                                            justifyContent: 'center', 
+                                                            gap: '8px', 
+                                                            marginTop: '8px'
+                                                        }}
+                                                    >
+                                                        {verifying ? <Loader2 size={16} className="spin-animation" /> : <CreditCard size={16} />}
+                                                        <span>Pay via Bank Transfer (Paystack)</span>
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </AnimatePresence>
                                 </div>
 
                                 <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
