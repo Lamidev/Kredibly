@@ -63,10 +63,25 @@ const sendIndividualMorningSummary = async (profile, now = new Date()) => {
             pendingFromYesterday += Math.max(0, s.totalAmount - paid);
         });
 
+        // Fetch reminders due today
+        const endOfToday = new Date(now);
+        endOfToday.setHours(23, 59, 59, 999);
+
+        const remindersToday = await Reminder.find({
+            businessId: profile._id,
+            triggerDate: { $gte: startOfToday, $lte: endOfToday },
+            status: { $ne: "cancelled" }
+        });
+
+        let agendaText = "No specific tasks scheduled for today. Keep pushing! 🚀";
+        if (remindersToday.length > 0) {
+            agendaText = remindersToday.map((r, i) => `${i + 1}. ${r.description}`).join('\n');
+        }
+
         const effectivePlan = isPreLaunch ? 'oga' : profile.plan;
         
-        // Only send if activity OR high tier plan OR Pre-Launch
-        if (salesYesterday.length > 0 || totalCashIn > 0 || effectivePlan === 'chairman' || effectivePlan === 'oga') {
+        // Only send if activity OR reminders OR high tier plan OR Pre-Launch
+        if (salesYesterday.length > 0 || totalCashIn > 0 || remindersToday.length > 0 || effectivePlan === 'chairman' || effectivePlan === 'oga') {
             const planTitle = effectivePlan === "chairman" ? "Chairman" : (effectivePlan === "oga" ? "Oga" : "Boss");
             const bossTitle = profile.assistantSettings?.preferredName || planTitle;
 
@@ -77,7 +92,8 @@ const sendIndividualMorningSummary = async (profile, now = new Date()) => {
                         { type: "text", text: bossTitle },
                         { type: "text", text: totalCashIn.toLocaleString() },
                         { type: "text", text: salesYesterday.length.toString() },
-                        { type: "text", text: pendingFromYesterday.toLocaleString() }
+                        { type: "text", text: pendingFromYesterday.toLocaleString() },
+                        { type: "text", text: agendaText }
                     ]
                 }
             ];

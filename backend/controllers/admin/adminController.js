@@ -9,7 +9,7 @@ const Payment = require("../../models/Payment");
 
 exports.getGlobalStats = async (req, res) => {
     try {
-        const totalUsers = await User.countDocuments({ role: 'user', isVerified: true });
+        const totalUsers = await User.countDocuments({ role: 'user' });
         const totalBusinesses = await BusinessProfile.countDocuments();
         const totalSalesCount = await Sale.countDocuments();
 
@@ -43,6 +43,7 @@ exports.getGlobalStats = async (req, res) => {
             stats: {
                 totalUsers,
                 totalBusinesses,
+                totalIncomplete: Math.max(0, totalUsers - totalBusinesses),
                 totalSalesCount,
                 totalPlatformVolume,
                 totalOutstanding,
