@@ -2025,7 +2025,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         await sendReply(from, targetMsg);
                     }
                     isProcessed = true;
-                } else if (aiResponseItem && (aiResponseItem.intent === "reply_ticket" || (aiResponseItem.intent === "general_chat" && (text.toLowerCase().includes("problem") || text.toLowerCase().includes("issue"))))) {
+                } else if (aiResponseItem && aiResponseItem.intent === "reply_ticket") {
                     if (openTicket) {
                          openTicket.replies.push({ message: text, sender: "user" });
                          openTicket.status = "open";
