@@ -119,7 +119,7 @@ exports.updateProfile = async (req, res) => {
                 details: "Completed merchant onboarding"
             });
             
-            res.status(201).json({ success: true, data: profile });
+            return res.status(201).json({ success: true, data: profile });
         }
 
         await logActivity({

@@ -79,7 +79,12 @@ const AdminDashboard = () => {
                             <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#10B981', background: '#ECFDF5', padding: '4px 10px', borderRadius: '100px' }}>LIVE</span>
                         </div>
                         <p style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem' }}>Total Merchants</p>
-                        <h3 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', fontWeight: 950, color: 'var(--text)', letterSpacing: '-0.04em', margin: '4px 0' }}>{stats?.totalUsers || 0}</h3>
+                        <h3 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', fontWeight: 950, color: 'var(--text)', letterSpacing: '-0.04em', margin: '4px 0 0' }}>
+                            {stats?.totalBusinesses || 0}
+                        </h3>
+                        <p style={{ fontSize: '0.85rem', fontWeight: 800, color: '#EA580C', margin: '0 0 4px' }}>
+                            {stats?.totalIncomplete || 0} Incomplete Profiles
+                        </p>
                         <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Founders & Business Owners</p>
                     </div>
 

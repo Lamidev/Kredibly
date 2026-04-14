@@ -557,9 +557,9 @@ exports.sendReminder = async (req, res) => {
                 {
                     type: "body",
                     parameters: [
-                        { type: "text", text: business.displayName },
                         { type: "text", text: sale.customerName || "Customer" },
-                        { type: "text", text: message }
+                        { type: "text", text: message },
+                        { type: "text", text: business.displayName }
                     ]
                 },
                 {

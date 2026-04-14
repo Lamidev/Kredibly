@@ -88,7 +88,14 @@ const AdminMerchants = () => {
                                                 {u.name?.charAt(0)}
                                             </div>
                                             <div>
-                                                <p style={{ margin: 0, fontWeight: 850, fontSize: '0.95rem' }}>{u.name}</p>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <p style={{ margin: 0, fontWeight: 850, fontSize: '0.95rem' }}>{u.name}</p>
+                                                    {u.business?.isKreddyConnected && (
+                                                        <span title="WhatsApp Connected" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#DCFCE7', color: '#166534', padding: '2px 6px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 900 }}>
+                                                            WA ACTIVE
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748B' }}>{u.email}</p>
                                             </div>
                                         </div>
@@ -96,11 +103,11 @@ const AdminMerchants = () => {
                                     <td style={{ padding: '16px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
                                         <span style={{ 
                                             padding: '4px 12px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 900,
-                                            background: u.business?.plan === 'hustler' ? '#F1F5F9' : u.business?.plan === 'oga' ? '#ECFDF5' : '#EEF2FF',
-                                            color: u.business?.plan === 'hustler' ? '#64748B' : u.business?.plan === 'oga' ? '#10B981' : '#6366F1',
+                                            background: u.business?.plan === 'hustler' ? '#F1F5F9' : u.business?.plan === 'oga' ? '#ECFDF5' : u.business?.plan === 'chairman' ? '#EEF2FF' : '#FFF7ED',
+                                            color: u.business?.plan === 'hustler' ? '#64748B' : u.business?.plan === 'oga' ? '#10B981' : u.business?.plan === 'chairman' ? '#6366F1' : '#EA580C',
                                             textTransform: 'uppercase', letterSpacing: '0.05em'
                                         }}>
-                                            {u.business?.plan || 'UNRANKED'}
+                                            {u.business?.plan || 'INCOMPLETE'}
                                         </span>
                                     </td>
                                     <td style={{ padding: '16px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9', fontSize: '0.85rem', fontWeight: 700, color: '#64748B' }}>
