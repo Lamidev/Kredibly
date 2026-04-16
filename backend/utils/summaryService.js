@@ -1,243 +1,143 @@
 const BusinessProfile = require("../models/BusinessProfile");
 const Sale = require("../models/Sale");
 const Reminder = require("../models/Reminder");
-const ActivityLog = require("../models/ActivityLog");
-const { sendWhatsAppMessage, sendWhatsAppTemplate } = require("../controllers/whatsapp/whatsappController");
+const { sendWhatsAppMessage } = require("../controllers/whatsapp/whatsappController");
+const { sendEmail } = require("./emailService");
+const { getDailyAdvice } = require("./adviceService");
+
 /**
- * Core logic to generate and send a morning summary for a specific business profile.
- * @param {Object} profile - The BusinessProfile document.
- * @param {Date} now - The current date/time (to determine yesterday).
- * @returns {Promise<Object>} - Status of the send operation.
+ * NEW KREDY GROWTH ENGINE LOGIC:
+ * 1. Active Users (<24h window): Full Accountant Summary on WhatsApp (FREE)
+ * 2. Inactive Users (>24h window): Growth Masterclass on Email (DRIVES ENGAGEMENT)
  */
 const sendIndividualMorningSummary = async (profile, now = new Date()) => {
     try {
         const startOfToday = new Date(now);
         startOfToday.setHours(0, 0, 0, 0);
 
-        const yesterday = new Date(now);
-        yesterday.setDate(yesterday.getDate() - 1);
-        yesterday.setHours(0, 0, 0, 0);
-
-        const startOfYesterday = new Date(yesterday);
-        const endOfYesterday = new Date(yesterday);
-        endOfYesterday.setHours(23, 59, 59, 999);
-
-        const LAUNCH_DATE = new Date('2026-05-01T00:00:00Z');
-        const isPreLaunch = now < LAUNCH_DATE;
-
-        // Skip if already sent today
+        // 1. Skip if already handled today (Accountant or Growth)
         if (profile.lastSummaryAt && profile.lastSummaryAt >= startOfToday) {
-            return { status: "skipped", reason: "Already sent today" };
+            return { status: "skipped", reason: "Merchant already handled today" };
         }
 
-        // ACTIVATION LOCK: Only send if they have messaged Kreddy!
-        if (!profile.isKreddyConnected) {
-            return { status: "skipped", reason: "Kreddy not connected" };
-        }
-
-        // Fetch sales made yesterday
-        const salesYesterday = await Sale.find({
-            businessId: profile._id,
-            createdAt: { $gte: startOfYesterday, $lte: endOfYesterday }
-        });
-
-        // Fetch total cash received yesterday
-        const allSalesWithPaymentsYesterday = await Sale.find({
-            businessId: profile._id,
-            "payments.date": { $gte: startOfYesterday, $lte: endOfYesterday }
-        });
-
-        let totalCashIn = 0;
-        allSalesWithPaymentsYesterday.forEach(sale => {
-            sale.payments.forEach(p => {
-                const pDate = new Date(p.date);
-                if (pDate >= startOfYesterday && pDate <= endOfYesterday) {
-                    totalCashIn += p.amount;
-                }
-            });
-        });
-
-        let pendingFromYesterday = 0;
-        salesYesterday.forEach(s => {
-            const paid = s.payments.reduce((sum, p) => sum + p.amount, 0);
-            pendingFromYesterday += Math.max(0, s.totalAmount - paid);
-        });
-
-        // Fetch reminders due today
-        const endOfToday = new Date(now);
-        endOfToday.setHours(23, 59, 59, 999);
-
-        const remindersToday = await Reminder.find({
-            businessId: profile._id,
-            triggerDate: { $gte: startOfToday, $lte: endOfToday },
-            status: { $ne: "cancelled" }
-        });
-
-        let agendaText = "No specific tasks scheduled for today. Keep pushing! 🚀";
-        if (remindersToday.length > 0) {
-            agendaText = remindersToday.map((r, i) => `${i + 1}. ${r.description}`).join('\n');
-        }
-
-        const effectivePlan = isPreLaunch ? 'oga' : profile.plan;
-        
-        const { getDailyAdvice } = require("./adviceService");
+        // 2. Fetch Daily Advice Segment (Masterclass)
         const dailyTip = await getDailyAdvice();
 
-        // 🛡️ COST SAVING: Check if the 24-hour window is open
-        const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
+        // 3. Resolve merchant's preferred name strictly
+        // Priority: Settings > Business Name > Respectful Title
+        const bossTitle = profile.assistantSettings?.preferredName || profile.businessName || "Chief";
 
-        if (salesYesterday.length > 0 || totalCashIn > 0 || remindersToday.length > 0 || effectivePlan === 'chairman' || effectivePlan === 'oga') {
-            const planTitle = effectivePlan === "chairman" ? "Chairman" : (effectivePlan === "oga" ? "Oga" : "Boss");
-            const bossTitle = profile.assistantSettings?.preferredName || planTitle;
+        // 4. Determine if merchant is ACTIVE (Inside 24h WhatsApp Window)
+        const isInsideWindow = profile.lastInboundAt && (now - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
 
-            const components = [
-                {
-                    type: "body",
-                    parameters: [
-                        { type: "text", text: bossTitle },
-                        { type: "text", text: totalCashIn.toLocaleString() },
-                        { type: "text", text: salesYesterday.length.toString() },
-                        { type: "text", text: pendingFromYesterday.toLocaleString() },
-                        { type: "text", text: agendaText }
-                    ]
-                }
-            ];
+        if (isInsideWindow) {
+            // -------------------------------------------------------------------------
+            // 🟢 MODE A: FULL ACCOUNTANT SUMMARY (WhatsApp - Active Merchants)
+            // -------------------------------------------------------------------------
+            console.log(`📡 [ACTIVE] Sending Full Summary to ${profile.displayName} on WhatsApp...`);
 
-            const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
-            const canSendPaidTemplate = effectivePlan !== "hustler";
+            // Fetch Data for Report
+            const startOfYesterday = new Date(startOfToday);
+            startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+            const endOfYesterday = new Date(startOfYesterday);
+            endOfYesterday.setHours(23, 59, 59, 999);
 
-            let sent = false;
-            
-            if (isInsideWindow) {
-                // 🟢 FREE-FORM HIJACK: Send 100% free text message because window is open!
-                const freeFormText = `Good morning, ${bossTitle}! 🌅\n\n🎯 *Today's Kreddy Masterclass:*\n${dailyTip}\n\n📊 *Record for Yesterday:*\n💰 Total Cash: *₦${totalCashIn.toLocaleString()}*\n📑 New Sales: *${salesYesterday.length}*\n⏳ Pending Debt: *₦${pendingFromYesterday.toLocaleString()}*\n\n🗓️ *Today's Agenda:*\n${agendaText}\n\n_Let's make more money today!_ 🚀`;
-                sent = await sendWhatsAppMessage(profile.whatsappNumber, freeFormText);
-                if (sent) console.log(`✅ [FREE-FORM] Summary sent for ${profile.displayName}`);
-            } else if (canSendPaidTemplate) {
-                // 🟠 PAID TEMPLATE: Window is closed, but merchant is Oga/Chairman (Paid subscription covers this)
-                sent = await sendWhatsAppTemplate(profile.whatsappNumber, 'kreddy_morning_summary', components);
-                if (sent) console.log(`💰 [PAID-TEMPLATE] Summary forced via template for ${profile.displayName}`);
-            } else {
-                // 🔴 EMAIL ONLY: Hustler user + Window closed. No WhatsApp to save cost.
-                const { sendEmail } = require("./emailService");
-                const user = await require("../models/User").findById(profile.ownerId);
+            const salesYesterday = await Sale.find({
+                businessId: profile._id,
+                createdAt: { $gte: startOfYesterday, $lte: endOfYesterday }
+            });
 
-                if (user && user.email) {
-                    await sendEmail({
-                        to: user.email,
-                        subject: `🌅 Your Kreddy Morning Summary`,
-                        html: `<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; color: #1e293b; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #f8fafc;">
-                                <h2 style="color: #059669; text-align: center;">Kreddy Accountant Summary 🌅</h2>
-                                
-                                <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
-                                    <h4 style="margin-top: 0; color: #64748b; font-size: 12px; text-transform: uppercase;">Today's Masterclass</h4>
-                                    <div style="white-space: pre-line; color: #1e293b; font-size: 15px;">${dailyTip}</div>
-                                </div>
+            const allSalesWithPaymentsYesterday = await Sale.find({
+                businessId: profile._id,
+                "payments.date": { $gte: startOfYesterday, $lte: endOfYesterday }
+            });
 
-                                <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                                    <h4 style="margin-top: 0; color: #64748b; font-size: 12px; text-transform: uppercase;">Yesterday's Numbers</h4>
-                                    <ul style="padding: 0; list-style: none;">
-                                        <li style="margin-bottom: 8px;">💰 Total Cash: <b>₦${totalCashIn.toLocaleString()}</b></li>
-                                        <li style="margin-bottom: 8px;">📑 New Sales: <b>${salesYesterday.length}</b></li>
-                                        <li style="margin-bottom: 8px;">⏳ Pending Debt: <b>₦${pendingFromYesterday.toLocaleString()}</b></li>
-                                    </ul>
-                                    <h4 style="margin-top: 20px; color: #64748b; font-size: 12px; text-transform: uppercase;">Today's Agenda</h4>
-                                    <pre style="white-space: pre-wrap; font-family: inherit; font-size: 14px; background: #f1f5f9; padding: 12px; border-radius: 8px;">${agendaText}</pre>
-                                </div>
+            let totalCashIn = 0;
+            allSalesWithPaymentsYesterday.forEach(s => {
+                s.payments.forEach(p => {
+                    if (new Date(p.date) >= startOfYesterday && new Date(p.date) <= endOfYesterday) totalCashIn += p.amount;
+                });
+            });
 
-                                <p style="text-align: center; font-size: 12px; color: #94a3b8; margin-top: 30px;">Kredibly: Helping you build a stronger business, one record at a time.</p>
-                               </div>`
-                    });
-                    console.log(`📪 [EMAIL-SENT] Summary (with tip) for ${profile.displayName} sent to inbox.`);
-                }
-                sent = true; 
+            let pendingDebt = 0;
+            salesYesterday.forEach(s => {
+                const paid = s.payments.reduce((sum, p) => sum + p.amount, 0);
+                pendingDebt += Math.max(0, s.totalAmount - paid);
+            });
+
+            const remindersToday = await Reminder.find({
+                businessId: profile._id,
+                triggerDate: { $gte: startOfToday, $lte: new Date(startOfToday.getTime() + 86400000) },
+                status: { $ne: "cancelled" }
+            });
+
+            let agendaText = "No specific tasks scheduled. Keep pushing! 🚀";
+            if (remindersToday.length > 0) {
+                agendaText = remindersToday.map((r, i) => `${i + 1}. ${r.description}`).join('\n');
             }
-            
+
+            const message = `Good morning, ${bossTitle}! 🌅\n\n🎯 *Today's Kreddy Masterclass:*\n${dailyTip}\n\n📊 *Yesterday's Report:*\n💰 Cash in: *₦${totalCashIn.toLocaleString()}*\n📑 Sales: *${salesYesterday.length}*\n⏳ Debt: *₦${pendingDebt.toLocaleString()}*\n\n🗓️ *Today's Agenda:*\n${agendaText}\n\n_Let's scale your empire today!_ 🛡️`;
+
+            const sent = await sendWhatsAppMessage(profile.whatsappNumber, message);
             if (sent) {
                 profile.lastSummaryAt = new Date();
                 await profile.save();
-                
-                await ActivityLog.create({
-                    businessId: profile._id,
-                    action: "SYSTEM_TASK",
-                    entityType: "SYSTEM",
-                    details: `Morning Accountant Summary (Template) delivered to ${profile.displayName}`
-                });
-                return { status: "sent" };
+                return { status: "sent", channel: "whatsapp" };
             } else {
-                return { status: "error", reason: "WhatsApp API returned fail on summary template" };
+                return { status: "failed", error: "WhatsApp Free-form failed for active user" };
             }
+
         } else {
-            // MODE B: THE GROWTH COACH (For Inactive Users)
-            const planTitle = effectivePlan === "chairman" ? "Chairman" : (effectivePlan === "oga" ? "Oga" : "Boss");
-            const bossTitle = profile.assistantSettings?.preferredName || planTitle;
-
-            const components = [
-                {
-                    type: "body",
-                    parameters: [
-                        { type: "text", text: bossTitle }
-                    ]
-                }
-            ];
-
-            const { getDailyAdvice } = require("./adviceService");
-            const dailyTip = await getDailyAdvice();
-
-            const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
+            // -------------------------------------------------------------------------
+            // 🟠 MODE B: GROWTH MASTERCLASS (Email - Inactive Merchants)
+            // -------------------------------------------------------------------------
+            console.log(`📪 [INACTIVE] Sending Growth Masterclass to ${profile.displayName} via Email...`);
             
-            let sent = false;
-            if (isInsideWindow) {
-                // 🟢 FREE-FORM HIJACK
-                const freeFormCoach = `Hello ${bossTitle}! 🚀\n\n🎯 *Today's Kreddy Masterclass:*\n\n${dailyTip}\n\n_Log your first sale today and stay winning!_ 🛡️`;
-                sent = await sendWhatsAppMessage(profile.whatsappNumber, freeFormCoach);
-                if (sent) console.log(`✅ [FREE-FORM] Growth Coach sent for ${profile.displayName}`);
-            } else {
-                // 🔴 EMAIL ONLY
-                const { sendEmail } = require("./emailService");
-                const user = await require("../models/User").findById(profile.ownerId);
+            const user = await require("../models/User").findById(profile.ownerId);
+            if (!user || !user.email) return { status: "failed", error: "No email found for inactive user" };
 
-                if (user && user.email) {
-                    await sendEmail({
-                        to: user.email,
-                        subject: `💡 Today's Kreddy Business Masterclass`,
-                        html: `<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; color: #1e293b; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #f8fafc;">
-                                <div style="text-align: center; margin-bottom: 24px;">
-                                    <h2 style="color: #059669; margin: 0;">Kreddy Growth Engine 🚀</h2>
-                                    <p style="color: #64748b; font-weight: 600; font-size: 14px; text-transform: uppercase;">Daily Business Masterclass</p>
-                                </div>
-                                <div style="background: white; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; white-space: pre-line; line-height: 1.6; font-size: 16px;">
-                                    ${dailyTip}
-                                </div>
-                                <div style="text-align: center; margin-top: 30px; padding: 20px; border-top: 1px solid #e2e8f0;">
-                                    <p style="font-size: 14px; color: #475569; font-weight: 500;">Record your sales today to keep the momentum going!</p>
-                                    <p style="font-size: 11px; color: #94a3b8; margin-top: 20px;">Helping you build a stronger legacy, one record at a time.</p>
-                                </div>
-                               </div>`
-                    });
-                    console.log(`💡 [EMAIL-SENT] Growth Masterclass for ${profile.displayName} delivered.`);
-                }
-                sent = true; 
-            }
-            
-            if (sent) {
-                profile.lastSummaryAt = new Date();
-                await profile.save();
-                
-                await ActivityLog.create({
-                    businessId: profile._id,
-                    action: "SYSTEM_TASK",
-                    entityType: "SYSTEM",
-                    details: `Morning Coach Nudge (Template) delivered to ${profile.displayName} (Inactive Yesterday)`
-                });
-                return { status: "sent" };
-            } else {
-                return { status: "error", reason: "WhatsApp API returned fail on nudge template" };
-            }
+            const emailHtml = `
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1e293b; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 24px; background-color: #ffffff; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <span style="background: #ECFDF5; color: #059669; padding: 10px 20px; borderRadius: 100px; fontSize: 13px; fontWeight: 900; letterSpacing: 0.1em; text-transform: uppercase;">Growth Masterclass</span>
+                    </div>
+                    
+                    <h2 style="color: #0F172A; text-align: center; font-size: 24px; font-weight: 950; margin-bottom: 30px;">Rise & Grind, ${bossTitle}! 🌅</h2>
+                    
+                    <div style="background: #F8FAF9; padding: 30px; border-radius: 20px; border: 1px dashed #D1FAE5; margin-bottom: 32px;">
+                        <h4 style="margin: 0 0 12px 0; color: #065F46; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 900;">Today's Street-Smart Tip</h4>
+                        <div style="white-space: pre-line; color: #1E293B; font-size: 16px; line-height: 1.6; font-weight: 600;">${dailyTip}</div>
+                    </div>
+
+                    <div style="text-align: center;">
+                        <p style="color: #64748B; font-size: 14px; margin-bottom: 24px; font-weight: 700;">Wake up Kreddy on WhatsApp to see your full numbers for yesterday! 📊</p>
+                        <a href="https://wa.me/2349141040854?text=Kreddy%2C%20I'm%20ready%20to%20grow%20today!" 
+                           style="display: block; background-color: #25D366; color: white; padding: 18px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 18px; margin-bottom: 12px; box-shadow: 0 10px 15px -3px rgba(37, 211, 102, 0.3);">
+                           CHIEF, SHOW ME MY NUMBERS! 🚀
+                        </a>
+                        <a href="https://usekredibly.com/dashboard" style="display: block; color: #64748B; padding: 12px; text-decoration: none; font-weight: 800; font-size: 13px;">View Web Dashboard</a>
+                    </div>
+
+                    <div style="border-top: 1px solid #E2E8F0; margin-top: 40px; padding-top: 20px; text-align: center;">
+                        <p style="font-size: 11px; color: #94A3B8; font-weight: 700;">Kredibly Growth Engine &copy; 2026. Keep Scaling!</p>
+                    </div>
+                </div>
+            `;
+
+            await sendEmail({
+                to: user.email,
+                subject: `🌅 Rise & Grind: Today's Kreddy Masterclass`,
+                html: emailHtml
+            });
+
+            profile.lastSummaryAt = new Date();
+            await profile.save();
+            return { status: "sent", channel: "email" };
         }
-    } catch (err) {
-        console.error(`❌ Summary Error for ${profile?.displayName}:`, err.message);
-        return { status: "error", error: err.message };
+
+    } catch (error) {
+        console.error("Critical Summary Engine Failure:", error);
+        return { status: "failed", error: error.message };
     }
 };
 

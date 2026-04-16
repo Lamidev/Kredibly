@@ -30,24 +30,26 @@ exports.regenerateAdvice = async (req, res) => {
  */
 exports.approveAndQueueSummaries = async (req, res) => {
     try {
-        const { editedAdvice } = req.body;
+        const { editedAdvice, tone } = req.body;
 
         // 1. Update and Approve
         const config = await SystemConfig.findOneAndUpdate(
             { key: "daily_advice" },
             { 
-                value: editedAdvice, 
+                value: { adviceText: editedAdvice, tone }, 
                 status: "approved", 
-                lastUpdated: new Date() 
+                lastUpdated: new Date()
             },
-            { new: true }
+            { new: true, upsert: true }
         );
 
         if (!config) return res.status(404).json({ error: "Advice not found" });
 
         // 2. QUEUE THE JOBS: This is the "Engine Start" button
-        // We find all business profiles that are setup
-        const profiles = await BusinessProfile.find({ isSetup: true });
+        // We find all business profiles with a WhatsApp number
+        const profiles = await BusinessProfile.find({ 
+            whatsappNumber: { $exists: true, $ne: "" } 
+        });
         const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
         
         const existingJobs = await BackgroundJob.find({

@@ -54,6 +54,10 @@ const processBackgroundJobs = async () => {
                     job.status = "completed";
                     job.completedAt = new Date();
                     job.error = null;
+                    job.metadata = { 
+                        ...(job.metadata || {}), 
+                        channel: result.channel || null
+                    };
                 } else {
                     job.status = "failed";
                     job.error = result.error || result.reason || "Operation failed";
@@ -68,9 +72,15 @@ const processBackgroundJobs = async () => {
                 
                 await job.save();
 
-                // 2. PACING: Wait 15 seconds if there are more jobs in this batch
+                // 2. ADAPTIVE PACING: 
+                // Emails have 0ms delay. WhatsApp has 5s delay for bulk summaries.
                 if (jobs.indexOf(job) < jobs.length - 1) {
-                    await new Promise(res => setTimeout(res, 15000));
+                    const isWhatsApp = result.channel === "whatsapp" || result.status === "sent";
+                    const delay = isWhatsApp ? 5000 : 0; // 5s for WA, 0s for Email
+                    
+                    if (delay > 0) {
+                        await new Promise(res => setTimeout(res, delay));
+                    }
                 }
 
             } catch (jobErr) {

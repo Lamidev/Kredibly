@@ -249,13 +249,29 @@ exports.getMissionControlFeed = async (req, res) => {
         const Sale = require("../../models/Sale");
         const ActivityLog = require("../../models/ActivityLog");
 
-        // 1. Fetch Stats for Hero Section
+        // 1. Fetch Stats for Hero Section (Today Only + Granular Channels)
+        const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+        
         const jobStats = await BackgroundJob.aggregate([
-            { $group: { _id: "$status", count: { $sum: 1 } } }
+            { $match: { createdAt: { $gte: todayStart } } },
+            { $group: { 
+                _id: { status: "$status", channel: "$metadata.channel" }, 
+                count: { $sum: 1 } 
+            } }
         ]);
         
-        const statsObj = { pending: 0, completed: 0, failed: 0, processing: 0 };
-        jobStats.forEach(s => { statsObj[s._id] = s.count; });
+        const statsObj = { pending: 0, wa_sent: 0, email_sent: 0, failed: 0, processing: 0 };
+        jobStats.forEach(s => { 
+            const status = s._id.status;
+            const channel = s._id.channel;
+            
+            if (status === 'completed') {
+                if (channel === 'whatsapp') statsObj.wa_sent += s.count;
+                else statsObj.email_sent += s.count;
+            } else {
+                statsObj[status] = (statsObj[status] || 0) + s.count;
+            }
+        });
 
         // 2. Fetch Aggregated Feed (Filtered for Significance)
         const [jobs, logs, subs, sales] = await Promise.all([

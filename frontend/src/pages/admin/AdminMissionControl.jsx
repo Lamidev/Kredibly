@@ -37,8 +37,15 @@ const AdminMissionControl = () => {
     const fetchDailyAdvice = async () => {
         try {
             const res = await axios.get(`${API_URL}/admin/daily-advice`, { withCredentials: true });
-            setAdvice(res.data.value || "");
-            setAdviceStatus(res.data.status || "pending");
+            const value = res.data?.value;
+            // value is now an object { adviceText, tone }
+            setAdvice(value?.adviceText || value || "");
+            setAdviceStatus(res.data?.status || "pending");
+            if (value?.tone) {
+                setTone(value.tone);
+            } else if (res.data?.metadata?.tone) {
+                setTone(res.data.metadata.tone);
+            }
         } catch (err) {
             console.error("Daily Advice Sync Error:", err);
         }
@@ -63,7 +70,10 @@ const AdminMissionControl = () => {
         
         setIsApproving(true);
         try {
-            const res = await axios.post(`${API_URL}/admin/daily-advice/approve`, { editedAdvice: advice }, { withCredentials: true });
+            const res = await axios.post(`${API_URL}/admin/daily-advice/approve`, { 
+                editedAdvice: advice,
+                tone 
+            }, { withCredentials: true });
             setAdviceStatus("approved");
             toast.success(res.data.message);
             fetchMissionControlData(true);
@@ -162,7 +172,7 @@ const AdminMissionControl = () => {
                 <div className="dashboard-glass" style={{ padding: '24px', borderRadius: '28px', background: 'white', border: '1px solid #E2E8F0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <div style={{ padding: '10px', background: '#ECFDF5', borderRadius: '14px', color: '#10B981' }}><CheckCircle2 size={20} /></div>
-                        <span style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A' }}>{stats.completed}</span>
+                        <span style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A' }}>{(stats.wa_sent || 0) + (stats.email_sent || 0)}</span>
                     </div>
                     <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Daily Success</p>
                 </div>
@@ -235,12 +245,41 @@ const AdminMissionControl = () => {
                                 onChange={(e) => setAdvice(e.target.value)}
                                 style={{ 
                                     width: '100%', background: 'transparent', border: 'none', color: 'white', 
-                                    fontSize: '1.1rem', fontWeight: 700, lineHeight: '1.6', height: '100px', 
+                                    fontSize: '1.1rem', fontWeight: 700, lineHeight: '1.6', height: '180px', 
                                     resize: 'none', outline: 'none'
                                 }}
                                 placeholder="Loading daily advice..."
                             />
                         </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {/* Queue Micro-Monitor */}
+                            <div style={{ background: '#000000', borderRadius: '24px', padding: '24px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 900, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Batch Progress</span>
+                                    <motion.div animate={{ opacity: stats.pending > 0 ? [1, 0.5, 1] : 1 }} transition={{ repeat: Infinity, duration: 2 }}>
+                                        <Zap size={14} color={stats.pending > 0 ? "#FACC15" : "rgba(255,255,255,0.2)"} />
+                                    </motion.div>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                                    <div>
+                                        <div style={{ fontSize: '1.25rem', fontWeight: 950, color: 'white' }}>{stats.pending}</div>
+                                        <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 800 }}>QUEUED</div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#4ADE80' }}>{stats.wa_sent || 0}</div>
+                                        <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 800 }}>WA</div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#60A5FA' }}>{stats.email_sent || 0}</div>
+                                        <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 800 }}>EMAIL</div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#F87171' }}>{stats.failed}</div>
+                                        <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 800 }}>FAIL</div>
+                                    </div>
+                                </div>
+                            </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', justifyContent: 'center' }}>
                             <button 
@@ -257,12 +296,13 @@ const AdminMissionControl = () => {
                             </button>
                             <button 
                                 onClick={handleApproveAndSend}
-                                disabled={isApproving || adviceStatus === 'approved'}
+                                disabled={isApproving || !advice.trim()}
                                 style={{ 
                                     width: '100%', padding: '16px', borderRadius: '18px', 
-                                    background: adviceStatus === 'approved' ? 'rgba(255,255,255,0.1)' : 'var(--primary)', 
-                                    color: 'white', cursor: adviceStatus === 'approved' ? 'default' : 'pointer',
+                                    background: isApproving ? 'rgba(255,255,255,0.1)' : 'var(--primary)', 
+                                    color: 'white', cursor: isApproving ? 'default' : 'pointer',
                                     fontWeight: 950, fontSize: '0.9rem', border: 'none',
+                                    boxShadow: isApproving ? 'none' : '0 10px 20px -5px rgba(99, 102, 241, 0.4)',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
                                 }}
                             >
@@ -276,6 +316,7 @@ const AdminMissionControl = () => {
                     </div>
                 </div>
             </div>
+        </div>
 
             {/* UNIFIED FEED */}
             <div className="dashboard-glass" style={{ background: 'white', borderRadius: '32px', border: '1px solid #E2E8F0', padding: '32px', minHeight: '600px' }}>
