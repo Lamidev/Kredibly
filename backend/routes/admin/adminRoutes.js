@@ -27,4 +27,10 @@ router.post("/background-jobs/:id/retry", adminController.retryBackgroundJob);
 router.patch("/background-jobs/:id/cancel", adminController.cancelBackgroundJob);
 router.delete("/background-jobs/:id", adminController.deleteBackgroundJob);
 
+const dailyAdviceController = require("../../controllers/admin/dailyAdviceController");
+
+router.get("/daily-advice", dailyAdviceController.getDailyAdvice);
+router.post("/daily-advice/regenerate", dailyAdviceController.regenerateAdvice);
+router.post("/daily-advice/approve", dailyAdviceController.approveAndQueueSummaries);
+
 module.exports = router;

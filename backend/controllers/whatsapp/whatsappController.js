@@ -188,6 +188,18 @@ const extractInfoRobust = (text, context = {}) => {
         return result;
     }
 
+    // DELETE REMINDER: "delete my 3pm reminder", "cancel my call with David", "remove task"
+    if (lower.includes("delete") || lower.includes("cancel") || lower.includes("remove")) {
+        if (lower.includes("reminder") || lower.includes("task") || lower.includes("call") || lower.includes("meeting")) {
+            result.intent = "delete_reminder";
+            result.data.taskDescription = text.replace(/delete|cancel|remove|reminder|task|my/gi, '').trim();
+            return result;
+        } else if (lower.includes("sale") || lower.includes("invoice") || lower.includes("record") || lower.includes("kr-")) {
+            result.intent = "delete_sale";
+            return result;
+        }
+    }
+
     if (lower.includes("draft") || lower.includes("message for")) {
         result.intent = "draft_reminder";
         result.data.reply = "I'm on it, Chief! 🫡 Let me draft a sharp message you can send to your customer...";
@@ -707,6 +719,10 @@ exports.handleIncoming = async (req, res) => {
         
         const merchantFirstName = registeredName || profileName || tierTitle;
         const bossTitle = profile?.assistantSettings?.preferredName || merchantFirstName;
+
+        // 🛡️ COST SAVING: Track the 24-hour window
+        profile.lastInboundAt = new Date();
+        await profile.save();
 
         if (!profile) {
             // Pre-launch Phase: Force Registration for all unknown numbers
@@ -1410,6 +1426,11 @@ Upgrade here: ${APP_URL}/pricing`);
                 let reply = `✅ *Record Saved!* (#${newSale.invoiceNumber})\n\n${wittyIntro}\n`;
                 if (bal > 0) reply += `\n⏳ They still owe you *₦${bal.toLocaleString()}*`;
                 else reply += `\n✅ *Fully Paid!*`;
+
+                // 📢 HUSTLER NUDGE
+                if (plan === "hustler" || !plan) {
+                    reply += `\n\n_P.S. Upgrade to Oga so I can keep sending your reports here even when you are away! 🛡️_`;
+                }
                 
                 await sendReply(from, reply);
                 
@@ -1646,9 +1667,9 @@ Upgrade here: ${APP_URL}/pricing`);
                                             saleId: linkedSaleId
                                         });
                                         const nudgeTime = nudgeDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', hour12: true });
-                                        await sendReply(from, `🫡 *Locked in!* \n\nI'll remind you to *"${taskDescription}"* at *${eventTimeStr}*${recLabel}. I'll also give you a heads-up 15 mins early (at *${nudgeTime}*). 🚀`);
+                                        await sendReply(from, `🫡 *Locked in!* \n\nI'll remind you to *"${taskDescription}"* at *${eventTimeStr}*${recLabel}. I'll also give you a heads-up 15 mins early (at *${nudgeTime}*). 🚀 \n\n${(plan === "hustler" || !plan) ? "_Tip: Upgrade to Oga for instant WhatsApp alerts everywhere! 🛡️_" : ""}`);
                                     } else {
-                                        await sendReply(from, `✅ *Task Saved!* \n\nI will remind you to *"${taskDescription}"* at exactly *${eventTimeStr}*${recLabel}. (Too close for a 15m heads-up!) 🫡`);
+                                        await sendReply(from, `✅ *Task Saved!* \n\nI will remind you to *"${taskDescription}"* at exactly *${eventTimeStr}*${recLabel}. (Too close for a 15m heads-up!) 🫡 \n\n${(plan === "hustler" || !plan) ? "_Tip: Upgrade to Oga for instant WhatsApp alerts everywhere! 🛡️_" : ""}`);
                                     }
                                 } else {
                                     // Tasks and Debts: Exact Match
@@ -1672,7 +1693,14 @@ Upgrade here: ${APP_URL}/pricing`);
                                     }
 
                                     const FriendlyDate = triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
-                                    await sendReply(from, `✅ *Task Saved!* \n\nI will remind you to *"${taskDescription}"* at exactly *${FriendlyDate}*${recLabel}. 🫡`);
+                                    
+                                    let successMsg = `✅ *Task Saved!* \n\nI will remind you to *"${taskDescription}"* at exactly *${FriendlyDate}*${recLabel}. 🫡`;
+                                    
+                                    if (plan === "hustler" || !plan) {
+                                        successMsg += `\n\n🛡️ *Plan Note:* Since you're on the Hustler plan, I'll send this reminder to your **Email** at the set time. Upgrade to Oga for instant WhatsApp alerts! 🚀`;
+                                    }
+
+                                    await sendReply(from, successMsg);
                                 }
                             }
                         }
@@ -2057,52 +2085,55 @@ Upgrade here: ${APP_URL}/pricing`);
                     }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "delete_reminder") {
-                    const searchRef = (aiResponseItem.data.customerName || aiResponseItem.data.taskDescription || text).trim();
-                    const pendingReminders = await Reminder.find({ 
-                        businessId: profile._id, 
-                        status: 'pending' 
-                    }).sort({ triggerDate: 1 });
+                    const data = aiResponseItem.data || {};
+                    const taskTarget = data.taskDescription || data.customerName || text;
+                    const reminderDateStr = data.reminderDate;
 
-                    if (pendingReminders.length === 0) {
-                        await sendReply(from, `🔍 ${bossTitle}, you don't have any pending reminders scheduled at the moment.`);
-                    } else {
-                        // Fuzzy search for the target reminder
-                        const matches = pendingReminders.filter(r => {
-                            const desc = r.description.toLowerCase();
-                            const query = searchRef.toLowerCase();
-                            return desc.includes(query) || query.includes(desc);
-                        });
+                    let filter = {
+                        businessId: profile._id,
+                        status: "pending"
+                    };
 
-                        if (matches.length === 0) {
-                            let msg = `🤔 I catch that you want to delete a reminder, but I'm not sure which one. Here are your upcoming tasks:\n\n`;
-                            pendingReminders.slice(0, 5).forEach((r, i) => {
-                                msg += `${i+1}. *${r.description}* (${new Date(r.triggerDate).toLocaleString()})\n`;
-                            });
-                            msg += `\nWhich one should I remove? 🛡️`;
-                            await sendReply(from, msg);
-                        } else if (matches.length === 1) {
-                            const target = matches[0];
-                            const desc = target.description;
-                            await Reminder.deleteOne({ _id: target._id });
-                            await sendReply(from, `🛡️ *Reminder Cancelled!* \n\nI've cleared the task: *"${desc}"* from your schedule. ✅`);
-                        } else {
-                            let msg = `🤔 I found *${matches.length}* similar reminders. Which one should I cancel?\n\n`;
-                            matches.forEach((m, i) => {
-                                msg += `${i+1}. *${m.description}* (${new Date(m.triggerDate).toLocaleString()})\n`;
-                            });
-                            await WhatsAppSession.findOneAndUpdate(
-                                { whatsappNumber: cleanFrom },
-                                {
-                                    type: 'delete_reminder_disambiguation',
-                                    data: { options: matches.map(m => ({ id: m._id, name: m.description })) },
-                                    expiresAt: new Date(Date.now() + 5 * 60 * 1000)
-                                },
-                                { upsert: true }
-                            );
-                            await sendReply(from, msg);
+                    if (taskTarget && taskTarget.toLowerCase() !== "task" && taskTarget.toLowerCase() !== "reminder") {
+                        filter.description = { $regex: new RegExp(taskTarget.trim(), "i") };
+                    }
+
+                    if (reminderDateStr) {
+                        const targetDate = new Date(reminderDateStr);
+                        if (!isNaN(targetDate.getTime())) {
+                            const start = new Date(targetDate); start.setMinutes(start.getMinutes() - 60);
+                            const end = new Date(targetDate); end.setMinutes(end.getMinutes() + 60);
+                            filter.triggerDate = { $gte: start, $lte: end };
                         }
                     }
-                    isProcessed = true;
+
+                    const matches = await Reminder.find(filter).sort({ triggerDate: 1 });
+
+                    if (matches.length === 0) {
+                        await sendReply(from, `🔍 I couldn't find any pending reminders for *"${taskTarget || 'that'}"*, ${bossTitle}.`);
+                    } else if (matches.length === 1) {
+                        const rem = matches[0];
+                        rem.status = "cancelled";
+                        await rem.save();
+                        await sendReply(from, `🗑️ *Reminder Cancelled!* \n\nI've removed the task *"${rem.description}"* from your schedule. 🫡`);
+                    } else {
+                        let msg = `🤔 I found *${matches.length}* pending reminders that might match. Which one should I cancel?\n\n`;
+                        matches.slice(0, 5).forEach((m, i) => {
+                            const time = m.triggerDate.toLocaleString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true });
+                            msg += `${i+1}. *${time}* — ${m.description}\n`;
+                        });
+                        
+                        await WhatsAppSession.findOneAndUpdate(
+                            { whatsappNumber: cleanFrom },
+                            {
+                                type: 'delete_reminder_disambiguation',
+                                data: { options: matches.map(m => ({ id: m._id, name: m.description })) },
+                                expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+                            },
+                            { upsert: true }
+                        );
+                        await sendReply(from, msg);
+                    }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "support") {
                     // 🛡️ FORMAL SUPPORT TICKET (From WhatsApp Support Intent)

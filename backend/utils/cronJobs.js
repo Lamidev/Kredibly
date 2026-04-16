@@ -4,7 +4,58 @@ const Sale = require("../models/Sale");
 const Reminder = require("../models/Reminder");
 const { sendWhatsAppMessage, sendWhatsAppAlert } = require("../controllers/whatsapp/whatsappController");
 const { sendActivationNudgeEmail, sendFinishSetupEmail } = require("../emailLogic/emails");
+const { sendIndividualMorningSummary } = require("./summaryService");
+const SystemConfig = require("../models/SystemConfig");
+const { generateDailyAdvice } = require("./adviceService");
 const BackgroundJob = require("../models/BackgroundJob");
+
+/**
+ * 0. AUTONOMOUS MORNING DISPATCH (Runs at 8:00 AM WAT)
+ * Ensures summaries go out even if the Admin didn't have time to manually approve.
+ */
+const scheduleMorningSummary = () => {
+    cron.schedule("0 8 * * *", async () => {
+        try {
+            console.log("🌅 [AUTONOMOUS] Starting 8 AM Morning Dispatch...");
+            
+            // 1. Ensure a tip exists for today
+            const config = await SystemConfig.findOne({ key: "daily_advice" });
+            if (!config || (new Date() - new Date(config.lastUpdated)) > (20 * 60 * 60 * 1000)) {
+                await generateDailyAdvice();
+            }
+
+            // 2. Auto-Approve if pending
+            await SystemConfig.findOneAndUpdate(
+                { key: "daily_advice" },
+                { status: "approved", lastUpdated: new Date() }
+            );
+
+            // 3. Queue Jobs for everyone who doesn't have a job today yet
+            const profiles = await BusinessProfile.find({ isSetup: true });
+            const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
+
+            for (const p of profiles) {
+                const exists = await BackgroundJob.findOne({
+                    businessId: p._id,
+                    type: "MORNING_SUMMARY",
+                    createdAt: { $gte: startOfToday }
+                });
+
+                if (!exists) {
+                    await BackgroundJob.create({
+                        businessId: p._id,
+                        type: "MORNING_SUMMARY",
+                        status: "pending",
+                        scheduledFor: new Date()
+                    });
+                }
+            }
+            console.log(`✅ [AUTONOMOUS] Queued reports for ${profiles.length} merchants.`);
+        } catch (err) {
+            console.error("Autonomous Dispatch Error:", err.message);
+        }
+    }, { timezone: "Africa/Lagos" });
+};
 
 /**
  * 1. TASK REMINDERS WORKER (Runs every minute)
@@ -12,6 +63,50 @@ const BackgroundJob = require("../models/BackgroundJob");
 const scheduleRemindersWorker = () => {
     cron.schedule("* * * * *", async () => {
         try {
+            // ---------------------------------------------------------
+            // PART 1: Proactive 15-Minute "Heads-up" for Upcoming Tasks
+            // ---------------------------------------------------------
+            const headsUpTime = new Date(Date.now() + 15 * 60 * 1000); 
+            const upcomingHeadsUps = await Reminder.find({
+                status: "pending",
+                isHeadsUpSent: false,
+                type: { $in: ["meeting", "personal"] },
+                triggerDate: { $lte: headsUpTime, $gt: new Date() }
+            }).populate("businessId");
+
+            for (const headsUp of upcomingHeadsUps) {
+                try {
+                    const profile = headsUp.businessId;
+                    if (!profile) {
+                        headsUp.status = "failed";
+                        headsUp.error = "Orphaned reminder: No business profile linked";
+                        await headsUp.save();
+                        continue;
+                    }
+                    const bossTitle = profile.assistantSettings?.preferredName || "Boss";
+                    const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
+                    const isProUser = profile.plan === "oga" || profile.plan === "chairman";
+
+                    const headsUpMsg = `🔔 *Quick Heads-up, ${bossTitle}!* \n\nIn 15 minutes, you have a task coming up: *"${headsUp.description}"*.\n\n_Standing by to help you crush it!_ 🛡️`;
+
+                    if (isInsideWindow) {
+                        await sendWhatsAppMessage(headsUp.whatsappNumber, headsUpMsg);
+                        console.log(`✅ [FREE-FORM] 15m Heads-up sent for ${profile.displayName}`);
+                    } else if (isProUser) {
+                        await sendWhatsAppAlert(headsUp.whatsappNumber, bossTitle, headsUpMsg);
+                        console.log(`💰 [PAID-TEMPLATE] 15m Heads-up forced for ${profile.displayName}`);
+                    }
+
+                    headsUp.isHeadsUpSent = true;
+                    await headsUp.save();
+                } catch (err) {
+                    console.error("Heads-up delivery error:", err.message);
+                }
+            }
+
+            // ---------------------------------------------------------
+            // PART 2: Actual Time Reminders
+            // ---------------------------------------------------------
             const pendingReminders = await Reminder.find({
                 status: "pending",
                 triggerDate: { $lte: new Date() }
@@ -58,9 +153,56 @@ const scheduleRemindersWorker = () => {
 
                 msg += `Let's get it done! 🚀\n\n_Reply "snooze 10 mins" if you are running late!_`;
 
-                await sendWhatsAppAlert(acquired.whatsappNumber, title, msg).catch(e => {});
+                console.log(`⏰ Processing Reminder [${acquired._id}] for ${title} (${acquired.whatsappNumber})...`);
 
-                if (acquired.saleId) {
+                const profile = acquired.businessId;
+                const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
+                const isProUser = profile.plan === "oga" || profile.plan === "chairman";
+
+                let success = false;
+                
+                if (isInsideWindow) {
+                    // 🟢 Free Message (Inside 24h Window)
+                    success = await sendWhatsAppMessage(acquired.whatsappNumber, msg).catch(e => false);
+                } else if (isProUser) {
+                    // 🟠 Paid Template (Pro User + Window Closed) — Opens the window for the day!
+                    success = await sendWhatsAppAlert(acquired.whatsappNumber, title, msg).catch(e => false);
+                } else {
+                    // 🔴 Email Only (Free User + Window Closed)
+                    const { sendEmail } = require("./emailService");
+                    const user = await require("../models/User").findById(profile.ownerId);
+                    
+                    if (user && user.email) {
+                        await sendEmail({
+                            to: user.email,
+                            subject: `🔔 Task Reminder: ${title}`,
+                            html: `<div style="font-family: sans-serif; padding: 20px; color: #333;">
+                                    <h2>Hey ${profile.assistantSettings?.preferredName || "Boss"},</h2>
+                                    <p>You set a reminder for: <b>"${acquired.description}"</b></p>
+                                    <p>Kreddy is reminding you to get it done! 🛡️</p>
+                                    <hr />
+                                    <p style="font-size: 12px; color: #777;">Tip: Reply to Kreddy on WhatsApp to get these alerts there instantly!</p>
+                                   </div>`
+                        });
+                        console.log(`📪 [EMAIL-SENT] Reminder [${acquired._id}] sent to inbox.`);
+                    }
+                    success = true; 
+                }
+
+                if (success) {
+                    console.log(`✅ Reminder [${acquired._id}] delivered to ${acquired.whatsappNumber}`);
+                    acquired.status = "delivered";
+                    acquired.deliveredAt = new Date();
+                    acquired.error = null;
+                } else {
+                    console.error(`❌ Reminder [${acquired._id}] FAILED to deliver (check Template/Meta logs)`);
+                    acquired.status = "failed";
+                    acquired.error = "WhatsApp Template Delivery Failed";
+                }
+
+                await acquired.save();
+
+                if (success && acquired.saleId) {
                     const sale = acquired.saleId;
                     const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                     const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
@@ -98,65 +240,6 @@ const scheduleRemindersWorker = () => {
     });
 };
 
-/**
- * 2. MORNING CHIEF SUMMARY (8:00 AM Lagos)
- */
-const scheduleMorningSummary = () => {
-    const generateMorningSummaryJobs = async (isManual = false) => {
-        const type = isManual ? "Catch-up" : "Scheduled";
-        const now = new Date();
-        const startOfToday = new Date(now); startOfToday.setHours(0, 0, 0, 0);
-        
-        try {
-            const ActivityLog = require("../models/ActivityLog");
-            const profiles = await BusinessProfile.find({ isKreddyConnected: true });
-
-            // Use Lagos timezone midnight for "start of today" comparison
-            const lagosNow = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Lagos' }));
-            const startOfTodayLagos = new Date(lagosNow);
-            startOfTodayLagos.setHours(0, 0, 0, 0);
-
-            let queuedCount = 0;
-            let skippedCount = 0;
-            for (const profile of profiles) {
-                // Skip if already sent today (compare using Lagos time)
-                if (profile.lastSummaryAt) {
-                    const lastSentLagos = new Date(profile.lastSummaryAt.toLocaleString('en-US', { timeZone: 'Africa/Lagos' }));
-                    if (lastSentLagos >= startOfTodayLagos) { skippedCount++; continue; }
-                }
-                
-                // Skip ONLY if a pending or completed job already exists today (ignore failed ones)
-                const existingJob = await BackgroundJob.findOne({
-                    businessId: profile._id,
-                    type: "MORNING_SUMMARY",
-                    status: { $in: ["pending", "processing", "completed"] },
-                    createdAt: { $gte: startOfToday }
-                });
-
-                if (existingJob) { skippedCount++; continue; }
-
-                await BackgroundJob.create({
-                    type: "MORNING_SUMMARY",
-                    businessId: profile._id,
-                    status: "pending",
-                    scheduledFor: now
-                });
-                queuedCount++;
-            }
-
-            console.log(`🌅 Morning Summary Cron (${type}): Queued ${queuedCount}, Skipped ${skippedCount}/${profiles.length}`);
-
-            await ActivityLog.create({
-                action: "SYSTEM_TASK",
-                entityType: "SYSTEM",
-                details: `Morning Summary Queue Generated (${type}). Queued: ${queuedCount} | Skipped: ${skippedCount}`
-            });
-        } catch (err) { console.error("Error generating morning summary jobs:", err); }
-    };
-
-    cron.schedule("0 8 * * *", () => generateMorningSummaryJobs(false), { timezone: "Africa/Lagos" });
-    return { generateMorningSummaryJobs };
-};
 
 /**
  * 3. PLAN & TRIAL EXPIRY (9:00 AM Lagos)
