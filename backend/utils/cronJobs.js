@@ -14,47 +14,89 @@ const BackgroundJob = require("../models/BackgroundJob");
  * Ensures summaries go out even if the Admin didn't have time to manually approve.
  */
 const scheduleMorningSummary = () => {
+    // PRIMARY TRIGGER: 8:00 AM WAT
     cron.schedule("0 8 * * *", async () => {
-        try {
-            console.log("🌅 [AUTONOMOUS] Starting 8 AM Morning Dispatch...");
-            
-            // 1. Ensure a tip exists for today
-            const config = await SystemConfig.findOne({ key: "daily_advice" });
-            if (!config || (new Date() - new Date(config.lastUpdated)) > (20 * 60 * 60 * 1000)) {
-                await generateDailyAdvice();
-            }
+        await executeAutonomousDispatch();
+    }, { timezone: "Africa/Lagos" });
 
-            // 2. Auto-Approve if pending
+    // SECONDARY BACKUP: 8:15 AM WAT (In case server was rebooting at 8:00)
+    cron.schedule("15 8 * * *", async () => {
+        await executeAutonomousDispatch(true); // 'true' means only catch those who were missed
+    }, { timezone: "Africa/Lagos" });
+};
+
+const executeAutonomousDispatch = async (isBackup = false) => {
+    try {
+        console.log(`🌅 [AUTONOMOUS${isBackup ? '-BACKUP' : ''}] Starting Morning Dispatch...`);
+        
+        // 1. Step 1: Advice Retrieval (Honoring Admin Edits)
+        try {
+            const config = await SystemConfig.findOne({ key: "daily_advice" });
+            const hasDraft = config && config.value?.adviceText;
+            
+            if (!hasDraft) {
+                console.log("🧠 No draft found. Generating fresh Masterclass for autopilot...");
+                await generateDailyAdvice("English"); 
+            } else {
+                console.log("📜 Using existing draft for autonomous dispatch...");
+            }
+            
+            // Ensure status is approved for the jobs
             await SystemConfig.findOneAndUpdate(
                 { key: "daily_advice" },
-                { status: "approved", lastUpdated: new Date() }
+                { status: "approved" }
             );
+        } catch (aiErr) {
+            console.error("⚠️ AI Advice Failed, using hardcoded fallback:", aiErr.message);
+            // Ensure we at least have 'something' so summaries can send
+            await SystemConfig.findOneAndUpdate(
+                { key: "daily_advice" },
+                { 
+                    value: { 
+                        adviceText: `Cashflow is King. Profit is just paper, but cash pays the bills and buys stock. Record every kobo that enters your hand today. Let's win!`,
+                        tone: "English"
+                    },
+                    status: "approved",
+                    lastUpdated: new Date()
+                },
+                { upsert: true }
+            );
+        }
 
-            // 3. Queue Jobs for everyone who doesn't have a job today yet
-            const profiles = await BusinessProfile.find({ isSetup: true });
-            const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
+        // 2. Step 2: Individual Merchant Dispatch
+        const profiles = await BusinessProfile.find({ 
+            whatsappNumber: { $exists: true, $ne: "" } 
+        });
+        const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
+        
+        let queuedCount = 0;
+        for (const p of profiles) {
+            const exists = await BackgroundJob.findOne({
+                businessId: p._id,
+                type: "MORNING_SUMMARY",
+                createdAt: { $gte: startOfToday }
+            });
 
-            for (const p of profiles) {
-                const exists = await BackgroundJob.findOne({
+            if (!exists) {
+                await BackgroundJob.create({
                     businessId: p._id,
                     type: "MORNING_SUMMARY",
-                    createdAt: { $gte: startOfToday }
+                    status: "pending",
+                    scheduledFor: new Date()
                 });
-
-                if (!exists) {
-                    await BackgroundJob.create({
-                        businessId: p._id,
-                        type: "MORNING_SUMMARY",
-                        status: "pending",
-                        scheduledFor: new Date()
-                    });
-                }
+                queuedCount++;
             }
-            console.log(`✅ [AUTONOMOUS] Queued reports for ${profiles.length} merchants.`);
-        } catch (err) {
-            console.error("Autonomous Dispatch Error:", err.message);
         }
-    }, { timezone: "Africa/Lagos" });
+        
+        if (queuedCount > 0) {
+            console.log(`✅ [AUTONOMOUS] Successfully queued ${queuedCount} reports.`);
+        } else if (!isBackup) {
+            console.log("ℹ️ [AUTONOMOUS] No new reports to queue (All caught up).");
+        }
+
+    } catch (err) {
+        console.error("❌ Critical Autonomous Dispatch Failure:", err.message);
+    }
 };
 
 /**

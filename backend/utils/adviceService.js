@@ -2,10 +2,6 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const SystemConfig = require("../models/SystemConfig");
 
 const genAI = new GoogleGenerativeAI(process.env.KREDDY_API_KEY || "");
-const model = genAI.getGenerativeModel({ 
-    model: "gemini-2.5-flash",
-    systemInstruction: "You are Kreddy, the street-smart Nigerian business coach. Your job is to give one daily, punchy business tip or motivational quote to Nigerian merchants. Keep it short, relative to business growth or debt collection, and always end with your signature protector emoji 🛡️."
-});
 
 /**
  * Generate a high-value, long-form Daily Business Masterclass using Gemini 2.5 Pro.
@@ -14,67 +10,108 @@ const model = genAI.getGenerativeModel({
 const generateDailyAdvice = async (tone = "English") => {
     try {
         console.log(`🧠 Kreddy Brain: Generating ${tone} business advice...`);
-        
-        // Use Pro model for higher quality long-form advice
-        const proModel = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
         const toneInstruction = tone === "Pidgin" 
-            ? "Use authentic Street-Smart Nigerian Pidgin. Be warm, energetic, and encouraging."
-            : "Use professional but friendly Nigerian English. Focus on clarity and authority.";
+            ? "Use authentic Street-Smart Nigerian Pidgin only. Be warm, energetic, and encouraging."
+            : "Use professional and clear Standard English only. DO NOT use Pidgin or slang. Focus on clarity and authority.";
 
         const prompt = `
         Kreddy, act as a High-Level Nigerian Business Growth Coach.
-        Task: Write a "Kreddy Masterclass" for a Nigerian merchant to start their day.
+        Task: Write a short, powerful "masterclass" message for a Nigerian merchant to start their day.
         Tone: ${toneInstruction}
         
-        Structure Required:
-        1. 💡 THE BIG INSIGHT: A powerful heading and explanation of one specific business growth concept (e.g., compounding customer trust, inventory velocity, cashflow vs profit).
-        2. 🛡️ WHY IT MATTERS: Explain how this prevents failure or increases money in their pocket.
-        3. ✅ ACTION STEP: One clear thing they should do TODAY using Kredibly or in their shop.
-
         Rules:
-        - Keep it between 120 - 180 words. Give REAL value.
-        - Relate it to the Nigerian market (fuel prices, exchange rates, or customer trust).
-        - End with a motivating "Let's win!" vibe.
+        1. Write exactly like a human business coach sending a quick morning voice-note or direct WhatsApp text. 
+        2. NO BLOCKY AI HEADERS. Do NOT use "*💡 THE BIG INSIGHT:*" or "*✅ ACTION STEP:*". Just write naturally in paragraphs.
+        3. NO BULLET POINTS or hashtags. 
+        4. Focus on ONE specific growth concept (e.g. inventory velocity, compounding trust, or cashflow) and give ONE clear thing they should do today.
+        5. Keep it conversational, empathetic, and street-smart. Relate it to the Nigerian market.
+        6. Length: 2 small paragraphs maximum (around 80-120 words). Short, punchy, and highly readable.
+        7. Use mild bolding (*like this*) only for 1 or 2 key words of emphasis.
+        8. DO NOT start with generic greetings like "Here is your tip" or "Absolutely!". Dive straight into the coaching.
         `;
+        
+        let advice;
+        try {
+            // Priority 1: Use Pro model for higher quality long-form advice
+            const proModel = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+            const result = await proModel.generateContent(prompt);
+            advice = result.response.text().trim();
+        } catch (proErr) {
+            console.warn("⚠️ Gemini 2.5 Pro Busy/Failed, falling back to Flash model...");
+            // Priority 2: Use Flash if Pro is overloaded (503)
+            const flashModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+            const result = await flashModel.generateContent(prompt);
+            advice = result.response.text().trim();
+        }
 
-        const result = await proModel.generateContent(prompt);
-        const advice = result.response.text().trim();
+        const cleanedAdvice = cleanAIArtifacts(advice);
 
-        await SystemConfig.findOneAndUpdate(
+        const config = await SystemConfig.findOneAndUpdate(
             { key: "daily_advice" },
             { 
-                value: advice,
+                value: { adviceText: cleanedAdvice, tone },
                 status: "pending",
                 lastGenerated: new Date(),
-                lastUpdated: new Date(),
-                metadata: { tone }
+                lastUpdated: new Date()
             },
             { upsert: true, new: true }
         );
 
-        console.log("✅ Daily advice cached successfully.");
+        console.log("✅ Daily advice drafted and saved successfully.");
         return advice;
     } catch (err) {
-        console.error("❌ Advice Generation Error:", err.message);
-        return `💡 THE BIG INSIGHT: Professional Bookkeeping\n\n🛡️ WHY IT MATTERS: Without records, you are flying blind. You don't know who owes you or if you are making profit.\n\n✅ ACTION STEP: Open Kredibly today and log every single sale, no matter how small. Let's win! 🛡️`;
+        console.error("❌ Critical AI Advice Failure:", err.message);
+        
+        const fallbackValue = tone === "Pidgin" 
+            ? `💡 *THE BIG INSIGHT:* Cashflow na Lifeblood\n\n🛡️ *WETIN MATTER:* Profit na paper, na cash dey pay light bill. Log every kobo today!\n\n✅ *WETIN TO DO:* Open Kredibly, log one sale now. Let's win! 🛡️`
+            : `💡 *THE BIG INSIGHT:* Cashflow is King\n\n🛡️ *WHY IT MATTERS:* Profit is just paper, but cash pays the bills. Record every kobo today!\n\n✅ *ACTION STEP:* Log one sale in Kredibly now. Let's win! 🛡️`;
+
+        // Save the fallback so the UI stays in sync even during errors
+        await SystemConfig.findOneAndUpdate(
+            { key: "daily_advice" },
+            { 
+                value: { adviceText: fallbackValue, tone },
+                status: "pending",
+                lastGenerated: new Date(),
+                lastUpdated: new Date()
+            },
+            { upsert: true }
+        );
+
+        return fallbackValue;
     }
 };
 
 /**
- * Gets today's advice from cache (or generates it if missing).
+ * RETRIEVE THE LATEST SAVED ADVICE (For Dispatches)
+ * This is the "Truth" for both 8am Auto and Manual Send.
  */
 const getDailyAdvice = async () => {
-    const config = await SystemConfig.findOne({ key: "daily_advice" });
-    
-    // Refresh if missing or older than 20 hours
-    const isOld = !config || (new Date() - new Date(config.lastUpdated)) > (20 * 60 * 60 * 1000);
-    
-    if (isOld) {
-        return await generateDailyAdvice();
+    try {
+        const config = await SystemConfig.findOne({ key: "daily_advice" });
+        if (!config || !config.value?.adviceText) {
+            return "Good morning! Focus on your cashflow today. Every kobo counts! 🛡️";
+        }
+        return cleanAIArtifacts(config.value.adviceText);
+    } catch (e) {
+        return "Rise and grind! Consistency is the secret to scaling. 🚀";
     }
-    
-    return config.value;
+};
+
+/**
+ * AI JANITOR: Strips annoying AI symbols and fluff
+ * Ensures the growth message looks human-vetted.
+ */
+const cleanAIArtifacts = (text) => {
+    if (!text) return "";
+    return text
+        .replace(/^\s*[-•]\s*/gm, '')     // Remove lone bullet points at start of lines
+        .replace(/#{1,3}/g, '')           // Remove hashtags
+        .replace(/[-_]{2,}/g, '')         // Remove multiple hyphens/underscores
+        .replace(/^"|"$/g, '')            // Remove outer quotes
+        .replace(/^(Certainly!|Here is a tip|Good morning,|Sure!|Alright,|Here is a business tip:)/gi, '') // Remove AI chatter
+        .trim();
 };
 
 module.exports = { generateDailyAdvice, getDailyAdvice };
