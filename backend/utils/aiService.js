@@ -85,6 +85,7 @@ NAME CORRECTIONS:
 MULTI-INTENT RULE (CRITICAL):
 - If the user's message contains MULTIPLE distinct tasks, return a JSON array of intent objects.
 - Each object should be a complete valid intent.
+- DELETION PROTECTION: If a user says "Delete the reminder for [Time/Task]", ALWAYS use "delete_reminder". NEVER use "create_reminder" to save a task about deleting.
 - If the user wants to delete a sale (e.g. "Delete the invoice for Victoria"), use "delete_sale" intent and capture "customerName" or "invoiceNumber".
 - If the user wants to delete a reminder (e.g. "Cancel my call with David"), use "delete_reminder" intent.
 - IMPORTANT: If a user records a sale AND asks for a reminder for it (e.g. "Remind me to call them next week"), return BOTH "create_sale" and "create_reminder". Ensure both the Sale and the Reminder have the SAME dueDate/reminderDate.

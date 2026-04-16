@@ -1,7 +1,7 @@
 const Sale = require("../models/Sale");
 const Reminder = require("../models/Reminder");
 const BusinessProfile = require("../models/BusinessProfile");
-const { sendWhatsAppAlert } = require("../controllers/whatsapp/whatsappController");
+const { sendWhatsAppAlert, sendWhatsAppMessage } = require("../controllers/whatsapp/whatsappController");
 
 /**
  * Sends a nudge message (DEBT_NUDGE) based on the provided context.
@@ -24,7 +24,29 @@ const sendIndividualDebtNudge = async (data) => {
 
             const msg = `🤔 *Did They Pay, ${bossTitle}?*\n\nYesterday, you had a reminder to collect from *${sale.customerName}*.\n\nMy records show they still owe *₦${bal.toLocaleString()}*. \n\nDid they pay offline? If yes, just say: _"${sale.customerName} paid"_. \n\nIf not, would you like me to snooze this reminder for later, or send them another message?`;
             
-            await sendWhatsAppAlert(whatsappNumber, bossTitle, msg);
+            const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
+            
+            if (isInsideWindow) {
+                await sendWhatsAppMessage(whatsappNumber, msg);
+            } else if (profile.plan === "oga" || profile.plan === "chairman") {
+                await sendWhatsAppAlert(whatsappNumber, bossTitle, msg);
+            } else {
+                const { sendEmail } = require("./emailService");
+                const user = await require("../models/User").findById(profile.ownerId);
+                if (user && user.email) {
+                    await sendEmail({
+                        to: user.email,
+                        subject: `🤔 Debt Follow-up: ${sale.customerName}`,
+                        html: `<div style="font-family: sans-serif; padding: 20px; color: #333;">
+                                <h2>Hey ${bossTitle},</h2>
+                                <p>Yesterday, you had a reminder to collect from <b>${sale.customerName}</b>.</p>
+                                <p>My records show they still owe <b>₦${bal.toLocaleString()}</b>. Did they pay offline?</p>
+                                <p><i>Tip: Type "${sale.customerName} paid" next time you chat with me on WhatsApp!</i></p>
+                               </div>`
+                    });
+                    console.log(`📪 [EMAIL-SENT] Debt Nudge for ${profile.displayName} sent.`);
+                }
+            }
             return { status: "completed" };
 
         } else if (type === "past_due_escalation") {
@@ -38,7 +60,28 @@ const sendIndividualDebtNudge = async (data) => {
             
             const msg = `🚩 *Overdue Alert, ${bossTitle}!*\n\n*${sale.customerName}* was supposed to pay ₦${bal.toLocaleString()} yesterday, but the record is still unpaid.\n\nShould I draft a follow-up link for you to forward to them? \n\n_Type: "Send link to ${sale.customerName}"_`;
             
-            await sendWhatsAppAlert(whatsappNumber, bossTitle, msg);
+            const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
+
+            if (isInsideWindow) {
+                await sendWhatsAppMessage(whatsappNumber, msg);
+            } else if (profile.plan === "oga" || profile.plan === "chairman") {
+                await sendWhatsAppAlert(whatsappNumber, bossTitle, msg);
+            } else {
+                const { sendEmail } = require("./emailService");
+                const user = await require("../models/User").findById(profile.ownerId);
+                if (user && user.email) {
+                    await sendEmail({
+                        to: user.email,
+                        subject: `🚩 Overdue Alert: ${sale.customerName}`,
+                        html: `<div style="font-family: sans-serif; padding: 20px; color: #333;">
+                                <h2>🚩 Overdue Alert, ${bossTitle}!</h2>
+                                <p><b>${sale.customerName}</b> was supposed to pay ₦${bal.toLocaleString()} yesterday, but the record is still unpaid.</p>
+                                <p>Log into your dashboard to take action!</p>
+                               </div>`
+                    });
+                    console.log(`📪 [EMAIL-SENT] Past Due Alert for ${profile.displayName} sent.`);
+                }
+            }
             return { status: "completed" };
         } else if (type === "upcoming_summary") {
             const { saleIds } = data;
@@ -55,7 +98,28 @@ const sendIndividualDebtNudge = async (data) => {
                 ? `🌞 *Good Morning ${bossTitle}!* \n\nYou have *${sales.length}* sales expected to be paid today or tomorrow, totaling *₦${totalBal.toLocaleString()}*.\n\nI'm monitoring them for you! 🛡️`
                 : `📊 *Receivables Intelligence Summary*\n\nInfrastructure is monitoring *${sales.length}* sales due in this 48h period. \n\nTotal value: *₦${totalBal.toLocaleString()}*. \n\nStanding by for collection instructions. 🛡️`;
 
-            await sendWhatsAppAlert(whatsappNumber, bossTitle, msg);
+            const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
+
+            if (isInsideWindow) {
+                await sendWhatsAppMessage(whatsappNumber, msg);
+            } else if (profile.plan === "oga" || profile.plan === "chairman") {
+                await sendWhatsAppAlert(whatsappNumber, bossTitle, msg);
+            } else {
+                const { sendEmail } = require("./emailService");
+                const user = await require("../models/User").findById(profile.ownerId);
+                if (user && user.email) {
+                    await sendEmail({
+                        to: user.email,
+                        subject: `📊 Upcoming Receivables Summary`,
+                        html: `<div style="font-family: sans-serif; padding: 20px; color: #333;">
+                                <h2>${bossTitle}, here is your upcoming summary:</h2>
+                                <p>You have <b>${sales.length}</b> sales expected to be paid in the next 48 hours, totaling <b>₦${totalBal.toLocaleString()}</b>.</p>
+                                <p>I'm monitoring them for you! 🛡️</p>
+                               </div>`
+                    });
+                    console.log(`📪 [EMAIL-SENT] Upcoming Summary for ${profile.displayName} sent.`);
+                }
+            }
             return { status: "completed" };
         }
 
