@@ -204,17 +204,21 @@ const checkPaymentStatusByReference = async (accountReference, accountNumber) =>
 
         const transactions = response.data?.data?.results || response.data?.data?.content || [];
         
-        // Find any transaction that is SUCCESSFUL and matches our reference or just exists for this DVA
+        // Find any transaction that is SUCCESSFUL and matches our reference
         const successTx = transactions.find(tx => 
             (tx.status === 'SUCCESS' || tx.status === 'SUCCESSFUL') && 
-            (tx.accountReference === accountReference || tx.orderReference === accountReference || true)
+            (tx.virtualAccountReference === accountReference || tx.accountReference === accountReference || tx.orderReference === accountReference)
         );
         
         if (successTx) {
+            // Note: Transactions from /transactions/virtual are often already in Naira (e.g. "100.0")
+            const rawAmount = parseFloat(successTx.amount || 0);
+            const creditedAmount = rawAmount > 5 ? rawAmount : rawAmount * 100; // Fail-safe for kobo vs naira
+
             return {
                 paid: true,
-                amount: (successTx.amount || 0) / 100, // Nominal to Naira
-                transactionReference: successTx.transactionReference || accountReference,
+                amount: rawAmount, // Use raw amount as it is "100.0" in the verified response
+                transactionReference: successTx.transactionReference || successTx.paymentVendorReference || accountReference,
                 payer: successTx.senderName || 'Bank Transfer'
             };
         }
