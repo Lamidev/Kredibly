@@ -26,8 +26,8 @@ const VirtualAccountSchema = new mongoose.Schema({
     },
     provider: {
         type: String,
-        enum: ["monnify", "paystack", "squad"],
-        default: "squad"
+        enum: ["monnify", "paystack", "squad", "nomba"],
+        default: "nomba"
     },
     reference: {
         type: String,
