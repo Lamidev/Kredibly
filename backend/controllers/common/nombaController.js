@@ -35,10 +35,10 @@ exports.initializeNombaAccount = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Invoice is already fully paid' });
         }
 
-        // 2. Check if an active Nomba VA already exists for this sale (avoid duplicate creation)
         const existing = await VirtualAccount.findOne({
             saleId: sale._id,
             provider: 'nomba',
+            amount: amountToPay, // ⚡ CRITICAL: Only reuse if amount matches exactly
             status: 'active',
             expiresAt: { $gt: new Date() }
         });

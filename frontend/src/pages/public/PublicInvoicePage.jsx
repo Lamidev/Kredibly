@@ -824,14 +824,14 @@ const PublicInvoicePage = () => {
                                 {/* Payment Mode Selector */}
                                 <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
                                     <button 
-                                        onClick={() => setPaymentMode('full')}
+                                        onClick={() => { setPaymentMode('full'); setNombaData(null); }}
                                         style={{ flex: 1, padding: '16px', borderRadius: '14px', border: '1.5px solid', borderColor: paymentMode === 'full' ? 'var(--primary)' : '#E2E8F0', background: paymentMode === 'full' ? 'var(--primary-glow)' : 'white', cursor: 'pointer', transition: '0.2s' }}
                                     >
                                         <p style={{ margin: 0, fontSize: '10px', fontWeight: 900, color: paymentMode === 'full' ? 'var(--primary)' : '#94A3B8', textTransform: 'uppercase' }}>Full Balance</p>
                                         <p style={{ margin: '4px 0 0 0', fontSize: '15px', fontWeight: 800, color: paymentMode === 'full' ? 'var(--primary)' : '#475569' }}>₦{(balance || 0).toLocaleString()}</p>
                                     </button>
                                     <button 
-                                        onClick={() => setPaymentMode('partial')}
+                                        onClick={() => { setPaymentMode('partial'); setNombaData(null); }}
                                         style={{ flex: 1, padding: '16px', borderRadius: '14px', border: '1.5px solid', borderColor: paymentMode === 'partial' ? 'var(--primary)' : '#E2E8F0', background: paymentMode === 'partial' ? 'var(--primary-glow)' : 'white', cursor: 'pointer', transition: '0.2s' }}
                                     >
                                         <p style={{ margin: 0, fontSize: '10px', fontWeight: 900, color: paymentMode === 'partial' ? 'var(--primary)' : '#94A3B8', textTransform: 'uppercase' }}>Other Amount</p>
@@ -857,6 +857,7 @@ const PublicInvoicePage = () => {
                                                         const value = e.target.value.replace(/[^0-9]/g, '');
                                                         setCustomAmount(value);
                                                         setCustomAmountDisplay(value ? `₦${parseInt(value).toLocaleString()}` : '');
+                                                        setNombaData(null); // 🔄 Reset details when amount change detected
                                                     }}
                                                     placeholder="₦20,000"
                                                     style={{ width: '100%', background: 'transparent', border: 'none', fontSize: '24px', fontWeight: 900, color: '#0F172A', outline: 'none' }}
