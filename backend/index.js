@@ -39,7 +39,8 @@ const {
   scheduleMonthlyUsageReset,
   scheduleQueueHousekeeping,
   scheduleUpcomingNudges,
-  scheduleBankLockChecker
+  scheduleBankLockChecker,
+  startBackgroundJobRunner
 } = require("./utils/cronJobs");
 
 const rateLimit = require("express-rate-limit");
@@ -196,6 +197,7 @@ mongoose
     scheduleQueueHousekeeping();
     scheduleUpcomingNudges();
     scheduleBankLockChecker();
+    startBackgroundJobRunner();
 
     // 7. Start Server
     server.listen(PORT, () => {
