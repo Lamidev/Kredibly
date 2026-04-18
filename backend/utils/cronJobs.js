@@ -5,6 +5,8 @@ const Reminder = require("../models/Reminder");
 const { sendWhatsAppMessage, sendWhatsAppAlert } = require("../controllers/whatsapp/whatsappController");
 const { sendActivationNudgeEmail, sendFinishSetupEmail } = require("../emailLogic/emails");
 const { sendIndividualMorningSummary } = require("./summaryService");
+const { sendIndividualDebtNudge } = require("./nudgeService");
+const { processIndividualEscrowPayout } = require("./payoutService");
 const SystemConfig = require("../models/SystemConfig");
 const { generateDailyAdvice } = require("./adviceService");
 const BackgroundJob = require("../models/BackgroundJob");
@@ -495,6 +497,73 @@ const scheduleBankLockChecker = () => {
     });
 };
 
+/**
+ * 11. BACKGROUND JOB RUNNER (The "Core Motor") - Runs every minute
+ * Processes the queue created by both Admin (Manual) and Chron (Auto)
+ */
+const startBackgroundJobRunner = () => {
+    cron.schedule("* * * * *", async () => {
+        try {
+            // Find jobs scheduled for now or in the past that are pending
+            const pendingJobs = await BackgroundJob.find({
+                status: "pending",
+                scheduledFor: { $lte: new Date() }
+            }).limit(25).sort({ scheduledFor: 1 });
+
+            if (pendingJobs.length === 0) return;
+
+            console.log(`📡 [WORKER] Picking up ${pendingJobs.length} jobs from the queue...`);
+
+            for (const job of pendingJobs) {
+                // 1. Lock the job so other workers don't grab it
+                const acquired = await BackgroundJob.findOneAndUpdate(
+                    { _id: job._id, status: "pending" },
+                    { status: "processing", attempts: (job.attempts || 0) + 1 }
+                );
+                
+                if (!acquired) continue;
+
+                try {
+                    let result = { status: "failed", error: "Unknown type" };
+
+                    // 2. Dispatch based on type
+                    switch (job.type) {
+                        case "MORNING_SUMMARY":
+                            result = await sendIndividualMorningSummary(job.businessId);
+                            break;
+                        case "DEBT_NUDGE":
+                            result = await sendIndividualDebtNudge(job.data);
+                            break;
+                        case "ESCROW_PAYOUT":
+                            result = await processIndividualEscrowPayout(job.data?.escrowId);
+                            break;
+                        // Add more types here as we grow
+                    }
+
+                    // 3. Finalize Job
+                    if (result.status === "completed" || result.status === "skipped") {
+                        job.status = "completed";
+                        job.completedAt = new Date();
+                        job.error = null;
+                    } else {
+                        job.status = job.attempts >= 3 ? "failed" : "pending"; // Simple retry logic
+                        job.error = result.error || "Execution failed";
+                    }
+                    await job.save();
+
+                } catch (execErr) {
+                    console.error(`❌ Worker Execution Error (Job ${job._id}):`, execErr.message);
+                    job.status = job.attempts >= 3 ? "failed" : "pending";
+                    job.error = execErr.message;
+                    await job.save();
+                }
+            }
+        } catch (err) {
+            console.error("❌ Critical Background Worker Failure:", err.message);
+        }
+    });
+};
+
 module.exports = { 
     scheduleMorningSummary, 
     scheduleRemindersWorker, 
@@ -505,5 +574,6 @@ module.exports = {
     scheduleMonthlyUsageReset,
     scheduleQueueHousekeeping,
     scheduleUpcomingNudges,
-    scheduleBankLockChecker
+    scheduleBankLockChecker,
+    startBackgroundJobRunner
 };

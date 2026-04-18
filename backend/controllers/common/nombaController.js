@@ -165,9 +165,22 @@ exports.handleNombaWebhook = async (req, res) => {
     res.status(200).json({ status: 'received' });
 
     try {
-        // 2. Verify signature to ensure this is genuinely from Nomba
-        const signature = req.headers['nomba-signature'];
+        const signature = req.headers['nomba-signature'] || req.headers['x-nomba-signature'];
         const rawBody = req.rawBody || JSON.stringify(req.body);
+
+        // 🛡️ DEBUG LOGGING: Capture webhook for analysis (Remove after verify)
+        try {
+            const mongoose = require('mongoose');
+            const SystemLog = mongoose.models.SystemLog || mongoose.model('SystemLog', new mongoose.Schema({ type: String, data: Object, createdAt: { type: Date, default: Date.now } }));
+            await SystemLog.create({ 
+                type: 'NOMBA_WEBHOOK', 
+                data: { 
+                    header: req.headers, 
+                    body: req.body,
+                    url: req.originalUrl
+                } 
+            });
+        } catch (e) { console.error('Logging failed', e); }
 
         // ⚠️ Skip signature check in sandbox mode for now
         const isSandbox = process.env.NOMBA_ENV !== 'production';
@@ -184,7 +197,14 @@ exports.handleNombaWebhook = async (req, res) => {
         console.log(`🟢 Nomba Webhook received: ${eventType}`);
 
         // 3. Only process successful payment events
-        const acceptedEvents = ['payment_success', 'charge.success', 'transaction.success', 'transfer.success', 'SUCCESS'];
+        const acceptedEvents = [
+            'payment_success', 'payment.success', 
+            'charge.success', 'charge_success', 
+            'transaction.success', 'transaction_success',
+            'transfer.success', 'transfer_success',
+            'payout_success', 'payout.success',
+            'SUCCESS'
+        ];
         if (!acceptedEvents.includes(eventType)) {
             console.log(`ℹ️ Nomba Webhook: Ignored event type "${eventType}"`);
             return;
@@ -193,8 +213,10 @@ exports.handleNombaWebhook = async (req, res) => {
         const paymentData = event?.data || event;
         const accountReference = paymentData?.accountReference 
             || paymentData?.account_reference 
+            || paymentData?.orderReference
             || paymentData?.transactionReference;
-        const amountPaid = (paymentData?.amount || 0) / 100; // Convert from kobo
+        const amountPaidInKobo = paymentData?.amount || paymentData?.amountPaid || 0;
+        const amountPaid = amountPaidInKobo / 100; // Convert from kobo
 
         if (!accountReference || amountPaid <= 0) {
             console.warn('⚠️ Nomba Webhook: Missing reference or amount — ignoring');
@@ -205,8 +227,8 @@ exports.handleNombaWebhook = async (req, res) => {
         await internalProcessNombaPayment({
             accountReference,
             amount: amountPaid,
-            transactionReference: paymentData?.transactionReference || accountReference,
-            payer: paymentData?.payerName || 'Bank Transfer'
+            transactionReference: paymentData?.transactionReference || paymentData?.reference || accountReference,
+            payer: paymentData?.payerName || paymentData?.customerName || 'Bank Transfer'
         });
 
     } catch (err) {
