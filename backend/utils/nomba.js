@@ -82,13 +82,19 @@ const createDynamicVirtualAccount = async ({ amount, invoiceNumber, merchantName
         const token = await getAccessToken();
 
         const cleanInvoice = invoiceNumber.replace(/[^a-zA-Z0-9]/g, '');
-        const reference = `NOMBAINV${cleanInvoice}${Date.now()}`;
-        // Expire in 30 minutes to give customer just enough time while keeping ledger clean
-        const expiryDate = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+        const reference = `KREDINV-${cleanInvoice}-${Date.now().toString().slice(-6)}`;
+        // Expire in 45 minutes to satisfy Nomba API minimum requirements (30 mins is often rejected)
+        const expiryDate = new Date(Date.now() + 45 * 60 * 1000).toISOString();
+
+        // 🛡️ SECURITY: Sanitize Name strictly for Banking App compatibility
+        const sanitizedMerchant = (merchantName || 'KREDY')
+            .replace(/[^a-zA-Z0-9]/g, '')
+            .toUpperCase()
+            .substring(0, 15);
 
         const payload = {
             accountRef: reference,
-            accountName: (merchantName || 'KREDY').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().substring(0, 15),
+            accountName: `AKINBYTE/${sanitizedMerchant}`,
             bvn: '', // Not required for dynamic accounts in most cases
             expiryDate,
             callbackUrl: `${process.env.BACKEND_URL}/api/payments/webhook/nomba`,
@@ -125,7 +131,8 @@ const createDynamicVirtualAccount = async ({ amount, invoiceNumber, merchantName
             bankName: data.bankName || 'Nombank MFB',
             accountName: bankAccName || `Pay ${invoiceNumber}`,
             reference: reference,
-            expiresAt: expiryDate
+            expiresAt: expiryDate,
+            expiresIn: '45 minutes'
         };
 
     } catch (err) {
