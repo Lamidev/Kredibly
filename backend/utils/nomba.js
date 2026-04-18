@@ -83,8 +83,8 @@ const createDynamicVirtualAccount = async ({ amount, invoiceNumber, merchantName
 
         const cleanInvoice = invoiceNumber.replace(/[^a-zA-Z0-9]/g, '');
         const reference = `NOMBAINV${cleanInvoice}${Date.now()}`;
-        // Expire in 30 minutes to give customer just enough time while keeping ledger clean
-        const expiryDate = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+        // Expire in 45 minutes to satisfy Nomba API minimum requirements (30 mins is often rejected)
+        const expiryDate = new Date(Date.now() + 45 * 60 * 1000).toISOString();
 
         const payload = {
             accountRef: reference,
@@ -125,7 +125,8 @@ const createDynamicVirtualAccount = async ({ amount, invoiceNumber, merchantName
             bankName: data.bankName || 'Nombank MFB',
             accountName: bankAccName || `Pay ${invoiceNumber}`,
             reference: reference,
-            expiresAt: expiryDate
+            expiresAt: expiryDate,
+            expiresIn: '45 minutes'
         };
 
     } catch (err) {

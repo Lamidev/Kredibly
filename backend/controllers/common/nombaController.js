@@ -54,7 +54,7 @@ exports.initializeNombaAccount = async (req, res) => {
                     amount: existing.amount,
                     reference: existing.reference,
                     expiresAt: existing.expiresAt,
-                    expiresIn: '30 minutes'
+                    expiresIn: '45 minutes'
                 }
             });
         }
@@ -103,7 +103,7 @@ exports.initializeNombaAccount = async (req, res) => {
                 amount: vaRecord.amount,
                 reference: vaRecord.reference,
                 expiresAt: vaRecord.expiresAt,
-                expiresIn: '30 minutes'
+                expiresIn: '45 minutes'
             }
         });
 

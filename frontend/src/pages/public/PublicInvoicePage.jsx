@@ -882,7 +882,7 @@ const PublicInvoicePage = () => {
                                                     <div style={{ background: 'white', padding: '20px', borderRadius: '14px', border: '1px solid #E2E8F0', marginBottom: '16px', position: 'relative' }}>
                                                         <div style={{ position: 'absolute', top: '15px', right: '15px', display: 'flex', alignItems: 'center', gap: '6px', background: '#FEF2F2', padding: '5px 10px', borderRadius: '100px', border: '1px solid #FEE2E2' }}>
                                                             <Clock size={12} color="#EF4444" />
-                                                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#EF4444', letterSpacing: '0.5px' }}>{timeLeft || '29:59'}</span>
+                                                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#EF4444', letterSpacing: '0.5px' }}>{timeLeft || '44:59'}</span>
                                                         </div>
                                                         <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>Account Number</p>
                                                         <p style={{ margin: 0, fontSize: isMobile ? '24px' : '32px', fontWeight: 900, color: '#4C1D95', letterSpacing: isMobile ? '1px' : '3px', userSelect: 'all', wordBreak: 'break-all', lineHeight: 1.2 }}>{nombaData.accountNumber}</p>

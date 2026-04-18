@@ -48,7 +48,7 @@ const VirtualAccountSchema = new mongoose.Schema({
     },
     expiresAt: {
         type: Date,
-        default: () => new Date(Date.now() + 30 * 60 * 1000) // 30 mins expiry
+        default: () => new Date(Date.now() + 45 * 60 * 1000) // 45 mins expiry (Nomba minimum requirement)
     },
     createdAt: {
         type: Date,
