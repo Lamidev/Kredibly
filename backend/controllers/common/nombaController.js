@@ -122,8 +122,11 @@ exports.verifyNombaPaymentStatus = async (req, res) => {
         const { accountRef, saleId } = req.body;
         if (!accountRef) return res.status(400).json({ success: false, message: 'Account reference required' });
 
+        const va = await VirtualAccount.findOne({ reference: accountRef });
+        if (!va) return res.status(404).json({ success: false, message: 'Virtual account not found' });
+
         console.log(`🔍 Manually verifying Nomba payment for ${accountRef}...`);
-        const status = await checkPaymentStatusByReference(accountRef);
+        const status = await checkPaymentStatusByReference(va.reference, va.accountNumber);
 
         if (status.paid) {
             // Trigger the same processing logic as the webhook

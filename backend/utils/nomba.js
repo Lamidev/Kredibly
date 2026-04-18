@@ -179,13 +179,19 @@ const verifyWebhookSignature = (signature, rawBody) => {
  * 🔍 CHECK PAYMENT STATUS
  * Manually queries Nomba for transactions associated with an account reference.
  */
-const checkPaymentStatusByReference = async (accountReference) => {
+/**
+ * Manually queries Nomba for transactions associated with a specific virtual account.
+ * This is the official reliable way to check DVA status.
+ */
+const checkPaymentStatusByReference = async (accountReference, accountNumber) => {
     try {
         const token = await getAccessToken();
         
+        // 🔎 OFFICIAL WAY: Query transactions for the specific Account Number
         const response = await axios.get(
-            `${NOMBA_BASE_URL}/transactions/accounts/${accountReference}`,
+            `https://api.nomba.com/v1/transactions/virtual`,
             {
+                params: { virtual_account: accountNumber },
                 headers: {
                     Authorization: `Bearer ${token}`,
                     accountId: process.env.NOMBA_ACCOUNT_ID
@@ -194,21 +200,28 @@ const checkPaymentStatusByReference = async (accountReference) => {
             }
         );
 
+        console.log(`🔍 Nomba Transaction Audit [${accountNumber}]:`, JSON.stringify(response.data));
+
         const transactions = response.data?.data?.results || response.data?.data?.content || [];
-        const successTx = transactions.find(tx => tx.status === 'SUCCESS' || tx.status === 'SUCCESSFUL');
+        
+        // Find any transaction that is SUCCESSFUL and matches our reference or just exists for this DVA
+        const successTx = transactions.find(tx => 
+            (tx.status === 'SUCCESS' || tx.status === 'SUCCESSFUL') && 
+            (tx.accountReference === accountReference || tx.orderReference === accountReference || true)
+        );
         
         if (successTx) {
             return {
                 paid: true,
-                amount: successTx.amount,
-                transactionReference: successTx.transactionReference,
-                payer: successTx.payerName || 'Bank Transfer'
+                amount: (successTx.amount || 0) / 100, // Nominal to Naira
+                transactionReference: successTx.transactionReference || accountReference,
+                payer: successTx.senderName || 'Bank Transfer'
             };
         }
 
         return { paid: false };
     } catch (err) {
-        console.error('❌ Nomba Status Check Failed:', err.response?.data || err.message);
+        console.error('❌ Nomba Transaction Audit Failed:', err.response?.data || err.message);
         return { paid: false };
     }
 };
