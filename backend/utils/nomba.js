@@ -87,14 +87,14 @@ const createDynamicVirtualAccount = async ({ amount, invoiceNumber, merchantName
         const expiryDate = new Date(Date.now() + 45 * 60 * 1000).toISOString();
 
         // 🛡️ SECURITY: Sanitize Name strictly for Banking App compatibility
-        const sanitizedMerchant = (merchantName || 'KREDY')
-            .replace(/[^a-zA-Z0-9]/g, '')
+        let finalAccountName = (merchantName || 'KREDY')
             .toUpperCase()
-            .substring(0, 15);
+            .replace(/[^A-Z0-9 ]/g, '') // Keep alphanumeric + spaces for now
+            .replace(/^AKINBYTE\s*/i, ''); // Strip AKINBYTE if the merchant already included it, since Nomba will add it
 
         const payload = {
             accountRef: reference,
-            accountName: `AKINBYTE/${sanitizedMerchant}`,
+            accountName: finalAccountName.substring(0, 30), // Nomba allows up to 30 chars
             bvn: '', // Not required for dynamic accounts in most cases
             expiryDate,
             callbackUrl: `${process.env.BACKEND_URL}/api/payments/webhook/nomba`,
