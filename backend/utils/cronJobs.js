@@ -67,9 +67,11 @@ const executeAutonomousDispatch = async (isBackup = false) => {
         }
 
         // 2. Step 2: Individual Merchant Dispatch
+        // Expanded to include Group 3 (Onboarded but not yet connected)
         const profiles = await BusinessProfile.find({ 
-            whatsappNumber: { $exists: true, $ne: "" } 
+            onboardingStep: { $gte: 3 } 
         });
+
         const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
         
         let queuedCount = 0;

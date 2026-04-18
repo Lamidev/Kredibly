@@ -28,10 +28,13 @@ const sendIndividualMorningSummary = async (profile, now = new Date()) => {
         const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || "Chief";
 
         // 4. Determine if merchant is ACTIVE (Inside 24h WhatsApp Window)
-        const isInsideWindow = profile.lastInboundAt && (now - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
+        // Group 1: Connected + Interacted in last 24h + Has WhatsApp
+        const isInsideWindow = profile.isKreddyConnected && 
+                             profile.lastInboundAt && 
+                             (now - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
 
-        if (isInsideWindow) {
-            // 🟢 MODE A: FULL ACCOUNTANT SUMMARY (WhatsApp - Active Merchants)
+        if (isInsideWindow && profile.whatsappNumber) {
+            // 🟢 GROUP 1: FULL ACCOUNTANT SUMMARY (WhatsApp - NO EMAIL)
             // ... (keeping Mode A as is since it's WhatsApp)
             console.log(`📡 [ACTIVE] Sending Full Summary to ${profile.displayName} on WhatsApp...`);
 

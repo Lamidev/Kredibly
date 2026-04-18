@@ -183,13 +183,6 @@ const AdminMissionControl = () => {
                     </div>
                     <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Attention Required</p>
                 </div>
-                <div className="dashboard-glass" style={{ padding: '24px', borderRadius: '28px', background: '#0F172A', color: 'white' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <div style={{ padding: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '14px' }}><Shield size={20} /></div>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 900, color: 'rgba(255,255,255,0.6)' }}>HEALTH: 100%</span>
-                    </div>
-                    <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase' }}>System Integrity</p>
-                </div>
             </div>
 
             {/* KREDDY GROWTH ENGINE: Review & Approval Workflow */}

@@ -45,11 +45,15 @@ exports.approveAndQueueSummaries = async (req, res) => {
 
         if (!config) return res.status(404).json({ error: "Advice not found" });
 
-        // 2. QUEUE THE JOBS: This is the "Engine Start" button
-        // We find all business profiles with a WhatsApp number
+         // 2. QUEUE THE JOBS: This is the "Engine Start" button
+        // Includes: 
+        // 1. Active (WhatsApp)
+        // 2. Inactive Connected (Email)
+        // 3. Onboarded but Not Connected (Email)
         const profiles = await BusinessProfile.find({ 
-            whatsappNumber: { $exists: true, $ne: "" } 
-        });
+            onboardingStep: { $gte: 3 } // Must have finished basic onboarding
+        }); 
+
         const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
         
         // 🚨 OVERRIDE: Delete existing jobs for today so we can resend correctly
