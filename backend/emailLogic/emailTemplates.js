@@ -330,6 +330,42 @@ const FINISH_SETUP_TEMPLATE = `
 </html>
 `;
 
+const GROWTH_MASTERCLASS_TEMPLATE = `
+<!DOCTYPE html>
+<html lang="en">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.8; color: #374151; max-width: 600px; margin: 0 auto; padding: 24px;">
+  <div style="margin-bottom: 32px;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
+  </div>
+  
+  <p style="font-size: 13px; font-weight: 800; color: #4C1D95; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">The Morning Insight</p>
+  <h2 style="font-size: 22px; font-weight: 800; color: #111827; margin: 0 0 24px;">Rise & Grind, {name}! 🌅</h2>
+  
+  <div style="background: #F9FAFB; padding: 24px; border-radius: 16px; margin-bottom: 32px; border: 1px solid #F1F5F9;">
+    <p style="margin: 0; color: #111827; font-size: 16px; line-height: 1.6;">{adviceText}</p>
+  </div>
+
+  <div style="margin-bottom: 32px;">
+    <p style="font-size: 14px; color: #6B7280; font-weight: 600; margin-bottom: 16px;">Want to see your full financial summary for yesterday?</p>
+    <a href="https://wa.me/2347071238658?text=Kreddy%2C%20I'm%20ready%20to%20grow%20today!" 
+       style="background-color: #4C1D95; color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block;">
+       Check My Performance 🛡️
+    </a>
+  </div>
+
+  <p style="font-size: 14px; color: #6B7280;">Keep scaling your empire today. Kreddy is standing by.</p>
+
+  <div style="margin-top: 48px;">
+    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">The Kredibly Team</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">hello@usekredibly.com</p>
+  </div>
+  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
+    <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
+  </div>
+</body>
+</html>
+`;
+
 module.exports = {
   VERIFICATION_EMAIL_TEMPLATE,
   PASSWORD_RESET_SUCCESS_TEMPLATE,
@@ -341,5 +377,8 @@ module.exports = {
   WAITLIST_CONFIRMATION_TEMPLATE,
   SUPPORT_REPLY_TEMPLATE,
   SUBSCRIPTION_CONFIRM_TEMPLATE,
-  BANK_CHANGE_ALERT_TEMPLATE
+  BANK_CHANGE_ALERT_TEMPLATE,
+  GROWTH_MASTERCLASS_TEMPLATE,
+  ACTIVATION_NUDGE_TEMPLATE,
+  FINISH_SETUP_TEMPLATE
 };

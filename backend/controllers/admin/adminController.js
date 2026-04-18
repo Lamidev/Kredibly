@@ -401,3 +401,33 @@ exports.deleteBackgroundJob = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+exports.getDetailedDispatchReport = async (req, res) => {
+    try {
+        const BackgroundJob = require("../../models/BackgroundJob");
+        const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+
+        const jobs = await BackgroundJob.find({ 
+            createdAt: { $gte: todayStart },
+            type: "MORNING_SUMMARY"
+        }).populate("businessId", "displayName whatsappNumber");
+
+        // Simple aggregation logic
+        const report = jobs.map(j => ({
+            id: j._id,
+            merchant: j.businessId?.displayName || "System",
+            channel: j.metadata?.channel || "unknown",
+            status: j.status,
+            error: j.error,
+            completedAt: j.completedAt,
+            attempts: j.attempts
+        }));
+
+        res.status(200).json({ 
+            success: true, 
+            data: report 
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
