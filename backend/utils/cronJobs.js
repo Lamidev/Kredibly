@@ -32,13 +32,16 @@ const executeAutonomousDispatch = async (isBackup = false) => {
         // 1. Step 1: Advice Retrieval (Honoring Admin Edits)
         try {
             const config = await SystemConfig.findOne({ key: "daily_advice" });
+            const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
+            
+            const isStale = !config || !config.lastUpdated || config.lastUpdated < startOfToday;
             const hasDraft = config && config.value?.adviceText;
             
-            if (!hasDraft) {
-                console.log("🧠 No draft found. Generating fresh Masterclass for autopilot...");
+            if (isStale || !hasDraft) {
+                console.log("🧠 Advice is stale or missing. Generating fresh Masterclass for autopilot...");
                 await generateDailyAdvice("English"); 
             } else {
-                console.log("📜 Using existing draft for autonomous dispatch...");
+                console.log("📜 Today's draft already exists. Using it for autonomous dispatch...");
             }
             
             // Ensure status is approved for the jobs

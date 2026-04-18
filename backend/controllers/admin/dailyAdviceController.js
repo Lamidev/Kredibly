@@ -52,21 +52,18 @@ exports.approveAndQueueSummaries = async (req, res) => {
         });
         const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
         
-        const existingJobs = await BackgroundJob.find({
+        // 🚨 OVERRIDE: Delete existing jobs for today so we can resend correctly
+        await BackgroundJob.deleteMany({
             type: "MORNING_SUMMARY",
             createdAt: { $gte: startOfToday }
-        }).select("businessId");
+        });
 
-        const existingProfileIds = new Set(existingJobs.map(j => j.businessId.toString()));
-        
-        const jobs = profiles
-            .filter(p => !existingProfileIds.has(p._id.toString()))
-            .map(p => ({
-                businessId: p._id,
-                type: "MORNING_SUMMARY",
-                status: "pending",
-                scheduledFor: new Date()
-            }));
+        const jobs = profiles.map(p => ({
+            businessId: p._id,
+            type: "MORNING_SUMMARY",
+            status: "pending",
+            scheduledFor: new Date()
+        }));
 
         // Use insertMany for high speed
         if (jobs.length > 0) {

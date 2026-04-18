@@ -2,6 +2,7 @@ const BusinessProfile = require("../models/BusinessProfile");
 const Sale = require("../models/Sale");
 const Reminder = require("../models/Reminder");
 const { sendWhatsAppMessage } = require("../controllers/whatsapp/whatsappController");
+const { GROWTH_MASTERCLASS_TEMPLATE } = require("../emailLogic/emailTemplates");
 const { sendEmail } = require("./emailService");
 const { getDailyAdvice } = require("./adviceService");
 
@@ -24,16 +25,14 @@ const sendIndividualMorningSummary = async (profile, now = new Date()) => {
         const dailyTip = await getDailyAdvice();
 
         // 3. Resolve merchant's preferred name strictly
-        // Priority: Settings > Business Name > Respectful Title
-        const bossTitle = profile.assistantSettings?.preferredName || profile.businessName || "Chief";
+        const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || "Chief";
 
         // 4. Determine if merchant is ACTIVE (Inside 24h WhatsApp Window)
         const isInsideWindow = profile.lastInboundAt && (now - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
 
         if (isInsideWindow) {
-            // -------------------------------------------------------------------------
             // 🟢 MODE A: FULL ACCOUNTANT SUMMARY (WhatsApp - Active Merchants)
-            // -------------------------------------------------------------------------
+            // ... (keeping Mode A as is since it's WhatsApp)
             console.log(`📡 [ACTIVE] Sending Full Summary to ${profile.displayName} on WhatsApp...`);
 
             // Fetch Data for Report
@@ -88,45 +87,19 @@ const sendIndividualMorningSummary = async (profile, now = new Date()) => {
             }
 
         } else {
-            // -------------------------------------------------------------------------
             // 🟠 MODE B: GROWTH MASTERCLASS (Email - Inactive Merchants)
-            // -------------------------------------------------------------------------
             console.log(`📪 [INACTIVE] Sending Growth Masterclass to ${profile.displayName} via Email...`);
             
             const user = await require("../models/User").findById(profile.ownerId);
             if (!user || !user.email) return { status: "failed", error: "No email found for inactive user" };
 
-            const emailHtml = `
-                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1e293b; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 24px; background-color: #ffffff; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);">
-                    <div style="text-align: center; margin-bottom: 30px;">
-                        <span style="background: #ECFDF5; color: #059669; padding: 10px 20px; borderRadius: 100px; fontSize: 13px; fontWeight: 900; letterSpacing: 0.1em; text-transform: uppercase;">Growth Masterclass</span>
-                    </div>
-                    
-                    <h2 style="color: #0F172A; text-align: center; font-size: 24px; font-weight: 950; margin-bottom: 30px;">Rise & Grind, ${bossTitle}! 🌅</h2>
-                    
-                    <div style="background: #F8FAF9; padding: 30px; border-radius: 20px; border: 1px dashed #D1FAE5; margin-bottom: 32px;">
-                        <h4 style="margin: 0 0 12px 0; color: #065F46; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 900;">Today's Street-Smart Tip</h4>
-                        <div style="white-space: pre-line; color: #1E293B; font-size: 16px; line-height: 1.6; font-weight: 600;">${dailyTip}</div>
-                    </div>
-
-                    <div style="text-align: center;">
-                        <p style="color: #64748B; font-size: 14px; margin-bottom: 24px; font-weight: 700;">Wake up Kreddy on WhatsApp to see your full numbers for yesterday! 📊</p>
-                        <a href="https://wa.me/2349141040854?text=Kreddy%2C%20I'm%20ready%20to%20grow%20today!" 
-                           style="display: block; background-color: #25D366; color: white; padding: 18px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 18px; margin-bottom: 12px; box-shadow: 0 10px 15px -3px rgba(37, 211, 102, 0.3);">
-                           CHIEF, SHOW ME MY NUMBERS! 🚀
-                        </a>
-                        <a href="https://usekredibly.com/dashboard" style="display: block; color: #64748B; padding: 12px; text-decoration: none; font-weight: 800; font-size: 13px;">View Web Dashboard</a>
-                    </div>
-
-                    <div style="border-top: 1px solid #E2E8F0; margin-top: 40px; padding-top: 20px; text-align: center;">
-                        <p style="font-size: 11px; color: #94A3B8; font-weight: 700;">Kredibly Growth Engine &copy; 2026. Keep Scaling!</p>
-                    </div>
-                </div>
-            `;
+            const emailHtml = GROWTH_MASTERCLASS_TEMPLATE
+                .replace(/{name}/g, profile.displayName)
+                .replace(/{adviceText}/g, dailyTip);
 
             await sendEmail({
                 to: user.email,
-                subject: `🌅 Rise & Grind: Today's Kreddy Masterclass`,
+                subject: `🌅 Morning Insight: A quick note for ${profile.displayName}`,
                 html: emailHtml
             });
 

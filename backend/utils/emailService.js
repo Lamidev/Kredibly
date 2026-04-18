@@ -14,9 +14,11 @@ const sendEmail = async ({ to, subject, html }) => {
     }
 
     try {
+        const fromEmail = process.env.SENDER_EMAIL || 'hello@usekredibly.com';
         const { data, error } = await resend.emails.send({
-            from: 'Kredibly <no-reply@usekredibly.com>',
+            from: `Oluwatosin from Kredibly <${fromEmail}>`,
             to: [to],
+            reply_to: fromEmail,
             subject: subject,
             html: html,
         });
