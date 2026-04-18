@@ -589,7 +589,7 @@ const PublicInvoicePage = () => {
                 <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
                     
                     {/* Status Pill */}
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px', position: 'relative' }}>
+                    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', position: 'relative', gap: isMobile ? '12px' : '0' }}>
                         <div style={{ 
                             padding: '6px 16px', borderRadius: '100px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', border: '1px solid',
                             backgroundColor: isPaid ? '#ECFDF5' : 'white',
@@ -606,9 +606,10 @@ const PublicInvoicePage = () => {
                                 initial={{ scale: 0, rotate: -20 }}
                                 animate={{ scale: 1, rotate: -15 }}
                                 style={{
-                                    position: 'absolute',
-                                    right: isMobile ? '-10px' : '-40px',
-                                    top: '-10px',
+                                    position: isMobile ? 'static' : 'absolute',
+                                    right: isMobile ? '0' : '-40px',
+                                    top: isMobile ? '0' : '-10px',
+                                    marginTop: isMobile ? '12px' : '0',
                                     width: '80px',
                                     height: '80px',
                                     border: '3px double #10B981',
@@ -879,16 +880,25 @@ const PublicInvoicePage = () => {
                                                     <p style={{ margin: 0, fontSize: '11px', fontWeight: 900, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Transfer exactly this amount</p>
                                                     <h2 style={{ fontSize: '32px', fontWeight: 900, color: '#0F172A', margin: '4px 0 20px' }}>₦{(nombaData.amount || 0).toLocaleString()}</h2>
 
-                                                    <div style={{ background: 'white', padding: '20px', borderRadius: '14px', border: '1px solid #E2E8F0', marginBottom: '16px', position: 'relative' }}>
-                                                        <div style={{ position: 'absolute', top: '15px', right: '15px', display: 'flex', alignItems: 'center', gap: '6px', background: '#FEF2F2', padding: '5px 10px', borderRadius: '100px', border: '1px solid #FEE2E2' }}>
-                                                            <Clock size={12} color="#EF4444" />
-                                                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#EF4444', letterSpacing: '0.5px' }}>{timeLeft || '44:59'}</span>
-                                                        </div>
-                                                        <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>Account Number</p>
-                                                        <p style={{ margin: 0, fontSize: isMobile ? '24px' : '32px', fontWeight: 900, color: '#4C1D95', letterSpacing: isMobile ? '1px' : '3px', userSelect: 'all', wordBreak: 'break-all', lineHeight: 1.2 }}>{nombaData.accountNumber}</p>
-                                                        <p style={{ margin: '10px 0 2px', fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>{nombaData.bankName}</p>
-                                                        <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#475569' }}>{nombaData.accountName}</p>
-                                                    </div>
+                                                    <div style={{ background: 'white', padding: isMobile ? '16px' : '20px', borderRadius: '14px', border: '1px solid #E2E8F0', marginBottom: '16px', position: 'relative', overflow: 'hidden' }}>
+                                                         <div style={{ 
+                                                             position: isMobile ? 'static' : 'absolute', 
+                                                             top: '15px', right: '15px', 
+                                                             display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start',
+                                                             gap: '6px', background: '#FEF2F2', padding: '5px 12px', borderRadius: '100px', 
+                                                             border: '1px solid #FEE2E2',
+                                                             marginBottom: isMobile ? '15px' : '0',
+                                                             width: isMobile ? 'fit-content' : 'auto',
+                                                             margin: isMobile ? '0 auto 12px' : '0'
+                                                         }}>
+                                                             <Clock size={12} color="#EF4444" />
+                                                             <span style={{ fontSize: '11px', fontWeight: 800, color: '#EF4444', letterSpacing: '0.5px' }}>{timeLeft || '44:59'}</span>
+                                                         </div>
+                                                         <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>Account Number</p>
+                                                         <p style={{ margin: 0, fontSize: isMobile ? '22px' : '32px', fontWeight: 900, color: '#4C1D95', letterSpacing: isMobile ? '1px' : '3px', userSelect: 'all', wordBreak: 'break-all', lineHeight: 1.2 }}>{nombaData.accountNumber}</p>
+                                                         <p style={{ margin: '10px 0 2px', fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>{nombaData.bankName}</p>
+                                                         <p style={{ margin: 0, fontSize: isMobile ? '13px' : '14px', fontWeight: 700, color: '#475569', wordBreak: 'break-word', maxWidth: '100%', lineHeight: 1.4 }}>{nombaData.accountName}</p>
+                                                     </div>
 
                                                     <button
                                                         onClick={() => {
