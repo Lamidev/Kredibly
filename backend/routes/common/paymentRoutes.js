@@ -10,27 +10,36 @@ const {
 const { handlePaystackWebhook } = require('../../controllers/common/webhookController');
 const saleController = require('../../controllers/business/saleController');
 
-// Verify payment and upgrade plan
+// ─── SUBSCRIPTION PAYMENTS (Paystack) ──────────────────────────────────────
 router.post('/verify', protect, verifyPayment);
 router.get('/upgrade-quote', protect, getUpgradeQuote);
 
-// Verify invoice payment (Public)
+// ─── INVOICE PAYMENTS (Paystack — Fallback / Secondary) ────────────────────
 router.post('/verify-invoice', verifyInvoicePayment);
 router.post('/initialize-transfer', initializeVirtualAccountPayment);
 
-const { initializeSquadAccount, handleSquadWebhook } = require('../../controllers/common/squadController');
+// ─── NOMBA PAYMENTS (Primary — Instant Bank Transfer) ──────────────────────
+const { 
+    initializeNombaAccount, 
+    handleNombaWebhook,
+    verifyNombaPaymentStatus 
+} = require('../../controllers/common/nombaController');
 
-// Squad Payments (Instant Settlement)
-router.post('/initialize-squad-account', initializeSquadAccount);
-router.post('/webhook/squad', handleSquadWebhook);
+router.post('/initialize-nomba-account', initializeNombaAccount);
+router.post('/verify-nomba-payment', verifyNombaPaymentStatus);
+router.post('/webhook/nomba', handleNombaWebhook);
 
-// Webhook for invoice payments and other Paystack events
+// ─── PAYSTACK WEBHOOK (Keep for subscription & fallback invoice payments) ──
 router.post('/webhook', handlePaystackWebhook);
 
-// Public Invoice Routes (to support Frontend PublicInvoicePage)
+// ─── SQUAD (Disabled — Kept for reference only) ────────────────────────────
+// const { initializeSquadAccount, handleSquadWebhook } = require('../../controllers/common/squadController');
+// router.post('/initialize-squad-account', initializeSquadAccount);
+// router.post('/webhook/squad', handleSquadWebhook);
+
+// ─── PUBLIC INVOICE ROUTES ─────────────────────────────────────────────────
 router.get('/invoice/:id', saleController.getSale);
 router.get('/share/:id', (req, res) => {
-    // Redirect to the frontend public invoice page
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/i/${req.params.id}`);
 });

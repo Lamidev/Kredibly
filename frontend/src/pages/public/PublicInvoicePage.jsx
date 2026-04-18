@@ -36,9 +36,11 @@ const PublicInvoicePage = () => {
     const [recentPaymentDate, setRecentPaymentDate] = useState(null);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [generating, setGenerating] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState('paystack'); // Default to Paystack
-    const [squadData, setSquadData] = useState(null);
-    const [loadingSquad, setLoadingSquad] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState('nomba'); // Default to Nomba
+    const [nombaData, setNombaData] = useState(null);
+    const [loadingNomba, setLoadingNomba] = useState(false);
+    const [verifyingPayment, setVerifyingPayment] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(null);
     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
     useEffect(() => {
@@ -109,6 +111,32 @@ const PublicInvoicePage = () => {
 
         return () => clearInterval(pollInterval);
     }, [id, sale, loading, showSuccessModal]);
+
+    // ⏱️ COUNTDOWN TIMER LOGIC
+    useEffect(() => {
+        if (!nombaData || !nombaData.expiresAt) return;
+
+        const target = new Date(nombaData.expiresAt).getTime();
+        
+        const updateTimer = () => {
+            const now = new Date().getTime();
+            const diff = target - now;
+
+            if (diff <= 0) {
+                setTimeLeft("Expired");
+                setNombaData(null); // Clear expired data
+                return;
+            }
+
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+        };
+
+        updateTimer();
+        const timer = setInterval(updateTimer, 1000);
+        return () => clearInterval(timer);
+    }, [nombaData]);
 
     const handleShare = async () => {
         if (navigator.share) {
@@ -196,32 +224,32 @@ const PublicInvoicePage = () => {
         }
     };
 
-    const handleSquadInitialization = async () => {
-        const amountToPay = paymentMode === 'full' 
-            ? (sale.totalAmount - (sale.paidAmount || 0)) 
+    const handleNombaInitialization = async () => {
+        const amountToPay = paymentMode === 'full'
+            ? (sale.totalAmount - (sale.paidAmount || 0))
             : parseFloat(customAmount);
 
         if (!amountToPay || amountToPay <= 0) {
-            toast.error("Please enter a valid amount");
+            toast.error('Please enter a valid amount');
             return;
         }
 
         try {
-            setLoadingSquad(true);
-            const res = await axios.post(`${API_URL}/payments/initialize-squad-account`, {
+            setLoadingNomba(true);
+            const res = await axios.post(`${API_URL}/payments/initialize-nomba-account`, {
                 invoiceId: id,
                 amount: amountToPay
             });
 
             if (res.data.success) {
-                setSquadData(res.data.data);
+                setNombaData(res.data.data);
             }
         } catch (err) {
-            console.error("Squad Initialization failed:", err);
-            const msg = err.response?.data?.squad_error || err.response?.data?.message || "Failed to load transfer details. Please try Card payment.";
+            console.error('Nomba Initialization failed:', err);
+            const msg = err.response?.data?.message || 'Bank transfer temporarily unavailable. Please use card payment below.';
             toast.error(msg);
         } finally {
-            setLoadingSquad(false);
+            setLoadingNomba(false);
         }
     };
 
@@ -231,12 +259,39 @@ const PublicInvoicePage = () => {
     const isOverdue = sale && !isPaid && sale.dueDate && new Date(sale.dueDate) < new Date();
     const isDebtRecovery = sale && !isPaid && (sale.status === 'partial' || isOverdue);
 
-    // Auto-init for Transfer modes
+    // 🔄 AUTO-RESET: Clear Nomba data if user changes amount or mode
     useEffect(() => {
-        if (paymentMethod === 'squad' && sale && !isPaid && !squadData) {
-            handleSquadInitialization();
+        if (nombaData) setNombaData(null);
+    }, [paymentMode, customAmount]);
+
+    const handleManualVerification = async () => {
+        if (!nombaData || !nombaData.reference) return;
+        setVerifyingPayment(true);
+        try {
+            const res = await axios.post(`${API_URL}/payments/verify-nomba-payment`, {
+                accountRef: nombaData.reference,
+                saleId: sale._id
+            });
+            
+            if (res.data.success) {
+                toast.success("Payment verified! Refreshing...");
+                // Refresh sale data
+                const saleRes = await axios.get(`${API_URL}/sales/${id}`);
+                if (saleRes.data.success) {
+                    setSale(saleRes.data.data);
+                    if (saleRes.data.data.paidAmount >= saleRes.data.data.totalAmount) {
+                        setShowSuccessModal(true);
+                    }
+                }
+            } else {
+                toast.error(res.data.message || "Payment not seen yet. Please wait a moment.");
+            }
+        } catch (err) {
+            toast.error("Status check failed. Please try again or wait for automatic update.");
+        } finally {
+            setVerifyingPayment(false);
         }
-    }, [paymentMethod, sale, isPaid, squadData]);
+    };
 
     const handlePaystackPayment = async (paymentChannel) => {
         const amountToPay = paymentMode === 'full' 
@@ -811,102 +866,143 @@ const PublicInvoicePage = () => {
                                 </AnimatePresence>
 
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                                        {/* ── NOMBA BANK TRANSFER (PRIMARY) ── */}
                                         <AnimatePresence mode="wait">
-                                            {squadData ? (
-                                                <motion.div 
+                                            {nombaData ? (
+                                                <motion.div
+                                                    key="nomba-details"
                                                     initial={{ opacity: 0, scale: 0.95 }}
                                                     animate={{ opacity: 1, scale: 1 }}
-                                                    style={{ background: '#F8FAFC', padding: '24px', borderRadius: '16px', border: '2px dashed #10B981', textAlign: 'center', boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.1)' }}
+                                                    style={{ background: '#F8FAFC', padding: '24px', borderRadius: '20px', border: '2px dashed #10B981', textAlign: 'center', boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.1)' }}
                                                 >
-                                                    <p style={{ margin: 0, fontSize: '11px', fontWeight: 900, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Please transfer exactly</p>
-                                                    <h2 style={{ fontSize: '28px', fontWeight: 900, color: '#0F172A', margin: '4px 0 16px' }}>₦{(squadData.amount || 0).toLocaleString()}</h2>
-                                                    
-                                                    <div style={{ background: 'white', padding: '16px', borderRadius: '12px', border: '1px solid #E2E8F0', marginBottom: '16px' }}>
-                                                        <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Account Number</p>
-                                                        <h1 style={{ margin: 0, fontSize: '36px', fontWeight: 950, color: '#4C1D95', letterSpacing: '2px', userSelect: 'all' }}>{squadData.accountNumber}</h1>
-                                                        <p style={{ margin: '8px 0 0', fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>{squadData.bankName}</p>
-                                                        <p style={{ margin: '4px 0 0', fontSize: '12px', fontWeight: 600, color: '#64748B' }}>{squadData.accountName}</p>
+                                                    <p style={{ margin: 0, fontSize: '11px', fontWeight: 900, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Transfer exactly this amount</p>
+                                                    <h2 style={{ fontSize: '32px', fontWeight: 900, color: '#0F172A', margin: '4px 0 20px' }}>₦{(nombaData.amount || 0).toLocaleString()}</h2>
+
+                                                    <div style={{ background: 'white', padding: '20px', borderRadius: '14px', border: '1px solid #E2E8F0', marginBottom: '16px', position: 'relative' }}>
+                                                        <div style={{ position: 'absolute', top: '10px', right: '15px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                            <Clock size={12} color="#EF4444" />
+                                                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#EF4444' }}>{timeLeft || '29:59'}</span>
+                                                        </div>
+                                                        <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>Account Number</p>
+                                                        <p style={{ margin: 0, fontSize: '38px', fontWeight: 900, color: '#4C1D95', letterSpacing: '3px', userSelect: 'all' }}>{nombaData.accountNumber}</p>
+                                                        <p style={{ margin: '10px 0 2px', fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>{nombaData.bankName}</p>
+                                                        <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: '#64748B' }}>{nombaData.accountName}</p>
                                                     </div>
 
-                                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                                        <button 
-                                                            onClick={() => {
-                                                                navigator.clipboard.writeText(squadData.accountNumber);
-                                                                toast.success("Account Number Copied!");
-                                                            }}
-                                                            style={{ flex: 1, padding: '12px', background: '#F1F5F9', border: 'none', borderRadius: '8px', fontWeight: 800, color: '#475569', cursor: 'pointer' }}
-                                                        >
-                                                            Copy Account No
-                                                        </button>
-                                                    </div>
+                                                    <button
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(nombaData.accountNumber);
+                                                            toast.success('Account number copied!');
+                                                        }}
+                                                        style={{ width: '100%', padding: '13px', background: '#4C1D95', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', marginBottom: '12px' }}
+                                                    >
+                                                        Copy Account Number
+                                                    </button>
 
-                                                    <div style={{ marginTop: '16px', padding: '12px', background: '#ECFDF5', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                                        <Loader2 size={16} className="spin-animation" color="#10B981" />
-                                                        <span style={{ fontSize: '12px', fontWeight: 800, color: '#047857' }}>Awaiting Transfer... Page will auto-update</span>
+                                                    <motion.button
+                                                        whileTap={{ scale: 0.98 }}
+                                                        onClick={handleManualVerification}
+                                                        disabled={verifyingPayment}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '13px',
+                                                            background: '#F1F5F9',
+                                                            color: '#475569',
+                                                            borderRadius: '10px',
+                                                            border: '1px solid #E2E8F0',
+                                                            fontSize: '13px',
+                                                            fontWeight: 800,
+                                                            cursor: verifyingPayment ? 'not-allowed' : 'pointer',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            gap: '8px',
+                                                            marginBottom: '12px'
+                                                        }}
+                                                    >
+                                                        {verifyingPayment ? <Loader2 size={16} className="spin-animation" /> : <ShieldCheck size={16} />}
+                                                        <span>{verifyingPayment ? 'Verifying...' : 'I have made the transfer'}</span>
+                                                    </motion.button>
+
+                                                    <div style={{ padding: '10px 16px', background: '#ECFDF5', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                                        <Loader2 size={15} className="spin-animation" color="#10B981" />
+                                                        <span style={{ fontSize: '12px', fontWeight: 800, color: '#047857' }}>Waiting for transfer... this page updates automatically</span>
                                                     </div>
                                                 </motion.div>
                                             ) : (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                                    <motion.button 
-                                                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                                        onClick={handleSquadInitialization}
-                                                        disabled={loadingSquad}
-                                                        style={{ 
-                                                            width: '100%', 
-                                                            padding: isMobile ? '18px' : '22px', 
-                                                            background: isOverdue ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)' : 'linear-gradient(135deg, #4C1D95 0%, #2E1065 100%)',
-                                                            color: 'white', 
-                                                            borderRadius: '16px', 
-                                                            border: 'none', 
-                                                            fontWeight: 800, 
-                                                            fontSize: isMobile ? '16px' : '18px', 
-                                                            cursor: loadingSquad ? 'not-allowed' : 'pointer', 
-                                                            display: 'flex', 
-                                                            alignItems: 'center', 
-                                                            justifyContent: 'center', 
-                                                            gap: '12px', 
-                                                            boxShadow: isOverdue ? '0 12px 20px rgba(239, 68, 68, 0.25)' : '0 12px 20px rgba(76, 29, 149, 0.3)',
-                                                        }}
-                                                    >
-                                                        {loadingSquad ? <Loader2 size={24} className="spin-animation" /> : <Building2 size={24} />}
-                                                        <span>{loadingSquad ? 'Generating Bank Details...' : 'Pay via Bank Transfer'}</span>
-                                                    </motion.button>
-                                                    
-                                                    {/* Fallback Paystack Button */}
-                                                    <button 
-                                                        onClick={() => handlePaystackPayment('bank_transfer')}
-                                                        disabled={verifying}
-                                                        style={{ 
-                                                            width: '100%', 
-                                                            padding: '14px', 
-                                                            background: 'white', 
-                                                            color: '#475569', 
-                                                            borderRadius: '12px', 
-                                                            border: '1px solid #E2E8F0', 
-                                                            fontWeight: 700, 
-                                                            fontSize: '14px', 
-                                                            cursor: verifying ? 'not-allowed' : 'pointer', 
-                                                            display: 'flex', 
-                                                            alignItems: 'center', 
-                                                            justifyContent: 'center', 
-                                                            gap: '8px', 
-                                                            marginTop: '8px'
-                                                        }}
-                                                    >
-                                                        {verifying ? <Loader2 size={16} className="spin-animation" /> : <CreditCard size={16} />}
-                                                        <span>Pay via Bank Transfer (Paystack)</span>
-                                                    </button>
-                                                </div>
+                                                <motion.button
+                                                    key="nomba-init"
+                                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                                    onClick={handleNombaInitialization}
+                                                    disabled={loadingNomba}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: isMobile ? '18px' : '22px',
+                                                        background: isOverdue ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)' : 'linear-gradient(135deg, #4C1D95 0%, #2E1065 100%)',
+                                                        color: 'white',
+                                                        borderRadius: '16px',
+                                                        border: 'none',
+                                                        fontWeight: 800,
+                                                        fontSize: isMobile ? '16px' : '18px',
+                                                        cursor: loadingNomba ? 'not-allowed' : 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '12px',
+                                                        boxShadow: isOverdue ? '0 12px 20px rgba(239, 68, 68, 0.25)' : '0 12px 20px rgba(76, 29, 149, 0.3)',
+                                                        opacity: loadingNomba ? 0.7 : 1
+                                                    }}
+                                                >
+                                                    {loadingNomba ? <Loader2 size={22} className="spin-animation" /> : <Building2 size={22} />}
+                                                    <span>
+                                                        {loadingNomba 
+                                                            ? 'Generating Bank Details...' 
+                                                            : `Pay ₦${(paymentMode === 'full' ? balance : (parseFloat(customAmount) || 0)).toLocaleString()} via Bank Transfer`}
+                                                    </span>
+                                                </motion.button>
                                             )}
                                         </AnimatePresence>
+
+                                        {/* ── PAYSTACK CARD / FALLBACK (SECONDARY) ── */}
+                                        <div style={{ position: 'relative', margin: '4px 0' }}>
+                                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center' }}><div style={{ width: '100%', borderTop: '1px solid #F1F5F9' }} /></div>
+                                            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+                                                <span style={{ background: 'white', padding: '0 12px', fontSize: '10px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>or pay with card</span>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={() => handlePaystackPayment('card')}
+                                            disabled={verifying}
+                                            style={{
+                                                width: '100%',
+                                                padding: '14px',
+                                                background: 'white',
+                                                color: '#475569',
+                                                borderRadius: '12px',
+                                                border: '1.5px solid #E2E8F0',
+                                                fontWeight: 700,
+                                                fontSize: '14px',
+                                                cursor: verifying ? 'not-allowed' : 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '8px'
+                                            }}
+                                        >
+                                            {verifying ? <Loader2 size={16} className="spin-animation" /> : <CreditCard size={16} color="#475569" />}
+                                            <span>Pay with Card (Paystack)</span>
+                                        </button>
+
                                 </div>
 
                                 <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                    <ShieldCheck size={16} color="#10B981" /> 100% Secure Bank Settlement
+                                    <ShieldCheck size={16} color="#10B981" /> 100% Secure Instant Settlement
                                 </div>
 
                                 {verifying && (
-                                    <motion.p 
+                                    <motion.p
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         style={{ textAlign: 'center', color: '#64748B', fontSize: '13px', fontWeight: 600, marginTop: '16px' }}
@@ -916,13 +1012,10 @@ const PublicInvoicePage = () => {
                                 )}
 
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginTop: '24px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', opacity: 0.6 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', opacity: 0.5 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                             <ShieldCheck size={14} color="#10B981" />
                                             <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Secure 256-bit SSL</span>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <img src="/paystack-logo.jpg" style={{ height: '32px', objectFit: 'contain', filter: 'contrast(1.1)' }} alt="Paystack" />
                                         </div>
                                     </div>
                                 </div>
