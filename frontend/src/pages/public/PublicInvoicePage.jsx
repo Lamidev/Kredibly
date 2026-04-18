@@ -411,7 +411,7 @@ const PublicInvoicePage = () => {
 
 
     return (
-        <div style={{ minHeight: '100vh', background: '#FDFCFE', color: '#0F172A', fontFamily: "'Inter', sans-serif", paddingBottom: '100px' }}>
+        <div style={{ minHeight: '100vh', background: '#FDFCFE', color: '#0F172A', fontFamily: "'Inter', sans-serif", paddingBottom: '40px' }}>
             <div className="printable-receipt" style={{ position: 'fixed', left: '-9999px', top: 0 }}>
                 {/* This hidden copy is what actually gets captured for PDF/Image */}
                 <div id="receipt-download-target" style={{ width: '600px', background: 'white', padding: '48px', fontFamily: "'Inter', sans-serif" }}>
@@ -880,14 +880,14 @@ const PublicInvoicePage = () => {
                                                     <h2 style={{ fontSize: '32px', fontWeight: 900, color: '#0F172A', margin: '4px 0 20px' }}>₦{(nombaData.amount || 0).toLocaleString()}</h2>
 
                                                     <div style={{ background: 'white', padding: '20px', borderRadius: '14px', border: '1px solid #E2E8F0', marginBottom: '16px', position: 'relative' }}>
-                                                        <div style={{ position: 'absolute', top: '10px', right: '15px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <div style={{ position: 'absolute', top: '15px', right: '15px', display: 'flex', alignItems: 'center', gap: '6px', background: '#FEF2F2', padding: '5px 10px', borderRadius: '100px', border: '1px solid #FEE2E2' }}>
                                                             <Clock size={12} color="#EF4444" />
-                                                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#EF4444' }}>{timeLeft || '29:59'}</span>
+                                                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#EF4444', letterSpacing: '0.5px' }}>{timeLeft || '29:59'}</span>
                                                         </div>
                                                         <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>Account Number</p>
-                                                        <p style={{ margin: 0, fontSize: '38px', fontWeight: 900, color: '#4C1D95', letterSpacing: '3px', userSelect: 'all' }}>{nombaData.accountNumber}</p>
+                                                        <p style={{ margin: 0, fontSize: isMobile ? '24px' : '32px', fontWeight: 900, color: '#4C1D95', letterSpacing: isMobile ? '1px' : '3px', userSelect: 'all', wordBreak: 'break-all', lineHeight: 1.2 }}>{nombaData.accountNumber}</p>
                                                         <p style={{ margin: '10px 0 2px', fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>{nombaData.bankName}</p>
-                                                        <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: '#64748B' }}>{nombaData.accountName}</p>
+                                                        <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#475569' }}>{nombaData.accountName}</p>
                                                     </div>
 
                                                     <button
@@ -1116,14 +1116,14 @@ const PublicInvoicePage = () => {
                     </div>
 
                     {/* Powered by Kredibly Badge */}
-                    <div style={{ marginTop: '32px', textAlign: 'center', borderTop: '1px solid #F8FAFC', paddingTop: '24px' }}>
+                    <div style={{ marginTop: '16px', textAlign: 'center', borderTop: '1px solid #F8FAFC', paddingTop: '16px' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: '#F8FAFC', borderRadius: '100px', border: '1px solid #F1F5F9' }}>
                             <img src="/krediblyrevamped.png" style={{ height: '14px', filter: 'brightness(1.1) contrast(1.1)' }} alt="Kredibly" />
                             <span style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Powered by Kredibly</span>
                         </div>
                     </div>
 
-                    <div style={{ marginTop: '48px', textAlign: 'center', padding: '40px 0', borderTop: '1px solid #F1F5F9' }}>
+                    <div style={{ marginTop: '16px', textAlign: 'center', padding: '24px 0', borderTop: '1px solid #F1F5F9' }}>
                         <p style={{ fontSize: '10px', fontWeight: 700, color: '#64748B', lineHeight: 1.8, maxWidth: '400px', margin: '0 auto' }}>
                             Kredibly is the intelligent ledger for modern commerce. Secure, transparent, and built for scale. © 2026.
                         </p>

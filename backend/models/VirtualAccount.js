@@ -34,6 +34,9 @@ const VirtualAccountSchema = new mongoose.Schema({
         unique: true,
         required: true
     },
+    accountName: {
+        type: String
+    },
     amount: {
         type: Number,
         required: true
@@ -45,7 +48,7 @@ const VirtualAccountSchema = new mongoose.Schema({
     },
     expiresAt: {
         type: Date,
-        default: () => new Date(Date.now() + 60 * 60 * 1000) // 1 hour expiry
+        default: () => new Date(Date.now() + 30 * 60 * 1000) // 30 mins expiry
     },
     createdAt: {
         type: Date,

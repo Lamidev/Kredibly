@@ -4,7 +4,7 @@ const VirtualAccount = require('../../models/VirtualAccount');
 const Notification = require('../../models/Notification');
 const ActivityLog = require('../../models/ActivityLog');
 const { logActivity } = require('../../utils/activityLogger');
-const { createDynamicVirtualAccount, verifyWebhookSignature, initiateTransfer } = require('../../utils/nomba');
+const { createDynamicVirtualAccount, verifyWebhookSignature, initiateTransfer, checkPaymentStatusByReference } = require('../../utils/nomba');
 const { sendWhatsAppAlert } = require('../whatsapp/whatsappController');
 
 /**
@@ -50,11 +50,11 @@ exports.initializeNombaAccount = async (req, res) => {
                 data: {
                     accountNumber: existing.accountNumber,
                     bankName: existing.bankName,
-                    accountName: `Pay Invoice ${sale.invoiceNumber}`,
+                    accountName: existing.accountName || (business.displayName ? `AKINBYTE/${business.displayName.toUpperCase()}` : `Pay Invoice ${sale.invoiceNumber}`),
                     amount: existing.amount,
                     reference: existing.reference,
                     expiresAt: existing.expiresAt,
-                    expiresIn: '1 hour'
+                    expiresIn: '30 minutes'
                 }
             });
         }
@@ -67,7 +67,7 @@ exports.initializeNombaAccount = async (req, res) => {
             nombaData = await createDynamicVirtualAccount({
                 amount: amountToPay,
                 invoiceNumber: sale.invoiceNumber,
-                customerName: sale.customerName || 'Customer',
+                merchantName: business.displayName || 'Kredibly Merchant',
                 customerEmail: sale.customerEmail || ''
             });
         } catch (nombaErr) {
@@ -88,6 +88,7 @@ exports.initializeNombaAccount = async (req, res) => {
             bankName: nombaData.bankName,
             provider: 'nomba',
             reference: nombaData.reference,
+            accountName: nombaData.accountName,
             amount: amountToPay,
             status: 'active',
             expiresAt: new Date(nombaData.expiresAt)
@@ -102,7 +103,7 @@ exports.initializeNombaAccount = async (req, res) => {
                 amount: vaRecord.amount,
                 reference: vaRecord.reference,
                 expiresAt: vaRecord.expiresAt,
-                expiresIn: '1 hour'
+                expiresIn: '30 minutes'
             }
         });
 
@@ -126,18 +127,22 @@ exports.verifyNombaPaymentStatus = async (req, res) => {
 
         if (status.paid) {
             // Trigger the same processing logic as the webhook
-            await processNombaPayment({
+            const result = await internalProcessNombaPayment({
                 accountReference: accountRef,
                 amount: status.amount,
                 transactionReference: status.transactionReference,
                 payer: status.payer
             });
             
-            return res.status(200).json({ 
-                success: true, 
-                message: 'Payment verified and processed!',
-                data: status 
-            });
+            if (result.success) {
+                return res.status(200).json({ 
+                    success: true, 
+                    message: result.message || 'Payment verified and processed!',
+                    data: status 
+                });
+            } else {
+                return res.status(400).json({ success: false, message: result.message });
+            }
         }
 
         return res.status(200).json({ 
@@ -151,92 +156,8 @@ exports.verifyNombaPaymentStatus = async (req, res) => {
 };
 
 /**
- * Common logic to process Nomba payment (extracted for reuse)
- */
-async function processNombaPayment(data) {
-    const { accountReference, amount, transactionReference, payer, fee } = data;
-    
-    // Calculate net amount (Gross amount - Nomba fees)
-    // If fee isn't provided, we assume a small buffer or handle it
-    const netAmount = data.netAmount || (amount - (fee || 0));
-
-    const existingTx = await Sale.findOne({ "payments.transactionId": transactionReference });
-    if (existingTx) return;
-
-    const va = await VirtualAccount.findOne({ reference: accountReference }).populate('businessId');
-    if (!va) {
-        console.error('❌ Nomba Payment: No matching virtual account for', accountReference);
-        return;
-    }
-
-    const sale = await Sale.findById(va.saleId);
-    if (!sale) return;
-
-    const business = va.businessId;
-
-    // Record the GROSS amount (what the customer paid) on the invoice
-    sale.payments.push({
-        amount: amount, 
-        method: 'bank_transfer',
-        transactionId: transactionReference,
-        status: 'completed',
-        date: new Date()
-    });
-
-    const totalPaid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
-    sale.paidAmount = totalPaid;
-    sale.status = totalPaid >= sale.totalAmount ? 'paid' : 'partial';
-    await sale.save();
-
-    console.log(`✅ Paid: ₦${amount} for Inv ${sale.invoiceNumber} (${sale.status})`);
-
-    // WhatsApp Alert to Merchant
-    if (business.whatsappNumber) {
-        try {
-            await sendWhatsAppAlert({
-                to: business.whatsappNumber,
-                template: 'kreddy_payment_alert',
-                vars: [
-                    business.displayName || 'Merchant',
-                    `₦${amount.toLocaleString()}`,
-                    sale.invoiceNumber,
-                    sale.customerName || 'Customer'
-                ]
-            });
-        } catch (waErr) {
-            console.error('❌ Whatsapp Alert Failed:', waErr.message);
-        }
-    }
-
-    // Auto-Sweep the NET amount to the Merchant's bank account
-    const bankDetails = business.bankDetails;
-    if (bankDetails && bankDetails.accountNumber) {
-        try {
-            // We sweep the netAmount (Gross - Fee) to avoid "Insufficient Balance" errors
-            await initiateTransfer({
-                amount: netAmount,
-                bankCode: bankDetails.bankCode,
-                accountNumber: bankDetails.accountNumber,
-                accountName: bankDetails.accountName,
-                narration: `Kredibly INV#${sale.invoiceNumber}`
-            });
-            console.log(`✅ Auto-swept Net ₦${netAmount} (after fees) to ${bankDetails.accountName}`);
-        } catch (sweepErr) {
-            console.error(`❌ Auto-sweep FAILED for ${sale.invoiceNumber}. Balance might be too low:`, sweepErr.message);
-        }
-    }
-}
-
-/**
  * 🔔 HANDLE NOMBA PAYMENT WEBHOOK
  * Nomba fires this when a customer successfully pays into a virtual account.
- * This is the core of the instant payment flow — it:
- *   1. Verifies the signature
- *   2. Matches the payment to an invoice
- *   3. Marks invoice as paid
- *   4. Notifies merchant via WhatsApp
- *   5. Auto-sweeps funds to merchant's bank account
- * 
  * Route: POST /api/payments/webhook/nomba
  */
 exports.handleNombaWebhook = async (req, res) => {
@@ -279,48 +200,69 @@ exports.handleNombaWebhook = async (req, res) => {
             return;
         }
 
-        // 4. Find the matching Virtual Account record by reference
+        // 4. Trigger unified processing logic
+        await internalProcessNombaPayment({
+            accountReference,
+            amount: amountPaid,
+            transactionReference: paymentData?.transactionReference || accountReference,
+            payer: paymentData?.payerName || 'Bank Transfer'
+        });
+
+    } catch (err) {
+        console.error('❌ Nomba Webhook Processing Error:', err);
+    }
+};
+
+/**
+ * 🛠️ UNIFIED NOMBA PAYMENT PROCESSOR
+ * Handles idempotency, ledger updates, notifications, and auto-sweeps.
+ */
+async function internalProcessNombaPayment({ accountReference, amount, transactionReference, payer }) {
+    try {
+        // 1. Find matching Virtual Account
         const vaRecord = await VirtualAccount.findOne({ reference: accountReference });
         if (!vaRecord) {
-            console.warn(`⚠️ Nomba Webhook: No VA record found for reference ${accountReference}`);
-            return;
+            console.warn(`⚠️ Payment Processor: No VA record found for reference ${accountReference}`);
+            return { success: false, message: "Virtual account not found" };
         }
 
-        // 5. Find the sale
+        // 2. Find the sale
         const sale = await Sale.findById(vaRecord.saleId).populate('businessId');
         if (!sale) {
-            console.error(`❌ Nomba Webhook: Sale not found for VA ${vaRecord._id}`);
-            return;
+            console.error(`❌ Payment Processor: Sale not found for VA ${vaRecord._id}`);
+            return { success: false, message: "Sale record not found" };
         }
 
-        // 6. Idempotency check — don't double-process the same payment
-        const isDuplicate = sale.payments?.some(p => p.reference === accountReference);
+        // 3. Idempotency check — don't double-process the same payment
+        const isDuplicate = sale.payments?.some(p => p.reference === transactionReference || p.reference === accountReference);
         if (isDuplicate) {
-            console.log(`🔁 Nomba Webhook: Already processed ${accountReference} — skipping`);
-            return;
+            console.log(`🔁 Payment Processor: Already processed ${transactionReference} — skipping`);
+            return { success: true, message: "Already processed" };
         }
 
-        // 7. Record the payment on the invoice
-        const creditAmount = vaRecord.amount; // Use the invoice amount, not raw transfer amount
+        // 4. Record the payment on the invoice
+        // Note: We use the actual amount transferred if it's within a threshold, otherwise credited VA amount
+        const creditAmount = Math.abs(amount - vaRecord.amount) < 2 ? amount : vaRecord.amount;
+        
         sale.payments.push({
             amount: creditAmount,
             method: 'Nomba',
-            reference: accountReference,
+            reference: transactionReference || accountReference,
             date: new Date()
         });
-        await sale.save(); // Triggers status flip to 'paid' via pre-save hook
+        await sale.save(); // Triggers status flip logic in Sale.js
 
-        // 8. Mark VA as used
+        // 5. Mark VA as used
         vaRecord.status = 'used';
         await vaRecord.save();
 
         const business = sale.businessId;
         const totalPaid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
-        const balance = sale.totalAmount - totalPaid;
+        const balanceRemaining = sale.totalAmount - totalPaid;
 
         console.log(`✅ Nomba: ₦${creditAmount} recorded for Invoice #${sale.invoiceNumber}`);
 
-        // 9. Create in-app notification
+        // 6. Notifications
         if (business) {
             await Notification.create({
                 businessId: business._id,
@@ -338,70 +280,45 @@ exports.handleNombaWebhook = async (req, res) => {
                 details: `Nomba instant payment of ₦${creditAmount.toLocaleString()} verified for Invoice #${sale.invoiceNumber}`
             });
 
-            // 10. Notify merchant on WhatsApp IMMEDIATELY
+            // 7. WhatsApp Alert to Merchant
             if (business.whatsappNumber) {
-                const statusLine = balance <= 0
+                const statusLine = balanceRemaining <= 0
                     ? '✅ *Fully Paid!* Invoice is now cleared.'
-                    : `⏳ *Balance Remaining:* ₦${balance.toLocaleString()}`;
+                    : `⏳ *Balance Remaining:* ₦${balanceRemaining.toLocaleString()}`;
 
-                const msg = `💰 *Payment Received!*\n\n*₦${creditAmount.toLocaleString()}* just landed for *Invoice #${sale.invoiceNumber}* (${sale.customerName}).\n\n${statusLine}\n\n_Money is being swept to your account now._`;
+                const alertMsg = `💰 *Payment Received!*\n\n*₦${creditAmount.toLocaleString()}* just landed for *Invoice #${sale.invoiceNumber}* (${sale.customerName}).\n\n${statusLine}\n\n_Money is being swept to your account now._`;
 
-                await sendWhatsAppAlert(business.whatsappNumber, 'Chief', msg).catch(e => {
-                    console.error('WhatsApp Notify Error (non-blocking):', e.message);
+                await sendWhatsAppAlert(business.whatsappNumber, business.displayName || 'Chief', alertMsg).catch(e => {
+                    console.error('WhatsApp Notify Error:', e.message);
                 });
             }
 
-            // 11. AUTO-SWEEP: Send money to merchant's registered bank account immediately
+            // 8. AUTO-SWEEP: Instant Payout to Merchant's Bank Account
             const bankDetails = business.bankDetails;
-            if (
-                bankDetails?.bankCode &&
-                bankDetails?.accountNumber &&
-                bankDetails?.accountName &&
-                !business.isCompromised // Safety: don't sweep if account is flagged
-            ) {
-                // Check 24h bank detail lock (security feature from existing code)
-                const isLocked = bankDetails.bankDetailsLockUntil && new Date() < bankDetails.bankDetailsLockUntil;
+            const isLocked = bankDetails?.bankDetailsLockUntil && new Date() < new Date(bankDetails.bankDetailsLockUntil);
 
-                if (isLocked) {
-                    console.warn(`🛡️ Auto-sweep BLOCKED for ${business.displayName} — bank details lock active. Holding funds.`);
-                    // Funds stay in Nomba account until lock expires
-                } else {
-                    try {
-                        await initiateTransfer({
-                            amount: creditAmount,
-                            bankCode: bankDetails.bankCode,
-                            accountNumber: bankDetails.accountNumber,
-                            accountName: bankDetails.accountName,
-                            narration: `Kredibly INV#${sale.invoiceNumber} - ${sale.customerName}`
-                        });
-                        console.log(`✅ Auto-swept ₦${creditAmount} to ${bankDetails.accountName} (${bankDetails.accountNumber})`);
-                    } catch (sweepErr) {
-                        console.error(`❌ Auto-sweep FAILED for ${sale.invoiceNumber}:`, sweepErr.message);
-                        // Non-fatal: payment is recorded, merchant will be notified of the failure
-                        if (business.whatsappNumber) {
-                            await sendWhatsAppAlert(
-                                business.whatsappNumber,
-                                'Alert',
-                                `⚠️ Payment received for Invoice #${sale.invoiceNumber} but automatic bank sweep failed. Please contact support. Ref: ${accountReference}`
-                            ).catch(() => {});
-                        }
-                    }
+            if (bankDetails?.bankCode && bankDetails?.accountNumber && !isLocked && !business.isCompromised) {
+                try {
+                    // We sweep the gross amount (Nomba handles fee deduction from wallet)
+                    await initiateTransfer({
+                        amount: creditAmount,
+                        bankCode: bankDetails.bankCode,
+                        accountNumber: bankDetails.accountNumber,
+                        accountName: bankDetails.accountName || business.displayName,
+                        narration: `Kredibly INV#${sale.invoiceNumber} - ${sale.customerName}`
+                    });
+                    console.log(`✅ Auto-swept ₦${creditAmount} to ${bankDetails.accountName}`);
+                } catch (sweepErr) {
+                    console.error(`❌ Auto-sweep FAILED for ${sale.invoiceNumber}:`, sweepErr.message);
                 }
-            } else {
-                // No bank details set — funds stay in Nomba until merchant adds bank details
-                console.log(`ℹ️ No bank details for ${business.displayName} — funds held in Nomba account`);
-                if (business.whatsappNumber) {
-                    await sendWhatsAppAlert(
-                        business.whatsappNumber,
-                        'Action Required',
-                        `💰 ₦${creditAmount.toLocaleString()} received for Invoice #${sale.invoiceNumber}!\n\n⚠️ *Action Required:* Add your bank details in the Kredibly dashboard to enable automatic payouts.`
-                    ).catch(() => {});
-                }
+            } else if (isLocked) {
+                console.warn(`🛡️ Auto-sweep BLOCKED: Security lock active for ${business.displayName}`);
             }
         }
 
+        return { success: true };
     } catch (err) {
-        console.error('❌ Nomba Webhook Processing Error:', err);
-        // We already sent 200, so Nomba won't retry — log for investigation
+        console.error('❌ internalProcessNombaPayment Error:', err);
+        return { success: false, message: "Internal processing error" };
     }
-};
+}
