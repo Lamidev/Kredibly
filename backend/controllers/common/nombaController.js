@@ -184,7 +184,8 @@ exports.handleNombaWebhook = async (req, res) => {
         console.log(`🟢 Nomba Webhook received: ${eventType}`);
 
         // 3. Only process successful payment events
-        if (eventType !== 'payment_success' && eventType !== 'charge.success') {
+        const acceptedEvents = ['payment_success', 'charge.success', 'transaction.success', 'transfer.success', 'SUCCESS'];
+        if (!acceptedEvents.includes(eventType)) {
             console.log(`ℹ️ Nomba Webhook: Ignored event type "${eventType}"`);
             return;
         }

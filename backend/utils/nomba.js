@@ -188,7 +188,7 @@ const checkPaymentStatusByReference = async (accountReference) => {
             }
         );
 
-        const transactions = response.data?.data?.content || [];
+        const transactions = response.data?.data?.results || response.data?.data?.content || [];
         const successTx = transactions.find(tx => tx.status === 'SUCCESS' || tx.status === 'SUCCESSFUL');
         
         if (successTx) {
