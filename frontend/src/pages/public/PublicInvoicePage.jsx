@@ -75,7 +75,11 @@ const PublicInvoicePage = () => {
     useEffect(() => {
         if (!sale || loading) return;
         
-        const calcBalance = (s) => s.totalAmount - (s.paidAmount || s.payments?.reduce((sum, p) => sum + p.amount, 0) || 0);
+        const calcBalance = (s) => {
+            const paid = s.paidAmount || s.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+            const bal = s.totalAmount - paid;
+            return bal < 1 ? 0 : bal; // Consider less than 1 Naira as paid to handle float issues
+        };
         const currentBalance = calcBalance(sale);
         
         if (currentBalance <= 0) return; // Stop polling if fully paid
@@ -254,8 +258,14 @@ const PublicInvoicePage = () => {
     };
 
     // Derived State
-    const balance = sale ? (sale.totalAmount - (sale.paidAmount || sale.payments?.reduce((s, p) => s + p.amount, 0) || 0)) : 0;
-    const isPaid = sale ? balance <= 0 : false;
+    const calcCurrentBalance = (s) => {
+        if (!s) return 0;
+        const paid = s.paidAmount || s.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+        const bal = s.totalAmount - paid;
+        return bal < 1 ? 0 : bal;
+    };
+    const balance = calcCurrentBalance(sale);
+    const isPaid = sale ? (balance <= 0) : false;
     const isOverdue = sale && !isPaid && sale.dueDate && new Date(sale.dueDate) < new Date();
     const isDebtRecovery = sale && !isPaid && (sale.status === 'partial' || isOverdue);
 
@@ -279,7 +289,8 @@ const PublicInvoicePage = () => {
                 const saleRes = await axios.get(`${API_URL}/sales/${id}`);
                 if (saleRes.data.success) {
                     setSale(saleRes.data.data);
-                    if (saleRes.data.data.paidAmount >= saleRes.data.data.totalAmount) {
+                    const finalBalance = calcCurrentBalance(saleRes.data.data);
+                    if (finalBalance <= 0) {
                         setShowSuccessModal(true);
                     }
                 }

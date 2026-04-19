@@ -610,16 +610,37 @@ exports.sendWhatsAppMessage = sendReply;
 exports.sendWhatsAppTemplate = sendTemplateMessage;
 
 const sendWhatsAppAlert = async (to, bossTitle, textMessage) => {
-    const components = [
-        {
-            type: "body",
-            parameters: [
-                { type: "text", text: bossTitle },
-                { type: "text", text: textMessage }
-            ]
+    try {
+        const cleanTo = String(to).replace(/\D/g, '');
+        // 🛡️ COST SAVING: Check if the 24-hour customer service window is open
+        const profile = await BusinessProfile.findOne({ whatsappNumber: cleanTo });
+        
+        const now = new Date();
+        const isWindowOpen = profile?.lastInboundAt && (now - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
+
+        if (isWindowOpen) {
+            console.log(`💡 WhatsApp Session Open for ${cleanTo} — Sending free session message`);
+            // Format as a bold message with person's title
+            const sessionText = `*${bossTitle}!* 🚀\n\n${textMessage}`;
+            return await sendReply(cleanTo, sessionText);
         }
-    ];
-    return await sendTemplateMessage(to, 'kreddy_system_alert', components);
+
+        // Window Closed or Profile not found: Use official Template (Paid)
+        console.log(`🔔 WhatsApp Session Closed for ${cleanTo} — Sending paid template message`);
+        const components = [
+            {
+                type: "body",
+                parameters: [
+                    { type: "text", text: bossTitle },
+                    { type: "text", text: textMessage }
+                ]
+            }
+        ];
+        return await sendTemplateMessage(to, 'kreddy_system_alert', components);
+    } catch (err) {
+        console.error("❌ sendWhatsAppAlert Error:", err.message);
+        return false;
+    }
 };
 exports.sendWhatsAppAlert = sendWhatsAppAlert;
 

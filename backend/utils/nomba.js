@@ -247,17 +247,17 @@ const initiateTransfer = async ({ amount, bankCode, accountNumber, accountName, 
     try {
         const token = await getAccessToken();
 
+        // 🚀 NOMBA V2: Transfers use the v2 API with slightly different fields
         const response = await axios.post(
-            `${NOMBA_BASE_URL}/transfers/single`,
+            `https://api.nomba.com/v2/transfers/bank`,
             {
-                amount: Math.round(amount * 100),
+                amount: Math.round(amount * 100), // Nomba v2 still expects kobo
                 bankCode,
                 accountNumber,
                 accountName,
                 narration: narration || 'Kredibly Invoice Settlement',
-                currency: 'NGN',
                 senderName: 'Kredibly',
-                reference: `KREDSWEEP_${Date.now()}_${Math.floor(Math.random() * 9999)}`
+                merchantTxRef: `KREDSWEEP_${Date.now()}_${Math.floor(Math.random() * 9999)}`
             },
             {
                 headers: {
@@ -274,7 +274,7 @@ const initiateTransfer = async ({ amount, bankCode, accountNumber, accountName, 
 
     } catch (err) {
         console.error('❌ Nomba Transfer Error:', err.response?.data || err.message);
-        throw new Error(err.response?.data?.message || 'Failed to initiate Nomba transfer');
+        throw new Error(err.response?.data?.message || err.response?.data?.description || 'Failed to initiate Nomba transfer');
     }
 };
 
