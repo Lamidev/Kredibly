@@ -333,34 +333,22 @@ const FINISH_SETUP_TEMPLATE = `
 const GROWTH_MASTERCLASS_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="en">
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.8; color: #374151; max-width: 600px; margin: 0 auto; padding: 24px;">
-  <div style="margin-bottom: 32px;">
-    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
-  </div>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.8; color: #111827; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <p style="font-size: 16px; margin-top: 0;">Good morning {name},</p>
   
-  <p style="font-size: 13px; font-weight: 800; color: #4C1D95; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">The Morning Insight</p>
-  <h2 style="font-size: 22px; font-weight: 800; color: #111827; margin: 0 0 24px;">Rise & Grind, {name}! 🌅</h2>
-  
-  <div style="background: #F9FAFB; padding: 24px; border-radius: 16px; margin-bottom: 32px; border: 1px solid #F1F5F9;">
-    <p style="margin: 0; color: #111827; font-size: 16px; line-height: 1.6;">{adviceText}</p>
-  </div>
+  <p style="font-size: 16px; color: #374151;">{adviceText}</p>
 
-  <div style="margin-bottom: 32px;">
-    <p style="font-size: 14px; color: #6B7280; font-weight: 600; margin-bottom: 16px;">Want to see your full financial summary for yesterday?</p>
-    <a href="https://wa.me/2347071238658?text=Kreddy%2C%20I'm%20ready%20to%20grow%20today!" 
-       style="background-color: #4C1D95; color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block;">
-       Check My Performance 🛡️
-    </a>
-  </div>
+  <p style="font-size: 15px; color: #374151; margin-top: 24px;">
+    To see your full financial performance for yesterday or record a new sale, simply visit your dashboard or send me a message on WhatsApp:
+    <br>
+    <a href="https://wa.me/2347071238658?text=Kreddy%2C%20I'm%20ready%20to%20grow%20today!" style="color: #4C1D95; font-weight: 700; text-decoration: underline;">Open Kreddy on WhatsApp →</a>
+  </p>
 
-  <p style="font-size: 14px; color: #6B7280;">Keep scaling your empire today. Kreddy is standing by.</p>
+  <p style="font-size: 15px; color: #374151;">Let's make today a winning day for your business.</p>
 
-  <div style="margin-top: 48px;">
-    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">The Kredibly Team</p>
-    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">hello@usekredibly.com</p>
-  </div>
-  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
-    <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
+  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px;">
+    <p style="font-weight: 700; color: #111827; margin: 0; font-size: 16px;">Oluwatosin</p>
+    <p style="color: #6B7280; font-size: 14px; margin: 0;">Founder, Kredibly</p>
   </div>
 </body>
 </html>

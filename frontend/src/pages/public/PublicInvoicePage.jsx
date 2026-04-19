@@ -78,11 +78,28 @@ const PublicInvoicePage = () => {
         const calcBalance = (s) => {
             const paid = s.paidAmount || s.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
             const bal = s.totalAmount - paid;
-            return bal < 1 ? 0 : bal; // Consider less than 1 Naira as paid to handle float issues
+            return bal < 1 ? 0 : bal; 
         };
-        const currentBalance = calcBalance(sale);
+
+        const initialBalance = calcBalance(sale);
         
-        if (currentBalance <= 0) return; // Stop polling if fully paid
+        // 🏆 SUCCESS CATCH: If it's already paid on mount/update but modal isn't shown yet
+        if (initialBalance <= 0 && !showSuccessModal && sale.payments?.length > 0) {
+            // Check if it's a recent payment (within 5 minutes) to avoid annoying old visits
+            const lastPayment = sale.payments[sale.payments.length - 1];
+            const isRecent = (new Date() - new Date(lastPayment.date)) < (5 * 60 * 1000);
+            
+            if (isRecent) {
+                setLastPaymentAmount(lastPayment.amount);
+                setRecentPaymentDate(new Date(lastPayment.date));
+                setCustomAmount('');
+                setCustomAmountDisplay('');
+                setShowSuccessModal(true);
+            }
+            return;
+        }
+
+        if (initialBalance <= 0) return;
 
         const pollInterval = setInterval(async () => {
             try {
@@ -91,30 +108,24 @@ const PublicInvoicePage = () => {
                     const latestSale = res.data.data;
                     const newBalance = calcBalance(latestSale);
                     
-                    // If balance decreased dynamically
-                    if (newBalance < currentBalance) {
+                    if (newBalance < initialBalance) {
                         setSale(latestSale);
-                        if (newBalance <= 0 && !showSuccessModal) {
-                            setLastPaymentAmount(currentBalance - newBalance);
+                        if (newBalance <= 0) {
+                            const lastPayment = latestSale.payments[latestSale.payments.length - 1];
+                            setLastPaymentAmount(lastPayment?.amount || initialBalance);
                             setRecentPaymentDate(new Date());
                             setCustomAmount('');
                             setCustomAmountDisplay('');
                             setShowSuccessModal(true);
-                        } else {
-                            toast.success("Payment verified successfully on the ledger! 🛡️");
+                            clearInterval(pollInterval);
                         }
-                    } else if (latestSale.updatedAt !== sale.updatedAt) {
-                        // Only update state if something else changed (e.g. description)
-                        setSale(latestSale);
                     }
                 }
-            } catch (err) {
-                // Silent catch for background polling
-            }
-        }, 8000); // Poll every 8 seconds
+            } catch (err) { }
+        }, 4000);
 
         return () => clearInterval(pollInterval);
-    }, [id, sale, loading, showSuccessModal]);
+    }, [id, sale?.status, loading, showSuccessModal]);
 
     // ⏱️ COUNTDOWN TIMER LOGIC
     useEffect(() => {
@@ -291,6 +302,8 @@ const PublicInvoicePage = () => {
                     setSale(saleRes.data.data);
                     const finalBalance = calcCurrentBalance(saleRes.data.data);
                     if (finalBalance <= 0) {
+                        setCustomAmount('');
+                        setCustomAmountDisplay('');
                         setShowSuccessModal(true);
                     }
                 }

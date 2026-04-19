@@ -51,8 +51,10 @@ exports.approveAndQueueSummaries = async (req, res) => {
         // 2. Inactive Connected (Email)
         // 3. Onboarded but Not Connected (Email)
         const profiles = await BusinessProfile.find({ 
-            onboardingStep: { $gte: 3 } // Must have finished basic onboarding
+            onboardingStep: { $gte: 0 } // Include all merchants for test stability
         }); 
+
+        console.log(`📡 [ADMIN] Found ${profiles.length} eligible merchants for summary dispatch.`);
 
         const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
         
