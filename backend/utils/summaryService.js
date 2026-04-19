@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const BusinessProfile = require("../models/BusinessProfile");
 const Sale = require("../models/Sale");
 const Reminder = require("../models/Reminder");
@@ -11,8 +12,17 @@ const { getDailyAdvice } = require("./adviceService");
  * 1. Active Users (<24h window): Full Accountant Summary on WhatsApp (FREE)
  * 2. Inactive Users (>24h window): Growth Masterclass on Email (DRIVES ENGAGEMENT)
  */
-const sendIndividualMorningSummary = async (profile, now = new Date()) => {
+const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
     try {
+        console.log(`🔍 [SUMMARY] Resolving merchant record for input: ${profileInput}...`);
+        let profile = profileInput;
+        // ⚡ FIX: If we received an ID instead of a full object (from Job Runner), fetch it.
+        if (typeof profile === "string" || mongoose.Types.ObjectId.isValid(profile)) {
+            profile = await BusinessProfile.findById(profileInput);
+        }
+
+        if (!profile) return { status: "failed", error: "Profile not found" };
+
         const startOfToday = new Date(now);
         startOfToday.setHours(0, 0, 0, 0);
 
@@ -82,10 +92,12 @@ const sendIndividualMorningSummary = async (profile, now = new Date()) => {
 
             const sent = await sendWhatsAppMessage(profile.whatsappNumber, message);
             if (sent) {
+                console.log(`✅ [WHATSAPP] Summary delivered to ${profile.displayName}.`);
                 profile.lastSummaryAt = new Date();
                 await profile.save();
                 return { status: "sent", channel: "whatsapp" };
             } else {
+                console.error(`❌ [WHATSAPP] Delivery FAILED for ${profile.displayName}.`);
                 return { status: "failed", error: "WhatsApp Free-form failed for active user" };
             }
 
@@ -106,6 +118,7 @@ const sendIndividualMorningSummary = async (profile, now = new Date()) => {
                 html: emailHtml
             });
 
+            console.log(`✅ [EMAIL] Growth Masterclass sent to ${user.email}.`);
             profile.lastSummaryAt = new Date();
             await profile.save();
             return { status: "sent", channel: "email" };

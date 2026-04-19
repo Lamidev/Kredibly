@@ -71,7 +71,7 @@ const executeAutonomousDispatch = async (isBackup = false) => {
         // 2. Step 2: Individual Merchant Dispatch
         // Expanded to include Group 3 (Onboarded but not yet connected)
         const profiles = await BusinessProfile.find({ 
-            onboardingStep: { $gte: 3 } 
+            onboardingStep: { $gte: 0 } 
         });
 
         const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
@@ -502,6 +502,7 @@ const scheduleBankLockChecker = () => {
  * Processes the queue created by both Admin (Manual) and Chron (Auto)
  */
 const startBackgroundJobRunner = () => {
+    console.log("⏰ Background Job Runner Initialized (Processing every 60s)");
     cron.schedule("* * * * *", async () => {
         try {
             // Find jobs scheduled for now or in the past that are pending
@@ -524,9 +525,9 @@ const startBackgroundJobRunner = () => {
                 if (!acquired) continue;
 
                 try {
-                    let result = { status: "failed", error: "Unknown type" };
-
                     // 2. Dispatch based on type
+                    console.log(`🚀 Processing ${job.type} for ${job.businessId}...`);
+                    let result = { status: "failed", error: "Unknown type" };
                     switch (job.type) {
                         case "MORNING_SUMMARY":
                             result = await sendIndividualMorningSummary(job.businessId);
