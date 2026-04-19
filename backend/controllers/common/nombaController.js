@@ -206,6 +206,7 @@ exports.handleNombaWebhook = async (req, res) => {
             'transaction.success', 'transaction_success',
             'transfer.success', 'transfer_success',
             'payout_success', 'payout.success',
+            'order_payment_success', 'order.payment.success',
             'SUCCESS'
         ];
         if (!acceptedEvents.includes(eventType)) {
@@ -218,8 +219,9 @@ exports.handleNombaWebhook = async (req, res) => {
             || paymentData?.account_reference 
             || paymentData?.orderReference
             || paymentData?.transactionReference;
-        const amountPaidInKobo = paymentData?.amount || paymentData?.amountPaid || 0;
-        const amountPaid = amountPaidInKobo / 100; // Convert from kobo
+        const amountRaw = paymentData?.amount || paymentData?.amountPaid || 0;
+        // Fail-safe: If it looks like Naira (e.g. 100.0 instead of 10000), don't divide by 100
+        const amountPaid = amountRaw > 500 ? amountRaw / 100 : amountRaw;
 
         if (!accountReference || amountPaid <= 0) {
             console.warn('⚠️ Nomba Webhook: Missing reference or amount — ignoring');
@@ -260,29 +262,35 @@ async function internalProcessNombaPayment({ accountReference, amount, transacti
         }
 
         // 3. Idempotency check — don't double-process the same payment
-        const isDuplicate = sale.payments?.some(p => p.reference === transactionReference || p.reference === accountReference);
+        const isDuplicate = sale.payments?.some(p => 
+            p.reference === transactionReference || 
+            (p.method === 'Nomba' && Math.abs(p.amount - amount) < 0.1 && Math.abs(new Date() - new Date(p.date)) < 300000)
+        );
+
         if (isDuplicate) {
             console.log(`🔁 Payment Processor: Already processed ${transactionReference} — skipping`);
             return { success: true, message: "Already processed" };
         }
 
         // 4. Record the payment on the invoice
-        // Note: We use the actual amount transferred if it's within a threshold, otherwise credited VA amount
-        const creditAmount = Math.abs(amount - vaRecord.amount) < 2 ? amount : vaRecord.amount;
+        // We use the amount reported by Nomba (fail-safe already applied)
+        const creditAmount = amount;
         
+        // Ensure business is captured before save to avoid de-population issues
+        const business = sale.businessId;
+
         sale.payments.push({
             amount: creditAmount,
             method: 'Nomba',
             reference: transactionReference || accountReference,
             date: new Date()
         });
+        
         await sale.save(); // Triggers status flip logic in Sale.js
 
         // 5. Mark VA as used
         vaRecord.status = 'used';
         await vaRecord.save();
-
-        const business = sale.businessId;
         const totalPaid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
         const balanceRemaining = sale.totalAmount - totalPaid;
 
@@ -293,7 +301,7 @@ async function internalProcessNombaPayment({ accountReference, amount, transacti
             await Notification.create({
                 businessId: business._id,
                 title: '💰 Payment Received',
-                message: `₦${creditAmount.toLocaleString()} received for Invoice #${sale.invoiceNumber} from ${sale.customerName}.`,
+                message: `₦${creditAmount.toLocaleString()} received for Invoice #${sale.invoiceNumber} from ${sale.customerName || payer}.`,
                 type: 'payment',
                 saleId: sale._id
             });
@@ -303,20 +311,24 @@ async function internalProcessNombaPayment({ accountReference, amount, transacti
                 action: 'PAYMENT_RECEIVED',
                 entityType: 'PAYMENT',
                 entityId: sale._id,
-                details: `Nomba instant payment of ₦${creditAmount.toLocaleString()} verified for Invoice #${sale.invoiceNumber}`
+                details: `Nomba payment of ₦${creditAmount.toLocaleString()} verified for Invoice #${sale.invoiceNumber} (${payer})`
             });
 
-            // 7. WhatsApp Alert to Merchant
+            // 7. WhatsApp Alert to Merchant (Kreddy)
             if (business.whatsappNumber) {
                 const statusLine = balanceRemaining <= 0
-                    ? '✅ *Fully Paid!* Invoice is now cleared.'
-                    : `⏳ *Balance Remaining:* ₦${balanceRemaining.toLocaleString()}`;
+                    ? '✅ Fully Paid! Invoice is now cleared.'
+                    : `⏳ Balance Remaining: ₦${balanceRemaining.toLocaleString()}`;
 
-                const alertMsg = `💰 *Payment Received!*\n\n*₦${creditAmount.toLocaleString()}* just landed for *Invoice #${sale.invoiceNumber}* (${sale.customerName}).\n\n${statusLine}\n\n_Money is being swept to your account now._`;
+                // Meta Templates (kreddy_system_alert) often fail if params contain newlines/tabs.
+                // We keep it as a clean, single-line string for maximum compatibility.
+                const alertMsg = `💰 Bank Transfer Received! ₦${creditAmount.toLocaleString()} just landed for Invoice #${sale.invoiceNumber} (${sale.customerName || payer}). ${statusLine}. Money is being swept to your account now.`;
 
                 await sendWhatsAppAlert(business.whatsappNumber, business.displayName || 'Chief', alertMsg).catch(e => {
                     console.error('WhatsApp Notify Error:', e.message);
                 });
+            } else {
+                console.log(`ℹ️ Kreddy Notify: Skipped (No WhatsApp number for ${business.displayName})`);
             }
 
             // 8. AUTO-SWEEP: Instant Payout to Merchant's Bank Account
@@ -331,20 +343,21 @@ async function internalProcessNombaPayment({ accountReference, amount, transacti
                         bankCode: bankDetails.bankCode,
                         accountNumber: bankDetails.accountNumber,
                         accountName: bankDetails.accountName || business.displayName,
-                        narration: `Kredibly INV#${sale.invoiceNumber} - ${sale.customerName}`
+                        narration: `Kredibly INV #${sale.invoiceNumber} settlement`
                     });
                     console.log(`✅ Auto-swept ₦${creditAmount} to ${bankDetails.accountName}`);
                 } catch (sweepErr) {
                     console.error(`❌ Auto-sweep FAILED for ${sale.invoiceNumber}:`, sweepErr.message);
                 }
-            } else if (isLocked) {
-                console.warn(`🛡️ Auto-sweep BLOCKED: Security lock active for ${business.displayName}`);
+            } else {
+                const reason = isLocked ? "Security Lock" : (business.bankDetails?.accountNumber ? "Logic Blocked" : "Missing Bank Details");
+                console.log(`🛡️ Auto-sweep SKIPPED for ${sale.invoiceNumber}: ${reason}`);
             }
         }
 
-        return { success: true };
+        return { success: true, message: "Payment processed and ledger updated!" };
     } catch (err) {
         console.error('❌ internalProcessNombaPayment Error:', err);
-        return { success: false, message: "Internal processing error" };
+        return { success: false, message: "Internal processing error: " + err.message };
     }
 }
