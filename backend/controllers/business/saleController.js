@@ -229,6 +229,24 @@ exports.addPayment = async (req, res) => {
             }
         }
 
+
+        // Emit socket event
+        try {
+            const { getIO } = require('../../utils/socket');
+            const io = getIO();
+            if (io && sale.businessId) {
+                const paidNow = sale.payments.reduce((sum, p) => sum + p.amount, 0);
+                const currentBalance = sale.totalAmount - paidNow;
+                io.to(sale.businessId._id.toString()).emit('sale_updated', {
+                    saleId: sale._id,
+                    balance: currentBalance,
+                    amountPaid: paidNow
+                });
+            }
+        } catch (socketErr) {
+            console.error("❌ Socket emit error in addPayment:", socketErr.message);
+        }
+
         console.log(`✅ Payment of ${amount} recorded successfully for Sale ${sale.invoiceNumber}`);
         res.status(200).json({ success: true, data: sale });
     } catch (error) {

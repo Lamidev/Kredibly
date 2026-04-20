@@ -353,6 +353,22 @@ async function internalProcessNombaPayment({ accountReference, amount, transacti
                 const reason = isLocked ? "Security Lock" : (business.bankDetails?.accountNumber ? "Logic Blocked" : "Missing Bank Details");
                 console.log(`🛡️ Auto-sweep SKIPPED for ${sale.invoiceNumber}: ${reason}`);
             }
+
+            // 9. Auto-detect UI refresh via Socket
+            try {
+                const { getIO } = require('../../utils/socket');
+                const io = getIO();
+                if (io && business) {
+                    console.log(`🔌 Emitting sale_updated for business: ${business._id}`);
+                    io.to(business._id.toString()).emit('sale_updated', {
+                        saleId: sale._id,
+                        balance: balanceRemaining,
+                        amountPaid: totalPaid
+                    });
+                }
+            } catch (socketErr) {
+                console.error("❌ Socket emit error in nombaController:", socketErr.message);
+            }
         }
 
         return { success: true, message: "Payment processed and ledger updated!" };
