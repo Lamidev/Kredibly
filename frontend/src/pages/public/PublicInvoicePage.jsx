@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import PaymentSuccessModal from '../../components/payment/PaymentSuccessModal';
+import { initiateSocketConnection, disconnectSocket, listenToEvent, stopListeningToEvent } from '../../utils/socket';
 
 const PublicInvoicePage = () => {
     const { id } = useParams();
@@ -71,7 +72,7 @@ const PublicInvoicePage = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, [id]);
 
-    // 🛡️ WEBHOOK POLLING: Automatically update UI when backend processing completes
+    // 🔌 Real-time Socket Setup for live payment verification
     useEffect(() => {
         if (!sale || loading) return;
         
@@ -99,16 +100,18 @@ const PublicInvoicePage = () => {
             return;
         }
 
-        if (initialBalance <= 0) return;
+        if (initialBalance <= 0 || !sale.businessId) return;
 
-        const pollInterval = setInterval(async () => {
-            try {
-                const res = await axios.get(`${API_URL}/sales/${id}`);
-                if (res.data.success) {
-                    const latestSale = res.data.data;
-                    const newBalance = calcBalance(latestSale);
-                    
-                    if (newBalance < initialBalance) {
+        initiateSocketConnection(sale.businessId._id || sale.businessId);
+
+        listenToEvent("sale_updated", async (data) => {
+            if (data.saleId === sale._id) {
+                try {
+                    const res = await axios.get(`${API_URL}/sales/${id}`);
+                    if (res.data.success) {
+                        const latestSale = res.data.data;
+                        const newBalance = calcBalance(latestSale);
+                        
                         setSale(latestSale);
                         if (newBalance <= 0) {
                             const lastPayment = latestSale.payments[latestSale.payments.length - 1];
@@ -117,14 +120,20 @@ const PublicInvoicePage = () => {
                             setCustomAmount('');
                             setCustomAmountDisplay('');
                             setShowSuccessModal(true);
-                            clearInterval(pollInterval);
+                        } else if (newBalance < initialBalance) {
+                            toast.success(`Payment Received: ₦${(data.amountPaid || 0).toLocaleString()} 💰`);
                         }
                     }
+                } catch (err) {
+                    console.error("Socket fetch detail error:", err);
                 }
-            } catch (err) { }
-        }, 4000);
+            }
+        });
 
-        return () => clearInterval(pollInterval);
+        return () => {
+            stopListeningToEvent("sale_updated");
+            disconnectSocket();
+        };
     }, [id, sale?.status, loading, showSuccessModal]);
 
     // ⏱️ COUNTDOWN TIMER LOGIC
