@@ -230,7 +230,7 @@ exports.handlePaystackWebhook = async (req, res) => {
                                     { type: "text", text: paidAmount.toLocaleString() },
                                     { type: "text", text: invoiceNumber },
                                     { type: "text", text: sale.customerName },
-                                    { type: "text", text: customText }
+                                    { type: "text", text: customText + ` \n\n📄 View Receipt: https://usekredibly.com/r/${invoiceNumber}` }
                                 ]
                             }
                         ];

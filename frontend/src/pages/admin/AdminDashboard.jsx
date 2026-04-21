@@ -95,9 +95,9 @@ const AdminDashboard = () => {
                             </div>
                             <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#8B5CF6', background: '#F5F3FF', padding: '4px 10px', borderRadius: '100px' }}>PLATFORM GTV</span>
                         </div>
-                        <p style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem' }}>Gross Volume Flow</p>
-                        <h3 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', fontWeight: 950, color: 'var(--text)', letterSpacing: '-0.04em', margin: '4px 0' }}>₦{stats?.totalPlatformVolume?.toLocaleString() || 0}</h3>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Merchant Marketplace Total</p>
+                        <p style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem' }}>Verified Cash Flow</p>
+                        <h3 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', fontWeight: 950, color: 'var(--text)', letterSpacing: '-0.04em', margin: '4px 0' }}>₦{stats?.totalVerifiedVolume?.toLocaleString() || 0}</h3>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Verified Online Transactions</p>
                     </div>
 
                     <div className="admin-stats-card">

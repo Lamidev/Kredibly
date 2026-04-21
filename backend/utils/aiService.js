@@ -76,6 +76,7 @@ INTENTS:
 22. "list_sales": When the user asks for "all sales", "show me everything", "history", "what I sold today", or "everything recorded". 
     - CRITICAL: "Show me all sales" MUST go to this intent. DO NOT use check_debt for history. 
     - check_debt is ONLY for "who owes me".
+23. "check_performance": When the user asks "how much did I make today?", "any payments today?", "daily summary", "what is my today revenue?".
 
 NAME CORRECTIONS:
 - If a user says "No, the name is [Name]" or "I meant [Name]", use "update_record" intent.
@@ -105,6 +106,7 @@ REQUIRED JSON OUTPUT:
     "reminderType": "debt" | "task" | "meeting" | "personal",
     "taskDescription": "Extract the specific activity. MUST NOT BE EMPTY for create_reminder.",
     "preferredName": "Desired name if the user is setting their preference (set_preferred_name intent).",
+    "sourceAccountName": "The specific name of the sender found on a bank receipt/screenshot (Olu, XYZ LTD, etc).",
     "method": "card" | "transfer",
     "plan": "oga" | "chairman",
     "reply": "Your brief partner-like response recognizing the task. RELATE THE TITLE OF THE TASK IN YOUR REPLY."

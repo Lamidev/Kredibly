@@ -77,7 +77,11 @@ const AdminRevenue = () => {
         </div>
     );
 
-    const totalVolume = invoicePayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const totalRecordedVolume = invoicePayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const verifiedMethods = ['Nomba', 'Paystack', 'Squad', 'Kredibly Online'];
+    const totalVerifiedVolume = invoicePayments
+        .filter(p => verifiedMethods.includes(p.method))
+        .reduce((sum, p) => sum + (p.amount || 0), 0);
     const totalSubs = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
     return (
@@ -92,10 +96,10 @@ const AdminRevenue = () => {
                         </div>
                         <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#4C1D95', background: 'rgba(76, 29, 149, 0.1)', padding: '4px 10px', borderRadius: '100px' }}>PLATFORM GTV</span>
                     </div>
-                    <p style={{ color: 'var(--text-muted)', fontWeight: 800, fontSize: '0.85rem', marginBottom: '4px' }}>Gross Transaction Volume</p>
-                    <h3 style={{ fontSize: 'clamp(1.5rem, 8vw, 2.2rem)', fontWeight: 950, color: 'var(--text)', letterSpacing: '-0.04em' }}>₦{totalVolume.toLocaleString()}</h3>
+                    <p style={{ color: 'var(--text-muted)', fontWeight: 800, fontSize: '0.85rem', marginBottom: '4px' }}>Verified Cash Flow</p>
+                    <h3 style={{ fontSize: 'clamp(1.5rem, 8vw, 2.2rem)', fontWeight: 950, color: 'var(--text)', letterSpacing: '-0.04em' }}>₦{totalVerifiedVolume.toLocaleString()}</h3>
                     <p style={{ margin: '8px 0 0', fontSize: '0.75rem', fontWeight: 700, color: '#4C1D95', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                         <TrendingUp size={14} /> Global Trade Output
+                         <TrendingUp size={14} /> ₦{totalRecordedVolume.toLocaleString()} Total Recorded
                     </p>
                 </div>
 
