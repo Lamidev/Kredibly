@@ -6,6 +6,7 @@ const SupportTicket = require("../../models/SupportTicket");
 const Reminder = require("../../models/Reminder");
 const User = require("../../models/User");
 const Feedback = require("../../models/Feedback");
+const CustomerAlias = require("../../models/CustomerAlias");
 const axios = require("axios");
 const { logActivity } = require("../../utils/activityLogger");
 const { processMessageWithAI, processAudioWithAI, processImageWithAI } = require("../../utils/aiService");
@@ -1099,6 +1100,66 @@ Upgrade here: ${APP_URL}/pricing`);
                             return await sendReply(from, `🤔 I couldn't locate that record anymore. It might have been deleted.`);
                         }
                     }
+                } else if (session.type === 'alias_confirmation') {
+                    if (['yes', 'y', 'correct', 'confirm'].includes(lowerText)) {
+                        const { saleId, sourceName, customerName, paidAmount } = session.data;
+                        await WhatsAppSession.deleteOne({ _id: session._id });
+
+                        const sale = await Sale.findById(saleId);
+                        if (sale) {
+                            sale.payments.push({ amount: paidAmount, method: "WhatsApp Screenshot (Confirmed Alias)" });
+                            await sale.save();
+
+                            // 🧠 LEARN: Save this alias for the future
+                            if (sourceName) {
+                                await CustomerAlias.findOneAndUpdate(
+                                    { businessId: profile._id, sourceName },
+                                    { targetName: customerName, lastUsedAt: new Date() },
+                                    { upsert: true, new: true }
+                                );
+                            }
+
+                            await sendReply(from, `✅ *Logged & Learned!* \n\nRecorded for *${customerName}*. I've also memorized that *"${sourceName}"* is one of their account names! 🛡️💎`);
+                        }
+                    } else {
+                        await WhatsAppSession.deleteOne({ _id: session._id });
+                        await sendReply(from, `No problem! I'll keep the payment as pending. Tell me who it belongs to whenever you're ready! 🫡`);
+                    }
+                    return;
+                } else if (session.type === 'manual_alias_tagging') {
+                    const choice = parseInt(text);
+                    let selectedSale = null;
+                    
+                    if (!isNaN(choice) && session.data.options && choice > 0 && choice <= session.data.options.length) {
+                        selectedSale = await Sale.findById(session.data.options[choice - 1].id);
+                    } else if (text.length > 2) {
+                        selectedSale = await Sale.findOne({ 
+                            businessId: profile._id, 
+                            customerName: { $regex: new RegExp(text.trim(), "i") },
+                            status: { $ne: "paid" }
+                        });
+                    }
+
+                    if (selectedSale) {
+                        const { sourceName, paidAmount } = session.data;
+                        await WhatsAppSession.deleteOne({ _id: session._id });
+
+                        selectedSale.payments.push({ amount: paidAmount, method: "WhatsApp Screenshot (Manual Tag)" });
+                        await selectedSale.save();
+
+                        if (sourceName) {
+                            await CustomerAlias.findOneAndUpdate(
+                                { businessId: profile._id, sourceName },
+                                { targetName: selectedSale.customerName, lastUsedAt: new Date() },
+                                { upsert: true, new: true }
+                            );
+                        }
+
+                        await sendReply(from, `✅ *Perfectly Handled!* \n\nI've credited *${selectedSale.customerName}* with the ₦${paidAmount.toLocaleString()} payment. \n\nMemory Bank Updated: I've linked *"${sourceName}"* to them! 🧠💎`);
+                    } else {
+                        await sendReply(from, `🤔 I didn't catch that. Please type the **Number** or the **Customer Name** to credit this payment.`);
+                    }
+                    return;
                 }
             }
         }
@@ -1397,6 +1458,83 @@ Upgrade here: ${APP_URL}/pricing`);
                  if (!isProcessed && (aiResponseItem.data.totalAmount > 0 || (aiResponseItem.data.paidAmount && aiResponseItem.data.paidAmount > 0))) {
                      console.log("🔄 Re-routing: No record found to update, switching to create_sale...");
                      aiResponseItem.intent = "create_sale";
+                 }
+
+                 if (!isProcessed && aiResponseItem.intent === "update_record" && aiResponseItem.sourceAccountName && plan === 'chairman') {
+                    const escapedSource = aiResponseItem.sourceAccountName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const aliasMatch = await CustomerAlias.findOne({
+                        businessId: profile._id,
+                        sourceName: { $regex: new RegExp(`^${escapedSource}$`, "i") }
+                    });
+
+                    if (aliasMatch) {
+                        console.log(`🧠 Alias found: ${aiResponseItem.sourceAccountName} -> ${aliasMatch.targetName}`);
+                        aiResponseItem.data.customerName = aliasMatch.targetName;
+                        // Trigger re-run of this intent with the correct name
+                        const escapedTarget = aliasMatch.targetName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        const sale = await Sale.findOne({ businessId: profile._id, customerName: { $regex: new RegExp(`^${escapedTarget}$`, "i") }, status: { $ne: "paid" } });
+                        if (sale) {
+                            if (aiResponseItem.data.paidAmount > 0) sale.payments.push({ amount: aiResponseItem.data.paidAmount, method: "WhatsApp Alias Match" });
+                            await sale.save();
+                            await sendReply(from, `✅ *Payment Recorded (Alias Match)!* \n\nI recognized the account name *"${aiResponseItem.sourceAccountName}"* as *${sale.customerName}*. Record updated! 🛡️`);
+                            isProcessed = true;
+                        }
+                    } else if (aiResponseItem.data.paidAmount > 0) {
+                        // 🧐 SMART TRIAGE: Search by Amount if name is mystery
+                        const potentialSales = await Sale.find({
+                            businessId: profile._id,
+                            status: { $ne: "paid" }
+                        }).sort({ createdAt: -1 });
+
+                        const filteredByAmount = potentialSales.filter(s => {
+                            const balance = s.totalAmount - s.payments.reduce((sum, p) => sum + p.amount, 0);
+                            return balance === aiResponseItem.data.paidAmount;
+                        });
+
+                        if (filteredByAmount.length === 1) {
+                            const sale = filteredByAmount[0];
+                            await WhatsAppSession.findOneAndUpdate(
+                                { whatsappNumber: cleanFrom },
+                                {
+                                    type: 'alias_confirmation',
+                                    data: {
+                                        saleId: sale._id,
+                                        customerName: sale.customerName,
+                                        sourceName: aiResponseItem.sourceAccountName,
+                                        paidAmount: aiResponseItem.data.paidAmount
+                                    },
+                                    expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+                                },
+                                { upsert: true }
+                            );
+                            await sendReply(from, `🧐 *Smart Match Detected, ${bossTitle}!* \n\nI catch a ₦${aiResponseItem.data.paidAmount.toLocaleString()} transfer from *"${aiResponseItem.sourceAccountName}"*. \n\nI don't have that name, but *${sale.customerName}* owes that exact amount. Is this for her? 🛡️`);
+                            isProcessed = true;
+                        } else if (potentialSales.length > 0) {
+                            // Manual Tagging Request
+                            let msg = `🧐 *Mystery Payment Detected, ${bossTitle}!* \n\nI catch the ₦${aiResponseItem.data.paidAmount.toLocaleString()} transfer from *"${aiResponseItem.sourceAccountName}"*, but I don't recognize the name. \n\nWho should I credit this to?\n\n`;
+                            potentialSales.slice(0, 5).forEach((s, i) => {
+                                const bal = s.totalAmount - s.payments.reduce((sum,p)=>sum+p.amount, 0);
+                                msg += `${i+1}. *${s.customerName}* (Owes ₦${bal.toLocaleString()})\n`;
+                            });
+                            msg += `\n_Reply with the Number (1-5) or Name!_ 🫡`;
+
+                            await WhatsAppSession.findOneAndUpdate(
+                                { whatsappNumber: cleanFrom },
+                                {
+                                    type: 'manual_alias_tagging',
+                                    data: {
+                                        sourceName: aiResponseItem.sourceAccountName,
+                                        paidAmount: aiResponseItem.data.paidAmount,
+                                        options: potentialSales.slice(0, 5).map(s => ({ id: s._id, name: s.customerName }))
+                                    },
+                                    expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+                                },
+                                { upsert: true }
+                            );
+                            await sendReply(from, msg);
+                            isProcessed = true;
+                        }
+                    }
                  }
             }
 
@@ -1905,6 +2043,47 @@ Upgrade here: ${APP_URL}/pricing`);
 
                     scheduleMsg += `\n_To add a task, say: "Remind me to [task] by [time]"_ 💡`;
                     await sendReply(from, scheduleMsg);
+                    isProcessed = true;
+                } else if (aiResponseItem && aiResponseItem.intent === "check_performance") {
+                    // 💰 NEW: PERFORMANCE CHECK - "How much did I make today?"
+                    const startOfToday = new Date();
+                    startOfToday.setHours(0, 0, 0, 0);
+
+                    // 1. Get Today's Sales
+                    const salesToday = await Sale.find({
+                        businessId: profile._id,
+                        createdAt: { $gte: startOfToday }
+                    });
+
+                    // 2. Get Today's Cash Collected (Verified + Manual)
+                    const salesWithPaymentsToday = await Sale.find({
+                        businessId: profile._id,
+                        "payments.date": { $gte: startOfToday }
+                    });
+
+                    let totalCashIn = 0;
+                    salesWithPaymentsToday.forEach(s => {
+                        s.payments.forEach(p => {
+                            if (new Date(p.date) >= startOfToday) totalCashIn += p.amount;
+                        });
+                    });
+
+                    // 3. Resolve boss title
+                    const bossTitle = profile.assistantSettings?.preferredName || (plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss"));
+
+                    let performanceMsg = `📊 *Today's Performance, ${bossTitle}!*\n\n`;
+                    performanceMsg += `💰 Cash Collected: *₦${totalCashIn.toLocaleString()}*\n`;
+                    performanceMsg += `📑 New Invoices: *${salesToday.length}* (₦${salesToday.reduce((sum, s) => sum + s.totalAmount, 0).toLocaleString()})\n\n`;
+
+                    if (totalCashIn > 0) {
+                        performanceMsg += `Excellent! Your cash position is looking stronger. 💎`;
+                    } else if (salesToday.length > 0) {
+                        performanceMsg += `Sales are moving! Let's ensure these turn into cash soon. 🛡️`;
+                    } else {
+                        performanceMsg += `Zero records so far today. Remember to log every kobo to build your Trust Score! 🚀`;
+                    }
+
+                    await sendReply(from, performanceMsg);
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "pay_subscription") {
                     const targetPlan = (aiResponseItem.data.plan || "oga").toLowerCase();

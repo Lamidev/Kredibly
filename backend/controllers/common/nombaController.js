@@ -5,6 +5,7 @@ const Notification = require('../../models/Notification');
 const ActivityLog = require('../../models/ActivityLog');
 const { logActivity } = require('../../utils/activityLogger');
 const { createDynamicVirtualAccount, verifyWebhookSignature, initiateTransfer, checkPaymentStatusByReference } = require('../../utils/nomba');
+const { logUsage } = require('../../utils/usageTracker');
 const { sendWhatsAppAlert } = require('../whatsapp/whatsappController');
 
 /**
@@ -291,8 +292,32 @@ async function internalProcessNombaPayment({ accountReference, amount, transacti
         // 5. Mark VA as used
         vaRecord.status = 'used';
         await vaRecord.save();
+        
         const totalPaid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
         const balanceRemaining = sale.totalAmount - totalPaid;
+
+        if (business.whatsappNumber) {
+            const receiptLink = `https://usekredibly.com/r/${sale.invoiceNumber}`;
+            const lockUntil = business.bankDetails?.bankDetailsLockUntil;
+            
+            const statusLine = balanceRemaining <= 0
+                ? '✅ Fully Paid!'
+                : `⏳ Balance Remaining: ₦${balanceRemaining.toLocaleString()}`;
+
+            let msg = `💰 *Bank Transfer Received!*\n\nHigh power! ₦${creditAmount.toLocaleString()} just landed for *Invoice #${sale.invoiceNumber}* (${sale.customerName || payer}).\n\n`;
+            
+            if (lockUntil && new Date() < lockUntil) {
+                msg += `🛡️ *Security:* Since you recently updated your bank details, settlements are escrowed for 24h. \n\n`;
+            } else {
+                msg += `🛡️ *Settlement:* Money is being swept to your bank account automatically. 🚀\n\n`;
+            }
+
+            msg += statusLine;
+            msg += `\n\n📄 *Receipt Link:* ${receiptLink}`;
+            
+            const { sendWhatsAppAlert } = require('../whatsapp/whatsappController');
+            await sendWhatsAppAlert(business.whatsappNumber, business.displayName || 'Chief', msg).catch(e => console.error("WA Fail:", e.message));
+        }
 
         console.log(`✅ Nomba: ₦${creditAmount} recorded for Invoice #${sale.invoiceNumber}`);
 
@@ -313,23 +338,7 @@ async function internalProcessNombaPayment({ accountReference, amount, transacti
                 entityId: sale._id,
                 details: `Nomba payment of ₦${creditAmount.toLocaleString()} verified for Invoice #${sale.invoiceNumber} (${payer})`
             });
-
-            // 7. WhatsApp Alert to Merchant (Kreddy)
-            if (business.whatsappNumber) {
-                const statusLine = balanceRemaining <= 0
-                    ? '✅ Fully Paid! Invoice is now cleared.'
-                    : `⏳ Balance Remaining: ₦${balanceRemaining.toLocaleString()}`;
-
-                // Meta Templates (kreddy_system_alert) often fail if params contain newlines/tabs.
-                // We keep it as a clean, single-line string for maximum compatibility.
-                const alertMsg = `💰 Bank Transfer Received! ₦${creditAmount.toLocaleString()} just landed for Invoice #${sale.invoiceNumber} (${sale.customerName || payer}). ${statusLine}. Money is being swept to your account now.`;
-
-                await sendWhatsAppAlert(business.whatsappNumber, business.displayName || 'Chief', alertMsg).catch(e => {
-                    console.error('WhatsApp Notify Error:', e.message);
-                });
-            } else {
-                console.log(`ℹ️ Kreddy Notify: Skipped (No WhatsApp number for ${business.displayName})`);
-            }
+        }
 
             // 8. AUTO-SWEEP: Instant Payout to Merchant's Bank Account
             const bankDetails = business.bankDetails;
@@ -369,10 +378,13 @@ async function internalProcessNombaPayment({ accountReference, amount, transacti
             } catch (socketErr) {
                 console.error("❌ Socket emit error in nombaController:", socketErr.message);
             }
-        }
 
-        return { success: true, message: "Payment processed and ledger updated!" };
-    } catch (err) {
+            // 10. Track Platform Metrics
+            logUsage("revenue", { amount: creditAmount }).catch(e => console.error("Revenue log fail:", e));
+            logUsage("merchant_fee", { amount: creditAmount }).catch(e => console.error("Fee log fail:", e));
+
+            return { success: true, message: "Payment processed and ledger updated!" };
+        } catch (err) {
         console.error('❌ internalProcessNombaPayment Error:', err);
         return { success: false, message: "Internal processing error: " + err.message };
     }

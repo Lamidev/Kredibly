@@ -42,6 +42,7 @@ const PublicInvoicePage = () => {
     const [loadingNomba, setLoadingNomba] = useState(false);
     const [verifyingPayment, setVerifyingPayment] = useState(false);
     const [timeLeft, setTimeLeft] = useState(null);
+    const [modalDismissed, setModalDismissed] = useState(false);
     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
     useEffect(() => {
@@ -74,53 +75,41 @@ const PublicInvoicePage = () => {
 
     // 🔌 Real-time Socket Setup for live payment verification
     useEffect(() => {
-        if (!sale || loading) return;
+        if (!sale || !sale._id || loading) return;
         
-        const calcBalance = (s) => {
-            const paid = s.paidAmount || s.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
-            const bal = s.totalAmount - paid;
-            return bal < 1 ? 0 : bal; 
-        };
+        const businessId = sale.businessId?._id || sale.businessId;
+        if (!businessId) return;
 
-        const initialBalance = calcBalance(sale);
-        
-        // 🏆 SUCCESS CATCH: If it's already paid on mount/update but modal isn't shown yet
-        if (initialBalance <= 0 && !showSuccessModal && sale.payments?.length > 0) {
-            // Check if it's a recent payment (within 5 minutes) to avoid annoying old visits
-            const lastPayment = sale.payments[sale.payments.length - 1];
-            const isRecent = (new Date() - new Date(lastPayment.date)) < (5 * 60 * 1000);
+        initiateSocketConnection(businessId);
+
+        const onSaleUpdated = async (data) => {
+            console.log("🔌 Socket Update Received:", data);
             
-            if (isRecent) {
-                setLastPaymentAmount(lastPayment.amount);
-                setRecentPaymentDate(new Date(lastPayment.date));
-                setCustomAmount('');
-                setCustomAmountDisplay('');
-                setShowSuccessModal(true);
-            }
-            return;
-        }
+            // Compare IDs safely as strings
+            const isMatch = String(data.saleId) === String(sale._id) || 
+                            String(data.saleId) === String(sale.invoiceNumber);
 
-        if (initialBalance <= 0 || !sale.businessId) return;
-
-        initiateSocketConnection(sale.businessId._id || sale.businessId);
-
-        listenToEvent("sale_updated", async (data) => {
-            if (data.saleId === sale._id) {
+            if (isMatch) {
                 try {
                     const res = await axios.get(`${API_URL}/sales/${id}`);
                     if (res.data.success) {
                         const latestSale = res.data.data;
-                        const newBalance = calcBalance(latestSale);
+                        const newBalance = calcCurrentBalance(latestSale);
                         
                         setSale(latestSale);
+                        
+                        // Show success modal if fully paid
                         if (newBalance <= 0) {
-                            const lastPayment = latestSale.payments[latestSale.payments.length - 1];
-                            setLastPaymentAmount(lastPayment?.amount || initialBalance);
+                            const lastPayment = latestSale.payments?.length > 0 
+                                ? latestSale.payments[latestSale.payments.length - 1] 
+                                : null;
+                            
+                            setLastPaymentAmount(lastPayment?.amount || (sale.totalAmount - (sale.paidAmount || 0)));
                             setRecentPaymentDate(new Date());
                             setCustomAmount('');
                             setCustomAmountDisplay('');
                             setShowSuccessModal(true);
-                        } else if (newBalance < initialBalance) {
+                        } else {
                             toast.success(`Payment Received: ₦${(data.amountPaid || 0).toLocaleString()} 💰`);
                         }
                     }
@@ -128,13 +117,33 @@ const PublicInvoicePage = () => {
                     console.error("Socket fetch detail error:", err);
                 }
             }
-        });
+        };
+
+        listenToEvent("sale_updated", onSaleUpdated);
 
         return () => {
             stopListeningToEvent("sale_updated");
             disconnectSocket();
         };
-    }, [id, sale?.status, loading, showSuccessModal]);
+    }, [id, sale?._id, loading]); // Remove dependencies that change frequently like showSuccessModal or status
+
+    // 🏆 INITIAL MOUNT SUCCESS CHECK: If it's already paid on load
+    useEffect(() => {
+        if (!sale || loading || showSuccessModal || modalDismissed) return;
+        
+        const bal = calcCurrentBalance(sale);
+        if (bal <= 0 && sale.payments?.length > 0) {
+            const lastPayment = sale.payments[sale.payments.length - 1];
+            // Show modal if the last payment was within the last 10 minutes (to avoid popping up on very old invoices)
+            const isRecent = (new Date() - new Date(lastPayment.date)) < (10 * 60 * 1000);
+            
+            if (isRecent) {
+                setLastPaymentAmount(lastPayment.amount);
+                setRecentPaymentDate(new Date(lastPayment.date));
+                setShowSuccessModal(true);
+            }
+        }
+    }, [sale?._id, loading]);
 
     // ⏱️ COUNTDOWN TIMER LOGIC
     useEffect(() => {
@@ -304,22 +313,35 @@ const PublicInvoicePage = () => {
             });
             
             if (res.data.success) {
-                toast.success("Payment verified! Refreshing...");
-                // Refresh sale data
+                // Refresh sale data to reflected updated ledger
                 const saleRes = await axios.get(`${API_URL}/sales/${id}`);
                 if (saleRes.data.success) {
-                    setSale(saleRes.data.data);
-                    const finalBalance = calcCurrentBalance(saleRes.data.data);
+                    const latestSale = saleRes.data.data;
+                    setSale(latestSale);
+                    
+                    const finalBalance = calcCurrentBalance(latestSale);
+                    
                     if (finalBalance <= 0) {
+                        toast.success("Payment verified! Success! 🎉");
+                        const lastPayment = latestSale.payments?.length > 0 
+                            ? latestSale.payments[latestSale.payments.length - 1] 
+                            : null;
+                        
+                        setLastPaymentAmount(lastPayment?.amount || (sale.totalAmount - (sale.paidAmount || 0)));
+                        setRecentPaymentDate(new Date());
                         setCustomAmount('');
                         setCustomAmountDisplay('');
                         setShowSuccessModal(true);
+                    } else {
+                        toast.success("Partial payment verified! Ledger updated. 💰");
+                        setNombaData(null); // Clear VA since amount might have changed
                     }
                 }
             } else {
                 toast.error(res.data.message || "Payment not seen yet. Please wait a moment.");
             }
         } catch (err) {
+            console.error("Manual verification error:", err);
             toast.error("Status check failed. Please try again or wait for automatic update.");
         } finally {
             setVerifyingPayment(false);
@@ -1187,7 +1209,10 @@ const PublicInvoicePage = () => {
 
             <PaymentSuccessModal
                 isOpen={showSuccessModal}
-                onClose={() => setShowSuccessModal(false)}
+                onClose={() => {
+                    setShowSuccessModal(false);
+                    setModalDismissed(true);
+                }}
                 amountPaid={lastPaymentAmount}
                 balanceRemaining={sale ? sale.totalAmount - sale.paidAmount : 0}
                 onDownloadReceipt={handleDownloadPDF}

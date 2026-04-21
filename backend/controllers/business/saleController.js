@@ -415,14 +415,12 @@ exports.getDashboardStats = async (req, res) => {
             const payments = (sale.payments || []);
             const paid = payments.reduce((sum, p) => sum + p.amount, 0);
             
-            // Calculate total online revenue
             const kreddyPaid = payments
-                .filter(p => p.method === 'Paystack')
+                .filter(p => ['Paystack', 'Nomba', 'Kredibly Online', 'Squad'].includes(p.method))
                 .reduce((sum, p) => sum + p.amount, 0);
 
-            // Calculate money "In Transit" (Paystack within 24h)
             const pending = payments
-                .filter(p => (p.method === 'Paystack' || p.method === 'Kredibly Online') && new Date(p.date) > twentyFourHoursAgo)
+                .filter(p => ['Paystack', 'Nomba', 'Kredibly Online', 'Squad'].includes(p.method) && new Date(p.date) > twentyFourHoursAgo)
                 .reduce((sum, p) => sum + p.amount, 0);
 
             stats.revenue += paid;

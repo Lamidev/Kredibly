@@ -9,34 +9,66 @@ const Payment = require("../../models/Payment");
 
 exports.getGlobalStats = async (req, res) => {
     try {
+        // Only count production businesses
+        const productionBusinessFilter = { isBetaTester: { $ne: true } };
         const totalUsers = await User.countDocuments({ role: 'user' });
-        const totalBusinesses = await BusinessProfile.countDocuments();
-        const totalSalesCount = await Sale.countDocuments();
+        const totalBusinesses = await BusinessProfile.countDocuments(productionBusinessFilter);
+
+        // Filter sales to exclude those from beta testers for more accurate counts
+        const productionSales = await Sale.find({}).populate('businessId', 'isBetaTester');
+        const salesCount = productionSales.filter(s => !s.businessId?.isBetaTester).length;
+        const totalSalesCount = salesCount;
 
         // 1. Merchant Platform Volume (Money flowing through merchants)
-        const sales = await Sale.find({});
+        const sales = await Sale.find({}).populate('businessId', 'isBetaTester');
         let totalPlatformVolume = 0;
+        let totalVerifiedVolume = 0;
         let totalOutstanding = 0;
 
+        const verifiedMethods = ['Paystack', 'Nomba', 'Squad', 'Kredibly Online'];
+        const testPatterns = [/test/i, /^T_/i, /^SANDBOX/i, /^KREDDY_TEST/i];
+
         sales.forEach(s => {
-            const paid = (s.payments || [])
-                .filter(p => p.method === 'Paystack')
+            // Skip Beta/Test merchant volume in "Verified Revenue" if wanted, 
+            // but here we filter by reference to catch test money on real accounts too.
+            const isTestMerchant = s.businessId?.isBetaTester === true;
+            
+            const payments = s.payments || [];
+            const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+            
+            const verifiedPaid = payments
+                .filter(p => {
+                    const isMethodMatch = verifiedMethods.includes(p.method);
+                    const isTestReference = p.reference && testPatterns.some(ptrn => ptrn.test(p.reference));
+                    return isMethodMatch && !isTestReference && !isTestMerchant;
+                })
                 .reduce((sum, p) => sum + (p.amount || 0), 0);
-            totalPlatformVolume += paid;
-            totalOutstanding += Math.max(0, (s.totalAmount || 0) - paid);
+
+            totalPlatformVolume += totalPaid;
+            totalVerifiedVolume += verifiedPaid;
+            totalOutstanding += Math.max(0, (s.totalAmount || 0) - totalPaid);
         });
 
-        // 2. Kredibly Revenue (Subscription payments)
-        const allPayments = await Payment.find({ status: 'success' });
-        const totalKrediblyRevenue = allPayments.reduce((sum, p) => sum + p.amount, 0);
+        // 2. Kredibly Revenue (Subscription payments) - Exclude test subs
+        const allPayments = await Payment.find({ status: 'success' }).populate('businessId', 'isBetaTester');
+        const totalKrediblyRevenue = allPayments
+            .filter(p => {
+                const isTestRef = p.paystackRef && testPatterns.some(ptrn => ptrn.test(p.paystackRef));
+                const isTestMerchant = p.businessId?.isBetaTester === true;
+                return !isTestRef && !isTestMerchant;
+            })
+            .reduce((sum, p) => sum + p.amount, 0);
 
-        // Filter Pulse for high-value activities only
+        // Filter Pulse for high-value activities only, excluding beta testers
         const importantActions = ['SIGNUP', 'WHATSAPP_SALE_CREATED', 'PAYMENT_RECEIVED', 'SUBSCRIPTION_PAID', 'SUPPORT_TICKET_CREATED', 'PROFILE_UPDATED'];
-        const globalActivities = await ActivityLog.find({ 
+        const logs = await ActivityLog.find({ 
             action: { $in: importantActions } 
         })
+            .populate('businessId', 'isBetaTester')
             .sort({ createdAt: -1 })
-            .limit(50);
+            .limit(100);
+
+        const globalActivities = logs.filter(l => !l.businessId?.isBetaTester).slice(0, 50);
 
         res.status(200).json({
             success: true,
@@ -45,9 +77,10 @@ exports.getGlobalStats = async (req, res) => {
                 totalBusinesses,
                 totalIncomplete: Math.max(0, totalUsers - totalBusinesses),
                 totalSalesCount,
-                totalPlatformVolume,
+                totalPlatformVolume, // Gross recorded (manual + online)
+                totalVerifiedVolume, // Real money (Online only)
                 totalOutstanding,
-                totalKrediblyRevenue
+                totalRevenue: totalKrediblyRevenue // Subscription revenue (Paystack verified)
             },
             activities: globalActivities
         });
@@ -145,10 +178,19 @@ exports.deleteCoupon = async (req, res) => {
 
 exports.getPayments = async (req, res) => {
     try {
+        const testPatterns = [/test/i, /^T_/i, /^SANDBOX/i, /^KREDDY_TEST/i];
+
         const payments = await Payment.find({})
-            .populate('businessId', 'displayName')
+            .populate('businessId', 'displayName isBetaTester')
             .sort({ createdAt: -1 });
-        res.status(200).json({ success: true, data: payments });
+
+        const filtered = payments.filter(p => {
+            const isTestRef = p.paystackRef && testPatterns.some(ptrn => ptrn.test(p.paystackRef));
+            const isTestMerchant = p.businessId?.isBetaTester === true;
+            return !isTestRef && !isTestMerchant;
+        });
+
+        res.status(200).json({ success: true, data: filtered });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -166,31 +208,38 @@ exports.deletePayment = async (req, res) => {
 
 exports.getInvoicePayments = async (req, res) => {
     try {
+        const testPatterns = [/test/i, /^T_/i, /^SANDBOX/i, /^KREDDY_TEST/i];
+
         const sales = await Sale.find({ 
-            "payments.method": "Paystack" 
+            "payments.0": { $exists: true } 
         })
             .select("customerName invoiceNumber businessId payments")
-            .populate("businessId", "displayName logoUrl")
+            .populate("businessId", "displayName logoUrl isBetaTester")
             .sort({ "payments.date": -1 });
 
         // Flatten the payments into a single list
         const flattened = [];
         sales.forEach(sale => {
+            // Skip Beta/Test merchants
+            if (sale.businessId?.isBetaTester) return;
+
             sale.payments.forEach(payment => {
-                if (payment.method === 'Paystack') {
-                    flattened.push({
-                        _id: payment._id,
-                        saleId: sale._id,
-                        invoiceNumber: sale.invoiceNumber,
-                        customerName: sale.customerName,
-                        merchantName: sale.businessId?.displayName || "Unknown Merchant",
-                        merchantLogo: sale.businessId?.logoUrl,
-                        amount: payment.amount,
-                        method: payment.method,
-                        reference: payment.reference,
-                        date: payment.date
-                    });
-                }
+                // Skip Test references
+                const isTest = payment.reference && testPatterns.some(ptrn => ptrn.test(payment.reference));
+                if (isTest) return;
+
+                flattened.push({
+                    _id: payment._id,
+                    saleId: sale._id,
+                    invoiceNumber: sale.invoiceNumber,
+                    customerName: sale.customerName,
+                    merchantName: sale.businessId?.displayName || "Unknown Merchant",
+                    merchantLogo: sale.businessId?.logoUrl,
+                    amount: payment.amount,
+                    method: payment.method,
+                    reference: payment.reference,
+                    date: payment.date
+                });
             });
         });
 
@@ -273,25 +322,35 @@ exports.getMissionControlFeed = async (req, res) => {
             }
         });
 
+        const testPatterns = [/test/i, /^T_/i, /^SANDBOX/i, /^KREDDY_TEST/i];
+
         // 2. Fetch Aggregated Feed (Filtered for Significance)
         const [jobs, logs, subs, sales] = await Promise.all([
             // Show only Failed or Processing jobs (The ones needing attention)
-            BackgroundJob.find({ status: { $in: ['failed', 'processing'] } }).sort({ createdAt: -1 }).limit(20).populate("businessId", "displayName"),
+            BackgroundJob.find({ status: { $in: ['failed', 'processing'] } }).sort({ createdAt: -1 }).limit(20).populate("businessId", "displayName isBetaTester"),
             
             // Show only high-value logs
             ActivityLog.find({ 
                 action: { $in: ['SIGNUP', 'PROFILE_UPDATED', 'ACCOUNT_VERIFIED'] } 
-            }).sort({ createdAt: -1 }).limit(15).populate("businessId", "displayName"),
+            }).sort({ createdAt: -1 }).limit(15).populate("businessId", "displayName isBetaTester"),
             
-            Payment.find({ status: 'success' }).sort({ createdAt: -1 }).limit(10).populate("businessId", "displayName"),
-            Sale.find({ "payments.0": { $exists: true } }).sort({ "payments.date": -1 }).limit(10).populate("businessId", "displayName")
+            Payment.find({ status: 'success' }).sort({ createdAt: -1 }).limit(10).populate("businessId", "displayName isBetaTester"),
+            Sale.find({ "payments.0": { $exists: true } }).sort({ "payments.date": -1 }).limit(20).populate("businessId", "displayName isBetaTester")
         ]);
 
         // 3. Format Unified Feed
         const feed = [];
 
-        // Add Background Jobs (Purple)
-        jobs.forEach(j => {
+        // Filter out Test Data
+        const filteredSubs = subs.filter(s => {
+            const isTestRef = s.paystackRef && testPatterns.some(p => p.test(s.paystackRef));
+            return !isTestRef && !s.businessId?.isBetaTester;
+        });
+
+        const filteredSales = sales.filter(s => !s.businessId?.isBetaTester);
+
+        // Add Background Jobs (Purple) - Only production
+        jobs.filter(j => !j.businessId?.isBetaTester).forEach(j => {
             feed.push({
                 _id: j._id,
                 type: 'JOB',
@@ -304,8 +363,8 @@ exports.getMissionControlFeed = async (req, res) => {
             });
         });
 
-        // Add Merchant Logs (Gray)
-        logs.forEach(l => {
+        // Add Merchant Logs (Gray) - Only production
+        logs.filter(l => !l.businessId?.isBetaTester).forEach(l => {
             feed.push({
                 _id: l._id,
                 type: 'LOG',
@@ -318,7 +377,7 @@ exports.getMissionControlFeed = async (req, res) => {
         });
 
         // Add Subscriptions (Blue)
-        subs.forEach(p => {
+        filteredSubs.forEach(p => {
             feed.push({
                 _id: p._id,
                 type: 'SUB',
@@ -330,15 +389,20 @@ exports.getMissionControlFeed = async (req, res) => {
             });
         });
 
-        // Add Customer Payments (Green)
-        sales.forEach(s => {
-            s.payments.forEach(p => {
+        // Add Customer Payments (Green) - Only show verified online payments
+        const verifiedMethods = ['Nomba', 'Paystack', 'Squad', 'Kredibly Online'];
+        filteredSales.forEach(s => {
+            s.payments.filter(p => verifiedMethods.includes(p.method)).forEach(p => {
+                // Skip Test references
+                const isTest = p.reference && testPatterns.some(ptrn => ptrn.test(p.reference));
+                if (isTest) return;
+
                 feed.push({
                     _id: p._id,
                     type: 'SALE',
-                    event: 'CUSTOMER_PAYMENT',
+                    event: `PAYMENT_${p.method.toUpperCase()}`,
                     merchant: s.businessId?.displayName || "Unknown",
-                    details: `Amount: ₦${p.amount.toLocaleString()} for Invoice ${s.invoiceNumber}`,
+                    details: `₦${p.amount.toLocaleString()} received via ${p.method} for #${s.invoiceNumber}`,
                     timestamp: p.date,
                     color: 'green'
                 });

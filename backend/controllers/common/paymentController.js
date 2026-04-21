@@ -409,14 +409,15 @@ exports.verifyInvoicePayment = async (req, res) => {
                 
                 let msg = `🔔 *Payment Verified!*\n\nChief, I've just verified an online payment of *₦${actualCreditAmount.toLocaleString()}* for *Invoice #${sale.invoiceNumber}* (${sale.customerName}).\n\n`;
                 if (lockUntil && new Date() < lockUntil) {
-                    msg += `🛡️ *Security Hold:* Since you recently updated your bank details, this money is being held in our *Secure Escrow* for 24 hours. \n\n`;
+                    msg += `🛡️ *Security Hold:* Escrowed for 24h due to bank update. \n\n`;
                 } else {
-                    msg += `🛡️ *Clearing:* We have secured these funds. They will settle to your bank account on the standard *T+1* clearing schedule.\n\n`;
+                    msg += `🛡️ *Clearing:* Funds secured and settled on T+1. \n\n`;
                 }
                 msg += balance <= 0 ? "✅ *Fully Paid!*" : `⏳ *Balance Remaining:* ₦${balance.toLocaleString()}`;
-                msg += `\n📄 *Receipt:* ${receiptLink}`;
+                msg += `\n\n📄 *Receipt:* ${receiptLink}`;
                 
-                await sendWhatsAppMessage(business.whatsappNumber, msg).catch(e => console.error("WA Fail:", e.message));
+                const { sendWhatsAppAlert } = require('../whatsapp/whatsappController');
+                await sendWhatsAppAlert(business.whatsappNumber, business.displayName || 'Chief', msg).catch(e => console.error("WA Fail:", e.message));
                 logUsage("merchant_fee", { amount: actualCreditAmount }).catch(e => console.error("Log fail:", e));
             }
         }

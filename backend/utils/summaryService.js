@@ -80,15 +80,30 @@ const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
             const remindersToday = await Reminder.find({
                 businessId: profile._id,
                 triggerDate: { $gte: startOfToday, $lte: new Date(startOfToday.getTime() + 86400000) },
-                status: { $ne: "cancelled" }
-            });
+                status: { $ne: "completed" } // Don't show already done tasks
+            }).limit(2);
 
-            let agendaText = "No specific tasks scheduled. Keep pushing! 🚀";
+            let agendaSection = "";
             if (remindersToday.length > 0) {
-                agendaText = remindersToday.map((r, i) => `${i + 1}. ${r.description}`).join('\n');
+                const agendaText = remindersToday.map((r, i) => `${i + 1}. ${r.description}`).join('\n');
+                agendaSection = `🗓️ *Today's Agenda:*\n${agendaText}\n\n`;
             }
 
-            const message = `Good morning, ${bossTitle}! 🌅\n\n🎯 *Today's Kreddy Masterclass:*\n${dailyTip}\n\n📊 *Yesterday's Report:*\n💰 Cash in: *₦${totalCashIn.toLocaleString()}*\n📑 Sales: *${salesYesterday.length}*\n⏳ Debt: *₦${pendingDebt.toLocaleString()}*\n\n🗓️ *Today's Agenda:*\n${agendaText}\n\n_Let's scale your empire today!_ 🛡️`;
+            // Top Aging Debts (Top 3 highest balances)
+            const topDebtors = await Sale.find({
+                businessId: profile._id,
+                status: { $in: ["unpaid", "partial"] }
+            })
+            .sort({ totalAmount: -1, createdAt: 1 })
+            .limit(3);
+
+            let debtorSection = "";
+            if (topDebtors.length > 0) {
+                const debtorList = topDebtors.map(d => `• ${d.customerName}: *₦${(d.totalAmount - d.payments.reduce((s, p) => s + p.amount, 0)).toLocaleString()}*`).join('\n');
+                debtorSection = `🧐 *Top Debt Alerts:*\n${debtorList}\n\n`;
+            }
+
+            const message = `Good morning, ${bossTitle}! 🌅\n\n📊 *Yesterday's Performance:*\n💰 Cash Collected: *₦${totalCashIn.toLocaleString()}*\n📑 New Invoices: *${salesYesterday.length}* (₦${salesYesterday.reduce((sum, s) => sum + s.totalAmount, 0).toLocaleString()})\n⏳ Debt Recorded: *₦${pendingDebt.toLocaleString()}*\n\n${agendaSection}${debtorSection}🎯 *Kreddy Growth Masterclass:*\n${dailyTip}\n\n_Let's scale your empire today!_ 🛡️`;
 
             const sent = await sendWhatsAppMessage(profile.whatsappNumber, message);
             if (sent) {
