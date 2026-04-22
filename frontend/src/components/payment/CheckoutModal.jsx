@@ -186,17 +186,17 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
                                             <span style={{ 
                                                 display: 'inline-flex', 
                                                 alignItems: 'center', 
-                                                padding: '6px 16px', 
-                                                background: plan === 'hustler' ? '#FEF2F2' : 'var(--primary-glow)', 
+                                                padding: '8px 18px', 
+                                                background: plan === 'hustler' ? '#FEF2F2' : 'rgba(76, 29, 149, 0.08)', 
                                                 color: plan === 'hustler' ? '#EF4444' : 'var(--primary)', 
                                                 borderRadius: '100px', 
-                                                fontSize: '0.85rem', 
+                                                fontSize: '0.8rem', 
                                                 fontWeight: 900, 
                                                 textTransform: 'uppercase',
-                                                letterSpacing: '0.04em',
-                                                border: `1px solid ${plan === 'hustler' ? '#FEE2E2' : 'rgba(76, 29, 149, 0.1)'}`,
+                                                letterSpacing: '0.05em',
+                                                border: `1px solid ${plan === 'hustler' ? '#FEE2E2' : 'rgba(76, 29, 149, 0.15)'}`,
                                                 whiteSpace: 'nowrap',
-                                                lineHeight: 1
+                                                lineHeight: 1.2
                                             }}>
                                                 {plan === 'oga' ? 'Oga Plan' : plan === 'chairman' ? 'Chairman Plan' : plan === 'hustler' ? 'Hustler Plan' : 'Custom Plan'}
                                             </span>

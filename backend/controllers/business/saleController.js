@@ -398,7 +398,6 @@ exports.getDashboardStats = async (req, res) => {
             monthlySalesCount,
             revenue: 0,
             kreddyRevenue: 0, 
-            pendingSettlement: 0, // NEW: Money verified but in transit (last 24h Paystack payments)
             outstanding: 0,
             recentSales: sales.slice(0, 5),
             trustScore: 60,
@@ -409,9 +408,6 @@ exports.getDashboardStats = async (req, res) => {
         let paidFullCount = 0;
 
         sales.forEach(sale => {
-            const now = new Date();
-            const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
             const payments = (sale.payments || []);
             const paid = payments.reduce((sum, p) => sum + p.amount, 0);
             
@@ -419,13 +415,8 @@ exports.getDashboardStats = async (req, res) => {
                 .filter(p => ['Paystack', 'Nomba', 'Kredibly Online', 'Squad'].includes(p.method))
                 .reduce((sum, p) => sum + p.amount, 0);
 
-            const pending = payments
-                .filter(p => ['Paystack', 'Nomba', 'Kredibly Online', 'Squad'].includes(p.method) && new Date(p.date) > twentyFourHoursAgo)
-                .reduce((sum, p) => sum + p.amount, 0);
-
             stats.revenue += paid;
             stats.kreddyRevenue += kreddyPaid;
-            stats.pendingSettlement += pending;
             stats.outstanding += (sale.totalAmount - paid);
 
             if (sale.confirmed) confirmedCount++;
