@@ -1,7 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Download, X, Share2 } from 'lucide-react';
+import { CheckCircle2, Download, X, Share2, Sparkles, FileText, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useAuth } from '../../context/AuthContext';
@@ -30,31 +30,34 @@ const PaymentSuccessModal = ({
                     position: 'fixed',
                     inset: 0,
                     zIndex: 10001,
-                    background: 'rgba(15, 23, 42, 0.6)',
-                    backdropFilter: 'blur(8px)',
+                    background: 'rgba(15, 23, 42, 0.7)',
+                    backdropFilter: 'blur(12px)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '20px'
+                    padding: '16px'
                 }}
                 onClick={onClose}
             >
                 <motion.div
-                    initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                    initial={{ scale: 0.9, opacity: 0, y: 30 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                    exit={{ scale: 0.9, opacity: 0, y: 30 }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 350 }}
                     onClick={(e) => e.stopPropagation()}
                     style={{
                         background: 'white',
                         borderRadius: '32px',
-                        maxWidth: '440px',
+                        maxWidth: '480px',
                         width: '100%',
                         overflow: 'hidden',
-                        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+                        boxShadow: '0 30px 60px -12px rgba(0,0,0,0.3)',
                         position: 'relative'
                     }}
                 >
+                    {/* Premium Header Decoration */}
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '6px', background: 'linear-gradient(90deg, #10B981, #059669)' }} />
+
                     {/* Close Button */}
                     <button
                         onClick={onClose}
@@ -62,279 +65,134 @@ const PaymentSuccessModal = ({
                             position: 'absolute',
                             top: '20px',
                             right: '20px',
-                            background: 'rgba(255,255,255,0.9)',
-                            border: 'none',
+                            background: 'rgba(255,255,255,1)',
+                            border: '1px solid #E2E8F0',
                             borderRadius: '50%',
-                            width: '36px',
-                            height: '36px',
+                            width: '40px',
+                            height: '40px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             cursor: 'pointer',
                             zIndex: 10,
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                            color: '#64748B'
                         }}
                     >
-                        <X size={20} color="#64748B" />
+                        <X size={20} />
                     </button>
 
-                    {/* Success Header */}
-                    <div style={{
-                        background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                        padding: '48px 32px 40px',
-                        textAlign: 'center',
-                        color: 'white'
-                    }}>
-                        <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: 'spring', delay: 0.1, damping: 15, stiffness: 200 }}
-                        >
-                            <CheckCircle2 
-                                size={72} 
-                                style={{ 
-                                    margin: '0 auto 20px',
-                                    filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))'
-                                }} 
-                            />
-                        </motion.div>
-                        <h2 style={{
-                            fontSize: 'clamp(22px, 6vw, 28px)',
-                            fontWeight: 900,
-                            margin: '0 0 8px 0',
-                            letterSpacing: '-0.02em'
-                        }}>
-                            Payment Successful!
+                    {/* Success Content */}
+                    <div style={{ padding: '48px 32px 40px', textAlign: 'center' }}>
+                        <div style={{ position: 'relative', width: '90px', height: '90px', margin: '0 auto 24px' }}>
+                            <motion.div
+                                animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
+                                transition={{ repeat: Infinity, duration: 4 }}
+                                style={{
+                                    position: 'absolute', inset: 0,
+                                    background: 'rgba(16, 185, 129, 0.1)',
+                                    borderRadius: '50%',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}
+                            >
+                                <CheckCircle2 size={56} color="#10B981" />
+                            </motion.div>
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: [0, 1, 0], scale: [0.5, 1.5, 0.5], rotate: 45 }}
+                                transition={{ repeat: Infinity, duration: 2, delay: 0.5 }}
+                                style={{ position: 'absolute', top: -5, right: -5, color: '#FCD34D' }}
+                            >
+                                <Sparkles size={24} fill="currentColor" />
+                            </motion.div>
+                        </div>
+
+                        <h2 style={{ fontSize: '1.75rem', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.02em' }}>
+                            {isFullyPaid ? "Invoice Settled!" : "Payment Confirmed!"}
                         </h2>
-                        <p style={{
-                            fontSize: '14px',
-                            opacity: 0.9,
-                            margin: 0,
-                            fontWeight: 600
-                        }}>
-                            Your payment has been verified and recorded
+                        <p style={{ color: '#64748B', fontWeight: 600, fontSize: '0.95rem' }}>
+                            Your transfer has been successfully verified.
                         </p>
                     </div>
 
-                    {/* Payment Details */}
-                    <div style={{ padding: 'clamp(20px, 5vw, 32px)' }}>
-                        <div style={{
-                            background: '#F8FAFC',
-                            borderRadius: '20px',
-                            padding: '24px',
-                            marginBottom: '24px',
-                            border: '1px solid #E2E8F0'
-                        }}>
-                            <div style={{ marginBottom: '20px' }}>
-                                <p style={{
-                                    fontSize: '11px',
-                                    fontWeight: 900,
-                                    color: '#94A3B8',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    margin: '0 0 8px 0'
-                                }}>
-                                    You Paid
-                                </p>
-                                <p style={{
-                                    fontSize: 'clamp(28px, 8vw, 36px)',
-                                    fontWeight: 950,
-                                    color: '#10B981',
-                                    margin: 0,
-                                    letterSpacing: '-0.03em'
-                                }}>
-                                    ₦{amountPaid.toLocaleString()}
-                                </p>
+                    <div style={{ padding: '0 32px 32px' }}>
+                        {/* Highlights Card */}
+                        <div style={{ background: '#F8FAFC', borderRadius: '24px', padding: '24px', border: '1px solid #F1F5F9', marginBottom: '24px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: !isFullyPaid ? '20px' : '0' }}>
+                                <div style={{ textAlign: 'left' }}>
+                                    <p style={{ fontSize: '11px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Verified Payment</p>
+                                    <p style={{ fontSize: '28px', fontWeight: 950, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                        <span style={{ fontSize: '18px', fontWeight: 800 }}>₦</span>{amountPaid.toLocaleString()}
+                                    </p>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#ECFDF5', borderRadius: '100px', border: '1px solid #D1FAE5' }}>
+                                        <div style={{ width: '6px', height: '6px', background: '#10B981', borderRadius: '50%' }} />
+                                        <span style={{ fontSize: '10px', fontWeight: 800, color: '#059669', textTransform: 'uppercase' }}>Success</span>
+                                    </div>
+                                </div>
                             </div>
 
                             {!isFullyPaid && (
-                                <div style={{
-                                    borderTop: '1px dashed #E2E8F0',
-                                    paddingTop: '16px'
-                                }}>
-                                    <p style={{
-                                        fontSize: '11px',
-                                        fontWeight: 900,
-                                        color: '#94A3B8',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.05em',
-                                        margin: '0 0 8px 0'
-                                    }}>
-                                        Balance Left
-                                    </p>
-                                    <p style={{
-                                        fontSize: '24px',
-                                        fontWeight: 900,
-                                        color: '#F59E0B',
-                                        margin: 0,
-                                        letterSpacing: '-0.02em'
-                                    }}>
-                                        ₦{balanceRemaining.toLocaleString()}
-                                    </p>
-                                </div>
-                            )}
-
-                            {isFullyPaid && (
-                                <div style={{
-                                    borderTop: '1px dashed #E2E8F0',
-                                    paddingTop: '16px',
-                                    textAlign: 'center'
-                                }}>
-                                    <p style={{
-                                        fontSize: '14px',
-                                        fontWeight: 800,
-                                        color: '#10B981',
-                                        margin: 0,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '8px'
-                                    }}>
-                                        <CheckCircle2 size={18} />
-                                        Invoice Fully Settled
-                                    </p>
+                                <div style={{ paddingTop: '20px', borderTop: '1px dashed #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#64748B' }}>Balance Remaining</span>
+                                    <span style={{ fontSize: '16px', fontWeight: 900, color: '#F59E0B' }}>₦{balanceRemaining.toLocaleString()}</span>
                                 </div>
                             )}
                         </div>
-
-                        {/* Receipt Ready Message */}
-                        <div style={{
-                            background: 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)',
-                            borderRadius: '16px',
-                            padding: '16px',
-                            marginBottom: '16px',
-                            border: '1px solid #BAE6FD',
-                            textAlign: 'center'
-                        }}>
-                            <p style={{
-                                fontSize: '13px',
-                                fontWeight: 700,
-                                color: '#0369A1',
-                                margin: 0,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '8px'
-                            }}>
-                                📄 Your receipt is ready to download
-                            </p>
-                        </div>
-
-                         {/* Viral Loop - Immediate Hook (Not for merchants) */}
-                         {!profile && (
-                            <div style={{
-                                marginBottom: '24px',
-                                textAlign: 'center',
-                                cursor: 'pointer'
-                            }}
-                                onClick={() => window.open('/', '_blank')}
-                            >
-                                <p style={{
-                                    fontSize: '11px',
-                                    fontWeight: 900,
-                                    color: '#4C1D95',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    marginBottom: '4px'
-                                }}>
-                                    Do people owe YOU money too?
-                                </p>
-                                <p style={{
-                                    fontSize: '13px',
-                                    fontWeight: 600,
-                                    color: '#6D28D9',
-                                    textDecoration: 'underline',
-                                    margin: 0
-                                }}>
-                                    Discover how Kreddy helps you recover it &rarr;
-                                </p>
-                            </div>
-                         )}
 
                         {/* Action Buttons */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <div style={{ display: 'flex', gap: '12px' }}>
-                                <button
-                                    onClick={onDownloadReceipt}
-                                    style={{
-                                        flex: 2,
-                                        padding: '16px',
-                                        background: '#0F172A',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '14px',
-                                        fontWeight: 900,
-                                        fontSize: '15px',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '8px',
-                                        transition: 'all 0.2s'
-                                    }}
-                                    onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                                    onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                                >
-                                    <Download size={18} />
-                                    Download
-                                </button>
-                                <button
-                                    onClick={async () => {
-                                        const text = shareText || `I've just made a payment of ₦${amountPaid.toLocaleString()}! You can view my verified receipt here:`;
-                                        const url = shareUrl || window.location.href;
-                                        if (navigator.share) {
-                                            try {
-                                                await navigator.share({ title: 'Payment Receipt', text, url });
-                                            } catch (err) {}
-                                        } else {
-                                            navigator.clipboard.writeText(`${text} ${url}`);
-                                            toast.success("Link copied to clipboard!");
-                                        }
-                                    }}
-                                    style={{
-                                        flex: 1,
-                                        padding: '16px',
-                                        background: '#F1F5F9',
-                                        color: '#0F172A',
-                                        border: '1px solid #E2E8F0',
-                                        borderRadius: '14px',
-                                        fontWeight: 800,
-                                        fontSize: '15px',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}
-                                >
-                                    <Share2 size={18} />
-                                </button>
-                            </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
                             <button
-                                onClick={onClose}
+                                onClick={async () => {
+                                    const text = shareText || `I've just made a payment of ₦${amountPaid.toLocaleString()}! View my verified receipt:`;
+                                    const url = shareUrl || window.location.href;
+                                    if (navigator.share) {
+                                        try { await navigator.share({ title: 'Payment Receipt', text, url }); } catch (err) {}
+                                    } else {
+                                        navigator.clipboard.writeText(`${text} ${url}`);
+                                        toast.success("Link copied to clipboard!");
+                                    }
+                                }}
                                 style={{
-                                    width: '100%',
-                                    padding: '16px',
-                                    background: 'white',
-                                    color: '#64748B',
-                                    border: '1px solid #E2E8F0',
-                                    borderRadius: '14px',
-                                    fontWeight: 800,
-                                    fontSize: '15px',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s'
-                                }}
-                                onMouseOver={(e) => {
-                                    e.currentTarget.style.background = '#F8FAFC';
-                                    e.currentTarget.style.color = '#0F172A';
-                                }}
-                                onMouseOut={(e) => {
-                                    e.currentTarget.style.background = 'white';
-                                    e.currentTarget.style.color = '#64748B';
+                                    width: '100%', padding: '18px', background: '#0F172A', color: 'white', borderRadius: '18px', border: 'none',
+                                    fontWeight: 900, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                                    boxShadow: '0 10px 15px -3px rgba(15, 23, 42, 0.2)'
                                 }}
                             >
-                                Close
+                                <Share2 size={20} />
+                                Share Payment Proof
                             </button>
                         </div>
+
+                        {/* Viral Loop / Promo Section (Only for customers & after full settlement) */}
+                        {!profile && isFullyPaid && (
+                            <div 
+                                onClick={() => window.open('/', '_blank')}
+                                style={{ 
+                                    padding: '20px', borderRadius: '24px', background: 'linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)', 
+                                    border: '1px solid #DDD6FE', textAlign: 'center', cursor: 'pointer',
+                                    marginBottom: '12px'
+                                }}
+                            >
+                                <p style={{ fontSize: '11px', fontWeight: 900, color: '#4C1D95', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+                                    Stop chasing payments manually
+                                </p>
+                                <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#6D28D9', margin: '0 0 12px 0' }}>
+                                    Kreddy can recover your debts automatically.
+                                </p>
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 850, color: '#4C1D95' }}>
+                                    Learn How It Works <ArrowRight size={14} />
+                                </div>
+                            </div>
+                        )}
+
+                        <button 
+                            onClick={onClose}
+                            style={{ width: '100%', background: 'transparent', border: 'none', color: '#94A3B8', fontWeight: 750, fontSize: '14px', cursor: 'pointer' }}
+                        >
+                            Return to Invoice
+                        </button>
                     </div>
                 </motion.div>
             </motion.div>

@@ -1,14 +1,38 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
+import { initiateSocketConnection, disconnectSocket, listenToEvent, stopListeningToEvent } from "../utils/socket";
+import { useAuth } from "./AuthContext";
 
 const SaleContext = createContext();
 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
 export const SaleProvider = ({ children }) => {
+    const { profile } = useAuth();
     const [sales, setSales] = useState([]);
     const [stats, setStats] = useState(null);
     const [analytics, setAnalytics] = useState(null);
     const [loading, setLoading] = useState(false);
+
+    // 🔌 Real-time Updates: Handle global payment notifications
+    useEffect(() => {
+        if (!profile || !profile._id) return;
+
+        initiateSocketConnection(profile._id.toString());
+
+        const handleGlobalSaleUpdate = (data) => {
+            console.log("🔌 Real-time Ledger Update:", data);
+            
+            // Refresh local data automatically
+            fetchSales();
+            fetchStats();
+        };
+
+        listenToEvent("sale_updated", handleGlobalSaleUpdate);
+
+        return () => {
+            stopListeningToEvent("sale_updated");
+        };
+    }, [profile?._id]);
 
     const fetchSales = async () => {
         try {

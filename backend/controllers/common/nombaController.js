@@ -244,65 +244,84 @@ exports.handleNombaWebhook = async (req, res) => {
         }
 
         const event = req.body;
-        const eventType = event?.type || event?.event;
-        console.log(`🟢 Nomba Webhook received: ${eventType}`);
+        const eventType = event?.event_type || event?.type || event?.event;
+        console.log(`🟢 Nomba Webhook received: event_type=${eventType}, requestId=${event?.requestId}`);
 
-        // 3. Only process successful payment events
         const acceptedEvents = [
             'payment_success', 'payment.success', 
             'charge.success', 'charge_success', 
             'transaction.success', 'transaction_success',
-            'transfer.success', 'transfer_success',
-            'payout_success', 'payout.success',
             'order_payment_success', 'order.payment.success',
-            'SUCCESS'
+            'SUCCESS', 'CREDIT'
         ];
-        if (!acceptedEvents.includes(eventType)) {
+        
+        const txData = event?.data?.transaction || {};    // DVA transaction data
+        const custData = event?.data?.customer || {};     // Payer info
+        const legacyData = event?.data || {};             // Fallback for old checkout payloads
+
+        // Check if valid event or has DVA transaction data
+        const hasValidEvent = acceptedEvents.includes(eventType);
+        const hasDVAPayload = !!(txData?.aliasAccountReference);
+        
+        if (!hasValidEvent && !hasDVAPayload) {
             console.log(`ℹ️ Nomba Webhook: Ignored event type "${eventType}"`);
             return;
         }
 
-        const paymentData = event?.data || event;
-        const accountReference = paymentData?.accountReference 
-            || paymentData?.account_reference 
-            || paymentData?.orderReference
-            || paymentData?.transactionReference;
-        const amountRaw = paymentData?.amount || paymentData?.amountPaid || 0;
-        // Parse the amount safely. 
-        // Virtual Accounts send kobo (e.g. 450000 = 4500 NGN).
-        // Checkout API might return Naira strings (e.g. "4500.00").
-        let amountPaid = parseFloat(amountRaw);
-        const isSub = typeof accountReference === 'string' && accountReference.startsWith('SUB-');
+        // Extract using the REAL field names from confirmed payload
+        const accountReference = txData?.aliasAccountReference   // ← Real DVA ref (KREDINV-...)
+            || legacyData?.accountRef
+            || legacyData?.accountReference
+            || legacyData?.orderReference;
+
+        const accountNumber = txData?.aliasAccountNumber         // ← Virtual bank account number
+            || legacyData?.bankAccountNumber
+            || legacyData?.accountNumber;
+
+        const nombaTransactionRef = txData?.transactionId        // ← Nomba's internal ref
+            || txData?.sessionId
+            || legacyData?.transactionReference
+            || accountReference;
+
+        const payer = custData?.senderName                       // ← Real sender name
+            || legacyData?.payerName
+            || legacyData?.customerName
+            || 'Bank Transfer';
+
+        // DVA transactionAmount is already in NAIRA. Legacy amountPaid might be kobo.
+        let amountPaid = parseFloat(txData?.transactionAmount || legacyData?.amountPaid || legacyData?.amount || 0);
         
-        // If it's a huge integer and doesn't explicitly look like a float, divide by 100.
-        // In Kredibly, all transactions are generally > 1000 NGN.
-        // Thus, if it's > 20000 (which is 20k), it's likely Kobo unless it's a massive payment.
-        // The safest check: if it ends with exactly ".0" or ".00", we can infer it's Naira.
-        const strVal = amountRaw.toString();
-        if (!strVal.includes('.') && amountPaid > 1000) {
-            amountPaid = amountPaid / 100;
-        } else if (isSub && amountPaid > 100000) { // Safety for subscriptions if they ever convert to kobo
-            amountPaid = amountPaid / 100;
+        // Only apply kobo→naira conversion for legacy checkout payloads (no txData)
+        if (!txData?.transactionAmount) {
+            const strVal = amountPaid.toString();
+            if (!strVal.includes('.') && amountPaid > 1000) {
+                amountPaid = amountPaid / 100;
+            }
         }
 
-        if (!accountReference || amountPaid <= 0) {
-            console.warn('⚠️ Nomba Webhook: Missing reference or amount — ignoring');
+        console.log(`💰 Extracted: ref=${accountReference}, acct=${accountNumber}, amount=₦${amountPaid}, payer=${payer}`);
+
+        if ((!accountReference && !accountNumber) || amountPaid <= 0) {
+            console.warn('⚠️ Nomba Webhook: Missing reference/accountNumber or amount — ignoring');
+            console.warn('⚠️ Payload top-level keys:', Object.keys(event || {}).join(', '));
             return;
         }
 
         // 4. Intercept Subscriptions
         if (typeof accountReference === 'string' && accountReference.startsWith('SUB-')) {
             console.log(`🚀 Nomba Webhook: Subscription payment detected for ${accountReference}`);
-            return await processSubscriptionWebhook(accountReference, amountPaid, payer, paymentData?.transactionReference || accountReference);
+            return await processSubscriptionWebhook(accountReference, amountPaid, payer, nombaTransactionRef);
         }
 
         // 5. Trigger unified processing logic
         await internalProcessNombaPayment({
             accountReference,
+            accountNumber,
             amount: amountPaid,
-            transactionReference: paymentData?.transactionReference || paymentData?.reference || accountReference,
-            payer: paymentData?.payerName || paymentData?.customerName || 'Bank Transfer'
+            transactionReference: nombaTransactionRef,
+            payer
         });
+
 
     } catch (err) {
         console.error('❌ Nomba Webhook Processing Error:', err);
@@ -368,12 +387,25 @@ async function processSubscriptionWebhook(reference, amount, payer, txRef) {
  * 🛠️ UNIFIED NOMBA PAYMENT PROCESSOR
  * Handles idempotency, ledger updates, notifications, and auto-sweeps.
  */
-async function internalProcessNombaPayment({ accountReference, amount, transactionReference, payer }) {
+async function internalProcessNombaPayment({ accountReference, accountNumber, amount, transactionReference, payer }) {
     try {
         // 1. Find matching Virtual Account
-        const vaRecord = await VirtualAccount.findOne({ reference: accountReference });
+        // Try by our reference (KREDINV-...) first, then fallback to Nomba's accountNumber
+        let vaRecord = accountReference 
+            ? await VirtualAccount.findOne({ reference: accountReference })
+            : null;
+        
+        if (!vaRecord && accountNumber) {
+            // Fallback: find active VA by the actual bank account number Nomba assigned
+            vaRecord = await VirtualAccount.findOne({ 
+                accountNumber: accountNumber,
+                status: 'active'
+            });
+            if (vaRecord) console.log(`✅ VA found via accountNumber fallback: ${accountNumber}`);
+        }
+        
         if (!vaRecord) {
-            console.warn(`⚠️ Payment Processor: No VA record found for reference ${accountReference}`);
+            console.warn(`⚠️ Payment Processor: No VA record found for ref=${accountReference} / acct=${accountNumber}`);
             return { success: false, message: "Virtual account not found" };
         }
 
@@ -506,14 +538,18 @@ async function internalProcessNombaPayment({ accountReference, amount, transacti
                         saleId: sale._id,
                         invoiceNumber: sale.invoiceNumber,
                         balance: balanceRemaining,
-                        amountPaid: totalPaid
+                        amountPaid: creditAmount
                     };
-                    console.log(`🔌 Emitting sale_updated for business: ${business?._id} & invoice: ${sale.invoiceNumber}`);
+                    console.log(`🔌 Emitting sale_updated to rooms: business:${business?._id}, invoice:${sale.invoiceNumber}, invoice:${sale._id}`);
+                    
                     // Emit to business room (merchant dashboard)
                     if (business && business._id) {
                         io.to(business._id.toString()).emit('sale_updated', payload);
                     }
-                    // Emit to invoice-specific rooms (public invoice page)
+                    
+                    // Emit to invoice-specific rooms.
+                    // invoiceNumber is stored WITH the KR- prefix (e.g. KR-P432-DF4W)
+                    // The frontend joins using the URL param which is the same full slug.
                     io.to(`invoice:${sale.invoiceNumber}`).emit('sale_updated', payload);
                     io.to(`invoice:${sale._id.toString()}`).emit('sale_updated', payload);
                     if (sale.publicSlug) {
