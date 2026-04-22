@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
     Download, 
@@ -24,6 +24,7 @@ import { jsPDF } from 'jspdf';
 import PaymentSuccessModal from '../../components/payment/PaymentSuccessModal';
 import { initiateSocketConnection, disconnectSocket, listenToEvent, stopListeningToEvent } from '../../utils/socket';
 import { useAuth } from '../../context/AuthContext';
+import confetti from 'canvas-confetti';
 
 const PublicInvoicePage = () => {
     const { id } = useParams();
@@ -47,6 +48,18 @@ const PublicInvoicePage = () => {
     const [isAutoVerifying, setIsAutoVerifying] = useState(false);
     const [modalDismissed, setModalDismissed] = useState(false);
     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+    
+    // 🛡️ Refs for stale closure protection & deduplication
+    const saleRef = useRef(sale);
+    const isProcessingSuccess = useRef(false);
+
+    useEffect(() => {
+        saleRef.current = sale;
+        // Reset success flag if invoice is not paid (e.g. on new invoice load)
+        if (sale && calcCurrentBalance(sale) > 0) {
+            isProcessingSuccess.current = false;
+        }
+    }, [sale]);
 
     // ─── DERIVED STATE & HELPERS ───
     const calcCurrentBalance = (s) => {
@@ -90,15 +103,24 @@ const PublicInvoicePage = () => {
                     const finalBalance = latestSale.totalAmount - (latestSale.paidAmount || latestSale.payments?.reduce((s, p) => s + p.amount, 0) || 0);
                     
                     // Only update state if something actually changed (prevents unnecessary re-renders)
-                    const oldPaid = sale.paidAmount || sale.payments?.reduce((s, p) => s + p.amount, 0) || 0;
+                    const currentSale = saleRef.current || sale;
+                    const oldPaid = currentSale.paidAmount || currentSale.payments?.reduce((s, p) => s + p.amount, 0) || 0;
                     const newPaid = latestSale.paidAmount || latestSale.payments?.reduce((s, p) => s + p.amount, 0) || 0;
                     
                     if (newPaid > oldPaid) {
+                        // 🛡️ PREVENT REPEATED SUCCESS UI
+                        if (isProcessingSuccess.current && finalBalance <= 0) {
+                            console.log("ℹ️ Success already being processed. Skipping redundant trigger.");
+                            return;
+                        }
+
                         console.log(`✅ ${silent ? 'Auto' : 'Manual'} verification found NEW payment!`);
                         setSale(latestSale);
                         
                         if (finalBalance <= 0) {
-                            if (!silent) toast.success("Payment verified! Success! 🎉");
+                            isProcessingSuccess.current = true;
+                            // Show the "Payment Detected" confirmation overlay
+                            setIsAutoVerifying(true);
                             
                             const lastPayment = latestSale.payments?.length > 0 
                                 ? latestSale.payments[latestSale.payments.length - 1] 
@@ -109,20 +131,33 @@ const PublicInvoicePage = () => {
                             setCustomAmount('');
                             setCustomAmountDisplay('');
                             setNombaData(null); 
-                            
-                            // Show success modal with a slight delay for better UX
+                            // Show success modal with a slight delay for better UX (Confirmation shows first)
                             setTimeout(() => {
-                                if (!silent) setIsAutoVerifying(false);
+                                setIsAutoVerifying(false);
                                 setShowSuccessModal(true);
-                            }, silent ? 0 : 1500);
+                                
+                                // 🎊 Senior Dev Touch: Celebrate full payment with confetti!
+                                confetti({
+                                    particleCount: 150,
+                                    spread: 70,
+                                    origin: { y: 0.6 },
+                                    colors: ['#4C1D95', '#10B981', '#F59E0B']
+                                });
+                            }, 2000);
                         } else {
-                            if (!silent) toast.success("Partial payment verified! Ledger updated. 💰");
-                            else toast.success(`New payment of ₦${(newPaid - oldPaid).toLocaleString()} detected! 💰`);
+                            // 💰 Partial Payment: Shorter delay, clear feedback
+                            setTimeout(() => {
+                                setIsAutoVerifying(false);
+                                if (!silent) {
+                                    toast.success("Partial payment verified! Ledger updated. 💰", { id: 'payment-update' });
+                                } else {
+                                    toast.success(`New payment of ₦${(newPaid - oldPaid).toLocaleString()} detected! 💰`, { id: 'payment-update' });
+                                }
+                            }, 1200);
                             
                             setNombaData(null); 
                             setCustomAmount('');
                             setCustomAmountDisplay('');
-                            if (!silent) setIsAutoVerifying(false);
                         }
                     }
                 }
@@ -193,19 +228,20 @@ const PublicInvoicePage = () => {
             console.log("🔌 Socket Update Received:", data);
             
             // 🛡️ Deduplication: If we are already verifying or just finished, ignore socket duplicate
-            if (verifyingPayment || showSuccessModal) return;
+            if (verifyingPayment || showSuccessModal || isProcessingSuccess.current) return;
 
             // Compare IDs safely as strings - match either database ID or invoice number
-            const isMatch = String(data.saleId) === String(sale._id) || 
-                            String(data.invoiceNumber) === String(sale.invoiceNumber) ||
-                            String(data.saleId) === String(sale.invoiceNumber);
+            const currentSale = saleRef.current || sale;
+            const isMatch = String(data.saleId) === String(currentSale._id) || 
+                            String(data.invoiceNumber) === String(currentSale.invoiceNumber) ||
+                            String(data.saleId) === String(currentSale.invoiceNumber);
 
             if (isMatch) {
                 try {
                     const res = await axios.get(`${API_URL}/sales/${id}`);
                     if (res.data.success) {
                         const latestSale = res.data.data;
-                        const oldPaid = sale.paidAmount || sale.payments?.reduce((s, p) => s + p.amount, 0) || 0;
+                        const oldPaid = currentSale.paidAmount || currentSale.payments?.reduce((s, p) => s + p.amount, 0) || 0;
                         const newPaid = latestSale.paidAmount || latestSale.payments?.reduce((s, p) => s + p.amount, 0) || 0;
                         
                         // 🛡️ Only proceed if the balance actually changed (deduplication)
@@ -215,6 +251,11 @@ const PublicInvoicePage = () => {
                         }
 
                         const newBalance = latestSale.totalAmount - newPaid;
+                        
+                        if (isProcessingSuccess.current && newBalance <= 0) {
+                            return;
+                        }
+
                         setSale(latestSale);
                         
                         // Clear Nomba VA whenever a payment is received (partial or full)
@@ -224,9 +265,9 @@ const PublicInvoicePage = () => {
                         
                         // Show verifying overlay for effect
                         setIsAutoVerifying(true);
-                        
                         setTimeout(() => {
                             setIsAutoVerifying(false);
+                            
                             // Show success modal if fully paid
                             if (newBalance <= 0) {
                                 const lastPayment = latestSale.payments?.length > 0 
@@ -236,8 +277,16 @@ const PublicInvoicePage = () => {
                                 setLastPaymentAmount(lastPayment?.amount || (latestSale.totalAmount - (latestSale.paidAmount || 0)));
                                 setRecentPaymentDate(new Date());
                                 setShowSuccessModal(true);
+
+                                // 🎊 Senior Dev Touch: Celebrate full payment with confetti!
+                                confetti({
+                                    particleCount: 150,
+                                    spread: 70,
+                                    origin: { y: 0.6 },
+                                    colors: ['#4C1D95', '#10B981', '#F59E0B']
+                                });
                             } else {
-                                toast.success(`Payment Received: ₦${(data.amountPaid || 0).toLocaleString()} 💰`);
+                                toast.success(`Payment Received: ₦${(data.amountPaid || 0).toLocaleString()} 💰`, { id: 'payment-update' });
                             }
                         }, 2500);
                     }
@@ -266,6 +315,7 @@ const PublicInvoicePage = () => {
             const isRecent = (new Date() - new Date(lastPayment.date)) < (10 * 60 * 1000);
             
             if (isRecent) {
+                isProcessingSuccess.current = true;
                 setLastPaymentAmount(lastPayment.amount);
                 setRecentPaymentDate(new Date(lastPayment.date));
                 setShowSuccessModal(true);
