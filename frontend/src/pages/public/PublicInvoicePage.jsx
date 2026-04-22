@@ -72,6 +72,46 @@ const PublicInvoicePage = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, [id]);
 
+    // 🔄 Polling Fallback: When a DVA is active, poll every 15s as webhook safety net
+    useEffect(() => {
+        if (!nombaData || !sale || !id) return; // Only poll when DVA is shown
+        
+        const calcBalance = (s) => s.totalAmount - s.payments.reduce((sum, p) => sum + p.amount, 0);
+        if (calcBalance(sale) <= 0) return; // Already paid
+        
+        const pollInterval = setInterval(async () => {
+            try {
+                const res = await axios.get(`${API_URL}/sales/${id}`);
+                if (res.data.success) {
+                    const fresh = res.data.data;
+                    const newBalance = fresh.totalAmount - fresh.payments.reduce((sum, p) => sum + p.amount, 0);
+                    const oldBalance = calcBalance(sale);
+                    
+                    if (newBalance < oldBalance) {
+                        // Payment detected via polling!
+                        console.log('✅ Payment detected via polling fallback');
+                        setSale(fresh);
+                        setNombaData(null);
+                        setIsAutoVerifying(true);
+                        setTimeout(() => {
+                            setIsAutoVerifying(false);
+                            if (newBalance <= 0) {
+                                const lastPayment = fresh.payments[fresh.payments.length - 1];
+                                setLastPaymentAmount(lastPayment?.amount || 0);
+                                setShowSuccessModal(true);
+                            } else {
+                                toast.success(`Payment Received: ₦${(oldBalance - newBalance).toLocaleString()} 💰`);
+                            }
+                        }, 2500);
+                        clearInterval(pollInterval);
+                    }
+                }
+            } catch (_) {} // Silent fail — don't spam errors
+        }, 15000); // Every 15s while DVA is on screen
+        
+        return () => clearInterval(pollInterval);
+    }, [nombaData, sale?._id]); // Restart when DVA changes
+
     // 🔌 Real-time Socket Setup for live payment verification
     useEffect(() => {
         if (!sale || !sale._id || loading) return;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
@@ -13,8 +13,7 @@ import {
     Building2,
     CheckCircle,
     Image as ImageIcon,
-    Download,
-    ArrowRight
+    Download
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -388,25 +387,9 @@ const PublicReceiptPage = () => {
             {/* Main Content */}
             <div style={{ maxWidth: '42rem', margin: '0 auto', padding: '24px 16px' }}>
                 {/* Header */}
-                {/* Header Branding (Sync with Invoice Page) */}
+                {/* Header — Always show Kredibly logo. Merchant logo is in the card below. */}
                 <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                    <div>
-                        {sale?.businessId?.plan === 'chairman' ? (
-                             sale?.businessId?.logoUrl ? (
-                                <img src={sale.businessId.logoUrl} alt={sale?.businessId?.displayName} style={{ height: '32px', maxWidth: '150px', objectFit: 'contain' }} />
-                             ) : (
-                                <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text)' }}>{sale?.businessId?.displayName}</span>
-                             )
-                        ) : sale?.businessId?.plan === 'oga' ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                {sale?.businessId?.logoUrl && <img src={sale.businessId.logoUrl} alt="Logo" style={{ height: '28px' }} />}
-                                <div style={{ width: '1px', height: '16px', background: '#E2E8F0' }}></div>
-                                <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '18px', opacity: 0.7 }} />
-                            </div>
-                        ) : (
-                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '24px' }} />
-                        )}
-                    </div>
+                    <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '24px' }} />
                     <button 
                         onClick={handleShare}
                         style={{ padding: '12px', background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(8px)', borderRadius: '50%', border: '1px solid #E2E8F0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', cursor: 'pointer' }}
@@ -606,8 +589,9 @@ const PublicReceiptPage = () => {
                 </motion.div>
                 </div>
 
-                {/* Viral Loop Call-To-Action - Only show for potential customers (not logged in merchants) */}
-                {!profile && (
+
+                {/* Viral Loop Call-To-Action - Only show for fully settled invoices */}
+                {isPaid && !profile && (
                     <div style={{ marginTop: '48px', textAlign: 'center' }}>
                         <div style={{ 
                             background: 'linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)', 
@@ -622,7 +606,7 @@ const PublicReceiptPage = () => {
                             <p style={{ color: '#6D28D9', fontSize: '0.95rem', marginBottom: '24px', lineHeight: 1.5, fontWeight: 600 }}>
                                 Stop fighting for payments. Let Kreddy chase your debts automatically while you focus on growth.
                             </p>
-                            <Link to="/" style={{ textDecoration: 'none' }}>
+                            <a href="/" target="_blank" style={{ textDecoration: 'none' }}>
                                 <button className="hover-scale" style={{ 
                                     padding: '16px 36px', 
                                     background: '#4C1D95', 
@@ -637,12 +621,13 @@ const PublicReceiptPage = () => {
                                     alignItems: 'center',
                                     gap: '10px'
                                 }}>
-                                    Learn How It Works <ArrowRight size={18} />
+                                    Learn How It Works
                                 </button>
-                            </Link>
+                            </a>
                         </div>
                     </div>
                 )}
+
 
                 {/* Secured by Kredibly Watermark (Universal Footer) */}
                 <div style={{ textAlign: 'center', marginTop: '64px', padding: '24px 0', borderTop: '1px solid #F1F5F9' }}>
