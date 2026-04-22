@@ -254,14 +254,14 @@ exports.handlePaystackWebhook = async (req, res) => {
                         
                         // Emit to business room (merchant dashboard)
                         if (business && business._id) {
-                            io.to(business._id.toString()).emit('sale_updated', payload);
+                            io.to(business._id.toString().toLowerCase()).emit('sale_updated', payload);
                         }
                         
                         // Emit to invoice-specific rooms (public invoice page)
-                        io.to(`invoice:${invoiceNumber}`).emit('sale_updated', payload);
-                        io.to(`invoice:${sale._id.toString()}`).emit('sale_updated', payload);
+                        io.to(`invoice:${invoiceNumber.toLowerCase()}`).emit('sale_updated', payload);
+                        io.to(`invoice:${sale._id.toString().toLowerCase()}`).emit('sale_updated', payload);
                         if (sale.publicSlug) {
-                            io.to(`invoice:${sale.publicSlug}`).emit('sale_updated', payload);
+                            io.to(`invoice:${sale.publicSlug.toLowerCase()}`).emit('sale_updated', payload);
                         }
                     }
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Download, X, Share2, Sparkles, FileText, ArrowRight } from 'lucide-react';
@@ -16,6 +16,14 @@ const PaymentSuccessModal = ({
     shareText 
 }) => {
     const { profile } = useAuth();
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     if (!isOpen) return null;
 
     const isFullyPaid = balanceRemaining <= 0;
@@ -83,7 +91,7 @@ const PaymentSuccessModal = ({
                     </button>
 
                     {/* Success Content */}
-                    <div style={{ padding: '48px 32px 40px', textAlign: 'center' }}>
+                    <div style={{ padding: isMobile ? '32px 20px 24px' : '48px 32px 40px', textAlign: 'center' }}>
                         <div style={{ position: 'relative', width: '90px', height: '90px', margin: '0 auto 24px' }}>
                             <motion.div
                                 animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
@@ -107,7 +115,7 @@ const PaymentSuccessModal = ({
                             </motion.div>
                         </div>
 
-                        <h2 style={{ fontSize: '1.75rem', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.02em' }}>
+                        <h2 style={{ fontSize: isMobile ? '1.5rem' : '1.75rem', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.02em' }}>
                             {isFullyPaid ? "Invoice Settled!" : "Payment Confirmed!"}
                         </h2>
                         <p style={{ color: '#64748B', fontWeight: 600, fontSize: '0.95rem' }}>
@@ -115,7 +123,7 @@ const PaymentSuccessModal = ({
                         </p>
                     </div>
 
-                    <div style={{ padding: '0 32px 32px' }}>
+                    <div style={{ padding: isMobile ? '0 20px 24px' : '0 32px 32px' }}>
                         {/* Highlights Card */}
                         <div style={{ background: '#F8FAFC', borderRadius: '24px', padding: '24px', border: '1px solid #F1F5F9', marginBottom: '24px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: !isFullyPaid ? '20px' : '0' }}>

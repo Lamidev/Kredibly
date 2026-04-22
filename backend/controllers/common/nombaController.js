@@ -544,16 +544,19 @@ async function internalProcessNombaPayment({ accountReference, accountNumber, am
                     
                     // Emit to business room (merchant dashboard)
                     if (business && business._id) {
-                        io.to(business._id.toString()).emit('sale_updated', payload);
+                        io.to(business._id.toString().toLowerCase()).emit('sale_updated', payload);
                     }
                     
                     // Emit to invoice-specific rooms.
-                    // invoiceNumber is stored WITH the KR- prefix (e.g. KR-P432-DF4W)
-                    // The frontend joins using the URL param which is the same full slug.
-                    io.to(`invoice:${sale.invoiceNumber}`).emit('sale_updated', payload);
-                    io.to(`invoice:${sale._id.toString()}`).emit('sale_updated', payload);
+                    // We normalize all IDs to lowercase to ensure matching regardless of case in URL
+                    if (sale.invoiceNumber) {
+                        io.to(`invoice:${sale.invoiceNumber.toLowerCase()}`).emit('sale_updated', payload);
+                    }
+                    if (sale._id) {
+                        io.to(`invoice:${sale._id.toString().toLowerCase()}`).emit('sale_updated', payload);
+                    }
                     if (sale.publicSlug) {
-                        io.to(`invoice:${sale.publicSlug}`).emit('sale_updated', payload);
+                        io.to(`invoice:${sale.publicSlug.toLowerCase()}`).emit('sale_updated', payload);
                     }
                 }
             } catch (socketErr) {

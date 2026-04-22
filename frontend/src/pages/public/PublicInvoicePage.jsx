@@ -72,45 +72,21 @@ const PublicInvoicePage = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, [id]);
 
-    // 🔄 Polling Fallback: When a DVA is active, poll every 15s as webhook safety net
+    // 🔄 Smart Polling Fallback: Proactively check Nomba status every 25s if webhook/socket fails
     useEffect(() => {
-        if (!nombaData || !sale || !id) return; // Only poll when DVA is shown
-        
-        const calcBalance = (s) => s.totalAmount - s.payments.reduce((sum, p) => sum + p.amount, 0);
-        if (calcBalance(sale) <= 0) return; // Already paid
+        if (!nombaData || !sale || !id || showSuccessModal || isPaid) return;
+
+        console.log("🔄 Starting smart polling for Nomba status...");
         
         const pollInterval = setInterval(async () => {
-            try {
-                const res = await axios.get(`${API_URL}/sales/${id}`);
-                if (res.data.success) {
-                    const fresh = res.data.data;
-                    const newBalance = fresh.totalAmount - fresh.payments.reduce((sum, p) => sum + p.amount, 0);
-                    const oldBalance = calcBalance(sale);
-                    
-                    if (newBalance < oldBalance) {
-                        // Payment detected via polling!
-                        console.log('✅ Payment detected via polling fallback');
-                        setSale(fresh);
-                        setNombaData(null);
-                        setIsAutoVerifying(true);
-                        setTimeout(() => {
-                            setIsAutoVerifying(false);
-                            if (newBalance <= 0) {
-                                const lastPayment = fresh.payments[fresh.payments.length - 1];
-                                setLastPaymentAmount(lastPayment?.amount || 0);
-                                setShowSuccessModal(true);
-                            } else {
-                                toast.success(`Payment Received: ₦${(oldBalance - newBalance).toLocaleString()} 💰`);
-                            }
-                        }, 2500);
-                        clearInterval(pollInterval);
-                    }
-                }
-            } catch (_) {} // Silent fail — don't spam errors
-        }, 15000); // Every 15s while DVA is on screen
-        
+            if (nombaData && !verifyingPayment) {
+                // We perform a 'silent' check (no UI overlay) to keep it smooth
+                await runPaymentVerification(true);
+            }
+        }, 25000); // Check every 25s as a fail-safe
+
         return () => clearInterval(pollInterval);
-    }, [nombaData, sale?._id]); // Restart when DVA changes
+    }, [nombaData, sale?._id, showSuccessModal, isPaid, id]);
 
     // 🔌 Real-time Socket Setup for live payment verification
     useEffect(() => {
@@ -118,11 +94,14 @@ const PublicInvoicePage = () => {
         
         const businessId = sale.businessId?._id || sale.businessId;
         // Pass both businessId and the current invoice ID/number to the socket
-        initiateSocketConnection(businessId, id);
+        initiateSocketConnection(String(businessId).toLowerCase(), id);
 
         const onSaleUpdated = async (data) => {
             console.log("🔌 Socket Update Received:", data);
             
+            // 🛡️ Deduplication: If we are already verifying or just finished, ignore socket duplicate
+            if (verifyingPayment || showSuccessModal) return;
+
             // Compare IDs safely as strings - match either database ID or invoice number
             const isMatch = String(data.saleId) === String(sale._id) || 
                             String(data.invoiceNumber) === String(sale.invoiceNumber) ||
@@ -133,12 +112,19 @@ const PublicInvoicePage = () => {
                     const res = await axios.get(`${API_URL}/sales/${id}`);
                     if (res.data.success) {
                         const latestSale = res.data.data;
-                        const newBalance = calcCurrentBalance(latestSale);
+                        const oldPaid = sale.paidAmount || sale.payments?.reduce((s, p) => s + p.amount, 0) || 0;
+                        const newPaid = latestSale.paidAmount || latestSale.payments?.reduce((s, p) => s + p.amount, 0) || 0;
                         
+                        // 🛡️ Only proceed if the balance actually changed (deduplication)
+                        if (newPaid <= oldPaid) {
+                            console.log("ℹ️ Socket event received but balance unchanged. Skipping update.");
+                            return;
+                        }
+
+                        const newBalance = latestSale.totalAmount - newPaid;
                         setSale(latestSale);
                         
                         // Clear Nomba VA whenever a payment is received (partial or full)
-                        // This prevents trying to reuse the same VA for the remaining balance
                         setNombaData(null); 
                         setCustomAmount('');
                         setCustomAmountDisplay('');
@@ -154,7 +140,7 @@ const PublicInvoicePage = () => {
                                     ? latestSale.payments[latestSale.payments.length - 1] 
                                     : null;
                                 
-                                setLastPaymentAmount(lastPayment?.amount || (sale.totalAmount - (sale.paidAmount || 0)));
+                                setLastPaymentAmount(lastPayment?.amount || (latestSale.totalAmount - (latestSale.paidAmount || 0)));
                                 setRecentPaymentDate(new Date());
                                 setShowSuccessModal(true);
                             } else {
@@ -171,7 +157,7 @@ const PublicInvoicePage = () => {
         listenToEvent("sale_updated", onSaleUpdated);
 
         return () => {
-            stopListeningToEvent("sale_updated");
+            stopListeningToEvent("sale_updated", onSaleUpdated);
             disconnectSocket();
         };
     }, [id, sale?._id, loading]); // Remove dependencies that change frequently like showSuccessModal or status
@@ -352,9 +338,19 @@ const PublicInvoicePage = () => {
         if (nombaData) setNombaData(null);
     }, [paymentMode, customAmount]);
 
-    const handleManualVerification = async () => {
-        if (!nombaData || !nombaData.reference) return;
-        setVerifyingPayment(true);
+    /**
+     * 🛡️ UNIFIED PAYMENT VERIFICATION LOGIC
+     * Can be called manually (button) or automatically (polling).
+     * @param {boolean} silent - If true, doesn't show loading overlays or error toasts
+     */
+    const runPaymentVerification = async (silent = false) => {
+        if (!nombaData?.reference || (verifyingPayment && !silent)) return;
+        
+        if (!silent) {
+            setVerifyingPayment(true);
+            setIsAutoVerifying(true);
+        }
+
         try {
             const res = await axios.post(`${API_URL}/payments/verify-nomba-payment`, {
                 accountRef: nombaData.reference,
@@ -366,39 +362,61 @@ const PublicInvoicePage = () => {
                 const saleRes = await axios.get(`${API_URL}/sales/${id}`);
                 if (saleRes.data.success) {
                     const latestSale = saleRes.data.data;
-                    setSale(latestSale);
+                    const finalBalance = latestSale.totalAmount - (latestSale.paidAmount || latestSale.payments?.reduce((s, p) => s + p.amount, 0) || 0);
                     
-                    const finalBalance = calcCurrentBalance(latestSale);
+                    // Only update state if something actually changed (prevents unnecessary re-renders)
+                    const oldPaid = sale.paidAmount || sale.payments?.reduce((s, p) => s + p.amount, 0) || 0;
+                    const newPaid = latestSale.paidAmount || latestSale.payments?.reduce((s, p) => s + p.amount, 0) || 0;
                     
-                    if (finalBalance <= 0) {
-                        toast.success("Payment verified! Success! 🎉");
-                        const lastPayment = latestSale.payments?.length > 0 
-                            ? latestSale.payments[latestSale.payments.length - 1] 
-                            : null;
+                    if (newPaid > oldPaid) {
+                        console.log(`✅ ${silent ? 'Auto' : 'Manual'} verification found NEW payment!`);
+                        setSale(latestSale);
                         
-                        setLastPaymentAmount(lastPayment?.amount || (sale.totalAmount - (sale.paidAmount || 0)));
-                        setRecentPaymentDate(new Date());
-                        setCustomAmount('');
-                        setCustomAmountDisplay('');
-                        setNombaData(null); // ✅ Clear VA widget after full payment
-                        setShowSuccessModal(true);
-                    } else {
-                        toast.success("Partial payment verified! Ledger updated. 💰");
-                        setNombaData(null); // Clear VA so customer can generate fresh one for balance
-                        setCustomAmount('');
-                        setCustomAmountDisplay('');
+                        if (finalBalance <= 0) {
+                            if (!silent) toast.success("Payment verified! Success! 🎉");
+                            
+                            const lastPayment = latestSale.payments?.length > 0 
+                                ? latestSale.payments[latestSale.payments.length - 1] 
+                                : null;
+                            
+                            setLastPaymentAmount(lastPayment?.amount || (latestSale.totalAmount - (latestSale.paidAmount || 0)));
+                            setRecentPaymentDate(new Date());
+                            setCustomAmount('');
+                            setCustomAmountDisplay('');
+                            setNombaData(null); 
+                            
+                            // Show success modal with a slight delay for better UX
+                            setTimeout(() => {
+                                if (!silent) setIsAutoVerifying(false);
+                                setShowSuccessModal(true);
+                            }, silent ? 0 : 1500);
+                        } else {
+                            if (!silent) toast.success("Partial payment verified! Ledger updated. 💰");
+                            else toast.success(`New payment of ₦${(newPaid - oldPaid).toLocaleString()} detected! 💰`);
+                            
+                            setNombaData(null); 
+                            setCustomAmount('');
+                            setCustomAmountDisplay('');
+                            if (!silent) setIsAutoVerifying(false);
+                        }
                     }
                 }
-            } else {
+            } else if (!silent) {
                 toast.error(res.data.message || "Payment not seen yet. Please wait a moment.");
+                setIsAutoVerifying(false);
             }
         } catch (err) {
-            console.error("Manual verification error:", err);
-            toast.error("Status check failed. Please try again or wait for automatic update.");
+            if (!silent) {
+                console.error("Verification error:", err);
+                toast.error("Status check failed. Please try again or wait for automatic update.");
+                setIsAutoVerifying(false);
+            }
         } finally {
-            setVerifyingPayment(false);
+            if (!silent) setVerifyingPayment(false);
         }
     };
+
+    const handleManualVerification = () => runPaymentVerification(false);
 
 
     const handlePaystackPayment = async (paymentChannel) => {
@@ -1051,9 +1069,14 @@ const PublicInvoicePage = () => {
                                                             <span>{verifyingPayment ? 'Verifying...' : 'I have made the transfer'}</span>
                                                         </motion.button>
 
-                                                        <div style={{ padding: '12px 16px', background: '#ECFDF5', borderRadius: '12px', border: '1px solid #D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                                            <Loader2 size={16} className="spin-animation" color="#10B981" />
-                                                            <span style={{ fontSize: '13px', fontWeight: 800, color: '#047857' }}>Listening for payment... updates automatically</span>
+                                                        <div style={{ padding: '12px 16px', background: '#ECFDF5', borderRadius: '12px', border: '1px solid #D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: 'inset 0 2px 4px rgba(16, 185, 129, 0.05)' }}>
+                                                            <motion.div 
+                                                                animate={{ opacity: [0.3, 1, 0.3], scale: [0.95, 1.05, 0.95] }}
+                                                                transition={{ repeat: Infinity, duration: 2 }}
+                                                            >
+                                                                <div style={{ width: '8px', height: '8px', background: '#10B981', borderRadius: '50%', boxShadow: '0 0 10px #10B981' }} />
+                                                            </motion.div>
+                                                            <span style={{ fontSize: '13px', fontWeight: 800, color: '#047857', letterSpacing: '0.2px' }}>Awaiting payment... automatic update active</span>
                                                         </div>
                                                     </div>
                                                 </motion.div>
@@ -1277,7 +1300,7 @@ const PublicInvoicePage = () => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             style={{ 
-                                background: 'white', padding: '40px', borderRadius: '32px', 
+                                background: 'white', padding: isMobile ? '32px 24px' : '40px', borderRadius: '32px', 
                                 textAlign: 'center', maxWidth: '400px', width: '100%',
                                 boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
                             }}
@@ -1296,9 +1319,9 @@ const PublicInvoicePage = () => {
                                     <ShieldCheck size={40} />
                                 </div>
                             </div>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#0F172A', marginBottom: '12px' }}>Payment Detected!</h3>
-                            <p style={{ color: '#64748B', fontWeight: 600, fontSize: '0.95rem', lineHeight: 1.6 }}>
-                                We've received your transfer notification. Just a moment while we verify the settlement...
+                            <h3 style={{ fontSize: '1.75rem', fontWeight: 950, color: '#0F172A', marginBottom: '12px', letterSpacing: '-0.02em' }}>Payment Detected!</h3>
+                            <p style={{ color: '#64748B', fontWeight: 600, fontSize: '1rem', lineHeight: 1.6 }}>
+                                We've just received your transfer notification. Hold tight while we secure your settlement record...
                             </p>
                             
                             <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'center', gap: '12px' }}>

@@ -25,8 +25,9 @@ module.exports = {
             // Join a per-invoice room (for public invoice pages with no auth)
             socket.on("join_invoice", (invoiceId) => {
                 if (invoiceId) {
-                    socket.join(`invoice:${invoiceId}`);
-                    if (isDev) console.log(`📄 Socket ${socket.id} joined invoice room: invoice:${invoiceId}`);
+                    const normalizedId = String(invoiceId).toLowerCase();
+                    socket.join(`invoice:${normalizedId}`);
+                    if (isDev) console.log(`📄 Socket ${socket.id} joined invoice room: invoice:${normalizedId}`);
                 }
             });
 

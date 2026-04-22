@@ -10,7 +10,7 @@ export const initiateSocketConnection = (businessId, invoiceId) => {
 	if (socket && socket.connected) {
 		// Already connected — just ensure we're in the right rooms
 		if (businessId) socket.emit("join_business", businessId);
-		if (invoiceId) socket.emit("join_invoice", invoiceId);
+		if (invoiceId) socket.emit("join_invoice", String(invoiceId).toLowerCase());
 		return socket;
 	}
 
@@ -25,7 +25,7 @@ export const initiateSocketConnection = (businessId, invoiceId) => {
 	socket.on("connect", () => {
 		console.log(`✅ Socket connected. Joining rooms...`);
 		if (businessId) socket.emit("join_business", businessId);
-		if (invoiceId) socket.emit("join_invoice", invoiceId);
+		if (invoiceId) socket.emit("join_invoice", String(invoiceId).toLowerCase());
 	});
 
 	return socket;
@@ -41,9 +41,13 @@ export const listenToEvent = (eventName, callback) => {
 	socket.on(eventName, callback);
 };
 
-export const stopListeningToEvent = (eventName) => {
+export const stopListeningToEvent = (eventName, callback) => {
   if (!socket) return;
-  socket.off(eventName);
+  if (callback) {
+    socket.off(eventName, callback);
+  } else {
+    socket.off(eventName);
+  }
 };
 
 export default socket;
