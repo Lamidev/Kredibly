@@ -610,40 +610,144 @@ const sendTypingIndicator = async (to) => {
 exports.sendWhatsAppMessage = sendReply;
 exports.sendWhatsAppTemplate = sendTemplateMessage;
 
-const sendWhatsAppAlert = async (to, bossTitle, textMessage) => {
+const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = null) => {
     try {
         const cleanTo = String(to).replace(/\D/g, '');
+        
+        // Normalize to international format for lookup (try both formats)
+        let normalizedTo = cleanTo;
+        if (normalizedTo.startsWith('0') && normalizedTo.length === 11) {
+            normalizedTo = '234' + normalizedTo.slice(1);
+        }
+
         // 🛡️ COST SAVING: Check if the 24-hour customer service window is open
-        const profile = await BusinessProfile.findOne({ whatsappNumber: cleanTo });
+        // Try multiple number formats since numbers may be stored differently
+        const profile = await BusinessProfile.findOne({ 
+            whatsappNumber: { $in: [cleanTo, normalizedTo, to.toString()] }
+        });
         
         const now = new Date();
         const isWindowOpen = profile?.lastInboundAt && (now - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
 
         if (isWindowOpen) {
-            console.log(`💡 WhatsApp Session Open for ${cleanTo} — Sending free session message`);
+            console.log(`💡 WhatsApp Session Open for ${normalizedTo} — Sending free session message`);
             // Format as a bold message with person's title
-            const sessionText = `*${bossTitle}!* 🚀\n\n${textMessage}`;
-            return await sendReply(cleanTo, sessionText);
+            let sessionText = `*${bossTitle}!* 🚀\n\n${textMessage}`;
+            
+            // If invoiceNumber provided but not in text, append it as a link
+            if (invoiceNumber && !textMessage.includes(invoiceNumber)) {
+                sessionText += `\n\n📄 *Receipt Link:* https://usekredibly.com/r/${invoiceNumber}`;
+            }
+
+            return await sendReply(normalizedTo, sessionText);
         }
 
         // Window Closed or Profile not found: Use official Template (Paid)
-        console.log(`🔔 WhatsApp Session Closed for ${cleanTo} — Sending paid template message`);
+        console.log(`🔔 WhatsApp Session Closed for ${normalizedTo} — Sending paid template message`);
+        
+        // Meta template body parameters are capped at 1024 chars
+        const safeMessage = String(textMessage).substring(0, 1024);
+        
         const components = [
             {
                 type: "body",
                 parameters: [
-                    { type: "text", text: bossTitle },
-                    { type: "text", text: textMessage }
+                    { type: "text", text: String(bossTitle).substring(0, 60) },
+                    { type: "text", text: safeMessage }
                 ]
             }
         ];
-        return await sendTemplateMessage(to, 'kreddy_system_alert', components);
+
+        // 🚀 SMART DYNAMIC BUTTON ROUTING
+        // Since Meta requires the parameter if the template has a dynamic button, we ALWAYS send one.
+        // We configure the Meta template base URL to: https://usekredibly.com/
+        // If it's an invoice alert, we append "r/KR-XXXX". If it's generic, we append "dashboard".
+        const buttonPath = invoiceNumber ? `r/${invoiceNumber}` : `dashboard`;
+
+        components.push({
+            type: "button",
+            sub_type: "url",
+            index: "0",
+            parameters: [
+                { type: "text", text: buttonPath }
+            ]
+        });
+        
+        // ✅ Use normalizedTo (digits-only international format) for template
+        return await sendTemplateMessage(normalizedTo, 'kreddy_system_alert', components);
     } catch (err) {
         console.error("❌ sendWhatsAppAlert Error:", err.message);
         return false;
     }
 };
+
+const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName, customText, bossTitle = 'Boss', sessionTextMsg = null) => {
+    try {
+        const cleanTo = String(to).replace(/\D/g, '');
+        let normalizedTo = cleanTo;
+        if (normalizedTo.startsWith('0') && normalizedTo.length === 11) {
+            normalizedTo = '234' + normalizedTo.slice(1);
+        }
+
+        const profile = await BusinessProfile.findOne({ 
+            whatsappNumber: { $in: [cleanTo, normalizedTo, to.toString()] }
+        });
+        
+        const now = new Date();
+        const isWindowOpen = profile?.lastInboundAt && (now - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
+
+        if (isWindowOpen) {
+            console.log(`💡 WhatsApp Session Open for ${normalizedTo} — Sending free payment session message`);
+            
+            let message = sessionTextMsg;
+            if (!message) {
+                // Formatting it similarly to the template for consistency
+                message = `💰 *Payment Received!*\n\nHigh power, ${bossTitle}! You just received a payment of *₦${amount.toLocaleString()}* for Invoice #${invoiceNumber} from *${customerName}*.\n\n${customText}\n\nYour Kredibly ledger has been updated automatically!`;
+            }
+            
+            // Append receipt URL if absent
+            if (!message.includes('usekredibly.com/r/')) {
+                message += `\n\n📄 *Receipt:* https://usekredibly.com/r/${invoiceNumber}`;
+            }
+
+            return await sendReply(normalizedTo, message);
+        }
+
+        // Window Closed: Use official Paid Template
+        console.log(`🔔 WhatsApp Session Closed for ${normalizedTo} — Sending paid payment template`);
+
+        const components = [
+            {
+                type: "body",
+                parameters: [
+                    { type: "text", text: String(amount).substring(0, 60) },
+                    { type: "text", text: String(invoiceNumber).substring(0, 60) },
+                    { type: "text", text: String(customerName).substring(0, 60) },
+                    { type: "text", text: String(customText).substring(0, 1024) }
+                ]
+            }
+        ];
+
+        // Push button variable blindly to support cases where the merchant adds it.
+        // Base Website URL: https://usekredibly.com/r/
+        components.push({
+            type: "button",
+            sub_type: "url",
+            index: "0",
+            parameters: [
+                { type: "text", text: String(invoiceNumber) }
+            ]
+        });
+
+        return await sendTemplateMessage(normalizedTo, 'kreddy_payment_alert', components);
+    } catch (err) {
+        console.error("❌ sendWhatsAppPaymentAlert Error:", err.message);
+        return false;
+    }
+};
+
 exports.sendWhatsAppAlert = sendWhatsAppAlert;
+exports.sendWhatsAppPaymentAlert = sendWhatsAppPaymentAlert;
 
 exports.verifyWebhook = (req, res) => {
     const mode = req.query["hub.mode"];

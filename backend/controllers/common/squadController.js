@@ -197,19 +197,15 @@ exports.handleSquadWebhook = async (req, res) => {
                 statusText = `Wallet Deposit: Funds added to your Kredibly wallet. (Reason: ${payoutStatus === "fail_manual" ? "Bank network error" : "No bank details linked"}).`;
             }
 
-            const components = [
-                {
-                    type: "body",
-                    parameters: [
-                        { type: "text", text: paidAmount.toLocaleString() },
-                        { type: "text", text: sale.invoiceNumber },
-                        { type: "text", text: sale.customerName },
-                        { type: "text", text: statusText }
-                    ]
-                }
-            ];
-
-            await sendWhatsAppTemplate(business.whatsappNumber, 'kreddy_payment_alert', components).catch(e => {});
+            const { sendWhatsAppPaymentAlert } = require('../whatsapp/whatsappController');
+            await sendWhatsAppPaymentAlert(
+                business.whatsappNumber,
+                paidAmount,
+                sale.invoiceNumber,
+                sale.customerName,
+                statusText,
+                business.displayName || 'Chief'
+            ).catch(e => console.error("Squad WA Fail:", e.message));
         }
 
         // ⚡ 6. REAL-TIME DASHBOARD UPDATE (Sockets)

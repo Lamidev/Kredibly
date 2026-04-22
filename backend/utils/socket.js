@@ -11,18 +11,27 @@ module.exports = {
         });
 
         io.on("connection", (socket) => {
-            console.log("🔌 Socket connected:", socket.id);
+            const isDev = process.env.NODE_ENV !== 'production';
+            if (isDev) console.log("🔌 Socket connected:", socket.id);
 
             // Join a private room for a specific business
             socket.on("join_business", (businessId) => {
                 if (businessId) {
                     socket.join(businessId);
-                    console.log(`🏢 Socket ${socket.id} joined business room: ${businessId}`);
+                    if (isDev) console.log(`🏢 Socket ${socket.id} joined business room: ${businessId}`);
+                }
+            });
+
+            // Join a per-invoice room (for public invoice pages with no auth)
+            socket.on("join_invoice", (invoiceId) => {
+                if (invoiceId) {
+                    socket.join(`invoice:${invoiceId}`);
+                    if (isDev) console.log(`📄 Socket ${socket.id} joined invoice room: invoice:${invoiceId}`);
                 }
             });
 
             socket.on("disconnect", () => {
-                console.log("🔌 Socket disconnected:", socket.id);
+                if (isDev) console.log("🔌 Socket disconnected:", socket.id);
             });
         });
 

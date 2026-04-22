@@ -21,10 +21,12 @@ router.post('/initialize-transfer', initializeVirtualAccountPayment);
 // ─── NOMBA PAYMENTS (Primary — Instant Bank Transfer) ──────────────────────
 const { 
     initializeNombaAccount, 
+    initializeNombaSubscription,
     handleNombaWebhook,
     verifyNombaPaymentStatus 
 } = require('../../controllers/common/nombaController');
 
+router.post('/initialize-subscription', protect, initializeNombaSubscription);
 router.post('/initialize-nomba-account', initializeNombaAccount);
 router.post('/verify-nomba-payment', verifyNombaPaymentStatus);
 router.post('/webhook/nomba', handleNombaWebhook);

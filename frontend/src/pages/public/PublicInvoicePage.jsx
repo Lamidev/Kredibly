@@ -78,15 +78,15 @@ const PublicInvoicePage = () => {
         if (!sale || !sale._id || loading) return;
         
         const businessId = sale.businessId?._id || sale.businessId;
-        if (!businessId) return;
-
-        initiateSocketConnection(businessId);
+        // Pass both businessId and the current invoice ID/number to the socket
+        initiateSocketConnection(businessId, id);
 
         const onSaleUpdated = async (data) => {
             console.log("🔌 Socket Update Received:", data);
             
-            // Compare IDs safely as strings
+            // Compare IDs safely as strings - match either database ID or invoice number
             const isMatch = String(data.saleId) === String(sale._id) || 
+                            String(data.invoiceNumber) === String(sale.invoiceNumber) ||
                             String(data.saleId) === String(sale.invoiceNumber);
 
             if (isMatch) {
@@ -98,6 +98,12 @@ const PublicInvoicePage = () => {
                         
                         setSale(latestSale);
                         
+                        // Clear Nomba VA whenever a payment is received (partial or full)
+                        // This prevents trying to reuse the same VA for the remaining balance
+                        setNombaData(null); 
+                        setCustomAmount('');
+                        setCustomAmountDisplay('');
+                        
                         // Show success modal if fully paid
                         if (newBalance <= 0) {
                             const lastPayment = latestSale.payments?.length > 0 
@@ -106,8 +112,6 @@ const PublicInvoicePage = () => {
                             
                             setLastPaymentAmount(lastPayment?.amount || (sale.totalAmount - (sale.paidAmount || 0)));
                             setRecentPaymentDate(new Date());
-                            setCustomAmount('');
-                            setCustomAmountDisplay('');
                             setShowSuccessModal(true);
                         } else {
                             toast.success(`Payment Received: ₦${(data.amountPaid || 0).toLocaleString()} 💰`);
@@ -313,7 +317,7 @@ const PublicInvoicePage = () => {
             });
             
             if (res.data.success) {
-                // Refresh sale data to reflected updated ledger
+                // Refresh sale data to reflect updated ledger
                 const saleRes = await axios.get(`${API_URL}/sales/${id}`);
                 if (saleRes.data.success) {
                     const latestSale = saleRes.data.data;
@@ -331,10 +335,13 @@ const PublicInvoicePage = () => {
                         setRecentPaymentDate(new Date());
                         setCustomAmount('');
                         setCustomAmountDisplay('');
+                        setNombaData(null); // ✅ Clear VA widget after full payment
                         setShowSuccessModal(true);
                     } else {
                         toast.success("Partial payment verified! Ledger updated. 💰");
-                        setNombaData(null); // Clear VA since amount might have changed
+                        setNombaData(null); // Clear VA so customer can generate fresh one for balance
+                        setCustomAmount('');
+                        setCustomAmountDisplay('');
                     }
                 }
             } else {
@@ -347,6 +354,7 @@ const PublicInvoicePage = () => {
             setVerifyingPayment(false);
         }
     };
+
 
     const handlePaystackPayment = async (paymentChannel) => {
         const amountToPay = paymentMode === 'full' 
@@ -471,32 +479,7 @@ const PublicInvoicePage = () => {
                 {/* This hidden copy is what actually gets captured for PDF/Image */}
                 <div id="receipt-download-target" style={{ width: '600px', background: 'white', padding: '48px', fontFamily: "'Inter', sans-serif" }}>
                     {/* Receipt Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', borderBottom: '2px solid #F1F5F9', paddingBottom: '32px', position: 'relative' }}>
-                        {(isPaid || sale.invoiceType === 'record') && (
-                            <div style={{ 
-                                position: 'absolute', 
-                                right: '-20px', 
-                                top: '-20px', 
-                                width: '130px',
-                                height: '130px',
-                                border: '6px double #10B981', 
-                                borderRadius: '50%', 
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                transform: 'rotate(-15deg)', 
-                                opacity: 0.9,
-                                background: 'rgba(255, 255, 255, 0.95)',
-                                zIndex: 10,
-                                boxShadow: '0 4px 10px rgba(16, 185, 129, 0.1)'
-                            }}>
-                                <span style={{ color: '#10B981', fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>OFFICIALLY</span>
-                                <span style={{ color: '#10B981', fontSize: '22px', fontWeight: 950, textTransform: 'uppercase', margin: '-4px 0' }}>SETTLED</span>
-                                <div style={{ height: '2px', width: '70%', background: '#10B981', margin: '4px 0' }} />
-                                <span style={{ color: '#10B981', fontSize: '9px', fontWeight: 800 }}>{new Date().toLocaleDateString()}</span>
-                            </div>
-                        )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', borderBottom: '2px solid #F1F5F9', paddingBottom: '32px' }}>
                         <div>
                             {sale?.businessId?.plan === 'chairman' ? (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -511,7 +494,7 @@ const PublicInvoicePage = () => {
                             )}
                         </div>
                         
-                        <div style={{ textAlign: 'right' }}>
+                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                             {sale?.businessId?.logoUrl && sale?.businessId?.plan === 'chairman' ? (
                                 <img src={sale.businessId.logoUrl} alt="Merchant Logo" style={{ height: '48px', objectFit: 'contain', marginBottom: '8px' }} />
                             ) : sale?.businessId?.plan === 'oga' ? (
@@ -530,6 +513,29 @@ const PublicInvoicePage = () => {
                                 <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0F172A', marginBottom: '4px' }}>{sale?.businessId?.displayName}</h3>
                             )}
                             <p style={{ margin: 0, fontSize: '11px', color: '#94A3B8', fontWeight: 700, marginTop: '4px' }}>{sale?.invoiceType === 'record' ? 'Receipt' : 'Invoice'} #{sale?.invoiceNumber}</p>
+                            {(isPaid || sale.invoiceType === 'record') && (
+                                <div style={{ 
+                                    width: '110px',
+                                    height: '110px',
+                                    border: '5px double #10B981', 
+                                    borderRadius: '50%', 
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transform: 'rotate(-15deg)', 
+                                    opacity: 0.9,
+                                    background: 'rgba(255, 255, 255, 0.95)',
+                                    boxShadow: '0 4px 10px rgba(16, 185, 129, 0.1)',
+                                    marginTop: '12px',
+                                    alignSelf: 'flex-end'
+                                }}>
+                                    <span style={{ color: '#10B981', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>OFFICIALLY</span>
+                                    <span style={{ color: '#10B981', fontSize: '19px', fontWeight: 950, textTransform: 'uppercase', margin: '-3px 0' }}>SETTLED</span>
+                                    <div style={{ height: '2px', width: '70%', background: '#10B981', margin: '4px 0' }} />
+                                    <span style={{ color: '#10B981', fontSize: '8px', fontWeight: 800 }}>{new Date().toLocaleDateString()}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -587,7 +593,7 @@ const PublicInvoicePage = () => {
                     {/* Footer */}
                     <div style={{ borderTop: '2px solid #F1F5F9', paddingTop: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                         <p style={{ fontSize: '11px', color: '#334155', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <ShieldCheck size={14} color="#334155" /> Secured by Kredibly • KR-{sale?.invoiceNumber}
+                            <ShieldCheck size={14} color="#334155" /> Secured by Kredibly • {sale?.invoiceNumber}
                         </p>
                     </div>
                 </div>
@@ -931,69 +937,79 @@ const PublicInvoicePage = () => {
                                                     key="nomba-details"
                                                     initial={{ opacity: 0, scale: 0.95 }}
                                                     animate={{ opacity: 1, scale: 1 }}
-                                                    style={{ background: '#F8FAFC', padding: '24px', borderRadius: '20px', border: '2px dashed #10B981', textAlign: 'center', boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.1)' }}
+                                                    style={{ width: '100%' }}
                                                 >
-                                                    <p style={{ margin: 0, fontSize: '11px', fontWeight: 900, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Transfer exactly this amount</p>
-                                                    <h2 style={{ fontSize: '32px', fontWeight: 900, color: '#0F172A', margin: '4px 0 20px' }}>₦{(nombaData.amount || 0).toLocaleString()}</h2>
+                                                    {/* Premium Dark Bank Card */}
+                                                    <div style={{ background: '#0F172A', padding: isMobile ? '20px' : '24px', borderRadius: '24px', textAlign: 'left', color: 'white', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.3)' }}>
+                                                        {/* Decorator Gradient */}
+                                                        <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '150px', height: '150px', background: 'radial-gradient(circle, rgba(124, 58, 237, 0.4) 0%, rgba(15, 23, 42, 0) 70%)', borderRadius: '50%' }} />
 
-                                                    <div style={{ background: 'white', padding: isMobile ? '16px' : '20px', borderRadius: '14px', border: '1px solid #E2E8F0', marginBottom: '16px', position: 'relative', overflow: 'hidden' }}>
-                                                         <div style={{ 
-                                                             position: isMobile ? 'static' : 'absolute', 
-                                                             top: '15px', right: '15px', 
-                                                             display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start',
-                                                             gap: '6px', background: '#FEF2F2', padding: '5px 12px', borderRadius: '100px', 
-                                                             border: '1px solid #FEE2E2',
-                                                             marginBottom: isMobile ? '15px' : '0',
-                                                             width: isMobile ? 'fit-content' : 'auto',
-                                                             margin: isMobile ? '0 auto 12px' : '0'
-                                                         }}>
-                                                             <Clock size={12} color="#EF4444" />
-                                                             <span style={{ fontSize: '11px', fontWeight: 800, color: '#EF4444', letterSpacing: '0.5px' }}>{timeLeft || '44:59'}</span>
-                                                         </div>
-                                                         <p style={{ margin: '0 0 6px', fontSize: '11px', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>Account Number</p>
-                                                         <p style={{ margin: 0, fontSize: isMobile ? '22px' : '32px', fontWeight: 900, color: '#4C1D95', letterSpacing: isMobile ? '1px' : '3px', userSelect: 'all', wordBreak: 'break-all', lineHeight: 1.2 }}>{nombaData.accountNumber}</p>
-                                                         <p style={{ margin: '10px 0 2px', fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>{nombaData.bankName}</p>
-                                                         <p style={{ margin: 0, fontSize: isMobile ? '13px' : '14px', fontWeight: 700, color: '#475569', wordBreak: 'break-word', maxWidth: '100%', lineHeight: 1.4 }}>{nombaData.accountName}</p>
-                                                     </div>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', position: 'relative', zIndex: 2 }}>
+                                                            <div>
+                                                               <p style={{ margin: 0, fontSize: '11px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Exact Amount Required</p>
+                                                               <h2 style={{ fontSize: isMobile ? '28px' : '36px', fontWeight: 950, color: 'white', margin: '4px 0 0', letterSpacing: '-0.02em' }}>₦{(nombaData.amount || 0).toLocaleString()}</h2>
+                                                            </div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(239, 68, 68, 0.1)', padding: '6px 12px', borderRadius: '100px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                                               <Clock size={12} color="#FCA5A5" />
+                                                               <span style={{ fontSize: '11px', fontWeight: 900, color: '#FCA5A5', letterSpacing: '0.5px' }}>{timeLeft || '44:59'}</span>
+                                                            </div>
+                                                        </div>
 
-                                                    <button
-                                                        onClick={() => {
-                                                            navigator.clipboard.writeText(nombaData.accountNumber);
-                                                            toast.success('Account number copied!');
-                                                        }}
-                                                        style={{ width: '100%', padding: '13px', background: '#4C1D95', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', marginBottom: '12px' }}
-                                                    >
-                                                        Copy Account Number
-                                                    </button>
+                                                        <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '16px', padding: isMobile ? '16px' : '20px', border: '1px solid rgba(255, 255, 255, 0.08)', position: 'relative', zIndex: 2 }}>
+                                                             <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Bank</p>
+                                                             <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 800, color: 'white' }}>{nombaData.bankName}</p>
 
-                                                    <motion.button
-                                                        whileTap={{ scale: 0.98 }}
-                                                        onClick={handleManualVerification}
-                                                        disabled={verifyingPayment}
-                                                        style={{
-                                                            width: '100%',
-                                                            padding: '13px',
-                                                            background: '#F1F5F9',
-                                                            color: '#475569',
-                                                            borderRadius: '10px',
-                                                            border: '1px solid #E2E8F0',
-                                                            fontSize: '13px',
-                                                            fontWeight: 800,
-                                                            cursor: verifyingPayment ? 'not-allowed' : 'pointer',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            gap: '8px',
-                                                            marginBottom: '12px'
-                                                        }}
-                                                    >
-                                                        {verifyingPayment ? <Loader2 size={16} className="spin-animation" /> : <ShieldCheck size={16} />}
-                                                        <span>{verifyingPayment ? 'Verifying...' : 'I have made the transfer'}</span>
-                                                    </motion.button>
+                                                             <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Account Number</p>
+                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                                                                <p style={{ margin: 0, fontSize: isMobile ? '24px' : '28px', fontWeight: 950, color: '#A78BFA', letterSpacing: '2px', userSelect: 'all' }}>{nombaData.accountNumber}</p>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        navigator.clipboard.writeText(nombaData.accountNumber);
+                                                                        toast.success('Account number copied!');
+                                                                    }}
+                                                                    style={{ background: 'white', color: '#0F172A', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 900, cursor: 'pointer', flexShrink: 0, boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                                                                >
+                                                                    Copy
+                                                                </button>
+                                                             </div>
 
-                                                    <div style={{ padding: '10px 16px', background: '#ECFDF5', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                                        <Loader2 size={15} className="spin-animation" color="#10B981" />
-                                                        <span style={{ fontSize: '12px', fontWeight: 800, color: '#047857' }}>Waiting for transfer... this page updates automatically</span>
+                                                             <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px dashed rgba(255, 255, 255, 0.15)' }}>
+                                                                 <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Account Name</p>
+                                                                 <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#CBD5E1', wordBreak: 'break-word', lineHeight: 1.4 }}>{nombaData.accountName}</p>
+                                                             </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div style={{ marginTop: '16px' }}>
+                                                        <motion.button
+                                                            whileTap={{ scale: 0.98 }}
+                                                            onClick={handleManualVerification}
+                                                            disabled={verifyingPayment}
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '16px',
+                                                                background: '#F1F5F9',
+                                                                color: '#475569',
+                                                                borderRadius: '14px',
+                                                                border: '1px solid #E2E8F0',
+                                                                fontSize: '14px',
+                                                                fontWeight: 800,
+                                                                cursor: verifyingPayment ? 'not-allowed' : 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                gap: '8px',
+                                                                marginBottom: '12px'
+                                                            }}
+                                                        >
+                                                            {verifyingPayment ? <Loader2 size={16} className="spin-animation" /> : <ShieldCheck size={16} />}
+                                                            <span>{verifyingPayment ? 'Verifying...' : 'I have made the transfer'}</span>
+                                                        </motion.button>
+
+                                                        <div style={{ padding: '12px 16px', background: '#ECFDF5', borderRadius: '12px', border: '1px solid #D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                                            <Loader2 size={16} className="spin-animation" color="#10B981" />
+                                                            <span style={{ fontSize: '13px', fontWeight: 800, color: '#047857' }}>Listening for payment... updates automatically</span>
+                                                        </div>
                                                     </div>
                                                 </motion.div>
                                             ) : (
@@ -1031,6 +1047,7 @@ const PublicInvoicePage = () => {
                                         </AnimatePresence>
 
                                         {/* ── PAYSTACK CARD / FALLBACK (SECONDARY) ── */}
+                                        {/* 
                                         <div style={{ position: 'relative', margin: '4px 0' }}>
                                             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center' }}><div style={{ width: '100%', borderTop: '1px solid #F1F5F9' }} /></div>
                                             <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
@@ -1060,6 +1077,7 @@ const PublicInvoicePage = () => {
                                             {verifying ? <Loader2 size={16} className="spin-animation" /> : <CreditCard size={16} color="#475569" />}
                                             <span>Pay with Card (Paystack)</span>
                                         </button>
+                                        */}
 
                                 </div>
 

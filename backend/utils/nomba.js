@@ -147,6 +147,54 @@ const createDynamicVirtualAccount = async ({ amount, invoiceNumber, merchantName
 };
 
 /**
+ * 💳 CREATE NOMBA CHECKOUT ORDER
+ * Generates a hosted checkout page URL for SaaS subscriptions.
+ * Customers can pay with Card, Transfer, USSD, etc.
+ */
+const createNombaCheckoutOrder = async ({ amount, orderReference, customerEmail, customerName }) => {
+    try {
+        const token = await getAccessToken();
+
+        const payload = {
+            order: {
+                orderReference: orderReference,
+                currency: "NGN",
+                amount: amount.toFixed(2), // strictly "3000.00" format 
+                customerEmail: customerEmail,
+                customerName: customerName || 'Kredibly Merchant',
+                callbackUrl: `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/merchant/settings?checkout=success`
+            }
+        };
+
+        const response = await axios.post(
+            `${NOMBA_BASE_URL}/checkout/order`,
+            payload,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    accountId: NOMBA_ACCOUNT_ID
+                },
+                timeout: 15000
+            }
+        );
+
+        // API returns { code: "00", description: "Success", data: { checkoutLink: "..." } }
+        const data = response.data?.data;
+        if (!data || !data.checkoutLink) {
+            throw new Error('Nomba did not return a valid checkout link');
+        }
+
+        console.log(`✅ Nomba Checkout created: ${data.checkoutLink} for Order ${orderReference}`);
+        return data.checkoutLink;
+
+    } catch (err) {
+        console.error('❌ NOMBA CHECKOUT ERROR DETAILS:', err.response?.data || err.message);
+        throw new Error(err.response?.data?.description || err.response?.data?.message || 'Failed to initialize Kredibly checkout');
+    }
+};
+
+/**
  * 🔐 VERIFY NOMBA WEBHOOK SIGNATURE
  * Nomba signs webhooks with a signature header. Always verify before processing.
  * 
@@ -281,6 +329,7 @@ const initiateTransfer = async ({ amount, bankCode, accountNumber, accountName, 
 module.exports = {
     getAccessToken,
     createDynamicVirtualAccount,
+    createNombaCheckoutOrder,
     verifyWebhookSignature,
     initiateTransfer,
     checkPaymentStatusByReference

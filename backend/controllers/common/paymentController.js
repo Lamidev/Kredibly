@@ -407,17 +407,31 @@ exports.verifyInvoicePayment = async (req, res) => {
                 const balance = sale.totalAmount - totalPaid;
                 const receiptLink = `https://usekredibly.com/r/${sale.invoiceNumber}`;
                 
+                let customText = "";
                 let msg = `🔔 *Payment Verified!*\n\nChief, I've just verified an online payment of *₦${actualCreditAmount.toLocaleString()}* for *Invoice #${sale.invoiceNumber}* (${sale.customerName}).\n\n`;
                 if (lockUntil && new Date() < lockUntil) {
+                    customText += `🛡️ *Security Hold:* Escrowed for 24h due to bank update. \n\n`;
                     msg += `🛡️ *Security Hold:* Escrowed for 24h due to bank update. \n\n`;
                 } else {
+                    customText += `🛡️ *Clearing:* Funds secured and settled on T+1. \n\n`;
                     msg += `🛡️ *Clearing:* Funds secured and settled on T+1. \n\n`;
                 }
-                msg += balance <= 0 ? "✅ *Fully Paid!*" : `⏳ *Balance Remaining:* ₦${balance.toLocaleString()}`;
+                
+                const statusLine = balance <= 0 ? "✅ *Fully Paid!*" : `⏳ *Balance Remaining:* ₦${balance.toLocaleString()}`;
+                customText += statusLine;
+                msg += statusLine;
                 msg += `\n\n📄 *Receipt:* ${receiptLink}`;
                 
-                const { sendWhatsAppAlert } = require('../whatsapp/whatsappController');
-                await sendWhatsAppAlert(business.whatsappNumber, business.displayName || 'Chief', msg).catch(e => console.error("WA Fail:", e.message));
+                const { sendWhatsAppPaymentAlert } = require('../whatsapp/whatsappController');
+                await sendWhatsAppPaymentAlert(
+                    business.whatsappNumber,
+                    actualCreditAmount,
+                    sale.invoiceNumber,
+                    sale.customerName,
+                    customText,
+                    business.displayName || 'Chief',
+                    msg
+                ).catch(e => console.error("WA Fail:", e.message));
                 logUsage("merchant_fee", { amount: actualCreditAmount }).catch(e => console.error("Log fail:", e));
             }
         }
