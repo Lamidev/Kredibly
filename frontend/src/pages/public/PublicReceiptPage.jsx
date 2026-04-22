@@ -26,6 +26,13 @@ const PublicReceiptPage = () => {
     const [sale, setSale] = useState(null);
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(null);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         fetchReceipt();
