@@ -17,7 +17,7 @@ export const SaleProvider = ({ children }) => {
     useEffect(() => {
         if (!profile || !profile._id) return;
 
-        initiateSocketConnection(profile._id.toString());
+        initiateSocketConnection(profile._id.toString().toLowerCase());
 
         const handleGlobalSaleUpdate = (data) => {
             console.log("🔌 Real-time Ledger Update:", data);
@@ -30,7 +30,7 @@ export const SaleProvider = ({ children }) => {
         listenToEvent("sale_updated", handleGlobalSaleUpdate);
 
         return () => {
-            stopListeningToEvent("sale_updated");
+            stopListeningToEvent("sale_updated", handleGlobalSaleUpdate);
         };
     }, [profile?._id]);
 
