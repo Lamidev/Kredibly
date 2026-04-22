@@ -1203,7 +1203,7 @@ const InvoicePage = () => {
                     {/* Footer */}
                     <div style={{ borderTop: '2px solid #F1F5F9', paddingTop: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                         <p style={{ fontSize: '11px', color: '#334155', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <ShieldCheck size={14} color="#334155" /> Secured by Kredibly • KR-{sale?.invoiceNumber}
+                            <ShieldCheck size={14} color="#334155" /> Secured by Kredibly • {sale?.invoiceNumber}
                         </p>
                     </div>
                 </div>

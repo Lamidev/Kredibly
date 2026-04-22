@@ -282,55 +282,7 @@ const Dashboard = () => {
                     </h2>
                 </motion.div>
 
-                <motion.div 
-                    whileHover={{ y: -5 }}
-                    className="dashboard-glass stat-card-premium" 
-                    style={{ 
-                        padding: '24px', borderRadius: '28px', border: '1px solid #4C1D95', 
-                        background: 'linear-gradient(135deg, rgba(76, 29, 149, 0.05) 0%, rgba(255,255,255,1) 100%)',
-                        position: 'relative', overflow: 'hidden'
-                    }}
-                >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                        <div style={{ background: 'rgba(76, 29, 149, 0.1)', color: '#4C1D95', padding: '10px', borderRadius: '14px' }}>
-                            <Activity size={20} className="pulse" strokeWidth={2.5} />
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                            <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#4C1D95', background: 'rgba(76, 29, 149, 0.2)', padding: '4px 12px', borderRadius: '100px' }}>SECURED</span>
-                        </div>
-                    </div>
-                    
-                    <p style={{ fontSize: '0.85rem', color: '#4C1D95', fontWeight: 800, marginBottom: '4px' }}>Money in Transit</p>
-                    <h2 style={{ fontSize: '2rem', fontWeight: 950, color: '#0F172A', letterSpacing: '-0.03em', marginBottom: '16px' }}>
-                        ₦{stats?.pendingSettlement?.toLocaleString() || 0}
-                    </h2>
 
-                    {/* Progress to Settlement */}
-                    <div style={{ width: '100%', height: '6px', background: '#F1F5F9', borderRadius: '10px', marginBottom: '12px', overflow: 'hidden' }}>
-                        <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: stats?.pendingSettlement > 0 ? '70%' : '0%' }}
-                            transition={{ duration: 1.5, ease: "easeOut" }}
-                            style={{ height: '100%', background: 'linear-gradient(90deg, #4C1D95 0%, #7C3AED 100%)', borderRadius: '10px' }}
-                        />
-                    </div>
-                    
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        {stats?.pendingSettlement > 0 ? (
-                            <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 700, color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <Clock size={12} /> Est. Arrival: Tomorrow
-                            </p>
-                        ) : (
-                            <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 700, color: '#10B981', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <CheckCircle size={12} /> All settlements cleared
-                            </p>
-                        )}
-                        <ArrowUpRight size={14} color="#64748B" />
-                    </div>
-
-                    {/* Subtle Background Icon */}
-                    <Wallet size={80} style={{ position: 'absolute', bottom: '-20px', right: '-20px', opacity: 0.03, color: '#4C1D95' }} />
-                </motion.div>
 
                 <motion.div 
                     whileHover={{ y: -5 }}

@@ -29,7 +29,7 @@ const sendIndividualDebtNudge = async (data) => {
             if (isInsideWindow) {
                 await sendWhatsAppMessage(whatsappNumber, msg);
             } else if (profile.plan === "oga" || profile.plan === "chairman") {
-                await sendWhatsAppAlert(whatsappNumber, bossTitle, msg);
+                await sendWhatsAppAlert(whatsappNumber, bossTitle, msg, sale.invoiceNumber);
             } else {
                 const { sendEmail } = require("./emailService");
                 const user = await require("../models/User").findById(profile.ownerId);
@@ -65,7 +65,7 @@ const sendIndividualDebtNudge = async (data) => {
             if (isInsideWindow) {
                 await sendWhatsAppMessage(whatsappNumber, msg);
             } else if (profile.plan === "oga" || profile.plan === "chairman") {
-                await sendWhatsAppAlert(whatsappNumber, bossTitle, msg);
+                await sendWhatsAppAlert(whatsappNumber, bossTitle, msg, sale.invoiceNumber);
             } else {
                 const { sendEmail } = require("./emailService");
                 const user = await require("../models/User").findById(profile.ownerId);

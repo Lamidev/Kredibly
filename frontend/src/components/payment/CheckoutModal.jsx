@@ -97,7 +97,7 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
         }
     };
 
-    const handlePaystackPayment = () => {
+    const handleNombaPayment = async () => {
         if (finalPrice <= 0) {
             const freeReference = {
                 reference: `FREE_${plan.toUpperCase()}_${Date.now()}_${Math.random().toString(36).substring(7)}`,
@@ -107,36 +107,35 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
             return;
         }
 
-        if (!window.PaystackPop) {
-            toast.error("Payment system is still loading. Please try again in a few seconds.");
-            return;
-        }
-
         if (!userEmail) {
             toast.error("User email is missing. Please refresh and try again.");
             return;
         }
 
-        const handler = window.PaystackPop.setup({
-            key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_placeholder',
-            email: userEmail,
-            amount: Math.round(finalPrice * 100), // in kobo
-            currency: 'NGN',
-            ref: `SUB_${plan.toUpperCase()}_${Date.now()}`,
-            metadata: {
-                paymentType: 'subscription',
+        setStatus('verifying');
+        toast.loading("Generating secure checkout...", { id: 'checkout-gen' });
+
+        try {
+            const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+            const res = await axios.post(`${API_URL}/payments/initialize-subscription`, {
                 plan,
                 billingCycle,
                 couponCode: discount?.code
-            },
-            callback: function (response) {
-                handleInternalSuccess(response);
-            },
-            onClose: function () {
-                toast.info("Payment window closed.");
+            }, { withCredentials: true });
+
+            if (res.data.success && res.data.checkoutLink) {
+                toast.dismiss('checkout-gen');
+                // Redirect user to Nomba hosted checkout
+                window.location.href = res.data.checkoutLink;
+            } else {
+                throw new Error("Invalid response from server");
             }
-        });
-        handler.openIframe();
+        } catch (err) {
+            console.error("Nomba Checkout Init Err:", err);
+            toast.dismiss('checkout-gen');
+            toast.error(err.response?.data?.message || "Failed to initialize secure checkout. Please try again.");
+            setStatus('billing');
+        }
     };
 
     return createPortal(
@@ -153,7 +152,10 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
                     background: 'white', width: '100%', maxWidth: '440px',
                     borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
                     border: '2px solid var(--primary-glow)',
-                    overflow: 'hidden', position: 'relative', minHeight: '300px'
+                    position: 'relative', 
+                    maxHeight: '90vh',
+                    display: 'flex',
+                    flexDirection: 'column'
                 }}
             >
                 <AnimatePresence mode="wait">
@@ -163,31 +165,55 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
+                            style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}
                         >
                             {/* Header */}
-                            <div style={{ padding: '20px 24px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <h3 style={{ fontSize: '1.2rem', fontWeight: 950, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>Confirm Upgrade</h3>
-                                <button onClick={onClose} style={{ background: '#F1F5F9', border: 'none', cursor: 'pointer', color: '#64748B', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ padding: '24px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 950, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>Confirm Upgrade</h3>
+                                <button onClick={onClose} style={{ background: '#F1F5F9', border: 'none', cursor: 'pointer', color: '#64748B', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: '0.2s' }} onMouseOver={e=>e.currentTarget.style.background='#E2E8F0'} onMouseOut={e=>e.currentTarget.style.background='#F1F5F9'}>
                                     <X size={20} />
                                 </button>
                             </div>
 
                             {/* Body */}
-                            <div style={{ padding: '24px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                    <span className={plan === 'hustler' ? "plan-tag-hustler" : "plan-tag-bright"}>
-                                        {plan === 'oga' ? 'Oga Plan' : plan === 'chairman' ? 'Chairman Plan' : plan === 'hustler' ? 'Hustler Plan' : 'Custom Plan'}
-                                    </span>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <span style={{ fontSize: '1.1rem', fontWeight: 950 }}>₦{basePrice.toLocaleString()}</span>
-                                        <div style={{ fontSize: '0.65rem', fontWeight: 900, color: '#16A34A', background: '#F0FDF4', padding: '2px 8px', borderRadius: '4px', marginTop: '4px' }}>PIONEER SUBSIDY APPLIED</div>
+                            <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+                                
+                                {/* Plan Card Area */}
+                                <div style={{ background: '#F8FAFC', borderRadius: '20px', padding: '20px', marginBottom: '24px', border: '1px solid #E2E8F0' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                                        <div>
+                                            <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Selected Plan</p>
+                                            <span style={{ 
+                                                display: 'inline-flex', 
+                                                alignItems: 'center', 
+                                                padding: '6px 16px', 
+                                                background: plan === 'hustler' ? '#FEF2F2' : 'var(--primary-glow)', 
+                                                color: plan === 'hustler' ? '#EF4444' : 'var(--primary)', 
+                                                borderRadius: '100px', 
+                                                fontSize: '0.85rem', 
+                                                fontWeight: 900, 
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.04em',
+                                                border: `1px solid ${plan === 'hustler' ? '#FEE2E2' : 'rgba(76, 29, 149, 0.1)'}`,
+                                                whiteSpace: 'nowrap',
+                                                lineHeight: 1
+                                            }}>
+                                                {plan === 'oga' ? 'Oga Plan' : plan === 'chairman' ? 'Chairman Plan' : plan === 'hustler' ? 'Hustler Plan' : 'Custom Plan'}
+                                            </span>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                             <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Base Rate</p>
+                                             <span style={{ fontSize: '1.25rem', fontWeight: 950, color: '#0F172A', lineHeight: 1 }}>₦{basePrice.toLocaleString()}</span>
+                                        </div>
                                     </div>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', fontSize: '0.85rem', color: '#64748B', fontWeight: 600 }}>
-                                    <span>Billing Cycle</span>
-                                    <span style={{ textTransform: 'capitalize', color: 'var(--primary)', fontWeight: 800 }}>
-                                        Pioneer Offer (2 Months Slash)
-                                    </span>
+
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0 0', borderTop: '1px dashed #CBD5E1' }}>
+                                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748B', fontWeight: 700 }}>Billing Cycle</p>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#F0FDF4', padding: '6px 12px', borderRadius: '8px', border: '1px solid #BBF7D0' }}>
+                                             <Sparkles size={14} color="#16A34A" />
+                                             <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#16A34A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pioneer Slash</span>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {discount ? (
@@ -225,7 +251,7 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
                                 </div>
 
                                 <button
-                                    onClick={handlePaystackPayment}
+                                    onClick={handleNombaPayment}
                                     className="btn-primary"
                                     style={{ width: '100%', height: '60px', borderRadius: '18px', fontSize: '1.1rem', justifyContent: 'center', fontWeight: 900, boxShadow: '0 10px 20px -5px var(--primary-glow)' }}
                                 >

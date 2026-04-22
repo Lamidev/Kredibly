@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import CheckoutModal from '../../components/payment/CheckoutModal';
 import PasswordConfirmModal from '../../components/payment/PasswordConfirmModal';
@@ -14,7 +15,6 @@ import {
     Zap,
     Clock,
     CheckCircle,
-    AlertCircle as AlertIcon,
     Loader2,
     Building2,
     Search
@@ -23,7 +23,24 @@ import axios from 'axios';
 import { isValidNigerianPhone, formatPhoneForDB } from '../../utils/validation';
 
 const SettingsPage = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
     const { user: currentUser, profile, updateProfile } = useAuth();
+    
+    // Check for Return from Nomba Checkout
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get('checkout') === 'success') {
+            toast.success("Payment Received! Validating your upgrade...");
+            navigate('/merchant/settings', { replace: true });
+            
+            import('canvas-confetti').then((module) => {
+                const confetti = module.default;
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            });
+        }
+    }, [location, navigate]);
+
     const isPro = profile?.plan === 'oga' || profile?.plan === 'chairman';
     const [saving, setSaving] = useState(false);
     const [showCheckout, setShowCheckout] = useState(false);

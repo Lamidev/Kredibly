@@ -223,35 +223,48 @@ exports.handlePaystackWebhook = async (req, res) => {
                         if (balance <= 0) customText = `✅ Fully Paid! This debt is now cleared.`;
                         else customText = `⏳ Balance Remaining: ₦${balance.toLocaleString()}`;
                         
-                        const components = [
-                            {
-                                type: "body",
-                                parameters: [
-                                    { type: "text", text: paidAmount.toLocaleString() },
-                                    { type: "text", text: invoiceNumber },
-                                    { type: "text", text: sale.customerName },
-                                    { type: "text", text: customText + ` \n\n📄 View Receipt: https://usekredibly.com/r/${invoiceNumber}` }
-                                ]
-                            }
-                        ];
-                        
-                        await sendWhatsAppTemplate(business.whatsappNumber, 'kreddy_payment_alert', components).catch(err => console.error(`❌ WhatsApp fail:`, err.message));
+                        const { sendWhatsAppPaymentAlert } = require('../whatsapp/whatsappController');
+                        await sendWhatsAppPaymentAlert(
+                            business.whatsappNumber, 
+                            paidAmount, 
+                            invoiceNumber, 
+                            sale.customerName, 
+                            customText, 
+                            business.displayName || 'Chief'
+                        ).catch(e => console.error("WA Fail:", e.message));
                     }
 
                     // ⚡ REAL-TIME DASHBOARD UPDATE (Sockets)
                     const { getIO } = require('../../utils/socket');
                     const io = getIO();
                     if (io) {
-                        console.log(`🔌 Emitting sale_updated for business: ${business._id}`);
-                        io.to(business._id.toString()).emit('sale_updated', {
+                        const totalPaid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
+                        const balanceRemaining = sale.totalAmount - totalPaid;
+                        const payload = {
                             saleId: sale._id,
                             invoiceNumber: invoiceNumber,
                             amount: actualCreditAmount,
                             customerName: sale.customerName,
                             status: sale.status,
-                            balance: sale.totalAmount - sale.payments.reduce((sum, p) => sum + p.amount, 0)
-                        });
+                            balance: balanceRemaining,
+                            amountPaid: actualCreditAmount
+                        };
+
+                        console.log(`🔌 Emitting sale_updated for business: ${business?._id} & invoice: ${invoiceNumber}`);
+                        
+                        // Emit to business room (merchant dashboard)
+                        if (business && business._id) {
+                            io.to(business._id.toString()).emit('sale_updated', payload);
+                        }
+                        
+                        // Emit to invoice-specific rooms (public invoice page)
+                        io.to(`invoice:${invoiceNumber}`).emit('sale_updated', payload);
+                        io.to(`invoice:${sale._id.toString()}`).emit('sale_updated', payload);
+                        if (sale.publicSlug) {
+                            io.to(`invoice:${sale.publicSlug}`).emit('sale_updated', payload);
+                        }
                     }
+
                 }
             }
         }

@@ -268,32 +268,7 @@ const PublicReceiptPage = () => {
                 <div id="receipt-download-target" style={{ width: '600px', background: 'white', padding: '48px', fontFamily: "'Inter', sans-serif" }}>
                     {/* Receipt Header */}
                     {/* Receipt Header & Branding Tiers */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', borderBottom: '2px solid #F1F5F9', paddingBottom: '32px', position: 'relative' }}>
-                        {isPaid && (
-                                <div style={{ 
-                                    position: 'absolute', 
-                                    right: '-20px', 
-                                    top: '-20px', 
-                                    width: '130px',
-                                    height: '130px',
-                                    border: '6px double #10B981', 
-                                    borderRadius: '50%', 
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    transform: 'rotate(-15deg)', 
-                                    opacity: 0.9,
-                                    background: 'rgba(255, 255, 255, 0.95)',
-                                    zIndex: 10,
-                                    boxShadow: '0 4px 10px rgba(16, 185, 129, 0.1)'
-                                }}>
-                                    <span style={{ color: '#10B981', fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>OFFICIALLY</span>
-                                    <span style={{ color: '#10B981', fontSize: '22px', fontWeight: 950, textTransform: 'uppercase', margin: '-4px 0' }}>SETTLED</span>
-                                    <div style={{ height: '2px', width: '70%', background: '#10B981', margin: '4px 0' }} />
-                                    <span style={{ color: '#10B981', fontSize: '9px', fontWeight: 800 }}>{new Date().toLocaleDateString()}</span>
-                                </div>
-                        )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', borderBottom: '2px solid #F1F5F9', paddingBottom: '32px' }}>
                         <div>
                             {/* Branding Tier: Chairman gets NO Kredibly logo in header, Oga gets co-branded, Hustler gets Kredibly-focused */}
                             {(sale?.businessId?.plan === 'hustler' || !sale?.businessId?.plan) && (
@@ -308,7 +283,7 @@ const PublicReceiptPage = () => {
                             )}
                         </div>
                         
-                        <div style={{ textAlign: 'right' }}>
+                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                             {/* Merchant Logo (Always for Oga/Chairman, fallback for Hustler) */}
                             {sale?.businessId?.logoUrl ? (
                                 <img src={sale.businessId.logoUrl} alt="Merchant Logo" style={{ height: '48px', maxWidth: '180px', objectFit: 'contain', marginBottom: '8px' }} />
@@ -316,6 +291,29 @@ const PublicReceiptPage = () => {
                                 <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: '#0F172A', marginBottom: '4px' }}>{sale?.businessId?.displayName}</h3>
                             )}
                             <p style={{ margin: 0, fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Invoice #{sale?.invoiceNumber}</p>
+                            {isPaid && (
+                                <div style={{ 
+                                    width: '110px',
+                                    height: '110px',
+                                    border: '5px double #10B981', 
+                                    borderRadius: '50%', 
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transform: 'rotate(-15deg)', 
+                                    opacity: 0.9,
+                                    background: 'rgba(255, 255, 255, 0.95)',
+                                    boxShadow: '0 4px 10px rgba(16, 185, 129, 0.1)',
+                                    marginTop: '12px',
+                                    alignSelf: 'flex-end'
+                                }}>
+                                    <span style={{ color: '#10B981', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>OFFICIALLY</span>
+                                    <span style={{ color: '#10B981', fontSize: '19px', fontWeight: 950, textTransform: 'uppercase', margin: '-3px 0' }}>SETTLED</span>
+                                    <div style={{ height: '2px', width: '70%', background: '#10B981', margin: '4px 0' }} />
+                                    <span style={{ color: '#10B981', fontSize: '8px', fontWeight: 800 }}>{new Date().toLocaleDateString()}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -374,7 +372,7 @@ const PublicReceiptPage = () => {
                     {/* Footer */}
                     <div style={{ borderTop: '2px solid #F1F5F9', paddingTop: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                         <p style={{ fontSize: '11px', color: '#334155', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <ShieldCheck size={14} color="#334155" /> Secured by Kredibly • KR-{sale?.invoiceNumber}
+                            <ShieldCheck size={14} color="#334155" /> Secured by Kredibly • {sale?.invoiceNumber}
                         </p>
                     </div>
                 </div>

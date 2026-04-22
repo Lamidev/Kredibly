@@ -4,9 +4,56 @@ const VirtualAccount = require('../../models/VirtualAccount');
 const Notification = require('../../models/Notification');
 const ActivityLog = require('../../models/ActivityLog');
 const { logActivity } = require('../../utils/activityLogger');
-const { createDynamicVirtualAccount, verifyWebhookSignature, initiateTransfer, checkPaymentStatusByReference } = require('../../utils/nomba');
+const { createDynamicVirtualAccount, createNombaCheckoutOrder, verifyWebhookSignature, initiateTransfer, checkPaymentStatusByReference } = require('../../utils/nomba');
 const { logUsage } = require('../../utils/usageTracker');
 const { sendWhatsAppAlert } = require('../whatsapp/whatsappController');
+
+/**
+ * 💳 INITIALIZE NOMBA SUBSCRIPTION (SaaS)
+ * Creates a hosted checkout link securely using the date promo logic.
+ * Route: POST /api/payments/initialize-subscription
+ */
+exports.initializeNombaSubscription = async (req, res) => {
+    try {
+        const { plan, billingCycle } = req.body;
+        const business = await BusinessProfile.findOne({ ownerId: req.user._id });
+        if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
+
+        if (!['oga', 'chairman'].includes(plan)) {
+            return res.status(400).json({ success: false, message: 'Invalid plan selected' });
+        }
+
+        const basePrices = {
+            oga: 6000,
+            chairman: 9000
+        };
+
+        let amount = basePrices[plan];
+
+        // Ensure Date Promo Logic is computed server-side
+        if (billingCycle === 'launch' && new Date() < new Date('2026-06-01')) {
+            amount = amount * 0.5; // 50% discount
+        }
+
+        const orderReference = `SUB-${plan.toUpperCase()}-${business._id}-${Date.now().toString().slice(-4)}`;
+
+        const checkoutLink = await createNombaCheckoutOrder({
+            amount,
+            orderReference,
+            customerEmail: req.user.email,
+            customerName: business.displayName || 'Kredibly Merchant'
+        });
+
+        res.status(200).json({
+            success: true,
+            checkoutLink
+        });
+
+    } catch (err) {
+        console.error('❌ initializeNombaSubscription Error:', err);
+        res.status(500).json({ success: false, message: 'Failed to generate checkout link' });
+    }
+};
 
 /**
  * ⚡ INITIALIZE NOMBA VIRTUAL ACCOUNT
@@ -221,15 +268,35 @@ exports.handleNombaWebhook = async (req, res) => {
             || paymentData?.orderReference
             || paymentData?.transactionReference;
         const amountRaw = paymentData?.amount || paymentData?.amountPaid || 0;
-        // Fail-safe: If it looks like Naira (e.g. 100.0 instead of 10000), don't divide by 100
-        const amountPaid = amountRaw > 500 ? amountRaw / 100 : amountRaw;
+        // Parse the amount safely. 
+        // Virtual Accounts send kobo (e.g. 450000 = 4500 NGN).
+        // Checkout API might return Naira strings (e.g. "4500.00").
+        let amountPaid = parseFloat(amountRaw);
+        const isSub = typeof accountReference === 'string' && accountReference.startsWith('SUB-');
+        
+        // If it's a huge integer and doesn't explicitly look like a float, divide by 100.
+        // In Kredibly, all transactions are generally > 1000 NGN.
+        // Thus, if it's > 20000 (which is 20k), it's likely Kobo unless it's a massive payment.
+        // The safest check: if it ends with exactly ".0" or ".00", we can infer it's Naira.
+        const strVal = amountRaw.toString();
+        if (!strVal.includes('.') && amountPaid > 1000) {
+            amountPaid = amountPaid / 100;
+        } else if (isSub && amountPaid > 100000) { // Safety for subscriptions if they ever convert to kobo
+            amountPaid = amountPaid / 100;
+        }
 
         if (!accountReference || amountPaid <= 0) {
             console.warn('⚠️ Nomba Webhook: Missing reference or amount — ignoring');
             return;
         }
 
-        // 4. Trigger unified processing logic
+        // 4. Intercept Subscriptions
+        if (typeof accountReference === 'string' && accountReference.startsWith('SUB-')) {
+            console.log(`🚀 Nomba Webhook: Subscription payment detected for ${accountReference}`);
+            return await processSubscriptionWebhook(accountReference, amountPaid, payer, paymentData?.transactionReference || accountReference);
+        }
+
+        // 5. Trigger unified processing logic
         await internalProcessNombaPayment({
             accountReference,
             amount: amountPaid,
@@ -241,6 +308,61 @@ exports.handleNombaWebhook = async (req, res) => {
         console.error('❌ Nomba Webhook Processing Error:', err);
     }
 };
+
+/**
+ * 🏆 PROCESS SUBSCRIPTION PLAN UPGRADES
+ * Triggers when Nomba confirms payment for a Nomba Hosted Checkout
+ */
+async function processSubscriptionWebhook(reference, amount, payer, txRef) {
+    try {
+        const parts = reference.split('-');
+        if (parts.length < 3) return console.error('❌ Invalid subscription reference:', reference);
+        
+        const plan = parts[1].toLowerCase();
+        const businessId = parts[2];
+
+        const business = await BusinessProfile.findById(businessId);
+        if (!business) return console.error('❌ Subscription webhook: Business not found', businessId);
+
+        // Calculate Next Billing Date
+        const currentExpiry = business.trialExpiresAt;
+        const now = new Date();
+        const start = (currentExpiry && currentExpiry > now) ? currentExpiry : now;
+        const nextBilling = new Date(start);
+        nextBilling.setMonth(nextBilling.getMonth() + 1); // Add 1 month
+
+        const oldPlan = business.plan;
+        
+        // Update Business
+        business.plan = plan;
+        business.planStatus = 'active';
+        business.trialExpiresAt = nextBilling;
+
+        if (!business.subscriptionHistory) business.subscriptionHistory = [];
+        business.subscriptionHistory.push({
+            date: new Date(),
+            plan: plan,
+            amount,
+            reference: txRef,
+            provider: 'nomba',
+            billingCycle: 'monthly',
+            expiresAt: nextBilling
+        });
+
+        await business.save();
+
+        console.log(`✅ ${business.displayName} upgraded to ${plan.toUpperCase()}! Next bill: ${nextBilling.toISOString()}`);
+
+        // Welcome Message (WhatsApp Nudge)
+        if (business.whatsappNumber) {
+            const msg = `🎉 *Upgrade Successful!*\n\nHigh Power! Your Kredibly subscription has been upgraded to the *${plan.toUpperCase()}* plan.\n\nEnjoy the premium features boss! 🔥`;
+            await sendWhatsAppAlert(business.whatsappNumber, msg);
+        }
+
+    } catch (error) {
+        console.error('❌ Subscription Webhook Error:', error);
+    }
+}
 
 /**
  * 🛠️ UNIFIED NOMBA PAYMENT PROCESSOR
@@ -304,19 +426,31 @@ async function internalProcessNombaPayment({ accountReference, amount, transacti
                 ? '✅ Fully Paid!'
                 : `⏳ Balance Remaining: ₦${balanceRemaining.toLocaleString()}`;
 
+            let customText = "";
             let msg = `💰 *Bank Transfer Received!*\n\nHigh power! ₦${creditAmount.toLocaleString()} just landed for *Invoice #${sale.invoiceNumber}* (${sale.customerName || payer}).\n\n`;
             
             if (lockUntil && new Date() < lockUntil) {
+                customText += `🛡️ *Security:* Since you recently updated your bank details, settlements are escrowed for 24h. \n\n`;
                 msg += `🛡️ *Security:* Since you recently updated your bank details, settlements are escrowed for 24h. \n\n`;
             } else {
+                customText += `🛡️ *Settlement:* Money is being swept to your bank account automatically. 🚀\n\n`;
                 msg += `🛡️ *Settlement:* Money is being swept to your bank account automatically. 🚀\n\n`;
             }
 
+            customText += statusLine;
             msg += statusLine;
             msg += `\n\n📄 *Receipt Link:* ${receiptLink}`;
             
-            const { sendWhatsAppAlert } = require('../whatsapp/whatsappController');
-            await sendWhatsAppAlert(business.whatsappNumber, business.displayName || 'Chief', msg).catch(e => console.error("WA Fail:", e.message));
+            const { sendWhatsAppPaymentAlert } = require('../whatsapp/whatsappController');
+            await sendWhatsAppPaymentAlert(
+                business.whatsappNumber,
+                creditAmount,
+                sale.invoiceNumber,
+                sale.customerName || payer,
+                customText,
+                business.displayName || 'Chief',
+                msg
+            ).catch(e => console.error("WA Fail:", e.message));
         }
 
         console.log(`✅ Nomba: ₦${creditAmount} recorded for Invoice #${sale.invoiceNumber}`);
@@ -368,16 +502,29 @@ async function internalProcessNombaPayment({ accountReference, amount, transacti
                 const { getIO } = require('../../utils/socket');
                 const io = getIO();
                 if (io && business) {
-                    console.log(`🔌 Emitting sale_updated for business: ${business._id}`);
-                    io.to(business._id.toString()).emit('sale_updated', {
+                    const payload = {
                         saleId: sale._id,
+                        invoiceNumber: sale.invoiceNumber,
                         balance: balanceRemaining,
                         amountPaid: totalPaid
-                    });
+                    };
+                    console.log(`🔌 Emitting sale_updated for business: ${business?._id} & invoice: ${sale.invoiceNumber}`);
+                    // Emit to business room (merchant dashboard)
+                    if (business && business._id) {
+                        io.to(business._id.toString()).emit('sale_updated', payload);
+                    }
+                    // Emit to invoice-specific rooms (public invoice page)
+                    io.to(`invoice:${sale.invoiceNumber}`).emit('sale_updated', payload);
+                    io.to(`invoice:${sale._id.toString()}`).emit('sale_updated', payload);
+                    if (sale.publicSlug) {
+                        io.to(`invoice:${sale.publicSlug}`).emit('sale_updated', payload);
+                    }
                 }
             } catch (socketErr) {
                 console.error("❌ Socket emit error in nombaController:", socketErr.message);
             }
+
+
 
             // 10. Track Platform Metrics
             logUsage("revenue", { amount: creditAmount }).catch(e => console.error("Revenue log fail:", e));

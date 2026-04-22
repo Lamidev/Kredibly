@@ -192,7 +192,7 @@ exports.addPayment = async (req, res) => {
                 msg += `⏳ *Balance Expected:* ₦${balance.toLocaleString()}\n*Action:* I've updated the invoice status to ${sale.status.toUpperCase()}.`;
             }
 
-            await sendWhatsAppAlert(sale.businessId.whatsappNumber, "Chief", msg).catch(e => {
+            await sendWhatsAppAlert(sale.businessId.whatsappNumber, "Chief", msg, sale.invoiceNumber).catch(e => {
                 console.error("WhatsApp Notify Error (non-blocking):", e.message);
             });
 
@@ -296,7 +296,7 @@ exports.confirmSale = async (req, res) => {
             if (business && business.whatsappNumber) {
 
                 const adminMsg = `${customer || 'A customer'} has just confirmed receipt of *Invoice #${invoiceNum}*.\n\nYour digital record is now verified! ✅`;
-                await sendWhatsAppAlert(business.whatsappNumber, "Verification Alert", adminMsg);
+                await sendWhatsAppAlert(business.whatsappNumber, "Verification Alert", adminMsg, invoiceNum);
             } else {
             }
         }
