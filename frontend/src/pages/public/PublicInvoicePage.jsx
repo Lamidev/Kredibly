@@ -48,6 +48,99 @@ const PublicInvoicePage = () => {
     const [modalDismissed, setModalDismissed] = useState(false);
     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
+    // ─── DERIVED STATE & HELPERS ───
+    const calcCurrentBalance = (s) => {
+        if (!s) return 0;
+        const paid = s.paidAmount || s.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+        const bal = s.totalAmount - paid;
+        return bal < 1 ? 0 : bal;
+    };
+    
+    // 🛡️ Pre-initialize derived values used in hooks
+    const balance = calcCurrentBalance(sale);
+    const isPaid = sale ? (balance <= 0) : false;
+    const isOverdue = sale && !isPaid && sale.dueDate && new Date(sale.dueDate) < new Date();
+    const isDebtRecovery = sale && !isPaid && (sale.status === 'partial' || isOverdue);
+
+    const handleManualVerification = () => runPaymentVerification(false);
+
+    /**
+     * 🛡️ UNIFIED PAYMENT VERIFICATION LOGIC
+     * Defined early to avoid TDZ (Temporal Dead Zone) in useEffect hooks.
+     */
+    const runPaymentVerification = async (silent = false) => {
+        if (!nombaData?.reference || (verifyingPayment && !silent)) return;
+        
+        if (!silent) {
+            setVerifyingPayment(true);
+            setIsAutoVerifying(true);
+        }
+
+        try {
+            const res = await axios.post(`${API_URL}/payments/verify-nomba-payment`, {
+                accountRef: nombaData.reference,
+                saleId: sale._id
+            });
+            
+            if (res.data.success) {
+                // Refresh sale data to reflect updated ledger
+                const saleRes = await axios.get(`${API_URL}/sales/${id}`);
+                if (saleRes.data.success) {
+                    const latestSale = saleRes.data.data;
+                    const finalBalance = latestSale.totalAmount - (latestSale.paidAmount || latestSale.payments?.reduce((s, p) => s + p.amount, 0) || 0);
+                    
+                    // Only update state if something actually changed (prevents unnecessary re-renders)
+                    const oldPaid = sale.paidAmount || sale.payments?.reduce((s, p) => s + p.amount, 0) || 0;
+                    const newPaid = latestSale.paidAmount || latestSale.payments?.reduce((s, p) => s + p.amount, 0) || 0;
+                    
+                    if (newPaid > oldPaid) {
+                        console.log(`✅ ${silent ? 'Auto' : 'Manual'} verification found NEW payment!`);
+                        setSale(latestSale);
+                        
+                        if (finalBalance <= 0) {
+                            if (!silent) toast.success("Payment verified! Success! 🎉");
+                            
+                            const lastPayment = latestSale.payments?.length > 0 
+                                ? latestSale.payments[latestSale.payments.length - 1] 
+                                : null;
+                            
+                            setLastPaymentAmount(lastPayment?.amount || (latestSale.totalAmount - (latestSale.paidAmount || 0)));
+                            setRecentPaymentDate(new Date());
+                            setCustomAmount('');
+                            setCustomAmountDisplay('');
+                            setNombaData(null); 
+                            
+                            // Show success modal with a slight delay for better UX
+                            setTimeout(() => {
+                                if (!silent) setIsAutoVerifying(false);
+                                setShowSuccessModal(true);
+                            }, silent ? 0 : 1500);
+                        } else {
+                            if (!silent) toast.success("Partial payment verified! Ledger updated. 💰");
+                            else toast.success(`New payment of ₦${(newPaid - oldPaid).toLocaleString()} detected! 💰`);
+                            
+                            setNombaData(null); 
+                            setCustomAmount('');
+                            setCustomAmountDisplay('');
+                            if (!silent) setIsAutoVerifying(false);
+                        }
+                    }
+                }
+            } else if (!silent) {
+                toast.error(res.data.message || "Payment not seen yet. Please wait a moment.");
+                setIsAutoVerifying(false);
+            }
+        } catch (err) {
+            if (!silent) {
+                console.error("Verification error:", err);
+                toast.error("Status check failed. Please try again or wait for automatic update.");
+                setIsAutoVerifying(false);
+            }
+        } finally {
+            if (!silent) setVerifyingPayment(false);
+        }
+    };
+
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
         window.addEventListener('resize', handleResize);
@@ -321,103 +414,10 @@ const PublicInvoicePage = () => {
         }
     };
 
-    // Derived State
-    const calcCurrentBalance = (s) => {
-        if (!s) return 0;
-        const paid = s.paidAmount || s.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
-        const bal = s.totalAmount - paid;
-        return bal < 1 ? 0 : bal;
-    };
-    const balance = calcCurrentBalance(sale);
-    const isPaid = sale ? (balance <= 0) : false;
-    const isOverdue = sale && !isPaid && sale.dueDate && new Date(sale.dueDate) < new Date();
-    const isDebtRecovery = sale && !isPaid && (sale.status === 'partial' || isOverdue);
-
     // 🔄 AUTO-RESET: Clear Nomba data if user changes amount or mode
     useEffect(() => {
         if (nombaData) setNombaData(null);
     }, [paymentMode, customAmount]);
-
-    /**
-     * 🛡️ UNIFIED PAYMENT VERIFICATION LOGIC
-     * Can be called manually (button) or automatically (polling).
-     * @param {boolean} silent - If true, doesn't show loading overlays or error toasts
-     */
-    const runPaymentVerification = async (silent = false) => {
-        if (!nombaData?.reference || (verifyingPayment && !silent)) return;
-        
-        if (!silent) {
-            setVerifyingPayment(true);
-            setIsAutoVerifying(true);
-        }
-
-        try {
-            const res = await axios.post(`${API_URL}/payments/verify-nomba-payment`, {
-                accountRef: nombaData.reference,
-                saleId: sale._id
-            });
-            
-            if (res.data.success) {
-                // Refresh sale data to reflect updated ledger
-                const saleRes = await axios.get(`${API_URL}/sales/${id}`);
-                if (saleRes.data.success) {
-                    const latestSale = saleRes.data.data;
-                    const finalBalance = latestSale.totalAmount - (latestSale.paidAmount || latestSale.payments?.reduce((s, p) => s + p.amount, 0) || 0);
-                    
-                    // Only update state if something actually changed (prevents unnecessary re-renders)
-                    const oldPaid = sale.paidAmount || sale.payments?.reduce((s, p) => s + p.amount, 0) || 0;
-                    const newPaid = latestSale.paidAmount || latestSale.payments?.reduce((s, p) => s + p.amount, 0) || 0;
-                    
-                    if (newPaid > oldPaid) {
-                        console.log(`✅ ${silent ? 'Auto' : 'Manual'} verification found NEW payment!`);
-                        setSale(latestSale);
-                        
-                        if (finalBalance <= 0) {
-                            if (!silent) toast.success("Payment verified! Success! 🎉");
-                            
-                            const lastPayment = latestSale.payments?.length > 0 
-                                ? latestSale.payments[latestSale.payments.length - 1] 
-                                : null;
-                            
-                            setLastPaymentAmount(lastPayment?.amount || (latestSale.totalAmount - (latestSale.paidAmount || 0)));
-                            setRecentPaymentDate(new Date());
-                            setCustomAmount('');
-                            setCustomAmountDisplay('');
-                            setNombaData(null); 
-                            
-                            // Show success modal with a slight delay for better UX
-                            setTimeout(() => {
-                                if (!silent) setIsAutoVerifying(false);
-                                setShowSuccessModal(true);
-                            }, silent ? 0 : 1500);
-                        } else {
-                            if (!silent) toast.success("Partial payment verified! Ledger updated. 💰");
-                            else toast.success(`New payment of ₦${(newPaid - oldPaid).toLocaleString()} detected! 💰`);
-                            
-                            setNombaData(null); 
-                            setCustomAmount('');
-                            setCustomAmountDisplay('');
-                            if (!silent) setIsAutoVerifying(false);
-                        }
-                    }
-                }
-            } else if (!silent) {
-                toast.error(res.data.message || "Payment not seen yet. Please wait a moment.");
-                setIsAutoVerifying(false);
-            }
-        } catch (err) {
-            if (!silent) {
-                console.error("Verification error:", err);
-                toast.error("Status check failed. Please try again or wait for automatic update.");
-                setIsAutoVerifying(false);
-            }
-        } finally {
-            if (!silent) setVerifyingPayment(false);
-        }
-    };
-
-    const handleManualVerification = () => runPaymentVerification(false);
-
 
     const handlePaystackPayment = async (paymentChannel) => {
         const amountToPay = paymentMode === 'full' 
