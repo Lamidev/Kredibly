@@ -645,13 +645,13 @@ const PublicReceiptPage = () => {
                 )}
 
                 {/* Secured by Kredibly Watermark (Universal Footer) */}
-                <div style={{ textAlign: 'center', marginTop: '60px', padding: '20px', opacity: 0.7 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <div style={{ height: '1px', width: '24px', background: '#CBD5E1' }}></div>
-                        <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Secured by Kredibly</p>
-                        <div style={{ height: '1px', width: '24px', background: '#CBD5E1' }}></div>
+                <div style={{ textAlign: 'center', marginTop: '64px', padding: '24px 0', borderTop: '1px solid #F1F5F9' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px', opacity: 0.8 }}>
+                        <div style={{ height: '1.5px', width: '20px', background: '#CBD5E1' }}></div>
+                        <p style={{ fontSize: '11px', color: '#64748B', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>Secured by Kredibly</p>
+                        <div style={{ height: '1.5px', width: '20px', background: '#CBD5E1' }}></div>
                     </div>
-                    <p style={{ fontSize: '10px', color: '#CBD5E1', fontWeight: 600 }}>Official Transaction Log ID: KR-{sale.invoiceNumber}</p>
+                    <p style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 700, margin: 0, opacity: 0.9 }}>Digital Settlement Log: {sale.invoiceNumber}</p>
                 </div>
             </div>
         </div>

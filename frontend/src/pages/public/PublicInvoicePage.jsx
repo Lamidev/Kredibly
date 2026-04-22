@@ -23,9 +23,11 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import PaymentSuccessModal from '../../components/payment/PaymentSuccessModal';
 import { initiateSocketConnection, disconnectSocket, listenToEvent, stopListeningToEvent } from '../../utils/socket';
+import { useAuth } from '../../context/AuthContext';
 
 const PublicInvoicePage = () => {
     const { id } = useParams();
+    const { profile } = useAuth();
     const [sale, setSale] = useState(null);
     const [loading, setLoading] = useState(true);
     const [verifying, setVerifying] = useState(false);
@@ -42,6 +44,7 @@ const PublicInvoicePage = () => {
     const [loadingNomba, setLoadingNomba] = useState(false);
     const [verifyingPayment, setVerifyingPayment] = useState(false);
     const [timeLeft, setTimeLeft] = useState(null);
+    const [isAutoVerifying, setIsAutoVerifying] = useState(false);
     const [modalDismissed, setModalDismissed] = useState(false);
     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
@@ -58,10 +61,6 @@ const PublicInvoicePage = () => {
                 } else {
                     setSale(null);
                 }
-                
-                // Check if merchant is logged in (to hide viral loops)
-                const storedProfile = localStorage.getItem('businessProfile');
-                if (storedProfile) setProfile(JSON.parse(storedProfile));
             } catch (err) {
                 console.error("Error fetching invoice:", err);
                 setSale(null);
@@ -104,18 +103,24 @@ const PublicInvoicePage = () => {
                         setCustomAmount('');
                         setCustomAmountDisplay('');
                         
-                        // Show success modal if fully paid
-                        if (newBalance <= 0) {
-                            const lastPayment = latestSale.payments?.length > 0 
-                                ? latestSale.payments[latestSale.payments.length - 1] 
-                                : null;
-                            
-                            setLastPaymentAmount(lastPayment?.amount || (sale.totalAmount - (sale.paidAmount || 0)));
-                            setRecentPaymentDate(new Date());
-                            setShowSuccessModal(true);
-                        } else {
-                            toast.success(`Payment Received: ₦${(data.amountPaid || 0).toLocaleString()} 💰`);
-                        }
+                        // Show verifying overlay for effect
+                        setIsAutoVerifying(true);
+                        
+                        setTimeout(() => {
+                            setIsAutoVerifying(false);
+                            // Show success modal if fully paid
+                            if (newBalance <= 0) {
+                                const lastPayment = latestSale.payments?.length > 0 
+                                    ? latestSale.payments[latestSale.payments.length - 1] 
+                                    : null;
+                                
+                                setLastPaymentAmount(lastPayment?.amount || (sale.totalAmount - (sale.paidAmount || 0)));
+                                setRecentPaymentDate(new Date());
+                                setShowSuccessModal(true);
+                            } else {
+                                toast.success(`Payment Received: ₦${(data.amountPaid || 0).toLocaleString()} 💰`);
+                            }
+                        }, 2500);
                     }
                 } catch (err) {
                     console.error("Socket fetch detail error:", err);
@@ -874,7 +879,7 @@ const PublicInvoicePage = () => {
 
                         {/* ACTION AREA */}
                         {!isPaid && sale.invoiceType !== 'record' ? (
-                            <div style={{ padding: isMobile ? '0 24px 24px' : '0 32px 32px' }}>
+                            <div style={{ padding: isMobile ? '0 16px 24px' : '0 32px 32px' }}>
                                 {sale.businessId?.plan === 'hustler' && (
                                     <div style={{ padding: '12px 16px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '12px', marginBottom: '20px', border: '1px dashed #DDD6FE', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <ShieldCheck size={16} color="#7C3AED" />
@@ -940,7 +945,7 @@ const PublicInvoicePage = () => {
                                                     style={{ width: '100%' }}
                                                 >
                                                     {/* Premium Dark Bank Card */}
-                                                    <div style={{ background: '#0F172A', padding: isMobile ? '20px' : '24px', borderRadius: '24px', textAlign: 'left', color: 'white', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.3)' }}>
+                                                    <div style={{ background: '#0F172A', padding: isMobile ? '24px 16px' : '24px', borderRadius: '24px', textAlign: 'left', color: 'white', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.3)' }}>
                                                         {/* Decorator Gradient */}
                                                         <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '150px', height: '150px', background: 'radial-gradient(circle, rgba(124, 58, 237, 0.4) 0%, rgba(15, 23, 42, 0) 70%)', borderRadius: '50%' }} />
 
@@ -955,19 +960,19 @@ const PublicInvoicePage = () => {
                                                             </div>
                                                         </div>
 
-                                                        <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '16px', padding: isMobile ? '16px' : '20px', border: '1px solid rgba(255, 255, 255, 0.08)', position: 'relative', zIndex: 2 }}>
+                                                        <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '16px', padding: isMobile ? '16px 12px' : '20px', border: '1px solid rgba(255, 255, 255, 0.08)', position: 'relative', zIndex: 2 }}>
                                                              <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Bank</p>
                                                              <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 800, color: 'white' }}>{nombaData.bankName}</p>
 
                                                              <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Account Number</p>
                                                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-                                                                <p style={{ margin: 0, fontSize: isMobile ? '24px' : '28px', fontWeight: 950, color: '#A78BFA', letterSpacing: '2px', userSelect: 'all' }}>{nombaData.accountNumber}</p>
+                                                                <p style={{ margin: 0, fontSize: isMobile ? '22px' : '28px', fontWeight: 950, color: '#A78BFA', letterSpacing: isMobile ? '1px' : '2px', userSelect: 'all' }}>{nombaData.accountNumber}</p>
                                                                 <button
                                                                     onClick={() => {
                                                                         navigator.clipboard.writeText(nombaData.accountNumber);
                                                                         toast.success('Account number copied!');
                                                                     }}
-                                                                    style={{ background: 'white', color: '#0F172A', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 900, cursor: 'pointer', flexShrink: 0, boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                                                                    style={{ background: 'white', color: '#0F172A', border: 'none', borderRadius: '8px', padding: isMobile ? '8px 12px' : '8px 16px', fontSize: '13px', fontWeight: 900, cursor: 'pointer', flexShrink: 0, boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
                                                                 >
                                                                     Copy
                                                                 </button>
@@ -1194,7 +1199,7 @@ const PublicInvoicePage = () => {
                                     </button>
                                 </div>
                                 
-                                <p style={{ fontSize: '11px', fontWeight: 750, color: '#94A3B8', marginTop: '24px' }}>Verified Settlement • Reference KR-{sale.invoiceNumber}</p>
+                                <p style={{ fontSize: '11px', fontWeight: 750, color: '#94A3B8', marginTop: '24px' }}>Verified Settlement • Reference {sale.invoiceNumber}</p>
                             </motion.div>
                         )}
                     </div>
@@ -1214,6 +1219,57 @@ const PublicInvoicePage = () => {
                     </div>
                 </motion.div>
             </main>
+
+            {/* 🛡️ Global Verifying Overlay (When socket detects payment) */}
+            <AnimatePresence>
+                {isAutoVerifying && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{ 
+                            position: 'fixed', inset: 0, zIndex: 30000, 
+                            background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(12px)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' 
+                        }}
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            style={{ 
+                                background: 'white', padding: '40px', borderRadius: '32px', 
+                                textAlign: 'center', maxWidth: '400px', width: '100%',
+                                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+                            }}
+                        >
+                            <div style={{ position: 'relative', width: '100px', height: '100px', margin: '0 auto 32px' }}>
+                                <motion.div 
+                                    animate={{ rotate: 360 }}
+                                    transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                                    style={{ 
+                                        position: 'absolute', inset: 0, 
+                                        borderRadius: '50%', border: '4px solid #F1F5F9',
+                                        borderTopColor: 'var(--primary)'
+                                    }}
+                                />
+                                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                                    <ShieldCheck size={40} />
+                                </div>
+                            </div>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#0F172A', marginBottom: '12px' }}>Payment Detected!</h3>
+                            <p style={{ color: '#64748B', fontWeight: 600, fontSize: '0.95rem', lineHeight: 1.6 }}>
+                                We've received your transfer notification. Just a moment while we verify the settlement...
+                            </p>
+                            
+                            <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'center', gap: '12px' }}>
+                                <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} style={{ width: '8px', height: '8px', background: 'var(--primary)', borderRadius: '50%' }} />
+                                <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} style={{ width: '8px', height: '8px', background: 'var(--primary)', borderRadius: '50%' }} />
+                                <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} style={{ width: '8px', height: '8px', background: 'var(--primary)', borderRadius: '50%' }} />
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             
             <style dangerouslySetInnerHTML={{ __html: `
                 .invoice-main-content { padding: 40px 16px 0; }
