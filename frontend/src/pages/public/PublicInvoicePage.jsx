@@ -435,6 +435,58 @@ const PublicInvoicePage = () => {
         }
     };
 
+    const handleWhatsAppShare = async () => {
+        const element = document.getElementById('receipt-download-target');
+        if (!element) return;
+
+        const merchantPhone = sale?.businessId?.whatsappNumber || sale?.businessId?.phoneNumber;
+        const cleanPhone = merchantPhone ? merchantPhone.replace(/\D/g, '') : '';
+        const text = `Hi ${sale?.businessId?.displayName}, I've just made a payment of ₦${lastPaymentAmount?.toLocaleString()} for Invoice #${sale?.invoiceNumber}. \n\nView my verified receipt here: ${window.location.origin}/i/${sale?.invoiceNumber}`;
+
+        setGenerating('share');
+        toast.loading('Preparing receipt image for sharing...', { id: 'share-gen' });
+
+        try {
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#FFFFFF',
+                onclone: (clonedDoc) => {
+                    const el = clonedDoc.getElementById('receipt-download-target');
+                    if (el) el.style.position = 'static';
+                }
+            });
+
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 0.9));
+            const file = new File([blob], `Receipt_KR-${sale.invoiceNumber}.png`, { type: 'image/png' });
+
+            // 📱 Check if native sharing (with files) is supported
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: `Receipt from ${sale?.businessId?.displayName}`,
+                    text: text
+                });
+                toast.success('Share menu opened!', { id: 'share-gen' });
+            } else {
+                // 💻 Fallback for Desktop/Unsupported browsers: Go straight to WA Web with text
+                console.log("Native file sharing not supported, falling back to WhatsApp link.");
+                const whatsappUrl = cleanPhone 
+                    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`
+                    : `https://wa.me/?text=${encodeURIComponent(text)}`;
+                
+                window.open(whatsappUrl, '_blank');
+                toast.success('Opening WhatsApp...', { id: 'share-gen' });
+            }
+        } catch (err) {
+            console.error("Share Error:", err);
+            toast.error("Sharing failed, but you can still download the image below.", { id: 'share-gen' });
+        } finally {
+            setGenerating(false);
+        }
+    };
+
     const handleNombaInitialization = async () => {
         const amountToPay = paymentMode === 'full'
             ? (sale.totalAmount - (sale.paidAmount || 0))
@@ -1403,7 +1455,9 @@ const PublicInvoicePage = () => {
                 amountPaid={lastPaymentAmount}
                 balanceRemaining={sale ? sale.totalAmount - sale.paidAmount : 0}
                 onDownloadReceipt={handleDownloadPDF}
-                shareUrl={window.location.origin + "/r/" + id}
+                onDownloadImage={handleDownloadImage}
+                onWhatsAppShare={handleWhatsAppShare}
+                shareUrl={window.location.origin + "/i/" + (sale?.invoiceNumber || id)}
                 shareText={`I've just made a payment of ₦${lastPaymentAmount?.toLocaleString()} to ${sale?.businessId?.displayName}! View my verified receipt here:`}
             />
         </div>

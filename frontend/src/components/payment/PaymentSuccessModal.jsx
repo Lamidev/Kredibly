@@ -12,6 +12,8 @@ const PaymentSuccessModal = ({
     amountPaid, 
     balanceRemaining, 
     onDownloadReceipt,
+    onDownloadImage,
+    onWhatsAppShare,
     shareUrl,
     shareText 
 }) => {
@@ -151,6 +153,41 @@ const PaymentSuccessModal = ({
 
                         {/* Action Buttons */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <button
+                                    onClick={onDownloadReceipt}
+                                    style={{
+                                        padding: '16px', background: '#F8FAFC', color: '#0F172A', borderRadius: '18px', border: '1px solid #E2E8F0',
+                                        fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                    }}
+                                >
+                                    <FileText size={18} />
+                                    PDF Receipt
+                                </button>
+                                <button
+                                    onClick={onDownloadImage}
+                                    style={{
+                                        padding: '16px', background: '#F8FAFC', color: '#0F172A', borderRadius: '18px', border: '1px solid #E2E8F0',
+                                        fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                    }}
+                                >
+                                    <Download size={18} />
+                                    Save Image
+                                </button>
+                            </div>
+
+                            <button
+                                onClick={onWhatsAppShare}
+                                style={{
+                                    width: '100%', padding: '18px', background: '#25D366', color: 'white', borderRadius: '18px', border: 'none',
+                                    fontWeight: 900, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                                    boxShadow: '0 10px 15px -3px rgba(37, 211, 102, 0.2)'
+                                }}
+                            >
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="" style={{ height: '20px', width: '20px', filter: 'brightness(0) invert(1)' }} />
+                                Send to Merchant
+                            </button>
+
                             <button
                                 onClick={async () => {
                                     const text = shareText || `I've just made a payment of ₦${amountPaid.toLocaleString()}! View my verified receipt:`;
@@ -163,13 +200,12 @@ const PaymentSuccessModal = ({
                                     }
                                 }}
                                 style={{
-                                    width: '100%', padding: '18px', background: '#0F172A', color: 'white', borderRadius: '18px', border: 'none',
-                                    fontWeight: 900, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                                    boxShadow: '0 10px 15px -3px rgba(15, 23, 42, 0.2)'
+                                    width: '100%', padding: '14px', background: 'transparent', color: '#64748B', borderRadius: '18px', border: '1px solid #E2E8F0',
+                                    fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
                                 }}
                             >
-                                <Share2 size={20} />
-                                Share Payment Proof
+                                <Share2 size={18} />
+                                Share Link
                             </button>
                         </div>
 
