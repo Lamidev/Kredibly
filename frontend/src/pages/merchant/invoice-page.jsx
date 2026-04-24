@@ -467,100 +467,46 @@ const InvoicePage = () => {
             )}
 
             {/* Strategic Layout Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '48px', gap: '24px', flexWrap: 'wrap' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        <Link to={isInternal ? "/sales" : "/"} style={{ color: 'inherit', textDecoration: 'none' }}>Records</Link>
-                        <ChevronRight size={12} />
-                        <span style={{ color: 'var(--primary)' }}>{balance <= 0 ? 'Digital Receipt' : 'Official Invoice'} {sale.invoiceNumber}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                        <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 950, color: 'var(--text)', margin: 0, letterSpacing: '-0.05em' }}>
-                            {sale.totalAmount.toLocaleString()} <span style={{ fontSize: 'clamp(0.9rem, 2vw, 1.2rem)', color: 'var(--text-muted)', fontWeight: 700 }}>NGN</span>
-                        </h1>
-                        <span style={{
-                            padding: '8px 16px',
-                            borderRadius: '100px',
-                            background: (paidAmount >= sale.totalAmount || sale.confirmed) ? 'rgba(16, 185, 129, 0.1)' : 'rgba(76, 29, 149, 0.1)',
-                            color: (paidAmount >= sale.totalAmount || sale.confirmed) ? 'var(--success)' : 'var(--primary)',
-                            fontSize: '0.75rem',
-                            fontWeight: 900,
-                            letterSpacing: '0.05em',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            border: '1px solid currentColor'
-                        }}>
-                            {paidAmount >= sale.totalAmount ? (
-                                <><CheckCircle size={14} /> FULLY PAID</>
-                            ) : sale.confirmed ? (
-                                <><ShieldCheck size={14} /> VERIFIED</>
-                            ) : (
-                                <><Zap size={14} /> PENDING COLLECTION</>
-                            )}
-                        </span>
-                    </div>
+            {/* Modern Executive Hero */}
+            <div style={{ textAlign: 'center', marginBottom: '48px', marginTop: '20px' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', background: paidAmount >= sale.totalAmount ? '#ECFDF5' : '#F5F3FF', borderRadius: '100px', border: `1px solid ${paidAmount >= sale.totalAmount ? '#D1FAE5' : '#E9E3FF'}`, marginBottom: '24px' }}>
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: paidAmount >= sale.totalAmount ? '#10B981' : '#7C3AED' }} />
+                    <span style={{ fontSize: '10px', fontWeight: 900, color: paidAmount >= sale.totalAmount ? '#065F46' : '#7C3AED', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                        {paidAmount >= sale.totalAmount ? 'Payment Fully Settled' : (sale.invoiceType === 'record' ? 'Verified Record' : 'Payment Collection Active')}
+                    </span>
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 56px)', fontFamily: 'Outfit', fontWeight: 950, color: '#0F172A', letterSpacing: '-0.04em', margin: '0 0 12px 0', lineHeight: 1 }}>
+                    ₦{sale.totalAmount.toLocaleString()}
+                </h1>
+                
+                <p style={{ fontSize: '15px', fontWeight: 600, color: '#64748B', maxWidth: '400px', margin: '0 auto', lineHeight: 1.5 }}>
+                    Invoice <span style={{ color: '#0F172A', fontWeight: 800 }}>#{sale.invoiceNumber}</span> for <span style={{ color: '#0F172A', fontWeight: 800 }}>{sale.customerName || 'Walk-in Customer'}</span>
+                </p>
+
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '32px', flexWrap: 'wrap' }}>
                     <button
                         onClick={() => setShowSuccessModal(true)}
-                        className="btn-primary"
-                        style={{ 
-                            padding: '12px 24px', 
-                            borderRadius: '16px', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '8px', 
-                            fontWeight: 900, 
-                            fontSize: '0.9rem', 
-                            background: '#4C1D95',
-                            color: 'white',
-                            border: 'none',
-                            cursor: 'pointer',
-                            boxShadow: '0 8px 16px -4px rgba(76, 29, 149, 0.4)' 
-                        }}
+                        style={{ padding: '14px 28px', background: '#4C1D95', color: 'white', borderRadius: '100px', border: 'none', fontWeight: 900, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 10px 20px -5px rgba(76, 29, 149, 0.4)' }}
                     >
-                        <Share2 size={16} strokeWidth={3} /> {balance <= 0 ? 'Share Receipt' : 'Share Link'}
+                        <Share2 size={16} strokeWidth={3} />
+                        Share {balance <= 0 ? 'Receipt' : 'Payment Link'}
                     </button>
                     <button
                         onClick={handleDownloadPDF}
                         disabled={generating === 'pdf'}
-                        style={{ 
-                            padding: '12px 20px', 
-                            borderRadius: '16px', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '8px', 
-                            fontWeight: 800, 
-                            fontSize: '0.9rem', 
-                            background: 'white',
-                            color: '#1E293B',
-                            border: '1px solid #E2E8F0',
-                            cursor: 'pointer'
-                        }}
+                        style={{ padding: '14px 24px', background: 'white', color: '#0F172A', borderRadius: '100px', border: '1px solid #E2E8F0', fontWeight: 800, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
                     >
                         {generating === 'pdf' ? <Loader2 size={16} className="spin-animation" /> : <Download size={16} />}
-                        PDF
+                        PDF Export
                     </button>
                     <button
                         onClick={handleDownloadImage}
                         disabled={generating === 'image'}
-                        style={{ 
-                            padding: '12px 20px', 
-                            borderRadius: '16px', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '8px', 
-                            fontWeight: 800, 
-                            fontSize: '0.9rem', 
-                            background: 'white',
-                            color: '#1E293B',
-                            border: '1px solid #E2E8F0',
-                            cursor: 'pointer'
-                        }}
+                        style={{ padding: '14px 24px', background: 'white', color: '#0F172A', borderRadius: '100px', border: '1px solid #E2E8F0', fontWeight: 800, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
                     >
-                        <ImageIcon size={16} /> Image
+                        <ImageIcon size={16} />
+                        Save Image
                     </button>
                 </div>
             </div>
@@ -578,67 +524,52 @@ const InvoicePage = () => {
                     {/* High-Impact Info Cards */}
                     {/* High-Impact Info Cards */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '20px' }}>
-                        <div className="dashboard-glass" style={{ padding: '20px', borderRadius: '24px', border: '1px solid var(--border)', background: 'white' }}>
-                            <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Billed To</p>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
-                                    <User size={16} />
+                        <div className="dashboard-glass" style={{ padding: '24px', borderRadius: '24px', border: '1px solid #F1F5F9', background: 'white' }}>
+                            <p style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.05em' }}>Customer Relationship</p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7C3AED' }}>
+                                    <User size={20} />
                                 </div>
-                                <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>
-                                    {sale.customerName || 'Walk-in Customer'}
-                                </h3>
+                                <div>
+                                    <h3 style={{ fontSize: '16px', fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>
+                                        {sale.customerName || 'Walk-in'}
+                                    </h3>
+                                    <p style={{ margin: 0, fontSize: '11px', fontWeight: 600, color: '#64748B' }}>Verified Client</p>
+                                </div>
                             </div>
                         </div>
-                        <div className="dashboard-glass" style={{ padding: '20px', borderRadius: '24px', border: '1px solid var(--border)', background: 'white', position: 'relative', overflow: 'hidden' }}>
-                            {balance <= 0 && (
-                                <div style={{ 
-                                    position: 'absolute', 
-                                    right: '-12px', 
-                                    top: '-12px', 
-                                    width: '90px',
-                                    height: '90px',
-                                    border: '4px double #10B981', 
-                                    borderRadius: '50%', 
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    transform: 'rotate(-15deg)', 
-                                    opacity: 1,
-                                    background: 'white',
-                                    zIndex: 10
-                                }}>
-                                    <span style={{ color: '#10B981', fontSize: '6.5px', fontWeight: 900, textTransform: 'uppercase' }}>OFFICIALLY</span>
-                                    <span style={{ color: '#10B981', fontSize: '13px', fontWeight: 950, textTransform: 'uppercase', margin: '-2px 0' }}>SETTLED</span>
-                                    <div style={{ height: '1.5px', width: '60%', background: '#10B981', margin: '3px 0' }} />
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <span style={{ color: '#10B981', fontSize: '5px', fontWeight: 800 }}>{new Date().toLocaleDateString('en-GB')}</span>
-                                        <span style={{ color: '#10B981', fontSize: '4.5px', fontWeight: 700, opacity: 0.8 }}>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                    </div>
-                                </div>
-                            )}
-                            <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Paid Amount</p>
-                            <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--success)', margin: 0 }}>₦{paidAmount.toLocaleString()}</h3>
+                        <div className="dashboard-glass" style={{ padding: '24px', borderRadius: '24px', border: '1px solid #F1F5F9', background: 'white', position: 'relative', overflow: 'hidden' }}>
+                            <p style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.05em' }}>Settled Amount</p>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                <span style={{ fontSize: '14px', fontWeight: 800, color: '#10B981' }}>₦</span>
+                                <h3 style={{ fontSize: '24px', fontWeight: 950, color: '#10B981', margin: 0 }}>{paidAmount.toLocaleString()}</h3>
+                            </div>
+                            <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', color: '#10B981', fontSize: '10px', fontWeight: 800 }}>
+                                <CheckCircle size={10} /> Logged in Ledger
+                            </div>
                         </div>
-                        <div className="dashboard-glass" style={{ padding: '20px', borderRadius: '24px', border: '1px solid var(--border)', background: 'white' }}>
-                            <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Cash Outside</p>
-                            <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: balance > 0 ? 'var(--warning)' : 'var(--text-muted)', margin: 0 }}>₦{balance.toLocaleString()}</h3>
+                        <div className="dashboard-glass" style={{ padding: '24px', borderRadius: '24px', border: '1px solid #F1F5F9', background: 'white' }}>
+                            <p style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.05em' }}>Outstanding</p>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                <span style={{ fontSize: '14px', fontWeight: 800, color: balance > 0 ? '#EF4444' : '#64748B' }}>₦</span>
+                                <h3 style={{ fontSize: '24px', fontWeight: 950, color: balance > 0 ? '#EF4444' : '#64748B', margin: 0 }}>{balance.toLocaleString()}</h3>
+                            </div>
+                            <p style={{ margin: '4px 0 0', fontSize: '10px', fontWeight: 700, color: '#94A3B8' }}>Current Recovery Value</p>
                         </div>
                     </div>
 
 
 
                     {/* Official Description */}
-                    <div className="dashboard-glass" style={{ background: 'white', borderRadius: '28px', border: '1px solid var(--border)', padding: '32px' }}>
+                    <div style={{ background: 'white', borderRadius: '32px', border: '1px solid #F1F5F9', padding: '32px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
-                            <FileText size={18} color="var(--primary)" strokeWidth={2.5} />
-                            <h3 style={{ fontWeight: 800, fontSize: '1rem', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                {balance <= 0 ? 'Receipt Details' : 'Invoice Details'}
+                            <FileText size={18} color="#7C3AED" strokeWidth={2.5} />
+                            <h3 style={{ fontWeight: 900, fontSize: '12px', margin: 0, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#0F172A' }}>
+                                {balance <= 0 ? 'RECEIPT MEMO' : 'INVOICE DESCRIPTION'}
                             </h3>
                         </div>
 
-                        <div style={{ fontSize: '1rem', color: 'var(--text)', lineHeight: 1.6, background: 'var(--background)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border)', position: 'relative' }}>
-                            <span style={{ position: 'absolute', top: '12px', right: '12px', opacity: 0.1 }}><Edit2 size={32} /></span>
+                        <div style={{ fontSize: '15px', color: '#475569', lineHeight: 1.6, background: '#F8FAFC', padding: '24px', borderRadius: '20px', border: '1px solid #F1F5F9', position: 'relative', fontWeight: 600 }}>
                             {sale.description}
                         </div>
 
@@ -777,46 +708,42 @@ const InvoicePage = () => {
                     )}
 
                     {/* Imprints & Integrity Timeline */}
-                    <div className="dashboard-glass" style={{ background: 'white', borderRadius: '32px', border: '1px solid var(--border)', padding: '32px' }}>
-                        <h4 style={{ fontWeight: 900, color: 'var(--text)', marginBottom: '32px', fontSize: '1rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Recent History</h4>
+                    <div style={{ background: 'white', borderRadius: '32px', border: '1px solid #F1F5F9', padding: '32px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
+                            <Clock size={18} color="#7C3AED" strokeWidth={2.5} />
+                            <h4 style={{ fontWeight: 900, color: '#0F172A', fontSize: '12px', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>Verified Audit Trail</h4>
+                        </div>
 
-                        <div className="timeline-track">
-                            <div style={{ display: 'flex', gap: '20px', marginBottom: '32px' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                    <div className="timeline-dot" style={{ background: 'var(--primary)' }}></div>
+                        <div style={{ background: '#F8FAFC', borderRadius: '20px', overflow: 'hidden', border: '1px solid #F1F5F9' }}>
+                            <div style={{ padding: '16px 20px', borderBottom: '1px solid #EEF2F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7C3AED', border: '1px solid #E2E8F0', flexShrink: 0 }}>
+                                        <FileText size={16} />
+                                    </div>
+                                    <div>
+                                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#1E293B' }}>Invoice Created</p>
+                                        <p style={{ margin: 0, fontSize: '11px', fontWeight: 600, color: '#64748B' }}>{new Date(sale.createdAt).toLocaleDateString()}</p>
+                                    </div>
                                 </div>
-                                <div style={{ flex: 1 }}>
-                                    <p style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text)', margin: '0 0 4px 0' }}>Created</p>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{new Date(sale.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-                                </div>
+                                <span style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', background: '#F8FAFC', padding: '4px 8px', borderRadius: '6px' }}>Drafted</span>
                             </div>
 
-                            {(sale.payments || []).filter(p => p.amount > 0).map((payment, idx) => (
-                                <div key={idx} style={{ display: 'flex', gap: '20px', marginBottom: '32px' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <div className="timeline-dot" style={{ background: 'var(--success)' }}></div>
+                            {[...(sale.payments || [])].slice(-5).reverse().map((p, idx, array) => (
+                                <div key={idx} style={{ padding: '16px 20px', borderBottom: idx === array.length - 1 ? 'none' : '1px solid #EEF2F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '200px' }}>
+                                        <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10B981', border: '1px solid #E2E8F0', flexShrink: 0 }}>
+                                            <CheckCircle size={16} />
+                                        </div>
+                                        <div style={{ minWidth: 0 }}>
+                                            <p style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#1E293B' }}>₦{p.amount.toLocaleString()} Recorded</p>
+                                            <p style={{ margin: 0, fontSize: '11px', fontWeight: 600, color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {new Date(p.date).toLocaleDateString()} • {p.reference || 'SYSTEM'}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div style={{ flex: 1 }}>
-                                        <p style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text)', margin: '0 0 4px 0' }}>Payment Recorded</p>
-                                        <p style={{ fontSize: '0.85rem', color: 'var(--success)', fontWeight: 900, marginBottom: '4px' }}>+ ₦{payment.amount.toLocaleString()}</p>
-                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                                            {new Date(payment.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(payment.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </p>
-                                    </div>
+                                    <span style={{ fontSize: '10px', fontWeight: 900, color: '#10B981', textTransform: 'uppercase', background: '#F0FDF4', padding: '4px 8px', borderRadius: '6px' }}>Logged</span>
                                 </div>
                             ))}
-
-                            {sale.confirmed && (
-                                <div style={{ display: 'flex', gap: '20px' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <div className="timeline-dot" style={{ background: 'var(--primary)' }}></div>
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <p style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text)', margin: '0 0 4px 0' }}>Customer Confirmed</p>
-                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Payment verified by customer</p>
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -1039,103 +966,102 @@ const InvoicePage = () => {
             
             {/* Hidden Receipt Template for Image/PDF Generation */}
             <div style={{ position: 'fixed', left: '-9999px', top: 0 }}>
-                <div id="receipt-download-target" className="printable-receipt" style={{ width: '600px', background: 'white', padding: '48px', fontFamily: "'Inter', sans-serif" }}>
+                <div id="receipt-download-target" style={{ width: '600px', background: 'white', padding: '64px', position: 'relative', minHeight: '840px' }}>
+                    {/* Background Decorative Element */}
+                    <div style={{ position: 'absolute', top: 0, right: 0, width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(124, 58, 237, 0.03) 0%, transparent 70%)', borderRadius: '50%' }} />
+
                     {/* Receipt Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', borderBottom: '2px solid #F1F5F9', paddingBottom: '32px', position: 'relative' }}>
-                        {(balance <= 0 || sale.invoiceType === 'record') && (
-                            <div style={{ 
-                                position: 'absolute', 
-                                right: '-20px', 
-                                top: '-20px', 
-                                width: '130px',
-                                height: '130px',
-                                border: '6px double #10B981', 
-                                borderRadius: '50%', 
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                transform: 'rotate(-15deg)', 
-                                opacity: 0.9,
-                                background: 'rgba(255, 255, 255, 0.95)',
-                                zIndex: 10,
-                                boxShadow: '0 4px 10px rgba(16, 185, 129, 0.1)'
-                            }}>
-                                <span style={{ color: '#10B981', fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>OFFICIALLY</span>
-                                <span style={{ color: '#10B981', fontSize: '22px', fontWeight: 950, textTransform: 'uppercase', margin: '-4px 0' }}>SETTLED</span>
-                                <div style={{ height: '2px', width: '70%', background: '#10B981', margin: '4px 0' }} />
-                                <span style={{ color: '#10B981', fontSize: '9px', fontWeight: 800 }}>{new Date().toLocaleDateString()}</span>
-                            </div>
-                        )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '60px' }}>
                         <div>
-                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '32px' }} />
-                        </div>
-                        
-                        <div style={{ textAlign: 'right' }}>
                             {sale?.businessId?.logoUrl ? (
-                                <img src={sale.businessId.logoUrl} alt="Merchant Logo" style={{ height: '48px', objectFit: 'contain', marginBottom: '8px' }} />
+                                <img src={sale.businessId.logoUrl} alt="Logo" style={{ height: '48px', marginBottom: '16px', objectFit: 'contain' }} />
                             ) : (
-                                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: '#0F172A', marginBottom: '4px' }}>{sale?.businessId?.displayName}</h3>
+                                <h2 style={{ fontSize: '24px', fontWeight: 950, margin: '0 0 8px 0', color: '#0F172A', letterSpacing: '-0.04em' }}>{sale?.businessId?.displayName}</h2>
                             )}
-                            <p style={{ margin: 0, fontSize: '12px', color: '#334155', fontWeight: 600 }}>Invoice #{sale?.invoiceNumber}</p>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #F1F5F9' }}>
+                                <ShieldCheck size={14} color="#10B981" />
+                                <span style={{ fontSize: '10px', fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Verified Merchant</span>
+                            </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                            <p style={{ margin: 0, fontSize: '12px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>Reference</p>
+                            <p style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: '#0F172A' }}>#{sale?.invoiceNumber}</p>
                         </div>
                     </div>
 
-                    {/* Financial Summary */}
-                    <div style={{ background: '#F8FAFC', padding: '32px', borderRadius: '24px', marginBottom: '32px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <div>
-                                <p style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '4px' }}>Customer</p>
-                                <p style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>{sale?.customerName || 'Walk-in Customer'}</p>
+                    {/* Financial Hero (The Main Focus) */}
+                    <div style={{ background: '#F8FAFC', padding: '40px', borderRadius: '32px', border: '1px solid #F1F5F9', marginBottom: '48px', textAlign: 'center' }}>
+                        <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Total Value</p>
+                        <h1 style={{ margin: 0, fontSize: '48px', fontWeight: 950, color: '#0F172A', letterSpacing: '-0.05em' }}>₦{sale?.totalAmount.toLocaleString()}</h1>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '32px', paddingTop: '32px', borderTop: '1px solid #E2E8F0' }}>
+                            <div style={{ textAlign: 'left' }}>
+                                <p style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '4px' }}>Paid to Date</p>
+                                <p style={{ fontSize: '18px', fontWeight: 900, color: '#10B981', margin: 0 }}>₦{paidAmount.toLocaleString()}</p>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                                <p style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '4px' }}>Total Amount</p>
-                                <p style={{ fontSize: '15px', fontWeight: 900, color: '#0F172A', margin: 0 }}>₦{sale?.totalAmount.toLocaleString()}</p>
-                            </div>
-                        </div>
-
-                        <div style={{ borderTop: '1px solid #E2E8F0', marginTop: '20px', paddingTop: '20px', position: 'relative' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Total Paid</span>
-                                <span style={{ fontSize: '13px', fontWeight: 800, color: '#10B981' }}>₦{paidAmount.toLocaleString()}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '15px', fontWeight: 900, color: '#0F172A' }}>Balance Due</span>
-                                <span style={{ fontSize: '18px', fontWeight: 950, color: balance > 0 ? '#EF4444' : '#10B981' }}>₦{balance.toLocaleString()}</span>
+                                <p style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '4px' }}>Balance Remaining</p>
+                                <p style={{ fontSize: '18px', fontWeight: 900, color: balance > 0 ? '#EF4444' : '#10B981', margin: 0 }}>₦{balance.toLocaleString()}</p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Payment History */}
-                    <div style={{ marginBottom: '40px' }}>
-                        <p style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '16px', letterSpacing: '0.05em' }}>Payment Timeline</p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px dashed #E2E8F0' }}>
-                                <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>Invoice Issued</span>
-                                <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>{new Date(sale?.createdAt).toLocaleDateString()}</span>
-                            </div>
-                            {(sale?.payments || []).map((p, idx) => (
-                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px dashed #E2E8F0' }}>
-                                    <div>
-                                        <p style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Payment Received</p>
-                                        <p style={{ fontSize: '11px', color: '#94A3B8', margin: 0 }}>{new Date(p.date).toLocaleDateString()} ({p.method})</p>
-                                    </div>
-                                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#10B981' }}>+ ₦{p.amount.toLocaleString()}</span>
-                                </div>
-                            ))}
+                    {/* Billed To & Date */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', marginBottom: '48px' }}>
+                        <div>
+                            <p style={{ fontSize: '11px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Billed To</p>
+                            <p style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>{sale?.customerName || 'Walk-in Customer'}</p>
+                            <p style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', margin: 0 }}>{sale?.customerPhone || 'Verified Customer'}</p>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                            <p style={{ fontSize: '11px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>Date of Issue</p>
+                            <p style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0 }}>{new Date(sale?.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</p>
                         </div>
                     </div>
 
-                    {/* Details */}
-                    <div style={{ marginBottom: '40px' }}>
-                         <p style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Description</p>
-                         <p style={{ fontSize: '14px', fontWeight: 600, color: '#334155', margin: 0, lineHeight: 1.5 }}>{sale?.description}</p>
+                    {/* Description */}
+                    <div style={{ marginBottom: '48px' }}>
+                        <p style={{ fontSize: '11px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.05em' }}>Description of Services</p>
+                        <div style={{ padding: '24px', background: '#FDFCFE', borderRadius: '16px', border: '1px solid #F1F5F9' }}>
+                            <p style={{ fontSize: '15px', color: '#334155', margin: 0, lineHeight: 1.6, fontWeight: 600 }}>{sale?.description}</p>
+                        </div>
                     </div>
+
+                    {/* Official Seal */}
+                    {balance <= 0 && (
+                        <div style={{ 
+                            position: 'absolute',
+                            bottom: '140px',
+                            right: '64px',
+                            width: '120px',
+                            height: '120px',
+                            border: `4px double #7C3AED`, 
+                            borderRadius: '50%', 
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transform: 'rotate(-15deg)', 
+                            opacity: 0.8,
+                            background: 'rgba(255, 255, 255, 0.9)',
+                            zIndex: 10
+                        }}>
+                            <span style={{ color: '#7C3AED', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>OFFICIALLY</span>
+                            <span style={{ color: '#7C3AED', fontSize: '20px', fontWeight: 950, textTransform: 'uppercase', margin: '-3px 0' }}>SETTLED</span>
+                            <div style={{ height: '2px', width: '70%', background: '#7C3AED', margin: '4px 0' }} />
+                            <span style={{ color: '#7C3AED', fontSize: '8px', fontWeight: 800 }}>{new Date().toLocaleDateString()}</span>
+                        </div>
+                    )}
 
                     {/* Footer */}
-                    <div style={{ borderTop: '2px solid #F1F5F9', paddingTop: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        <p style={{ fontSize: '11px', color: '#334155', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <ShieldCheck size={14} color="#334155" /> Secured by Kredibly • {sale?.invoiceNumber}
+                    <div style={{ marginTop: '40px', padding: '32px 0 0', borderTop: '2px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '16px', opacity: 0.6 }} />
+                            <div style={{ width: '1px', height: '12px', background: '#E2E8F0' }} />
+                            <span style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Verified Ledger</span>
+                        </div>
+                        <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 700, margin: 0 }}>
+                            Digitally Signed Document • Kredibly Infrastructure
                         </p>
                     </div>
                 </div>
