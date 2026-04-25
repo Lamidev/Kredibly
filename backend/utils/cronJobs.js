@@ -433,6 +433,19 @@ const scheduleQueueHousekeeping = () => {
 };
 
 /**
+ * 8.5 DAILY NOMBA BATCH SETTLEMENTS (11:30 PM Lagos)
+ * Sweeps all accumulated merchant balances to save on transfer fees.
+ */
+const scheduleDailySettlements = () => {
+    cron.schedule("30 23 * * *", async () => {
+        try {
+            const { processDailyNombaSettlements } = require("../controllers/common/nombaController");
+            await processDailyNombaSettlements();
+        } catch (error) { console.error("Cron Error (Daily Settlements):", error); }
+    }, { timezone: "Africa/Lagos" });
+};
+
+/**
  * 9. UPCOMING SALES NUDGES (10:00 AM Lagos)
  */
 const scheduleUpcomingNudges = () => {
@@ -577,5 +590,6 @@ module.exports = {
     scheduleQueueHousekeeping,
     scheduleUpcomingNudges,
     scheduleBankLockChecker,
+    scheduleDailySettlements,
     startBackgroundJobRunner
 };

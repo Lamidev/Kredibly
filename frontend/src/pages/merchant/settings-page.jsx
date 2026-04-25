@@ -708,6 +708,48 @@ const SettingsPage = () => {
                             </div>
                         )}
                     </div>
+
+                    <div style={{ marginTop: '32px', paddingTop: '32px', borderTop: '1px solid #F1F5F9', position: 'relative', zIndex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', background: 'rgba(76, 29, 149, 0.04)', borderRadius: '20px', border: '1px solid rgba(76, 29, 149, 0.1)' }}>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                    <p style={{ fontWeight: 800, color: '#1E293B', margin: 0 }}>Transaction Fee Recovery</p>
+                                    <span style={{ fontSize: '10px', fontWeight: 900, background: 'var(--primary)', color: 'white', padding: '2px 8px', borderRadius: '100px', textTransform: 'uppercase' }}>Smart</span>
+                                </div>
+                                <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0, fontWeight: 600 }}>
+                                    {form.prefersGatewayFeeAbsorption 
+                                        ? "You are absorbing all gateway fees. Customers pay exactly the invoice amount." 
+                                        : "Fees are passed to the customer. You receive 100% of your invoice amount."}
+                                </p>
+                            </div>
+                            <div style={{ position: 'relative', display: 'inline-block', width: '60px', height: '32px', marginLeft: '20px' }}>
+                                <input
+                                    type="checkbox"
+                                    id="fee-toggle"
+                                    checked={!form.prefersGatewayFeeAbsorption}
+                                    onChange={(e) => setForm({ ...form, prefersGatewayFeeAbsorption: !e.target.checked })}
+                                    style={{ opacity: 0, width: 0, height: 0 }}
+                                />
+                                <label
+                                    htmlFor="fee-toggle"
+                                    style={{
+                                        position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                                        backgroundColor: !form.prefersGatewayFeeAbsorption ? 'var(--primary)' : '#CBD5E1', borderRadius: '34px', transition: '.4s'
+                                    }}
+                                >
+                                    <span style={{
+                                        position: 'absolute', content: '""', height: '24px', width: '24px', left: '4px', bottom: '4px',
+                                        backgroundColor: 'white', borderRadius: '50%', transition: '.4s',
+                                        transform: !form.prefersGatewayFeeAbsorption ? 'translateX(28px)' : 'translateX(0)',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                    }}></span>
+                                </label>
+                            </div>
+                        </div>
+                        <p style={{ marginTop: '12px', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600, textAlign: 'center' }}>
+                            Tip: Most merchants pass fees to customers to ensure they get their full money instantly.
+                        </p>
+                    </div>
                 </section>
 
 

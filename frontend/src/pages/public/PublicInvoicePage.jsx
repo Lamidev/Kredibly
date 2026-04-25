@@ -368,6 +368,11 @@ const PublicInvoicePage = () => {
         setIsShareMenuOpen(true);
     };
 
+    const handleShareSlip = () => {
+        setShareMenuType('slip');
+        setIsShareMenuOpen(true);
+    };
+
     const handleDownloadPDF = async () => {
         const element = document.getElementById('receipt-download-target');
         if (!element) return;
@@ -441,7 +446,7 @@ const PublicInvoicePage = () => {
         }
     };
 
-    const handleWhatsAppShare = async (isSlip = false, forceDownload = false) => {
+    const handleShareImage = async (isSlip = false, forceDownload = false) => {
         const targetId = isSlip ? 'transaction-slip-target' : 'receipt-download-target';
         const element = document.getElementById(targetId);
         if (!element) return;
@@ -454,7 +459,7 @@ const PublicInvoicePage = () => {
             : `Hi ${sale?.businessId?.displayName}, I'm sharing the details of Invoice #${sale?.invoiceNumber}. \n\nView it here: ${window.location.origin}/i/${sale?.invoiceNumber}`;
 
         setGenerating('share');
-        toast.loading('Preparing receipt for sharing...', { id: 'share-gen' });
+        toast.loading('Preparing image for sharing...', { id: 'share-gen' });
 
         try {
             const canvas = await html2canvas(element, {
@@ -471,18 +476,31 @@ const PublicInvoicePage = () => {
                 }
             });
 
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 0.9));
-            const file = new File([blob], isSlip ? `Receipt_${sale.invoiceNumber}.png` : `Invoice_KR-${sale.invoiceNumber}.png`, { type: 'image/png' });
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 1.0));
+            const fileName = isSlip ? `Receipt_${sale.invoiceNumber}.png` : `Invoice_KR-${sale.invoiceNumber}.png`;
+            const file = new File([blob], fileName, { type: 'image/png' });
 
-            // 📱 If forceDownload is true OR native sharing is NOT supported
-            if (forceDownload || !navigator.canShare || !navigator.canShare({ files: [file] })) {
+            // 📱 Check for Native File Sharing Support
+            const canShare = navigator.canShare && navigator.canShare({ files: [file] });
+
+            if (forceDownload || !canShare) {
+                // FALLBACK: Download directly
                 const link = document.createElement('a');
-                link.download = isSlip ? `Receipt_${sale.invoiceNumber}.png` : `Invoice_KR-${sale.invoiceNumber}.png`;
+                link.download = fileName;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
-                toast.success(isSlip ? 'Transaction slip saved!' : 'Invoice image saved!', { id: 'share-gen' });
+                
+                toast.success(isSlip ? 'Transaction slip saved!' : 'Invoice saved!', { id: 'share-gen' });
+                
+                // If they specifically wanted to share to WhatsApp but files aren't supported, open the link after download
+                if (!forceDownload && cleanPhone) {
+                    setTimeout(() => {
+                        const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+                        window.open(whatsappUrl, '_blank');
+                    }, 1000);
+                }
             } else {
-                // 📱 Use native sharing
+                // 🚀 MOBILE NATIVE SHARE (Opens System Share Sheet with Image Attached)
                 try {
                     await navigator.share({
                         files: [file],
@@ -491,26 +509,21 @@ const PublicInvoicePage = () => {
                     });
                     toast.success('Shared successfully!', { id: 'share-gen' });
                 } catch (shareErr) {
-                    // 🛡️ Handle user cancellation (AbortError) silently
                     if (shareErr.name === 'AbortError') {
                         toast.dismiss('share-gen');
                         return;
                     }
-                    
-                    // 🛡️ For other errors, fallback to manual WhatsApp if phone exists, otherwise download
-                    console.warn("Native share failed, using fallback:", shareErr);
-                    if (cleanPhone) {
-                        const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
-                        window.open(whatsappUrl, '_blank');
-                        toast.success('Opening WhatsApp...', { id: 'share-gen' });
-                    } else {
-                        throw shareErr; // Trigger the main catch block for download fallback
-                    }
+                    console.warn("Native share failed, downloading instead:", shareErr);
+                    // Final fallback
+                    const link = document.createElement('a');
+                    link.download = fileName;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
                 }
             }
         } catch (err) {
             console.error("Share Error:", err);
-            toast.error("Sharing failed, but you can still download the image below.", { id: 'share-gen' });
+            toast.error("Sharing failed. Please try saving as image instead.", { id: 'share-gen' });
         } finally {
             setGenerating(false);
         }
@@ -1053,6 +1066,24 @@ const PublicInvoicePage = () => {
 
                                         {/* Payment Button / DVA Card */}
                                         <div style={{ marginTop: '8px' }}>
+                                            {!nombaData && !sale?.businessId?.prefersGatewayFeeAbsorption && (
+                                                <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '16px', border: '1px solid #E2E8F0', marginBottom: '16px', fontSize: '12px' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748B', marginBottom: '4px', fontWeight: 600 }}>
+                                                        <span>Invoice Amount</span>
+                                                        <span>₦{(paymentMode === 'full' ? balance : (parseFloat(customAmount) || 0)).toLocaleString()}</span>
+                                                    </div>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748B', fontWeight: 600 }}>
+                                                        <span>Verification Fee</span>
+                                                        <span>₦{Math.ceil(((paymentMode === 'full' ? balance : (parseFloat(customAmount) || 0)) + 50) / 0.9925 - (paymentMode === 'full' ? balance : (parseFloat(customAmount) || 0))).toLocaleString()}</span>
+                                                    </div>
+                                                    <div style={{ height: '1px', background: '#E2E8F0', margin: '12px 0' }} />
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#0F172A', fontWeight: 800, fontSize: '14px' }}>
+                                                        <span>Total to Pay</span>
+                                                        <span>₦{Math.ceil(((paymentMode === 'full' ? balance : (parseFloat(customAmount) || 0)) + 50) / 0.9925).toLocaleString()}</span>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             {nombaData ? (
                                                 <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
                                                     <div style={{ background: '#0F172A', padding: isMobile ? '28px 20px' : '24px', borderRadius: '24px', color: 'white', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.3)' }}>
@@ -1060,8 +1091,13 @@ const PublicInvoicePage = () => {
                                                         
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', position: 'relative', zIndex: 2 }}>
                                                             <div>
-                                                                <p style={{ margin: 0, fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>Pay This Exact Amount</p>
+                                                                <p style={{ margin: 0, fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>Total Amount to Pay</p>
                                                                 <h2 style={{ fontSize: isMobile ? '32px' : '28px', fontWeight: 950, margin: '4px 0 0' }}>₦{nombaData.amount.toLocaleString()}</h2>
+                                                                {nombaData.gatewayFee > 0 && (
+                                                                    <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#94A3B8', fontWeight: 700 }}>
+                                                                        (₦{nombaData.baseAmount.toLocaleString()} + ₦{nombaData.gatewayFee.toLocaleString()} verification fee)
+                                                                    </p>
+                                                                )}
                                                             </div>
                                                             <div style={{ background: 'rgba(239, 68, 68, 0.15)', padding: '6px 12px', borderRadius: '100px', border: '1px solid rgba(239, 68, 68, 0.2)', height: 'fit-content' }}>
                                                                 <span style={{ fontSize: '11px', fontWeight: 900, color: '#FCA5A5' }}>{timeLeft || '44:59'}</span>
@@ -1117,7 +1153,7 @@ const PublicInvoicePage = () => {
                                                     style={{ width: '100%', padding: '20px', background: 'linear-gradient(135deg, #4C1D95 0%, #2E1065 100%)', color: 'white', borderRadius: '20px', border: 'none', fontWeight: 900, fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: '0 15px 30px -5px rgba(76, 29, 149, 0.4)' }}
                                                 >
                                                     {loadingNomba ? <Loader2 size={22} className="spin-animation" /> : <Building2 size={22} />}
-                                                    <span>{loadingNomba ? 'Preparing...' : `Pay ₦${(paymentMode === 'full' ? balance : (parseFloat(customAmount) || 0)).toLocaleString()} via Transfer`}</span>
+                                                    <span>{loadingNomba ? 'Preparing...' : `Pay ₦${(!sale?.businessId?.prefersGatewayFeeAbsorption ? Math.ceil(((paymentMode === 'full' ? balance : (parseFloat(customAmount) || 0)) + 50) / 0.9925) : (paymentMode === 'full' ? balance : (parseFloat(customAmount) || 0))).toLocaleString()} via Transfer`}</span>
                                                 </motion.button>
                                             )}
                                         </div>
@@ -1129,15 +1165,7 @@ const PublicInvoicePage = () => {
                                             <CheckCircle size={32} />
                                         </div>
                                         <h4 style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A', marginBottom: '8px' }}>Payment Fully Settled</h4>
-                                        <p style={{ fontSize: '14px', color: '#64748B', marginBottom: '32px' }}>This transaction is verified and logged on the Kredibly ledger.</p>
-                                        
-                                        <button 
-                                            onClick={() => { setShareMenuType('invoice'); setIsShareMenuOpen(true); }}
-                                            style={{ width: '100%', padding: '18px', background: '#F8FAFC', color: '#475569', borderRadius: '16px', border: '1px solid #E2E8F0', fontWeight: 800, fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
-                                        >
-                                            <Share2 size={18} />
-                                            <span>Share Official Receipt</span>
-                                        </button>
+                                        <p style={{ fontSize: '14px', color: '#64748B', marginBottom: '0' }}>This transaction is verified and logged on the Kredibly ledger.</p>
                                     </div>
                                 )}
                             </div>
@@ -1191,7 +1219,7 @@ const PublicInvoicePage = () => {
                 balanceRemaining={sale ? sale.totalAmount - sale.paidAmount : 0}
                 onDownloadReceipt={handleDownloadPDF}
                 onDownloadImage={() => handleDownloadImage(true)}
-                onWhatsAppShare={() => handleWhatsAppShare(true)}
+                onWhatsAppShare={() => handleShareImage(true)}
                 shareUrl={window.location.origin + "/i/" + (sale?.invoiceNumber || id)}
                 shareText={`I've just made a payment of ₦${lastPaymentAmount?.toLocaleString()} to ${sale?.businessId?.displayName}! View my verified receipt here:`}
             />
@@ -1199,11 +1227,15 @@ const PublicInvoicePage = () => {
             <ShareActionSheet 
                 isOpen={isShareMenuOpen}
                 onClose={() => setIsShareMenuOpen(false)}
-                title={shareMenuType === 'slip' ? "Share Transaction Proof" : (isPaid ? "Share Official Receipt" : "Share Invoice Details")}
-                subtitle={shareMenuType === 'slip' ? "Send your proof of payment to the merchant" : "Choose how to share this record with others"}
-                onShareImage={(forceDownload = false) => handleWhatsAppShare(shareMenuType === 'slip', forceDownload)}
+                title={shareMenuType === 'slip' ? "Share Transaction Slip" : (isPaid ? "Share Official Receipt" : "Share Invoice Details")}
+                subtitle={shareMenuType === 'slip' ? "Send a verified image of your payment to the merchant" : "Share this record as a high-quality image or PDF"}
+                onShareImage={(forceDownload = false) => handleShareImage(shareMenuType === 'slip', forceDownload)}
                 onDownloadPDF={handleDownloadPDF}
-                onCopyLink={handleShare}
+                onCopyLink={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    toast.success('Link copied to clipboard!');
+                    setIsShareMenuOpen(false);
+                }}
             />
         </div>
         

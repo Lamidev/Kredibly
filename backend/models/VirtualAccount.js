@@ -39,7 +39,10 @@ const VirtualAccountSchema = new mongoose.Schema({
     },
     amount: {
         type: Number,
-        required: true
+        required: true // This is the total the customer pays (includes fees if passed)
+    },
+    baseAmount: {
+        type: Number // This is the original debt amount the merchant receives
     },
     status: {
         type: String,
