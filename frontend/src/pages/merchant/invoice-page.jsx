@@ -37,6 +37,7 @@ import { useSales } from "../../context/SaleContext";
 import { initiateSocketConnection, disconnectSocket, listenToEvent, stopListeningToEvent } from "../../utils/socket";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import ShareActionSheet from "../../components/payment/ShareActionSheet";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
@@ -68,6 +69,9 @@ const InvoicePage = () => {
     const [showCelebration, setShowCelebration] = useState(false);
     const [generating, setGenerating] = useState(null);
     const [deleteModal, setDeleteModal] = useState({ show: false, sale: null });
+    const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
+    const [shareMenuType, setShareMenuType] = useState('invoice'); // 'invoice' or 'slip'
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
     // Forms
     const [editForm, setEditForm] = useState({});
@@ -76,6 +80,8 @@ const InvoicePage = () => {
     const [processing, setProcessing] = useState(false);
 
     useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
         fetchSale();
         if (location.state?.showSuccessModal) {
             setShowSuccessModal(true);
@@ -83,6 +89,7 @@ const InvoicePage = () => {
             // Clear state so refresh doesn't show it again
             window.history.replaceState({}, document.title);
         }
+        return () => window.removeEventListener('resize', handleResize);
     }, [id]);
 
     // 🔌 Real-time Socket Setup for live payment verification
@@ -367,13 +374,13 @@ const InvoicePage = () => {
         }
     };
 
-    const handleDownloadImage = async () => {
+    const handleShareImage = async (forceDownload = false) => {
         if (generating) return;
         const receiptElement = document.getElementById('receipt-download-target');
         if (!receiptElement) return;
 
         setGenerating('image');
-        const toastId = toast.loading("Generating receipt image...");
+        const toastId = toast.loading(forceDownload ? "Generating image..." : "Preparing for share...");
         
         try {
             const html2canvas = (await import('html2canvas')).default;
@@ -415,26 +422,51 @@ const InvoicePage = () => {
 
             document.body.removeChild(container);
 
-            const image = canvas.toDataURL("image/png");
-            if (image === 'data:,') throw new Error("Blank image generated");
+            const imgData = canvas.toDataURL("image/png");
+            
+            if (!forceDownload && navigator.share && navigator.canShare) {
+                const blob = await (await fetch(imgData)).blob();
+                const file = new File([blob], `Invoice_${sale.invoiceNumber}.png`, { type: 'image/png' });
+                
+                if (navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: `Invoice #${sale.invoiceNumber}`,
+                            text: `View invoice details from ${sale.businessId.displayName}`
+                        });
+                        toast.dismiss(toastId);
+                        return;
+                    } catch (shareErr) {
+                        if (shareErr.name === 'AbortError') {
+                            toast.dismiss(toastId);
+                            return;
+                        }
+                        console.warn("Native share failed:", shareErr);
+                        // Fall through to download fallback
+                    }
+                }
+            }
 
             const link = document.createElement('a');
-            link.href = image;
+            link.href = imgData;
             link.download = `${balance <= 0 ? 'Receipt' : 'Invoice'}_${sale.invoiceNumber}.png`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             
             toast.dismiss(toastId);
-            toast.success("Receipt image downloaded!");
+            toast.success("Image saved!");
         } catch (err) {
-            console.error("Image generation failed:", err);
+            console.error("Share/Download failed:", err);
             toast.dismiss(toastId);
-            toast.error("Could not generate receipt image.");
+            toast.error("Process failed. Please try again.");
         } finally {
             setGenerating(null);
         }
     };
+
+    const handleDownloadImage = () => handleShareImage(true);
 
 
     if (loading) return (
@@ -450,11 +482,13 @@ const InvoicePage = () => {
 
     return (
         <div className="animate-fade-in" style={{
-            padding: isInternal ? '0' : '60px 20px',
-            maxWidth: isInternal ? '100%' : '1100px',
+            padding: isInternal ? (isMobile ? '16px' : '24px') : '60px 20px',
+            maxWidth: '1200px',
             margin: '0 auto',
             minHeight: '100vh',
-            background: isInternal ? 'transparent' : 'var(--background)'
+            background: isInternal ? 'transparent' : 'var(--background)',
+            overflowX: 'hidden',
+            width: '100%'
         }}>
             {/* Minimalist Professional Header */}
             {!isInternal && (
@@ -486,11 +520,11 @@ const InvoicePage = () => {
 
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '32px', flexWrap: 'wrap' }}>
                     <button
-                        onClick={() => setShowSuccessModal(true)}
+                        onClick={() => setIsShareMenuOpen(true)}
                         style={{ padding: '14px 28px', background: '#4C1D95', color: 'white', borderRadius: '100px', border: 'none', fontWeight: 900, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 10px 20px -5px rgba(76, 29, 149, 0.4)' }}
                     >
                         <Share2 size={16} strokeWidth={3} />
-                        Share {balance <= 0 ? 'Receipt' : 'Payment Link'}
+                        Share Details
                     </button>
                     <button
                         onClick={handleDownloadPDF}
@@ -715,35 +749,51 @@ const InvoicePage = () => {
                         </div>
 
                         <div style={{ background: '#F8FAFC', borderRadius: '20px', overflow: 'hidden', border: '1px solid #F1F5F9' }}>
-                            <div style={{ padding: '16px 20px', borderBottom: '1px solid #EEF2F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7C3AED', border: '1px solid #E2E8F0', flexShrink: 0 }}>
-                                        <FileText size={16} />
-                                    </div>
-                                    <div>
-                                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#1E293B' }}>Invoice Created</p>
-                                        <p style={{ margin: 0, fontSize: '11px', fontWeight: 600, color: '#64748B' }}>{new Date(sale.createdAt).toLocaleDateString()}</p>
-                                    </div>
-                                </div>
-                                <span style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', background: '#F8FAFC', padding: '4px 8px', borderRadius: '6px' }}>Drafted</span>
-                            </div>
+                             <div style={{ 
+                                 padding: isMobile ? '20px 16px' : '16px 20px', 
+                                 borderBottom: '1px solid #EEF2F6', 
+                                 display: 'flex', 
+                                 flexDirection: isMobile ? 'column' : 'row',
+                                 justifyContent: 'space-between', 
+                                 alignItems: isMobile ? 'flex-start' : 'center', 
+                                 gap: '12px' 
+                             }}>
+                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                     <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7C3AED', border: '1px solid #E2E8F0', flexShrink: 0 }}>
+                                         <FileText size={16} />
+                                     </div>
+                                     <div>
+                                         <p style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#1E293B' }}>Invoice Created</p>
+                                         <p style={{ margin: 0, fontSize: '11px', fontWeight: 600, color: '#64748B' }}>{new Date(sale.createdAt).toLocaleDateString()}</p>
+                                     </div>
+                                 </div>
+                                 <span style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', background: '#F8FAFC', padding: '4px 8px', borderRadius: '6px' }}>Drafted</span>
+                             </div>
 
-                            {[...(sale.payments || [])].slice(-5).reverse().map((p, idx, array) => (
-                                <div key={idx} style={{ padding: '16px 20px', borderBottom: idx === array.length - 1 ? 'none' : '1px solid #EEF2F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '200px' }}>
-                                        <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10B981', border: '1px solid #E2E8F0', flexShrink: 0 }}>
-                                            <CheckCircle size={16} />
-                                        </div>
-                                        <div style={{ minWidth: 0 }}>
-                                            <p style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#1E293B' }}>₦{p.amount.toLocaleString()} Recorded</p>
-                                            <p style={{ margin: 0, fontSize: '11px', fontWeight: 600, color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                {new Date(p.date).toLocaleDateString()} • {p.reference || 'SYSTEM'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <span style={{ fontSize: '10px', fontWeight: 900, color: '#10B981', textTransform: 'uppercase', background: '#F0FDF4', padding: '4px 8px', borderRadius: '6px' }}>Logged</span>
-                                </div>
-                            ))}
+                             {[...(sale.payments || [])].slice(-5).reverse().map((p, idx, array) => (
+                                 <div key={idx} style={{ 
+                                     padding: isMobile ? '20px 16px' : '16px 20px', 
+                                     borderBottom: idx === array.length - 1 ? 'none' : '1px solid #EEF2F6', 
+                                     display: 'flex', 
+                                     flexDirection: isMobile ? 'column' : 'row',
+                                     justifyContent: 'space-between', 
+                                     alignItems: isMobile ? 'flex-start' : 'center', 
+                                     gap: '12px' 
+                                 }}>
+                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                         <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10B981', border: '1px solid #E2E8F0', flexShrink: 0 }}>
+                                             <CheckCircle size={16} />
+                                         </div>
+                                         <div>
+                                             <p style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#1E293B' }}>₦{p.amount.toLocaleString()} Recorded</p>
+                                             <p style={{ margin: 0, fontSize: '11px', fontWeight: 600, color: '#64748B' }}>
+                                                 {new Date(p.date).toLocaleDateString()} • <span style={{ wordBreak: 'break-all' }}>{p.reference || (p.method === 'Initial' ? 'Opening Balance' : 'Verified Settlement')}</span>
+                                             </p>
+                                         </div>
+                                     </div>
+                                     <span style={{ fontSize: '10px', fontWeight: 900, color: '#10B981', textTransform: 'uppercase', background: '#F0FDF4', padding: '4px 8px', borderRadius: '6px' }}>Verified</span>
+                                 </div>
+                             ))}
                         </div>
                     </div>
                 </div>
@@ -957,7 +1007,7 @@ const InvoicePage = () => {
             )}
 
             <style>{`
-                @media (max-width: 1024px) {
+                @media (max-width: 1100px) {
                     .invoice-grid-responsive {
                         grid-template-columns: 1fr !important;
                     }
@@ -1049,7 +1099,7 @@ const InvoicePage = () => {
                             <span style={{ color: '#7C3AED', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>OFFICIALLY</span>
                             <span style={{ color: '#7C3AED', fontSize: '20px', fontWeight: 950, textTransform: 'uppercase', margin: '-3px 0' }}>SETTLED</span>
                             <div style={{ height: '2px', width: '70%', background: '#7C3AED', margin: '4px 0' }} />
-                            <span style={{ color: '#7C3AED', fontSize: '8px', fontWeight: 800 }}>{new Date().toLocaleDateString()}</span>
+                            <span style={{ color: '#7C3AED', fontSize: '8px', fontWeight: 800 }}>{settlementDate.toLocaleDateString()}</span>
                         </div>
                     )}
 
@@ -1066,6 +1116,15 @@ const InvoicePage = () => {
                     </div>
                 </div>
             </div>
+            <ShareActionSheet 
+                isOpen={isShareMenuOpen}
+                onClose={() => setIsShareMenuOpen(false)}
+                title={balance <= 0 ? "Share Official Receipt" : "Share Invoice Details"}
+                subtitle="Choose how to share this record with the customer"
+                onShareImage={handleShareImage}
+                onDownloadPDF={handleDownloadPDF}
+                onCopyLink={handleShare}
+            />
         </div>
     );
 };

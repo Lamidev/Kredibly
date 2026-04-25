@@ -39,9 +39,10 @@ const executeAutonomousDispatch = async (isBackup = false) => {
             const isStale = !config || !config.lastUpdated || config.lastUpdated < startOfToday;
             const hasDraft = config && config.value?.adviceText;
             
+            const previousTone = config?.value?.tone || "English";
             if (isStale || !hasDraft) {
-                console.log("🧠 Advice is stale or missing. Generating fresh Masterclass for autopilot...");
-                await generateDailyAdvice("English"); 
+                console.log(`🧠 Advice is stale or missing. Generating fresh Masterclass for autopilot in ${previousTone}...`);
+                await generateDailyAdvice(previousTone); 
             } else {
                 console.log("📜 Today's draft already exists. Using it for autonomous dispatch...");
             }

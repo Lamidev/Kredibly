@@ -17,6 +17,8 @@ const generateDailyAdvice = async (tone = "English") => {
 
         const prompt = `
         Kreddy, act as a High-Level Nigerian Business Growth Coach.
+        Today's Date: ${new Date().toDateString()}
+        
         Task: Write a short, powerful "masterclass" message for a Nigerian merchant to start their day.
         Tone: ${toneInstruction}
         
@@ -63,9 +65,17 @@ const generateDailyAdvice = async (tone = "English") => {
     } catch (err) {
         console.error("❌ Critical AI Advice Failure:", err.message);
         
-        const fallbackValue = tone === "Pidgin" 
-            ? `💡 *THE BIG INSIGHT:* Cashflow na Lifeblood\n\n🛡️ *WETIN MATTER:* Profit na paper, na cash dey pay light bill. Log every kobo today!\n\n✅ *WETIN TO DO:* Open Kredibly, log one sale now. Let's win! 🛡️`
-            : `💡 *THE BIG INSIGHT:* Cashflow is King\n\n🛡️ *WHY IT MATTERS:* Profit is just paper, but cash pays the bills. Record every kobo today!\n\n✅ *ACTION STEP:* Log one sale in Kredibly now. Let's win! 🛡️`;
+        const fallbacks = tone === "Pidgin" ? [
+            `💡 *THE BIG INSIGHT:* Cashflow na Lifeblood\n\n🛡️ *WETIN MATTER:* Profit na paper, na cash dey pay light bill. Log every kobo today!\n\n✅ *WETIN TO DO:* Open Kredibly, log one sale now. Let's win! 🛡️`,
+            `🚀 *SCALE UP:* Customer Trust na Gold\n\n🛡️ *WETIN MATTER:* If you deliver on time, dem go come back. Check your pending orders now!\n\n✅ *WETIN TO DO:* Call one customer to confirm delivery. Oya! 🚀`,
+            `📈 *GROWTH:* Small Wins count\n\n🛡️ *WETIN MATTER:* No look for big money only, small small kobo dey build empire. Record everything!\n\n✅ *WETIN TO DO:* Log your smallest sale from yesterday. Focus! 📈`
+        ] : [
+            `💡 *THE BIG INSIGHT:* Cashflow is King\n\n🛡️ *WHY IT MATTERS:* Profit is just paper, but cash pays the bills. Record every kobo today!\n\n✅ *ACTION STEP:* Log one sale in Kredibly now. Let's win! 🛡️`,
+            `🚀 *SCALE UP:* Consistency Wins\n\n🛡️ *WHY IT MATTERS:* Showing up every day is 80% of the battle. Keep your ledger updated.\n\n✅ *ACTION STEP:* Review your outstanding debts for 5 minutes. 🚀`,
+            `📈 *GROWTH:* Customer Retention\n\n🛡️ *WHY IT MATTERS:* It's cheaper to keep a customer than to find a new one. Service is everything.\n\n✅ *ACTION STEP:* Send a thank-you note to your last customer. 📈`
+        ];
+
+        const fallbackValue = fallbacks[Math.floor(Math.random() * fallbacks.length)];
 
         // Save the fallback so the UI stays in sync even during errors
         await SystemConfig.findOneAndUpdate(
