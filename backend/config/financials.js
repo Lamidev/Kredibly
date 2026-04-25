@@ -14,21 +14,44 @@ const FINANCIAL_CONFIG = {
             LARGE: 50                // > ₦50,000
         },
         EMTL_STAMP_DUTY: 50,         // Government Electronic Money Transfer Levy
-        MIN_INSTANT_SWEEP: 20000,    // Min amount to trigger immediate bank transfer
+        MIN_INSTANT_SWEEP: 5000,     // Wait until ₦5k to auto-sweep to avoid eating micro-transaction profits (1% max loss)
         DVA_FEE_CAP: 1000            // Maximum Nomba will charge on DVA collection
     },
     
+    getTransferFee: (amount) => {
+        if (amount < 5000) return 10;
+        if (amount <= 50000) return 25;
+        return 50;
+    },
+    
     // Helper to calculate how much to charge a customer to ensure merchant gets 'A'
+    // Under the new model, we ONLY pass the DVA collection fee to the customer. 
+    // The ₦50 bulk sweep fee is absorbed by the merchant when the threshold is hit.
     calculateGrossAmount: (netAmount, absorbFees = false) => {
         if (absorbFees) return netAmount;
         
-        // Formula: Gross = (Net + FixedFees) / (1 - Percentage)
-        // We use 50 as a safe flat fee to cover both transfer and stamp duty
-        const fixedFees = FINANCIAL_CONFIG.NOMBA.SWEEP_FEE_FLAT;
-        const percentage = FINANCIAL_CONFIG.NOMBA.DVA_PERCENTAGE;
+        // Nomba charges MAX(10, MIN(1000, 0.75% of Gross))
+        // 1. Minimum cap (₦10) applies when Gross <= 1333.33 (Net <= 1323.33)
+        // 2. Maximum cap (₦1000) applies when Gross >= 133333.33 (Net >= 132333.33)
+        if (netAmount <= 1323.33) {
+            return Math.ceil(netAmount + 10);
+        } else if (netAmount >= 132333.33) {
+            return Math.ceil(netAmount + 1000);
+        } else {
+            return Math.ceil(netAmount / (1 - FINANCIAL_CONFIG.NOMBA.DVA_PERCENTAGE));
+        }
+    },
+
+    // Helper to calculate how much lands in the merchant's virtual wallet after DVA fees
+    calculateNetAmount: (grossAmount) => {
+        // Nomba takes MAX(10, MIN(1000, 0.75% of gross))
+        const percentageFee = grossAmount * FINANCIAL_CONFIG.NOMBA.DVA_PERCENTAGE;
+        const actualDvaFee = Math.min(1000, Math.max(10, percentageFee));
         
-        const gross = (netAmount + fixedFees) / (1 - percentage);
-        return Math.ceil(gross);
+        // This is what lands in the Kredibly wallet.
+        // The ₦50 bulk sweep fee will be deducted from the *total* wallet balance at payout.
+        const net = grossAmount - actualDvaFee;
+        return Math.floor(net);
     }
 };
 

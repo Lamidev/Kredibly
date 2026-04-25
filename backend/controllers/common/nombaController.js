@@ -78,6 +78,9 @@ exports.initializeNombaAccount = async (req, res) => {
         if (!sale) return res.status(404).json({ success: false, message: 'Invoice not found' });
         
         const business = sale.businessId;
+        if (business && business.prefersGatewayFeeAbsorption === undefined) {
+            business.prefersGatewayFeeAbsorption = true;
+        }
         const requestedAmount = amount || (sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0));
 
         if (requestedAmount <= 0) {
@@ -450,6 +453,10 @@ async function internalProcessNombaPayment({ accountReference, accountNumber, am
         // 4. Record the payment on the invoice
         const creditAmount = vaRecord.baseAmount || amount;
         
+        // ⚡ SMART SETTLEMENT: Calculate what actually lands in merchant's pocket
+        // ⚡ SMART SETTLEMENT: Calculate what actually lands in merchant's pocket
+        const netToWallet = FINANCIAL_CONFIG.calculateNetAmount(amount);
+        
         // Ensure business is captured before save to avoid de-population issues
         const business = sale.businessId;
 
@@ -469,10 +476,22 @@ async function internalProcessNombaPayment({ accountReference, accountNumber, am
         const totalPaid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
         const balanceRemaining = sale.totalAmount - totalPaid;
 
+        // 6. Update internal wallet balance FIRST
+        await BusinessProfile.findByIdAndUpdate(business._id, { $inc: { walletBalance: netToWallet } });
+        const updatedBusiness = await BusinessProfile.findById(business._id);
+        const currentWalletBalance = updatedBusiness.walletBalance;
+
+        console.log(`💰 Merchant Wallet Updated: Business ${business?._id}, New Balance=₦${currentWalletBalance}`);
+
+        // 7. Check Sweep Threshold
+        const bankDetails = business.bankDetails;
+        const isLocked = bankDetails?.bankDetailsLockUntil && new Date() < new Date(bankDetails.bankDetailsLockUntil);
+        const threshold = FINANCIAL_CONFIG.NOMBA.MIN_INSTANT_SWEEP || 5000;
+        const meetsThreshold = currentWalletBalance >= threshold;
+
+        // 8. Notifications & Kreddy Alert
         if (business.whatsappNumber) {
             const receiptLink = `https://usekredibly.com/r/${sale.invoiceNumber}`;
-            const lockUntil = business.bankDetails?.bankDetailsLockUntil;
-            
             const statusLine = balanceRemaining <= 0
                 ? '✅ Fully Paid!'
                 : `⏳ Balance Remaining: ₦${balanceRemaining.toLocaleString()}`;
@@ -480,12 +499,15 @@ async function internalProcessNombaPayment({ accountReference, accountNumber, am
             let customText = "";
             let msg = `💰 *Bank Transfer Received!*\n\nHigh power! ₦${creditAmount.toLocaleString()} just landed for *Invoice #${sale.invoiceNumber}* (${sale.customerName || payer}).\n\n`;
             
-            if (lockUntil && new Date() < lockUntil) {
+            if (isLocked) {
                 customText += `🛡️ *Security:* Since you recently updated your bank details, settlements are escrowed for 24h. \n\n`;
                 msg += `🛡️ *Security:* Since you recently updated your bank details, settlements are escrowed for 24h. \n\n`;
+            } else if (!meetsThreshold) {
+                customText += `🛡️ *Settlement:* Because your wallet balance is under ₦${threshold.toLocaleString()}, this will automatically drop in your bank account tonight by 11:30 PM to save you transfer fees. 🚀\n\n`;
+                msg += `🛡️ *Settlement:* Because your wallet balance is under ₦${threshold.toLocaleString()}, this will automatically drop in your bank account tonight by 11:30 PM to save you transfer fees. 🚀\n\n`;
             } else {
-                customText += `🛡️ *Settlement:* Money is being swept to your bank account automatically. 🚀\n\n`;
-                msg += `🛡️ *Settlement:* Money is being swept to your bank account automatically. 🚀\n\n`;
+                customText += `🛡️ *Settlement:* Threshold met! Money is being swept to your bank account automatically right now. 🚀\n\n`;
+                msg += `🛡️ *Settlement:* Threshold met! Money is being swept to your bank account automatically right now. 🚀\n\n`;
             }
 
             customText += statusLine;
@@ -506,7 +528,6 @@ async function internalProcessNombaPayment({ accountReference, accountNumber, am
 
         console.log(`✅ Nomba: ₦${creditAmount} recorded for Invoice #${sale.invoiceNumber}`);
 
-        // 6. Notifications
         if (business) {
             await Notification.create({
                 businessId: business._id,
@@ -520,57 +541,44 @@ async function internalProcessNombaPayment({ accountReference, accountNumber, am
                 businessId: business._id,
                 action: 'PAYMENT_RECEIVED',
                 entityType: 'PAYMENT',
-                        entityId: sale._id,
-                        details: `Nomba payment of ₦${creditAmount.toLocaleString()} verified for Invoice #${sale.invoiceNumber} (${payer})`
-                    });
-                }
+                entityId: sale._id,
+                details: `Nomba payment of ₦${creditAmount.toLocaleString()} verified for Invoice #${sale.invoiceNumber} (${payer})`
+            });
+        }
 
-                // 8. SMART SETTLEMENT: Balance Cost vs. Speed
-                const bankDetails = business.bankDetails;
-                const isLocked = bankDetails?.bankDetailsLockUntil && new Date() < new Date(bankDetails.bankDetailsLockUntil);
-                
-                // Add money to internal wallet balance first
-                await BusinessProfile.findByIdAndUpdate(business._id, { $inc: { walletBalance: creditAmount } });
-                const updatedBusiness = await BusinessProfile.findById(business._id);
-                const currentWalletBalance = updatedBusiness.walletBalance;
+        // 9. Execute Sweep if Threshold Met
+        if (bankDetails?.bankCode && bankDetails?.accountNumber && !isLocked && !business.isCompromised) {
+            if (meetsThreshold) {
+                try {
+                    const sweepAmount = currentWalletBalance - FINANCIAL_CONFIG.NOMBA.SWEEP_FEE_FLAT;
+                    if (sweepAmount > 0) {
+                        console.log(`⚡ Instant Settlement Triggered (₦${sweepAmount})...`);
+                        
+                        await new Promise(resolve => setTimeout(resolve, 3000));
 
-                console.log(`💰 Merchant Wallet Updated: Business ${business?._id}, New Balance=₦${currentWalletBalance}`);
-
-                if (bankDetails?.bankCode && bankDetails?.accountNumber && !isLocked && !business.isCompromised) {
-                    try {
-                        // 🚀 THRESHOLD LOGIC: 
-                        // If payment is >= MIN_INSTANT_SWEEP, sweep INSTANTLY. 
-                        // If smaller, wait for the Daily Batch Sweep (midnight) to save on the transfer fee.
-                        if (creditAmount >= FINANCIAL_CONFIG.NOMBA.MIN_INSTANT_SWEEP) {
-                            console.log(`⚡ High-value payment detected (₦${creditAmount}). Triggering instant sweep...`);
-                            
-                            // ⏳ Safety delay for Nomba wallet sync
-                            await new Promise(resolve => setTimeout(resolve, 3000));
-
-                            const sweepRes = await initiateTransfer({
-                                amount: creditAmount,
-                                bankCode: bankDetails.bankCode,
-                                accountNumber: bankDetails.accountNumber,
-                                accountName: bankDetails.accountName || business.displayName,
-                                narration: `Kredibly INV #${sale.invoiceNumber} (Instant)`
-                            });
-                            
-                            // Deduct from wallet since we just swept it
-                            await BusinessProfile.findByIdAndUpdate(business._id, { $inc: { walletBalance: -creditAmount } });
-                            console.log(`✅ Auto-swept ₦${creditAmount} instantly. Ref: ${sweepRes?.data?.transactionId || 'N/A'}`);
-                        } else {
-                            console.log(`ℹ️ Small payment (₦${creditAmount}). Held in wallet for Daily Batch Sweep to save ₦50 fee.`);
-                        }
-                    } catch (sweepErr) {
-                        console.error(`❌ Auto-sweep FAILED for ${sale.invoiceNumber}:`, sweepErr.message);
+                        const sweepRes = await initiateTransfer({
+                            amount: sweepAmount,
+                            bankCode: bankDetails.bankCode,
+                            accountNumber: bankDetails.accountNumber,
+                            accountName: bankDetails.accountName || business.displayName,
+                            narration: `Kredibly Settlement (Instant)`
+                        });
+                        
+                        // Deduct from wallet since we swept everything
+                        await BusinessProfile.findByIdAndUpdate(business._id, { $inc: { walletBalance: -currentWalletBalance } });
+                        console.log(`✅ Auto-swept ₦${sweepAmount} instantly. Ref: ${sweepRes?.data?.transactionId || 'N/A'}`);
                     }
-                } else {
-                    let reason = "Missing Bank Details";
-                    if (isLocked) reason = `Security Lock (Active until ${bankDetails.bankDetailsLockUntil})`;
-                    else if (business.isCompromised) reason = "Account Flagged/Compromised";
-                    
-                    console.log(`🛡️ Auto-sweep SKIPPED: ${reason}. Funds held in Kredibly wallet.`);
+                } catch (sweepErr) {
+                    console.error(`❌ Auto-sweep FAILED for ${business._id}:`, sweepErr.message);
                 }
+            } else {
+                console.log(`🛡️ Auto-sweep SKIPPED: Balance (₦${currentWalletBalance}) under threshold (₦${threshold}). Funds held in Kredibly wallet until 11:30 PM.`);
+            }
+        } else if (!meetsThreshold) {
+            // Already handled by the meetsThreshold check above, just keeping the structure clean
+        } else {
+            console.log(`🛡️ Auto-sweep SKIPPED: Missing bank details or account locked.`);
+        }
 
             // 9. Auto-detect UI refresh via Socket
             try {

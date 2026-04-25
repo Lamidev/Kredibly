@@ -719,7 +719,11 @@ const SettingsPage = () => {
                                 <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0, fontWeight: 600 }}>
                                     {form.prefersGatewayFeeAbsorption 
                                         ? "You are absorbing all gateway fees. Customers pay exactly the invoice amount." 
-                                        : "Fees are passed to the customer. You receive 100% of your invoice amount."}
+                                        : "Customers cover the Gateway fee. You receive exactly the invoice amount."}
+                                    <br />
+                                    <span style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '4px', display: 'block', fontStyle: 'italic' }}>
+                                        *To protect your profits, funds auto-sweep to your bank when wallet hits ₦5,000 (Cost: ₦50). Balances under ₦5,000 are swept free every night at 11:30 PM.
+                                    </span>
                                 </p>
                             </div>
                             <div style={{ position: 'relative', display: 'inline-block', width: '60px', height: '32px', marginLeft: '20px' }}>
