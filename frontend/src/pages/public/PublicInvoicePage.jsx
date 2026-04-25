@@ -1349,42 +1349,23 @@ const PublicInvoicePage = () => {
                 }}
             />
 
-            {/* 🛡️ Verifying Payment Overlay (Dark Theme) */}
+            {/* 🛡️ Verifying Payment Overlay (Glassmorphic) */}
             <AnimatePresence>
                 {isAutoVerifying && (
                     <motion.div 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        style={{ 
-                            position: 'fixed', 
-                            inset: 0, 
-                            background: 'rgba(15, 23, 42, 0.9)', 
-                            backdropFilter: 'blur(10px)',
-                            zIndex: 100000,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
-                            textAlign: 'center',
-                            padding: '24px'
-                        }}
+                        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md"
                     >
-                        <div style={{ position: 'relative', width: '120px', height: '120px', marginBottom: '32px' }}>
-                            <motion.div 
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                style={{ position: 'absolute', inset: 0, border: '4px solid rgba(255,255,255,0.1)', borderRadius: '50%', borderTopColor: '#10B981', borderRightColor: '#10B981' }}
-                            />
-                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <ShieldCheck size={48} color="#10B981" />
+                        <div className="text-center p-8">
+                            <div className="relative mb-6 mx-auto w-24 h-24">
+                                <div className="absolute inset-0 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
+                                <div className="absolute inset-4 rounded-full border-4 border-white/10 border-b-white/40 animate-spin-slow"></div>
                             </div>
+                            <h3 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit' }}>Verifying Payment...</h3>
+                            <p className="text-white/60">We've detected your transfer. Just a moment! 🛡️</p>
                         </div>
-                        <h2 style={{ fontSize: '24px', fontWeight: 900, marginBottom: '12px', fontFamily: 'Outfit' }}>Verifying Payment</h2>
-                        <p style={{ fontSize: '15px', color: '#94A3B8', fontWeight: 600, maxWidth: '280px', lineHeight: 1.6 }}>
-                            We've detected a transfer! Just a moment while we update your official ledger...
-                        </p>
                     </motion.div>
                 )}
             </AnimatePresence>

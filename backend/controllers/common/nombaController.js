@@ -235,6 +235,7 @@ exports.verifyNombaPaymentStatus = async (req, res) => {
  * Route: POST /api/payments/webhook/nomba
  */
 exports.handleNombaWebhook = async (req, res) => {
+    console.log('⚡ Nomba Webhook Arrived:', JSON.stringify(req.body, null, 2));
     // 1. Always respond FAST to Nomba (< 5s) to prevent retry storms
     res.status(200).json({ status: 'received' });
 
@@ -518,8 +519,10 @@ async function internalProcessNombaPayment({ accountReference, accountNumber, am
             msg += statusLine;
             msg += `\n\n📄 *Receipt Link:* ${receiptLink}`;
             
+            console.log(`📡 Nomba: Triggering WA Alert for ${business.whatsappNumber} (Invoice #${sale.invoiceNumber})`);
+            
             const { sendWhatsAppPaymentAlert } = require('../whatsapp/whatsappController');
-            await sendWhatsAppPaymentAlert(
+            const waSuccess = await sendWhatsAppPaymentAlert(
                 business.whatsappNumber,
                 creditAmount,
                 sale.invoiceNumber,
@@ -527,7 +530,13 @@ async function internalProcessNombaPayment({ accountReference, accountNumber, am
                 customText,
                 business.displayName || 'Chief',
                 msg
-            ).catch(e => console.error("WA Fail:", e.message));
+            );
+
+            if (waSuccess) {
+                console.log(`✅ Nomba: WA Alert SENT successfully to ${business.whatsappNumber}`);
+            } else {
+                console.error(`❌ Nomba: WA Alert FAILED for ${business.whatsappNumber}. Check Meta logs.`);
+            }
         }
 
         console.log(`✅ Nomba: ₦${creditAmount} recorded for Invoice #${sale.invoiceNumber}`);
