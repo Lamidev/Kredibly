@@ -512,7 +512,7 @@ const sendReply = async (to, text, retryCount = 0) => {
             return await sendReply(to, text, retryCount + 1);
         }
 
-        console.error("❌ WhatsApp Final Failure:", errorData || error.message);
+        console.error("❌ WhatsApp Final Failure:", JSON.stringify(errorData || error.message, null, 2));
         return false;
     }
 };
@@ -573,7 +573,7 @@ const sendTemplateMessage = async (to, templateName, components = [], retryCount
             return await sendTemplateMessage(to, templateName, components, retryCount + 1);
         }
 
-        console.error(`❌ WhatsApp Template [${templateName}] Final Failure:`, errorData || error.message);
+        console.error(`❌ WhatsApp Template [${templateName}] Final Failure:`, JSON.stringify(errorData || error.message, null, 2));
         return false;
     }
 };
@@ -720,32 +720,41 @@ const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName,
         }
 
         // Window Closed: Use official Paid Template
-        console.log(`🔔 WhatsApp Session Closed for ${normalizedTo} — Sending paid payment template`);
+        console.log(`🔔 WhatsApp Session Closed for ${normalizedTo} — Sending paid payment template [kreddy_payment_alert]`);
+
+        // 🛡️ Variable Hardening: Ensure no 'undefined' or 'null' hits the Meta API
+        const safeAmount = String(amount || '0.00').substring(0, 60);
+        const safeInvoice = String(invoiceNumber || 'N/A').substring(0, 60);
+        const safeCustomer = String(customerName || 'Valued Customer').substring(0, 60);
+        const safeText = String(customText || 'Your payment has been received.').substring(0, 1024);
 
         const components = [
             {
                 type: "body",
                 parameters: [
-                    { type: "text", text: String(amount).substring(0, 60) },
-                    { type: "text", text: String(invoiceNumber).substring(0, 60) },
-                    { type: "text", text: String(customerName).substring(0, 60) },
-                    { type: "text", text: String(customText).substring(0, 1024) }
+                    { type: "text", text: safeAmount },
+                    { type: "text", text: safeInvoice },
+                    { type: "text", text: safeCustomer },
+                    { type: "text", text: safeText }
                 ]
             }
         ];
 
         // Push button variable blindly to support cases where the merchant adds it.
-        // Base Website URL: https://usekredibly.com/r/
         components.push({
             type: "button",
             sub_type: "url",
             index: "0",
             parameters: [
-                { type: "text", text: String(invoiceNumber) }
+                { type: "text", text: safeInvoice }
             ]
         });
 
-        return await sendTemplateMessage(normalizedTo, 'kreddy_payment_alert', components);
+        const success = await sendTemplateMessage(normalizedTo, 'kreddy_payment_alert', components);
+        if (!success) {
+            console.error(`❌ Meta Template rejection for ${normalizedTo}. Check template name and variables.`);
+        }
+        return success;
     } catch (err) {
         console.error("❌ sendWhatsAppPaymentAlert Error:", err.message);
         return false;
