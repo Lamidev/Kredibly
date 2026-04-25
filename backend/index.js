@@ -40,6 +40,7 @@ const {
   scheduleQueueHousekeeping,
   scheduleUpcomingNudges,
   scheduleBankLockChecker,
+  scheduleDailySettlements,
   startBackgroundJobRunner
 } = require("./utils/cronJobs");
 
@@ -197,6 +198,7 @@ mongoose
     scheduleQueueHousekeeping();
     scheduleUpcomingNudges();
     scheduleBankLockChecker();
+    scheduleDailySettlements();
     startBackgroundJobRunner();
 
     // 7. Start Server

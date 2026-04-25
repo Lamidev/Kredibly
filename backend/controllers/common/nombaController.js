@@ -1,6 +1,7 @@
 const Sale = require('../../models/Sale');
 const BusinessProfile = require('../../models/BusinessProfile');
 const VirtualAccount = require('../../models/VirtualAccount');
+const FINANCIAL_CONFIG = require('../../config/financials');
 const Notification = require('../../models/Notification');
 const ActivityLog = require('../../models/ActivityLog');
 const { logActivity } = require('../../utils/activityLogger');
@@ -77,16 +78,29 @@ exports.initializeNombaAccount = async (req, res) => {
         if (!sale) return res.status(404).json({ success: false, message: 'Invoice not found' });
         
         const business = sale.businessId;
-        const amountToPay = amount || (sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0));
+        const requestedAmount = amount || (sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0));
 
-        if (amountToPay <= 0) {
+        if (requestedAmount <= 0) {
             return res.status(400).json({ success: false, message: 'Invoice is already fully paid' });
+        }
+
+        // 🛡️ SMART FEE CALCULATION
+        // Nomba takes ~0.75% and Auto-sweep takes ₦50.
+        // If merchant passes fees to customer, we adjust the total so the merchant gets EXACTLY requestedAmount.
+        let amountToCharge = requestedAmount;
+        let gatewayFee = 0;
+
+        if (!business.prefersGatewayFeeAbsorption) {
+            // Use Centralized Calculator
+            amountToCharge = FINANCIAL_CONFIG.calculateGrossAmount(requestedAmount);
+            gatewayFee = amountToCharge - requestedAmount;
+            console.log(`⚖️ Fee Passing: Base=₦${requestedAmount}, Fee=₦${gatewayFee}, Total=₦${amountToCharge}`);
         }
 
         const existing = await VirtualAccount.findOne({
             saleId: sale._id,
             provider: 'nomba',
-            amount: amountToPay, // ⚡ CRITICAL: Only reuse if amount matches exactly
+            amount: amountToCharge, // ⚡ CRITICAL: Only reuse if amount matches exactly
             status: 'active',
             expiresAt: { $gt: new Date() }
         });
@@ -98,8 +112,10 @@ exports.initializeNombaAccount = async (req, res) => {
                 data: {
                     accountNumber: existing.accountNumber,
                     bankName: existing.bankName,
-                    accountName: existing.accountName || (business.displayName ? `AKINBYTE/${business.displayName.toUpperCase()}` : `Pay Invoice ${sale.invoiceNumber}`),
+                    accountName: existing.accountName || (business.displayName ? `KREDS/${business.displayName.toUpperCase()}` : `Pay Invoice ${sale.invoiceNumber}`),
                     amount: existing.amount,
+                    baseAmount: requestedAmount,
+                    gatewayFee: gatewayFee,
                     reference: existing.reference,
                     expiresAt: existing.expiresAt,
                     expiresIn: '45 minutes'
@@ -108,12 +124,12 @@ exports.initializeNombaAccount = async (req, res) => {
         }
 
         // 3. Create a fresh Nomba Dynamic Virtual Account
-        console.log(`🟢 Creating Nomba DVA for Invoice ${sale.invoiceNumber} — ₦${amountToPay}`);
+        console.log(`🟢 Creating Nomba DVA for Invoice ${sale.invoiceNumber} — ₦${amountToCharge}`);
         
         let nombaData;
         try {
             nombaData = await createDynamicVirtualAccount({
-                amount: amountToPay,
+                amount: amountToCharge,
                 invoiceNumber: sale.invoiceNumber,
                 merchantName: business.displayName || 'Kredibly Merchant',
                 customerEmail: sale.customerEmail || ''
@@ -137,7 +153,8 @@ exports.initializeNombaAccount = async (req, res) => {
             provider: 'nomba',
             reference: nombaData.reference,
             accountName: nombaData.accountName,
-            amount: amountToPay,
+            amount: amountToCharge,
+            baseAmount: requestedAmount,
             status: 'active',
             expiresAt: new Date(nombaData.expiresAt)
         });
@@ -147,8 +164,11 @@ exports.initializeNombaAccount = async (req, res) => {
             data: {
                 accountNumber: vaRecord.accountNumber,
                 bankName: vaRecord.bankName,
-                accountName: nombaData.accountName,
+                accountName: vaRecord.accountName,
                 amount: vaRecord.amount,
+                baseAmount: vaRecord.baseAmount,
+                gatewayFee: gatewayFee,
+                financialConfig: FINANCIAL_CONFIG.NOMBA,
                 reference: vaRecord.reference,
                 expiresAt: vaRecord.expiresAt,
                 expiresIn: '45 minutes'
@@ -428,8 +448,7 @@ async function internalProcessNombaPayment({ accountReference, accountNumber, am
         }
 
         // 4. Record the payment on the invoice
-        // We use the amount reported by Nomba (fail-safe already applied)
-        const creditAmount = amount;
+        const creditAmount = vaRecord.baseAmount || amount;
         
         // Ensure business is captured before save to avoid de-population issues
         const business = sale.businessId;
@@ -501,33 +520,57 @@ async function internalProcessNombaPayment({ accountReference, accountNumber, am
                 businessId: business._id,
                 action: 'PAYMENT_RECEIVED',
                 entityType: 'PAYMENT',
-                entityId: sale._id,
-                details: `Nomba payment of ₦${creditAmount.toLocaleString()} verified for Invoice #${sale.invoiceNumber} (${payer})`
-            });
-        }
-
-            // 8. AUTO-SWEEP: Instant Payout to Merchant's Bank Account
-            const bankDetails = business.bankDetails;
-            const isLocked = bankDetails?.bankDetailsLockUntil && new Date() < new Date(bankDetails.bankDetailsLockUntil);
-
-            if (bankDetails?.bankCode && bankDetails?.accountNumber && !isLocked && !business.isCompromised) {
-                try {
-                    // We sweep the gross amount (Nomba handles fee deduction from wallet)
-                    await initiateTransfer({
-                        amount: creditAmount,
-                        bankCode: bankDetails.bankCode,
-                        accountNumber: bankDetails.accountNumber,
-                        accountName: bankDetails.accountName || business.displayName,
-                        narration: `Kredibly INV #${sale.invoiceNumber} settlement`
+                        entityId: sale._id,
+                        details: `Nomba payment of ₦${creditAmount.toLocaleString()} verified for Invoice #${sale.invoiceNumber} (${payer})`
                     });
-                    console.log(`✅ Auto-swept ₦${creditAmount} to ${bankDetails.accountName}`);
-                } catch (sweepErr) {
-                    console.error(`❌ Auto-sweep FAILED for ${sale.invoiceNumber}:`, sweepErr.message);
                 }
-            } else {
-                const reason = isLocked ? "Security Lock" : (business.bankDetails?.accountNumber ? "Logic Blocked" : "Missing Bank Details");
-                console.log(`🛡️ Auto-sweep SKIPPED for ${sale.invoiceNumber}: ${reason}`);
-            }
+
+                // 8. SMART SETTLEMENT: Balance Cost vs. Speed
+                const bankDetails = business.bankDetails;
+                const isLocked = bankDetails?.bankDetailsLockUntil && new Date() < new Date(bankDetails.bankDetailsLockUntil);
+                
+                // Add money to internal wallet balance first
+                await BusinessProfile.findByIdAndUpdate(business._id, { $inc: { walletBalance: creditAmount } });
+                const updatedBusiness = await BusinessProfile.findById(business._id);
+                const currentWalletBalance = updatedBusiness.walletBalance;
+
+                console.log(`💰 Merchant Wallet Updated: Business ${business?._id}, New Balance=₦${currentWalletBalance}`);
+
+                if (bankDetails?.bankCode && bankDetails?.accountNumber && !isLocked && !business.isCompromised) {
+                    try {
+                        // 🚀 THRESHOLD LOGIC: 
+                        // If payment is >= MIN_INSTANT_SWEEP, sweep INSTANTLY. 
+                        // If smaller, wait for the Daily Batch Sweep (midnight) to save on the transfer fee.
+                        if (creditAmount >= FINANCIAL_CONFIG.NOMBA.MIN_INSTANT_SWEEP) {
+                            console.log(`⚡ High-value payment detected (₦${creditAmount}). Triggering instant sweep...`);
+                            
+                            // ⏳ Safety delay for Nomba wallet sync
+                            await new Promise(resolve => setTimeout(resolve, 3000));
+
+                            const sweepRes = await initiateTransfer({
+                                amount: creditAmount,
+                                bankCode: bankDetails.bankCode,
+                                accountNumber: bankDetails.accountNumber,
+                                accountName: bankDetails.accountName || business.displayName,
+                                narration: `Kredibly INV #${sale.invoiceNumber} (Instant)`
+                            });
+                            
+                            // Deduct from wallet since we just swept it
+                            await BusinessProfile.findByIdAndUpdate(business._id, { $inc: { walletBalance: -creditAmount } });
+                            console.log(`✅ Auto-swept ₦${creditAmount} instantly. Ref: ${sweepRes?.data?.transactionId || 'N/A'}`);
+                        } else {
+                            console.log(`ℹ️ Small payment (₦${creditAmount}). Held in wallet for Daily Batch Sweep to save ₦50 fee.`);
+                        }
+                    } catch (sweepErr) {
+                        console.error(`❌ Auto-sweep FAILED for ${sale.invoiceNumber}:`, sweepErr.message);
+                    }
+                } else {
+                    let reason = "Missing Bank Details";
+                    if (isLocked) reason = `Security Lock (Active until ${bankDetails.bankDetailsLockUntil})`;
+                    else if (business.isCompromised) reason = "Account Flagged/Compromised";
+                    
+                    console.log(`🛡️ Auto-sweep SKIPPED: ${reason}. Funds held in Kredibly wallet.`);
+                }
 
             // 9. Auto-detect UI refresh via Socket
             try {
@@ -569,9 +612,67 @@ async function internalProcessNombaPayment({ accountReference, accountNumber, am
             logUsage("revenue", { amount: creditAmount }).catch(e => console.error("Revenue log fail:", e));
             logUsage("merchant_fee", { amount: creditAmount }).catch(e => console.error("Fee log fail:", e));
 
-            return { success: true, message: "Payment processed and ledger updated!" };
-        } catch (err) {
+        return { success: true, message: "Payment processed and ledger updated!" };
+    } catch (err) {
         console.error('❌ internalProcessNombaPayment Error:', err);
         return { success: false, message: "Internal processing error: " + err.message };
     }
-}
+};
+
+/**
+ * 🧹 DAILY BATCH SETTLEMENT
+ * Sweeps all accumulated wallet balances to merchants.
+ * This runs at midnight to ensure merchants get their money daily but only pay one ₦50 fee.
+ */
+exports.processDailyNombaSettlements = async () => {
+    console.log("🚀 Starting Daily Nomba Batch Settlements...");
+    const businesses = await BusinessProfile.find({ walletBalance: { $gt: 100 } }); // Must be > 100 to cover fee + meaningful sweep
+    
+    let processed = 0;
+    for (const biz of businesses) {
+        // 🛡️ Safety Checks
+        if (!biz.bankDetails?.bankCode || !biz.bankDetails?.accountNumber) continue;
+        if (biz.isCompromised) continue;
+        
+        // Ensure security lock isn't active
+        const isLocked = biz.bankDetails?.bankDetailsLockUntil && new Date() < new Date(biz.bankDetails.bankDetailsLockUntil);
+        if (isLocked) {
+            console.log(`🛡️ Skipping batch sweep for ${biz.displayName}: Security lock active.`);
+            continue;
+        }
+
+        try {
+            const totalBalance = biz.walletBalance;
+            const fee = 50; // Nomba's standard transfer fee
+            const amountToSweep = totalBalance - fee;
+
+            if (amountToSweep <= 0) continue;
+
+            console.log(`💸 Sweeping ₦${amountToSweep} for ${biz.displayName} (Total Balance: ₦${totalBalance})`);
+            
+            await initiateTransfer({
+                amount: amountToSweep,
+                bankCode: biz.bankDetails.bankCode,
+                accountNumber: biz.bankDetails.accountNumber,
+                accountName: biz.bankDetails.accountName || biz.displayName,
+                narration: `Kredibly Settlement - ${new Date().toLocaleDateString()}`
+            });
+            
+            // Success! Reset wallet
+            biz.walletBalance = 0;
+            await biz.save();
+            processed++;
+
+            // 📱 Notify Merchant (Optional: High-value only or daily summary)
+            if (biz.whatsappNumber) {
+                const msg = `💰 *Daily Settlement Complete!*\n\nHigh Power! I've just swept your daily total of *₦${amountToSweep.toLocaleString()}* to your bank account.\n\n_Note: A ₦50 fee was deducted by the bank for the transfer._`;
+                await sendWhatsAppAlert(biz.whatsappNumber, msg).catch(e => console.error("Batch Notify Fail:", e));
+            }
+
+        } catch (err) {
+            console.error(`❌ Batch Sweep FAILED for ${biz.displayName}:`, err.message);
+        }
+    }
+    console.log(`✅ Batch Settlement Finished: Processed ${processed} merchants.`);
+    return { processed };
+};
