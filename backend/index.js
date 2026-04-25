@@ -50,6 +50,7 @@ const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss");
 
 const app = express();
+app.set('trust proxy', 1); // 🛡️ TRUST RENDER PROXY for rate-limiting
 const PORT = process.env.PORT || 7050;
 
 // 1. Security Headers (Helmet)
@@ -138,6 +139,12 @@ app.use(cookieParser());
 app.get("/api/health-check", (req, res) => {
   const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
   res.status(200).json({ status: "alive", database: dbStatus, timestamp: new Date() });
+});
+
+// 4. Redirects (WhatsApp Short-links)
+app.get("/r/:id", (req, res) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'https://usekredibly.com';
+  res.redirect(`${frontendUrl}/i/${req.params.id}`);
 });
 
 // 4. Routes

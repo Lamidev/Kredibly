@@ -763,8 +763,43 @@ const PublicInvoicePage = () => {
     return (
         <div style={{ minHeight: '100vh', background: '#FDFCFE', color: '#0F172A', fontFamily: "'Inter', sans-serif", paddingBottom: '40px' }}>
             <style>
-                {`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap');`}
+                {`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap');
+                  @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                  .animate-spin-slow { animation: spin-slow 3s linear infinite; }
+                `}
             </style>
+
+            {/* 🛡️ Verifying Payment Overlay (Hardened Stacking Context) */}
+            <AnimatePresence>
+                {isAutoVerifying && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            zIndex: 999999,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            backdropFilter: 'blur(12px)',
+                            WebkitBackdropFilter: 'blur(12px)',
+                            pointerEvents: 'all'
+                        }}
+                    >
+                        <div className="text-center p-8">
+                            <div className="relative mb-6 mx-auto w-24 h-24">
+                                <div className="absolute inset-0 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin"></div>
+                                <div className="absolute inset-4 rounded-full border-4 border-white/10 border-b-white/40 animate-spin-slow"></div>
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit' }}>Verifying Payment...</h3>
+                            <p className="text-white/60">We've detected your transfer. Just a moment! 🛡️</p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             <div className="printable-receipt" style={{ position: 'fixed', left: '-9999px', top: 0 }}>
                 <div id="receipt-download-target" style={{ width: '700px', background: 'white', padding: '64px', fontFamily: "'Inter', sans-serif", position: 'relative' }}>
                     {/* Security Watermark Texture */}
@@ -1352,28 +1387,8 @@ const PublicInvoicePage = () => {
                 }}
             />
 
-            {/* 🛡️ Verifying Payment Overlay (Glassmorphic) */}
-            <AnimatePresence>
-                {isAutoVerifying && (
-                    <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md"
-                    >
-                        <div className="text-center p-8">
-                            <div className="relative mb-6 mx-auto w-24 h-24">
-                                <div className="absolute inset-0 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
-                                <div className="absolute inset-4 rounded-full border-4 border-white/10 border-b-white/40 animate-spin-slow"></div>
-                            </div>
-                            <h3 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit' }}>Verifying Payment...</h3>
-                            <p className="text-white/60">We've detected your transfer. Just a moment! 🛡️</p>
-                        </div>
-                    </motion.div>
-                )}
             </AnimatePresence>
         </div>
-        
     );
 };
 

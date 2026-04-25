@@ -153,50 +153,27 @@ const PaymentSuccessModal = ({
 
                         {/* Action Buttons */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
-                            <button
-                                onClick={onWhatsAppShare}
-                                style={{
-                                    width: '100%', 
-                                    padding: '20px', 
-                                    background: 'linear-gradient(135deg, #10B981, #059669)', 
-                                    color: 'white', 
-                                    borderRadius: '20px', 
-                                    border: 'none',
-                                    fontWeight: 950, 
-                                    fontSize: '1.1rem', 
-                                    cursor: 'pointer', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center', 
-                                    gap: '12px',
-                                    boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.4)',
-                                    letterSpacing: '-0.01em'
-                                }}
-                            >
-                                <Share2 size={22} />
-                                Share Transaction Proof
-                            </button>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
                                 <button
                                     onClick={onDownloadReceipt}
                                     style={{
-                                        padding: '16px', background: '#F8FAFC', color: '#0F172A', borderRadius: '18px', border: '1px solid #E2E8F0',
-                                        fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                        padding: '20px', background: '#F8FAFC', color: '#4C1D95', borderRadius: '20px', border: '2px solid #EDE9FE',
+                                        fontWeight: 900, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px'
                                     }}
                                 >
-                                    <FileText size={16} />
-                                    Full PDF
+                                    <FileText size={20} />
+                                    Download Full PDF Receipt
                                 </button>
                                 <button
                                     onClick={onDownloadImage}
                                     style={{
-                                        padding: '16px', background: '#F8FAFC', color: '#0F172A', borderRadius: '18px', border: '1px solid #E2E8F0',
-                                        fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                        padding: '20px', background: 'linear-gradient(135deg, #4C1D95, #1E1B4B)', color: 'white', borderRadius: '20px', border: 'none',
+                                        fontWeight: 900, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+                                        boxShadow: '0 10px 20px -5px rgba(76, 29, 149, 0.2)'
                                     }}
                                 >
-                                    <Download size={16} />
-                                    Save Image
+                                    <Download size={20} />
+                                    Save Receipt as Image
                                 </button>
                             </div>
                         </div>
