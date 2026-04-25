@@ -3,6 +3,7 @@ const ActivityLog = require("../../models/ActivityLog");
 const Waitlist = require("../../models/Waitlist");
 const { logActivity } = require("../../utils/activityLogger");
 const { getBanks, resolveAccount, createSubaccount } = require("../../utils/paystack");
+const { getIO } = require("../../utils/socket");
 
 const cleanPhone = (num) => {
     if (!num) return num;
@@ -128,6 +129,15 @@ exports.updateProfile = async (req, res) => {
             entityType: "PROFILE",
             details: `Updated business profile for ${profile.displayName}`
         });
+
+        // 🔌 Real-time update for all open pages (like public invoices)
+        const io = getIO();
+        if (io) {
+            io.to(String(profile._id).toLowerCase()).emit("merchant_updated", {
+                businessId: profile._id,
+                updatedFields: { prefersGatewayFeeAbsorption }
+            });
+        }
 
         res.status(200).json({ success: true, data: profile });
     } catch (error) {

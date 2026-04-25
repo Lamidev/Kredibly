@@ -142,7 +142,7 @@ const BusinessProfileSchema = new mongoose.Schema({
     },
     prefersGatewayFeeAbsorption: {
         type: Boolean,
-        default: false // Default: Customer covers the fees (Merchant gets 100% of their money)
+        default: true // Default: Merchant absorbs the fees (Customer pays exactly what is on the invoice)
     },
     lastSummaryAt: {
         type: Date,

@@ -102,7 +102,7 @@ exports.getSale = async (req, res) => {
 
         // Try searching by MongoDB ID if it follows the format
         if (safeId.match(/^[0-9a-fA-F]{24}$/)) {
-            sale = await Sale.findById(safeId).populate("businessId", "displayName logoUrl phoneNumber whatsappNumber bankDetails entityType address paystackSubaccountCode plan");
+            sale = await Sale.findById(safeId).populate("businessId", "displayName logoUrl phoneNumber whatsappNumber bankDetails entityType address paystackSubaccountCode plan prefersGatewayFeeAbsorption");
         }
 
         // If not found by ID or not a valid ID format, try searching by invoiceNumber or publicSlug
@@ -112,10 +112,15 @@ exports.getSale = async (req, res) => {
                     { invoiceNumber: safeId.toUpperCase() },
                     { publicSlug: safeId }
                 ]
-            }).populate("businessId", "displayName logoUrl phoneNumber whatsappNumber bankDetails entityType address paystackSubaccountCode plan");
+            }).populate("businessId", "displayName logoUrl phoneNumber whatsappNumber bankDetails entityType address paystackSubaccountCode plan prefersGatewayFeeAbsorption");
         }
 
         if (!sale) return res.status(404).json({ message: "Sale record not found" });
+
+        // Ensure businessId has a default for prefersGatewayFeeAbsorption if missing
+        if (sale.businessId && sale.businessId.prefersGatewayFeeAbsorption === undefined) {
+            sale.businessId.prefersGatewayFeeAbsorption = true;
+        }
 
         // SECURITY: If bank details were recently changed (24h lock), hide subaccount code
         // This forces payments to Kredibly escrow instead of the new (risky) bank account.

@@ -310,10 +310,28 @@ const PublicInvoicePage = () => {
             }
         };
 
+        const onMerchantUpdated = async (data) => {
+            console.log("🏢 Merchant Settings Updated:", data);
+            try {
+                const res = await axios.get(`${API_URL}/sales/${id}`);
+                if (res.data.success) {
+                    setSale(res.data.data);
+                    // Reset custom amount and Nomba data if settings changed (fees might differ now)
+                    setNombaData(null);
+                    setCustomAmount('');
+                    setCustomAmountDisplay('');
+                }
+            } catch (err) {
+                console.error("Failed to refresh sale on merchant update", err);
+            }
+        };
+
         listenToEvent("sale_updated", onSaleUpdated);
+        listenToEvent("merchant_updated", onMerchantUpdated);
 
         return () => {
             stopListeningToEvent("sale_updated", onSaleUpdated);
+            stopListeningToEvent("merchant_updated", onMerchantUpdated);
             disconnectSocket();
         };
     }, [id, sale?._id, loading]);
@@ -539,6 +557,11 @@ const PublicInvoicePage = () => {
             return;
         }
 
+        if (amountToPay > balance) {
+            toast.error(`Amount exceeds remaining balance (₦${balance.toLocaleString()})`);
+            return;
+        }
+
         try {
             setLoadingNomba(true);
             const res = await axios.post(`${API_URL}/payments/initialize-nomba-account`, {
@@ -570,6 +593,11 @@ const PublicInvoicePage = () => {
 
         if (!amountToPay || amountToPay <= 0) {
             toast.error("Please enter a valid amount");
+            return;
+        }
+
+        if (amountToPay > balance) {
+            toast.error(`Amount exceeds remaining balance (₦${balance.toLocaleString()})`);
             return;
         }
 
@@ -693,6 +721,18 @@ const PublicInvoicePage = () => {
     const primaryColor = sale?.businessId?.brandColor || '#4C1D95';
     const secondaryColor = '#0F172A';
     const mutedColor = '#64748B';
+
+    // 🧮 Option X Fee Calculation Logic (Customer only covers DVA collection fee)
+    const rawInputAmount = paymentMode === 'full' ? balance : (parseFloat(customAmount) || 0);
+    let calculatedGatewayFee = 0;
+    if (rawInputAmount <= 1323.33) {
+        calculatedGatewayFee = 10;
+    } else if (rawInputAmount >= 132333.33) {
+        calculatedGatewayFee = 1000;
+    } else {
+        calculatedGatewayFee = Math.ceil(rawInputAmount / 0.9925) - rawInputAmount;
+    }
+    const finalTotalToPay = rawInputAmount + calculatedGatewayFee;
 
     return (
         <div style={{ minHeight: '100vh', background: '#FDFCFE', color: '#0F172A', fontFamily: "'Inter', sans-serif", paddingBottom: '40px' }}>
@@ -1052,7 +1092,14 @@ const PublicInvoicePage = () => {
                                                         <input 
                                                             type="text" value={customAmountDisplay} placeholder="₦0.00"
                                                             onChange={(e) => {
-                                                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                                                let val = e.target.value.replace(/[^0-9]/g, '');
+                                                                const numVal = parseInt(val) || 0;
+                                                                
+                                                                if (numVal > balance) {
+                                                                    val = Math.floor(balance).toString();
+                                                                    toast.error(`Maximum allowed: ₦${balance.toLocaleString()}`, { id: 'bal-limit' });
+                                                                }
+
                                                                 setCustomAmount(val);
                                                                 setCustomAmountDisplay(val ? `₦${parseInt(val).toLocaleString()}` : '');
                                                                 setNombaData(null);
@@ -1066,20 +1113,20 @@ const PublicInvoicePage = () => {
 
                                         {/* Payment Button / DVA Card */}
                                         <div style={{ marginTop: '8px' }}>
-                                            {!nombaData && !sale?.businessId?.prefersGatewayFeeAbsorption && (
+                                            {!nombaData && (sale?.businessId?.prefersGatewayFeeAbsorption === false || String(sale?.businessId?.prefersGatewayFeeAbsorption) === 'false') && rawInputAmount > 0 && (
                                                 <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '16px', border: '1px solid #E2E8F0', marginBottom: '16px', fontSize: '12px' }}>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748B', marginBottom: '4px', fontWeight: 600 }}>
                                                         <span>Invoice Amount</span>
-                                                        <span>₦{(paymentMode === 'full' ? balance : (parseFloat(customAmount) || 0)).toLocaleString()}</span>
+                                                        <span>₦{rawInputAmount.toLocaleString()}</span>
                                                     </div>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748B', fontWeight: 600 }}>
-                                                        <span>Verification Fee</span>
-                                                        <span>₦{Math.ceil(((paymentMode === 'full' ? balance : (parseFloat(customAmount) || 0)) + 50) / 0.9925 - (paymentMode === 'full' ? balance : (parseFloat(customAmount) || 0))).toLocaleString()}</span>
+                                                        <span>Processing Fee</span>
+                                                        <span>₦{calculatedGatewayFee.toLocaleString()}</span>
                                                     </div>
                                                     <div style={{ height: '1px', background: '#E2E8F0', margin: '12px 0' }} />
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', color: '#0F172A', fontWeight: 800, fontSize: '14px' }}>
                                                         <span>Total to Pay</span>
-                                                        <span>₦{Math.ceil(((paymentMode === 'full' ? balance : (parseFloat(customAmount) || 0)) + 50) / 0.9925).toLocaleString()}</span>
+                                                        <span>₦{finalTotalToPay.toLocaleString()}</span>
                                                     </div>
                                                 </div>
                                             )}
@@ -1095,7 +1142,7 @@ const PublicInvoicePage = () => {
                                                                 <h2 style={{ fontSize: isMobile ? '32px' : '28px', fontWeight: 950, margin: '4px 0 0' }}>₦{nombaData.amount.toLocaleString()}</h2>
                                                                 {nombaData.gatewayFee > 0 && (
                                                                     <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#94A3B8', fontWeight: 700 }}>
-                                                                        (₦{nombaData.baseAmount.toLocaleString()} + ₦{nombaData.gatewayFee.toLocaleString()} verification fee)
+                                                                        (₦{nombaData.baseAmount.toLocaleString()} + ₦{nombaData.gatewayFee.toLocaleString()} processing fee)
                                                                     </p>
                                                                 )}
                                                             </div>
@@ -1153,7 +1200,7 @@ const PublicInvoicePage = () => {
                                                     style={{ width: '100%', padding: '20px', background: 'linear-gradient(135deg, #4C1D95 0%, #2E1065 100%)', color: 'white', borderRadius: '20px', border: 'none', fontWeight: 900, fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: '0 15px 30px -5px rgba(76, 29, 149, 0.4)' }}
                                                 >
                                                     {loadingNomba ? <Loader2 size={22} className="spin-animation" /> : <Building2 size={22} />}
-                                                    <span>{loadingNomba ? 'Preparing...' : `Pay ₦${(!sale?.businessId?.prefersGatewayFeeAbsorption ? Math.ceil(((paymentMode === 'full' ? balance : (parseFloat(customAmount) || 0)) + 50) / 0.9925) : (paymentMode === 'full' ? balance : (parseFloat(customAmount) || 0))).toLocaleString()} via Transfer`}</span>
+                                                    <span>{loadingNomba ? 'Preparing...' : `Pay ₦${((sale?.businessId?.prefersGatewayFeeAbsorption === false || String(sale?.businessId?.prefersGatewayFeeAbsorption) === 'false') ? finalTotalToPay : rawInputAmount).toLocaleString()} via Transfer`}</span>
                                                 </motion.button>
                                             )}
                                         </div>
