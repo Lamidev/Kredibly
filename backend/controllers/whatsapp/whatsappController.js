@@ -527,10 +527,32 @@ const sendTemplateMessage = async (to, templateName, components = [], retryCount
 
         if (!accessToken || !phoneId) return false;
 
-        let cleanTo = String(to).replace(/\D/g, ''); 
+        let cleanTo = String(to).replace(/[\s+]/g, ''); 
         if (cleanTo.startsWith('0') && cleanTo.length === 11) {
             cleanTo = '234' + cleanTo.slice(1);
         }
+
+        // 🛡️ GLOBAL META SHIELD: Sanitize all text parameters in all components
+        const sanitizedComponents = components.map(comp => {
+            if (comp.parameters && Array.isArray(comp.parameters)) {
+                return {
+                    ...comp,
+                    parameters: comp.parameters.map(param => {
+                        if (param.type === 'text' && typeof param.text === 'string') {
+                            return {
+                                ...param,
+                                text: param.text
+                                    .replace(/[\n\r\t]/g, ' ') // Remove newlines/tabs
+                                    .replace(/\s\s+/g, ' ')    // Collapse multiple spaces
+                                    .trim()
+                            };
+                        }
+                        return param;
+                    })
+                };
+            }
+            return comp;
+        });
 
         const payload = {
             messaging_product: "whatsapp",
@@ -538,13 +560,10 @@ const sendTemplateMessage = async (to, templateName, components = [], retryCount
             type: "template",
             template: {
                 name: templateName,
-                language: { code: "en" }
+                language: { code: "en" },
+                components: sanitizedComponents
             }
         };
-
-        if (components && components.length > 0) {
-            payload.template.components = components;
-        }
 
         await axios.post(
             `https://graph.facebook.com/v21.0/${phoneId}/messages`,
@@ -656,7 +675,12 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
         console.log(`🔔 WhatsApp Session Closed for ${normalizedTo} — Sending paid template message`);
         
         // Meta template body parameters are capped at 1024 chars
-        const safeMessage = String(textMessage).substring(0, 1024);
+        // 🛡️ META STRICTNESS FIX: Strip newlines, tabs, and excessive spaces from parameters
+        const safeMessage = String(textMessage)
+            .replace(/[\n\r\t]/g, ' ') // Remove newlines and tabs
+            .replace(/\s\s+/g, ' ')    // Collapse multiple spaces
+            .trim()
+            .substring(0, 1024);
         
         const components = [
             {

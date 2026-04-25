@@ -1386,8 +1386,6 @@ const PublicInvoicePage = () => {
                     setIsShareMenuOpen(false);
                 }}
             />
-
-            </AnimatePresence>
         </div>
     );
 };
