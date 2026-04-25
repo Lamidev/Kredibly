@@ -166,6 +166,11 @@ const PublicInvoicePage = () => {
                             setIsAutoVerifying(true);
                             setLastPaymentAmount(lastPayment?.amount || 0);
                             
+                            // 🛡️ Clear Nomba VA & amount fields even for partial payments
+                            setNombaData(null); 
+                            setCustomAmount('');
+                            setCustomAmountDisplay('');
+
                             setTimeout(() => {
                                 setIsAutoVerifying(false);
                                 setShowSuccessModal(true);
@@ -501,8 +506,24 @@ const PublicInvoicePage = () => {
             // 📱 Check for Native File Sharing Support
             const canShare = navigator.canShare && navigator.canShare({ files: [file] });
 
-            if (forceDownload || !canShare) {
-                // FALLBACK: Download directly
+            if (!canShare) {
+                // FALLBACK 1: Try sharing as text/link only if files aren't supported
+                if (navigator.share) {
+                    try {
+                        await navigator.share({
+                            title: isSlip ? `Receipt from ${sale?.businessId?.displayName}` : `Invoice from ${sale?.businessId?.displayName}`,
+                            text: text,
+                            url: `${window.location.origin}/i/${sale?.invoiceNumber}`
+                        });
+                        toast.success('Link shared successfully!');
+                        setGenerating(false);
+                        return;
+                    } catch (sErr) {
+                        console.warn("Text share failed", sErr);
+                    }
+                }
+
+                // FALLBACK 2: Download directly
                 const link = document.createElement('a');
                 link.download = fileName;
                 link.href = canvas.toDataURL('image/png');
@@ -1187,10 +1208,26 @@ const PublicInvoicePage = () => {
 
                                                     <button 
                                                         onClick={handleManualVerification} disabled={verifyingPayment}
-                                                        style={{ width: '100%', padding: '16px', background: '#F8FAFC', color: '#475569', borderRadius: '16px', border: '1px solid #E2E8F0', marginTop: '16px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                                        style={{ 
+                                                            width: '100%', 
+                                                            padding: '18px', 
+                                                            background: '#F8FAFC', 
+                                                            color: primaryColor, 
+                                                            borderRadius: '16px', 
+                                                            border: `2px solid ${primaryColor}20`, 
+                                                            marginTop: '16px', 
+                                                            fontWeight: 900, 
+                                                            fontSize: '15px', 
+                                                            cursor: 'pointer', 
+                                                            display: 'flex', 
+                                                            alignItems: 'center', 
+                                                            justifyContent: 'center', 
+                                                            gap: '8px',
+                                                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
+                                                        }}
                                                     >
-                                                        {verifyingPayment ? <Loader2 size={16} className="spin-animation" /> : <ShieldCheck size={16} />}
-                                                        <span>I have made the transfer</span>
+                                                        {verifyingPayment ? <Loader2 size={18} className="spin-animation" /> : <CheckCircle size={18} />}
+                                                        <span>I have completed it</span>
                                                     </button>
                                                 </motion.div>
                                             ) : (

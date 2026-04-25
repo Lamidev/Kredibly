@@ -6,7 +6,7 @@
 
 const FINANCIAL_CONFIG = {
     NOMBA: {
-        DVA_PERCENTAGE: 0.0075,       // 0.75% collection fee
+        DVA_PERCENTAGE: 0.01,         // 1% collection fee (adjusted from 0.75% based on live observations)
         SWEEP_FEE_FLAT: 50,          // ₦50 covering transfer fee + safety buffer
         TRANSFER_FEES: {
             SMALL: 10,               // < ₦5,000
@@ -30,12 +30,12 @@ const FINANCIAL_CONFIG = {
     calculateGrossAmount: (netAmount, absorbFees = false) => {
         if (absorbFees) return netAmount;
         
-        // Nomba charges MAX(10, MIN(1000, 0.75% of Gross))
-        // 1. Minimum cap (₦10) applies when Gross <= 1333.33 (Net <= 1323.33)
-        // 2. Maximum cap (₦1000) applies when Gross >= 133333.33 (Net >= 132333.33)
-        if (netAmount <= 1323.33) {
+        // Nomba charges MAX(10, MIN(1000, 1% of Gross))
+        // 1. Minimum cap (₦10) applies when Gross <= 1000 (Net <= 990)
+        // 2. Maximum cap (₦1000) applies when Gross >= 100000 (Net >= 99000)
+        if (netAmount <= 990) {
             return Math.ceil(netAmount + 10);
-        } else if (netAmount >= 132333.33) {
+        } else if (netAmount >= 99000) {
             return Math.ceil(netAmount + 1000);
         } else {
             return Math.ceil(netAmount / (1 - FINANCIAL_CONFIG.NOMBA.DVA_PERCENTAGE));
@@ -44,7 +44,7 @@ const FINANCIAL_CONFIG = {
 
     // Helper to calculate how much lands in the merchant's virtual wallet after DVA fees
     calculateNetAmount: (grossAmount) => {
-        // Nomba takes MAX(10, MIN(1000, 0.75% of gross))
+        // Nomba takes MAX(10, MIN(1000, 1% of gross))
         const percentageFee = grossAmount * FINANCIAL_CONFIG.NOMBA.DVA_PERCENTAGE;
         const actualDvaFee = Math.min(1000, Math.max(10, percentageFee));
         
