@@ -77,6 +77,9 @@ const PublicInvoicePage = () => {
     // 🛡️ Pre-initialize derived values used in hooks
     const balance = calcCurrentBalance(sale);
     const isPaid = sale ? (balance <= 0) : false;
+    const settlementDate = isPaid && sale.payments?.length > 0 
+        ? new Date(sale.payments[sale.payments.length - 1].date)
+        : (sale?.createdAt ? new Date(sale.createdAt) : new Date());
     const isOverdue = sale && !isPaid && sale.dueDate && new Date(sale.dueDate) < new Date();
     const isDebtRecovery = sale && !isPaid && (sale.status === 'partial' || isOverdue);
 
@@ -412,10 +415,13 @@ const PublicInvoicePage = () => {
         
         try {
             const canvas = await html2canvas(element, {
-                scale: 3, // Higher scale for bank-style slip
+                scale: 3, 
                 useCORS: true,
                 logging: false,
                 backgroundColor: '#FFFFFF',
+                height: element.scrollHeight,
+                windowHeight: element.scrollHeight,
+                scrollY: 0,
                 onclone: (clonedDoc) => {
                     const el = clonedDoc.getElementById(targetId);
                     if (el) el.style.position = 'static';
@@ -456,6 +462,9 @@ const PublicInvoicePage = () => {
                 useCORS: true,
                 logging: false,
                 backgroundColor: '#FFFFFF',
+                height: element.scrollHeight,
+                windowHeight: element.scrollHeight,
+                scrollY: 0,
                 onclone: (clonedDoc) => {
                     const el = clonedDoc.getElementById(targetId);
                     if (el) el.style.position = 'static';
@@ -474,18 +483,30 @@ const PublicInvoicePage = () => {
                 toast.success(isSlip ? 'Transaction slip saved!' : 'Invoice image saved!', { id: 'share-gen' });
             } else {
                 // 📱 Use native sharing
-                await navigator.share({
-                    files: [file],
-                    title: isSlip ? `Receipt from ${sale?.businessId?.displayName}` : `Invoice from ${sale?.businessId?.displayName}`,
-                    text: text
-                });
-                console.log("Native file sharing not supported, falling back to WhatsApp link.");
-                const whatsappUrl = cleanPhone 
-                    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`
-                    : `https://wa.me/?text=${encodeURIComponent(text)}`;
-                
-                window.open(whatsappUrl, '_blank');
-                toast.success('Opening WhatsApp...', { id: 'share-gen' });
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: isSlip ? `Receipt from ${sale?.businessId?.displayName}` : `Invoice from ${sale?.businessId?.displayName}`,
+                        text: text
+                    });
+                    toast.success('Shared successfully!', { id: 'share-gen' });
+                } catch (shareErr) {
+                    // 🛡️ Handle user cancellation (AbortError) silently
+                    if (shareErr.name === 'AbortError') {
+                        toast.dismiss('share-gen');
+                        return;
+                    }
+                    
+                    // 🛡️ For other errors, fallback to manual WhatsApp if phone exists, otherwise download
+                    console.warn("Native share failed, using fallback:", shareErr);
+                    if (cleanPhone) {
+                        const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+                        window.open(whatsappUrl, '_blank');
+                        toast.success('Opening WhatsApp...', { id: 'share-gen' });
+                    } else {
+                        throw shareErr; // Trigger the main catch block for download fallback
+                    }
+                }
             }
         } catch (err) {
             console.error("Share Error:", err);
@@ -683,7 +704,7 @@ const PublicInvoicePage = () => {
                             )}
                             <div style={{ color: mutedColor, fontSize: '13px', fontWeight: 600 }}>
                                 <p style={{ margin: 0 }}>Official Merchant Record</p>
-                                <p style={{ margin: '2px 0 0' }}>{sale?.businessId?.email || 'verified@kredibly.com'}</p>
+                                <p style={{ margin: '2px 0 0' }}>{sale?.businessId?.email || `Verified by ${sale?.businessId?.displayName}`}</p>
                             </div>
                         </div>
 
@@ -759,7 +780,7 @@ const PublicInvoicePage = () => {
                             <tbody>
                                 <tr style={{ borderBottom: '1px solid #F8FAFC' }}>
                                     <td style={{ padding: '16px 0', fontSize: '13px', fontWeight: 600 }}>{new Date(sale.createdAt).toLocaleDateString()}</td>
-                                    <td style={{ padding: '16px 0', fontSize: '12px', color: mutedColor, fontWeight: 700 }}>Initial Issuance</td>
+                                    <td style={{ padding: '16px 0', fontSize: '12px', color: mutedColor, fontWeight: 700 }}>Record Created</td>
                                     <td style={{ padding: '16px 0', fontSize: '13px', fontWeight: 800, textAlign: 'right' }}>-</td>
                                 </tr>
                                 {(sale?.payments || []).map((p, idx) => (
@@ -796,7 +817,7 @@ const PublicInvoicePage = () => {
                             <span style={{ color: primaryColor, fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>OFFICIALLY</span>
                             <span style={{ color: primaryColor, fontSize: '20px', fontWeight: 950, textTransform: 'uppercase', margin: '-3px 0' }}>SETTLED</span>
                             <div style={{ height: '2px', width: '70%', background: primaryColor, margin: '4px 0' }} />
-                            <span style={{ color: primaryColor, fontSize: '8px', fontWeight: 800 }}>{new Date().toLocaleDateString()}</span>
+                            <span style={{ color: primaryColor, fontSize: '8px', fontWeight: 800 }}>{settlementDate.toLocaleDateString()}</span>
                         </div>
                     )}
 
@@ -908,7 +929,7 @@ const PublicInvoicePage = () => {
                                 </div>
                             </div>
 
-                            <div style={{ padding: '32px' }}>
+                            <div style={{ padding: isMobile ? '24px 16px' : '32px' }}>
                                 {/* Invoice Summary Grid */}
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>
                                     <div>
@@ -963,17 +984,25 @@ const PublicInvoicePage = () => {
                                         </div>
                                         <div style={{ background: '#F8FAFC', borderRadius: '20px', overflow: 'hidden', border: '1px solid #F1F5F9' }}>
                                             {sale.payments.map((p, idx) => (
-                                                <div key={idx} style={{ padding: '12px 16px', borderBottom: idx === sale.payments.length - 1 ? 'none' : '1px solid #EEF2F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                        <div style={{ width: '28px', height: '28px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10B981', border: '1px solid #E2E8F0' }}>
-                                                            <CheckCircle size={14} />
+                                                <div key={idx} style={{ 
+                                                    padding: isMobile ? '20px 16px' : '12px 16px', 
+                                                    borderBottom: idx === sale.payments.length - 1 ? 'none' : '1px solid #EEF2F6', 
+                                                    display: 'flex', 
+                                                    flexDirection: isMobile ? 'column' : 'row',
+                                                    justifyContent: 'space-between', 
+                                                    alignItems: isMobile ? 'flex-start' : 'center',
+                                                    gap: isMobile ? '16px' : '0'
+                                                }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                        <div style={{ width: '32px', height: '32px', background: 'white', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10B981', border: '1px solid #E2E8F0' }}>
+                                                            <CheckCircle size={16} />
                                                         </div>
                                                         <div>
-                                                            <p style={{ margin: 0, fontSize: '12px', fontWeight: 800, color: '#1E293B' }}>₦{p.amount.toLocaleString()}</p>
-                                                            <p style={{ margin: 0, fontSize: '10px', fontWeight: 600, color: '#64748B' }}>{new Date(p.date).toLocaleDateString()} • {p.reference || 'SYSTEM'}</p>
+                                                            <p style={{ margin: 0, fontSize: isMobile ? '15px' : '12px', fontWeight: 800, color: '#1E293B' }}>₦{p.amount.toLocaleString()}</p>
+                                                            <p style={{ margin: '2px 0 0', fontSize: isMobile ? '12px' : '10px', fontWeight: 600, color: '#64748B', wordBreak: 'break-all' }}>{new Date(p.date).toLocaleDateString()} • {p.reference || (p.method === 'Initial' ? 'Opening Balance' : 'Verified Settlement')}</p>
                                                         </div>
                                                     </div>
-                                                    <span style={{ fontSize: '9px', fontWeight: 900, color: '#10B981', textTransform: 'uppercase' }}>Logged</span>
+                                                    <span style={{ fontSize: '10px', fontWeight: 900, color: '#10B981', textTransform: 'uppercase', background: '#ECFDF5', padding: '4px 10px', borderRadius: '100px' }}>Verified Settlement</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -1026,34 +1055,49 @@ const PublicInvoicePage = () => {
                                         <div style={{ marginTop: '8px' }}>
                                             {nombaData ? (
                                                 <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-                                                    <div style={{ background: '#0F172A', padding: '24px', borderRadius: '24px', color: 'white', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.3)' }}>
+                                                    <div style={{ background: '#0F172A', padding: isMobile ? '28px 20px' : '24px', borderRadius: '24px', color: 'white', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.3)' }}>
                                                         <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '100px', height: '100px', background: 'radial-gradient(circle, rgba(124, 58, 237, 0.3) 0%, transparent 70%)', borderRadius: '50%' }} />
                                                         
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', position: 'relative', zIndex: 2 }}>
                                                             <div>
                                                                 <p style={{ margin: 0, fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>Pay This Exact Amount</p>
-                                                                <h2 style={{ fontSize: '28px', fontWeight: 950, margin: '4px 0 0' }}>₦{nombaData.amount.toLocaleString()}</h2>
+                                                                <h2 style={{ fontSize: isMobile ? '32px' : '28px', fontWeight: 950, margin: '4px 0 0' }}>₦{nombaData.amount.toLocaleString()}</h2>
                                                             </div>
                                                             <div style={{ background: 'rgba(239, 68, 68, 0.15)', padding: '6px 12px', borderRadius: '100px', border: '1px solid rgba(239, 68, 68, 0.2)', height: 'fit-content' }}>
                                                                 <span style={{ fontSize: '11px', fontWeight: 900, color: '#FCA5A5' }}>{timeLeft || '44:59'}</span>
                                                             </div>
                                                         </div>
 
-                                                        <div style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: '16px', padding: '20px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                                                        <div style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: '16px', padding: isMobile ? '24px 16px' : '20px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                                                             <div style={{ marginBottom: '16px' }}>
                                                                 <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#94A3B8', fontWeight: 800 }}>BANK NAME</p>
                                                                 <p style={{ margin: 0, fontSize: '14px', fontWeight: 800 }}>{nombaData.bankName}</p>
                                                             </div>
                                                             <div style={{ marginBottom: '16px' }}>
                                                                 <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#94A3B8', fontWeight: 800 }}>ACCOUNT NUMBER</p>
-                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                    <p style={{ margin: 0, fontSize: '24px', fontWeight: 950, color: '#A78BFA', letterSpacing: '1px' }}>{nombaData.accountNumber}</p>
-                                                                    <button onClick={() => { navigator.clipboard.writeText(nombaData.accountNumber); toast.success('Copied!'); }} style={{ padding: '8px 16px', background: 'white', color: '#0F172A', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 900, cursor: 'pointer' }}>Copy</button>
+                                                                <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '16px' : '0' }}>
+                                                                    <p style={{ margin: 0, fontSize: isMobile ? '32px' : '24px', fontWeight: 950, color: '#A78BFA', letterSpacing: '1px' }}>{nombaData.accountNumber}</p>
+                                                                    <button 
+                                                                        onClick={() => { navigator.clipboard.writeText(nombaData.accountNumber); toast.success('Copied!'); }} 
+                                                                        style={{ 
+                                                                            padding: isMobile ? '12px 24px' : '8px 16px', 
+                                                                            background: 'white', 
+                                                                            color: '#0F172A', 
+                                                                            border: 'none', 
+                                                                            borderRadius: '12px', 
+                                                                            fontSize: isMobile ? '14px' : '12px', 
+                                                                            fontWeight: 900, 
+                                                                            cursor: 'pointer',
+                                                                            width: isMobile ? '100%' : 'auto'
+                                                                        }}
+                                                                    >
+                                                                        {isMobile ? 'Copy Account Number' : 'Copy'}
+                                                                    </button>
                                                                 </div>
                                                             </div>
                                                             <div>
                                                                 <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#94A3B8', fontWeight: 800 }}>ACCOUNT NAME</p>
-                                                                <p style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>{nombaData.accountName || `${sale?.businessId?.displayName?.toUpperCase()}`}</p>
+                                                                <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, wordBreak: 'break-word' }}>{nombaData.accountName || `${sale?.businessId?.displayName?.toUpperCase()}`}</p>
                                                             </div>
                                                         </div>
                                                     </div>
