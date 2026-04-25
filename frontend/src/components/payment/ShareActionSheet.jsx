@@ -9,7 +9,8 @@ const ShareActionSheet = ({
     onDownloadPDF, 
     onCopyLink,
     title = "Share Official Document",
-    subtitle = "Choose how you'd like to share or save this record"
+    subtitle = "Choose how you'd like to share or save this record",
+    canShareToApps = true
 }) => {
     return (
         <AnimatePresence>
@@ -69,30 +70,32 @@ const ShareActionSheet = ({
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {/* Share as Image (Primary) */}
-                            <button
-                                onClick={() => { onShareImage(); onClose(); }}
-                                style={{
-                                    width: '100%',
-                                    padding: '18px',
-                                    background: 'linear-gradient(135deg, #4C1D95, #2E1065)',
-                                    color: 'white',
-                                    borderRadius: '20px',
-                                    border: 'none',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '16px',
-                                    cursor: 'pointer',
-                                    boxShadow: '0 10px 20px -5px rgba(76, 29, 149, 0.2)'
-                                }}
-                            >
-                                <div style={{ padding: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}>
-                                    <Share2 size={20} color="white" />
-                                </div>
-                                <div style={{ textAlign: 'left' }}>
-                                    <p style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>Share to Apps</p>
-                                    <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>WhatsApp, Instagram, etc.</p>
-                                </div>
-                            </button>
+                            {canShareToApps && (
+                                <button
+                                    onClick={() => { onShareImage(); onClose(); }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '18px',
+                                        background: 'linear-gradient(135deg, #4C1D95, #2E1065)',
+                                        color: 'white',
+                                        borderRadius: '20px',
+                                        border: 'none',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '16px',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 10px 20px -5px rgba(76, 29, 149, 0.2)'
+                                    }}
+                                >
+                                    <div style={{ padding: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}>
+                                        <Share2 size={20} color="white" />
+                                    </div>
+                                    <div style={{ textAlign: 'left' }}>
+                                        <p style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>Share to Apps</p>
+                                        <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>WhatsApp, Instagram, etc.</p>
+                                    </div>
+                                </button>
+                            )}
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                 {/* Save to Gallery */}

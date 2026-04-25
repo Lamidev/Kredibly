@@ -17,9 +17,9 @@ const TransactionSlip = ({
         <div 
             id={slipId}
             style={{ 
-                width: '400px', 
+                width: '360px', 
                 background: 'white', 
-                padding: '40px', 
+                padding: '32px', 
                 fontFamily: "'Inter', sans-serif",
                 color: '#0F172A',
                 position: 'relative',
@@ -140,9 +140,6 @@ const TransactionSlip = ({
                     </p>
                 </div>
             </div>
-
-            {/* Security Pattern (Bottom) */}
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4px', background: 'repeating-linear-gradient(45deg, #F1F5F9, #F1F5F9 10px, #FFFFFF 10px, #FFFFFF 20px)' }} />
         </div>
     );
 };
