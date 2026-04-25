@@ -868,12 +868,12 @@ const PublicInvoicePage = () => {
                         </table>
                     </div>
 
-                    {/* Official Seal */}
+                    {/* Official Seal - Relocated to avoid obstructing dynamic payment log */}
                     {isPaid && (
                         <div style={{ 
                             position: 'absolute',
-                            bottom: '120px',
-                            right: '64px',
+                            bottom: '150px',
+                            left: '64px',
                             width: '120px',
                             height: '120px',
                             border: `4px double ${primaryColor}`, 
@@ -883,10 +883,11 @@ const PublicInvoicePage = () => {
                             alignItems: 'center',
                             justifyContent: 'center',
                             transform: 'rotate(-15deg)', 
-                            opacity: 0.8,
-                            background: 'rgba(255, 255, 255, 0.9)',
-                            boxShadow: `0 4px 15px rgba(0,0,0,0.05)`,
-                            zIndex: 10
+                            opacity: 0.3,
+                            background: 'transparent',
+                            boxShadow: `0 4px 15px rgba(0,0,0,0.02)`,
+                            zIndex: 10,
+                            pointerEvents: 'none'
                         }}>
                             <span style={{ color: primaryColor, fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>OFFICIALLY</span>
                             <span style={{ color: primaryColor, fontSize: '20px', fontWeight: 950, textTransform: 'uppercase', margin: '-3px 0' }}>SETTLED</span>
