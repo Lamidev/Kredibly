@@ -31,11 +31,11 @@ const FINANCIAL_CONFIG = {
         if (absorbFees) return netAmount;
         
         // Nomba charges MAX(10, MIN(1000, 1% of Gross))
-        // 1. Minimum cap (₦10) applies when Gross <= 1000 (Net <= 990)
-        // 2. Maximum cap (₦1000) applies when Gross >= 100000 (Net >= 99000)
-        if (netAmount <= 990) {
+        // 1. Minimum cap (₦10) applies when Gross <= 1010 (Net <= 1000)
+        // 2. Maximum cap (₦1000) applies when Gross >= 101000 (Net >= 100000)
+        if (netAmount <= 1000) {
             return Math.ceil(netAmount + 10);
-        } else if (netAmount >= 99000) {
+        } else if (netAmount >= 100000) {
             return Math.ceil(netAmount + 1000);
         } else {
             return Math.ceil(netAmount / (1 - FINANCIAL_CONFIG.NOMBA.DVA_PERCENTAGE));

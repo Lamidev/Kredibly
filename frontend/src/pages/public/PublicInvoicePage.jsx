@@ -744,14 +744,15 @@ const PublicInvoicePage = () => {
     const mutedColor = '#64748B';
 
     // 🧮 Option X Fee Calculation Logic (Customer only covers DVA collection fee)
+    // 🛡️ SYNC WITH backend/config/financials.js (1% Fee Model)
     const rawInputAmount = paymentMode === 'full' ? balance : (parseFloat(customAmount) || 0);
     let calculatedGatewayFee = 0;
-    if (rawInputAmount <= 1323.33) {
+    if (rawInputAmount <= 1000) {
         calculatedGatewayFee = 10;
-    } else if (rawInputAmount >= 132333.33) {
+    } else if (rawInputAmount >= 100000) {
         calculatedGatewayFee = 1000;
     } else {
-        calculatedGatewayFee = Math.ceil(rawInputAmount / 0.9925) - rawInputAmount;
+        calculatedGatewayFee = Math.ceil(rawInputAmount / 0.99) - rawInputAmount;
     }
     const finalTotalToPay = rawInputAmount + calculatedGatewayFee;
 
