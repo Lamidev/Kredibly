@@ -739,7 +739,13 @@ const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName,
         const safeAmount = String(amount || '0.00').substring(0, 60);
         const safeInvoice = String(invoiceNumber || 'N/A').substring(0, 60);
         const safeCustomer = String(customerName || 'Valued Customer').substring(0, 60);
-        const safeText = String(customText || 'Your payment has been received.').substring(0, 1024);
+        
+        // 🛡️ META STRICTNESS FIX: Strip newlines, tabs, and excessive spaces from parameters
+        const safeText = String(customText || 'Your payment has been received.')
+            .replace(/[\n\r\t]/g, ' ') // Remove newlines and tabs
+            .replace(/\s\s+/g, ' ')    // Collapse multiple spaces to one
+            .trim()
+            .substring(0, 1024);
 
         const components = [
             {

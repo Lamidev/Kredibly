@@ -207,15 +207,15 @@ const verifyWebhookSignature = (signature, rawBody) => {
         const crypto = require('crypto');
         const secret = process.env.NOMBA_WEBHOOK_SECRET || NOMBA_PRIVATE_KEY;
         
-        // Try SHA512 first (Standard)
-        const expected512 = crypto.createHmac('sha512', secret).update(rawBody).digest('hex');
+        const payload = Buffer.isBuffer(rawBody) ? rawBody : String(rawBody);
+        const expected512 = crypto.createHmac('sha512', secret).update(payload).digest('hex');
         if (signature === expected512) return true;
 
         // Try SHA256 fallback (Some newer Nomba accounts)
-        const expected256 = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+        const expected256 = crypto.createHmac('sha256', secret).update(payload).digest('hex');
         if (signature === expected256) return true;
 
-        console.warn(`🛡️ Signature Mismatch! Provided: ${signature.substring(0, 10)}... | Expected: ${expected512.substring(0, 10)}...`);
+        console.warn(`🛡️ Signature Mismatch! [Payload Length: ${payload.length}]`);
         return false;
     } catch (err) {
         console.error('❌ Nomba Webhook Verification Error:', err.message);

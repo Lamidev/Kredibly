@@ -140,7 +140,7 @@ const PublicInvoicePage = () => {
 
                         if (finalBalance <= 0) {
                             isProcessingSuccess.current = true;
-                            // Show the "Payment Detected" confirmation overlay
+                            // 🛡️ Show the premium verification overlay immediately
                             setIsAutoVerifying(true);
                             
                             setLastPaymentAmount(lastPayment?.amount || (latestSale.totalAmount - (latestSale.paidAmount || 0)));
@@ -149,6 +149,7 @@ const PublicInvoicePage = () => {
                             setCustomAmountDisplay('');
                             setNombaData(null); 
 
+                            // Give the user a moment to see the "Verifying" state
                             setTimeout(() => {
                                 setIsAutoVerifying(false);
                                 setShowSuccessModal(true);
@@ -292,6 +293,8 @@ const PublicInvoicePage = () => {
 
                         // Show verifying overlay for effect
                         setIsAutoVerifying(true);
+                        
+                        // Give the user 2.5s of "Verification" bliss
                         setTimeout(() => {
                             setIsAutoVerifying(false);
                             setShowSuccessModal(true);
