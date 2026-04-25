@@ -624,7 +624,14 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
         // Try multiple number formats since numbers may be stored differently
         const altTo = cleanTo.startsWith('234') ? '0' + cleanTo.slice(3) : null;
         const plusTo = '+' + cleanTo;
-        
+        const senderNumber = process.env.WHATSAPP_SENDER_NUMBER || '2347071238658';
+
+        // 🛡️ SELF-MESSAGE PROTECTION: Meta blocks sending to self
+        if (cleanTo === senderNumber.replace(/\D/g, '')) {
+            console.warn(`🛑 Self-Notification Blocked: Number ${cleanTo} is the SENDER. Cannot send to self.`);
+            return false;
+        }
+
         const profile = await BusinessProfile.findOne({ 
             whatsappNumber: { $in: [cleanTo, normalizedTo, to.toString(), altTo, plusTo].filter(Boolean) }
         });
@@ -694,6 +701,12 @@ const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName,
 
         const altTo = cleanTo.startsWith('234') ? '0' + cleanTo.slice(3) : null;
         const plusTo = '+' + cleanTo;
+        const senderNumber = process.env.WHATSAPP_SENDER_NUMBER || '2347071238658';
+
+        if (cleanTo === senderNumber.replace(/\D/g, '')) {
+            console.warn(`🛑 Self-Notification Blocked: Number ${cleanTo} is the SENDER.`);
+            return false;
+        }
 
         const profile = await BusinessProfile.findOne({ 
             whatsappNumber: { $in: [cleanTo, normalizedTo, to.toString(), altTo, plusTo].filter(Boolean) }
