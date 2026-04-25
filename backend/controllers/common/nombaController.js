@@ -451,7 +451,11 @@ async function internalProcessNombaPayment({ accountReference, accountNumber, am
         }
 
         // 4. Record the payment on the invoice
-        const creditAmount = vaRecord.baseAmount || amount;
+        // ⚡ SMART CREDIT: If the customer paid exactly what was requested (including gateway fees), 
+        // we credit the merchant with the original Base Amount. If they paid something else (partial), 
+        // we credit the exact amount received.
+        const isFullPayment = vaRecord.amount && Math.abs(amount - vaRecord.amount) < 2;
+        const creditAmount = isFullPayment ? (vaRecord.baseAmount || amount) : amount;
         
         // ⚡ SMART SETTLEMENT: Calculate what actually lands in merchant's pocket
         // ⚡ SMART SETTLEMENT: Calculate what actually lands in merchant's pocket

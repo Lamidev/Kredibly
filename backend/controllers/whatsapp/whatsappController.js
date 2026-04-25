@@ -622,8 +622,11 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
 
         // 🛡️ COST SAVING: Check if the 24-hour customer service window is open
         // Try multiple number formats since numbers may be stored differently
+        const altTo = cleanTo.startsWith('234') ? '0' + cleanTo.slice(3) : null;
+        const plusTo = '+' + cleanTo;
+        
         const profile = await BusinessProfile.findOne({ 
-            whatsappNumber: { $in: [cleanTo, normalizedTo, to.toString()] }
+            whatsappNumber: { $in: [cleanTo, normalizedTo, to.toString(), altTo, plusTo].filter(Boolean) }
         });
         
         const now = new Date();
@@ -689,8 +692,11 @@ const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName,
             normalizedTo = '234' + normalizedTo.slice(1);
         }
 
+        const altTo = cleanTo.startsWith('234') ? '0' + cleanTo.slice(3) : null;
+        const plusTo = '+' + cleanTo;
+
         const profile = await BusinessProfile.findOne({ 
-            whatsappNumber: { $in: [cleanTo, normalizedTo, to.toString()] }
+            whatsappNumber: { $in: [cleanTo, normalizedTo, to.toString(), altTo, plusTo].filter(Boolean) }
         });
         
         const now = new Date();
@@ -825,12 +831,14 @@ exports.handleIncoming = async (req, res) => {
         processedMessages.add(messageId);
 
         const cleanFrom = cleanPhone(from);
+        const plusFrom = '+' + cleanFrom;
+        const altFrom = cleanFrom.startsWith('234') ? '0' + cleanFrom.slice(3) : null;
         
         // Find profile where either the owner or staff matches this number
         const profile = await BusinessProfile.findOne({ 
             $or: [
-                { whatsappNumber: cleanFrom },
-                { staffNumbers: cleanFrom }
+                { whatsappNumber: { $in: [cleanFrom, plusFrom, altFrom].filter(Boolean) } },
+                { staffNumbers: { $in: [cleanFrom, plusFrom, altFrom].filter(Boolean) } }
             ]
         }).populate("ownerId", "name");
 
@@ -846,10 +854,6 @@ exports.handleIncoming = async (req, res) => {
         const merchantFirstName = registeredName || profileName || tierTitle;
         const bossTitle = profile?.assistantSettings?.preferredName || merchantFirstName;
 
-        // 🛡️ COST SAVING: Track the 24-hour window
-        profile.lastInboundAt = new Date();
-        await profile.save();
-
         if (!profile) {
             // Pre-launch Phase: Force Registration for all unknown numbers
             const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
@@ -857,6 +861,10 @@ exports.handleIncoming = async (req, res) => {
             await sendReply(from, welcomeMsg);
             return;
         }
+
+        // 🛡️ COST SAVING: Track the 24-hour window
+        profile.lastInboundAt = new Date();
+        await profile.save();
 
         const isStaff = profile.whatsappNumber !== cleanFrom;
         const plan = profile.plan || "hustler";
