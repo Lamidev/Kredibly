@@ -430,6 +430,8 @@ const PublicInvoicePage = () => {
             toast.error("PDF generation failed: " + err.message, { id: 'pdf-gen' });
         } finally {
             setGenerating(false);
+            // 🛡️ Ensure loading state is cleared if not already replaced by success/error
+            setTimeout(() => toast.dismiss('pdf-gen'), 3000);
         }
     };
 
@@ -447,8 +449,6 @@ const PublicInvoicePage = () => {
                 useCORS: true,
                 logging: false,
                 backgroundColor: '#FFFFFF',
-                height: element.scrollHeight,
-                windowHeight: element.scrollHeight,
                 scrollY: 0,
                 onclone: (clonedDoc) => {
                     const el = clonedDoc.getElementById(targetId);
@@ -466,6 +466,8 @@ const PublicInvoicePage = () => {
             toast.error("Image capture failed: " + err.message, { id: 'image-gen' });
         } finally {
             setGenerating(false);
+            // 🛡️ Ensure loading state is cleared
+            setTimeout(() => toast.dismiss('image-gen'), 2000);
         }
     };
 
@@ -490,8 +492,6 @@ const PublicInvoicePage = () => {
                 useCORS: true,
                 logging: false,
                 backgroundColor: '#FFFFFF',
-                height: element.scrollHeight,
-                windowHeight: element.scrollHeight,
                 scrollY: 0,
                 onclone: (clonedDoc) => {
                     const el = clonedDoc.getElementById(targetId);
@@ -565,6 +565,7 @@ const PublicInvoicePage = () => {
             toast.error("Sharing failed. Please try saving as image instead.", { id: 'share-gen' });
         } finally {
             setGenerating(false);
+            toast.dismiss('share-gen');
         }
     };
 
@@ -1157,6 +1158,24 @@ const PublicInvoicePage = () => {
                                             {nombaData ? (
                                                 <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
                                                     <div style={{ background: '#0F172A', padding: isMobile ? '28px 20px' : '24px', borderRadius: '24px', color: 'white', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.3)' }}>
+                                                        {/* 📡 Live Status Banner */}
+                                                        <div style={{ 
+                                                            display: 'flex', 
+                                                            alignItems: 'center', 
+                                                            gap: '8px', 
+                                                            background: 'rgba(16, 185, 129, 0.1)', 
+                                                            border: '1px solid rgba(16, 185, 129, 0.2)',
+                                                            padding: '6px 12px',
+                                                            borderRadius: '100px',
+                                                            width: 'fit-content',
+                                                            marginBottom: '20px',
+                                                            position: 'relative',
+                                                            zIndex: 10
+                                                        }}>
+                                                            <div className="pulse-dot" style={{ width: '6px', height: '6px', background: '#10B981', borderRadius: '50%' }} />
+                                                            <span style={{ fontSize: '10px', fontWeight: 900, color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Monitoring for your transfer...</span>
+                                                        </div>
+
                                                         <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '100px', height: '100px', background: 'radial-gradient(circle, rgba(124, 58, 237, 0.3) 0%, transparent 70%)', borderRadius: '50%' }} />
                                                         
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', position: 'relative', zIndex: 2 }}>
@@ -1277,10 +1296,16 @@ const PublicInvoicePage = () => {
                 .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.05); }
                 .hover-scale { transition: transform 0.2s; }
                 .hover-scale:hover { transform: scale(1.02); }
+                .pulse-dot { animation: pulse-animation 2s infinite; }
+                @keyframes pulse-animation {
+                    0% { transform: scale(0.95); opacity: 0.7; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+                    70% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+                    100% { transform: scale(0.95); opacity: 0.7; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+                }
             ` }} />
 
             {/* Hidden Transaction Slip for Capture */}
-            <div style={{ position: 'fixed', left: '-9999px', top: 0 }}>
+            <div style={{ position: 'fixed', left: '-9999px', top: 0, display: 'inline-block', overflow: 'hidden', height: 'auto' }}>
                 {currentTransaction && (
                     <TransactionSlip 
                         amount={currentTransaction.amount}
@@ -1305,7 +1330,6 @@ const PublicInvoicePage = () => {
                 balanceRemaining={sale ? sale.totalAmount - sale.paidAmount : 0}
                 onDownloadReceipt={handleDownloadPDF}
                 onDownloadImage={() => handleDownloadImage(true)}
-                onWhatsAppShare={() => handleShareImage(true)}
                 shareUrl={window.location.origin + "/i/" + (sale?.invoiceNumber || id)}
                 shareText={`I've just made a payment of ₦${lastPaymentAmount?.toLocaleString()} to ${sale?.businessId?.displayName}! View my verified receipt here:`}
             />
@@ -1316,6 +1340,7 @@ const PublicInvoicePage = () => {
                 title={shareMenuType === 'slip' ? "Share Transaction Slip" : (isPaid ? "Share Official Receipt" : "Share Invoice Details")}
                 subtitle={shareMenuType === 'slip' ? "Send a verified image of your payment to the merchant" : "Share this record as a high-quality image or PDF"}
                 onShareImage={(forceDownload = false) => handleShareImage(shareMenuType === 'slip', forceDownload)}
+                canShareToApps={false}
                 onDownloadPDF={handleDownloadPDF}
                 onCopyLink={() => {
                     navigator.clipboard.writeText(window.location.href);
@@ -1323,6 +1348,46 @@ const PublicInvoicePage = () => {
                     setIsShareMenuOpen(false);
                 }}
             />
+
+            {/* 🛡️ Verifying Payment Overlay (Dark Theme) */}
+            <AnimatePresence>
+                {isAutoVerifying && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{ 
+                            position: 'fixed', 
+                            inset: 0, 
+                            background: 'rgba(15, 23, 42, 0.9)', 
+                            backdropFilter: 'blur(10px)',
+                            zIndex: 100000,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            textAlign: 'center',
+                            padding: '24px'
+                        }}
+                    >
+                        <div style={{ position: 'relative', width: '120px', height: '120px', marginBottom: '32px' }}>
+                            <motion.div 
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                style={{ position: 'absolute', inset: 0, border: '4px solid rgba(255,255,255,0.1)', borderRadius: '50%', borderTopColor: '#10B981', borderRightColor: '#10B981' }}
+                            />
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <ShieldCheck size={48} color="#10B981" />
+                            </div>
+                        </div>
+                        <h2 style={{ fontSize: '24px', fontWeight: 900, marginBottom: '12px', fontFamily: 'Outfit' }}>Verifying Payment</h2>
+                        <p style={{ fontSize: '15px', color: '#94A3B8', fontWeight: 600, maxWidth: '280px', lineHeight: 1.6 }}>
+                            We've detected a transfer! Just a moment while we update your official ledger...
+                        </p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
         
     );
