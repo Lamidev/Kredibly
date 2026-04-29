@@ -2,7 +2,7 @@ const BusinessProfile = require("../../models/BusinessProfile");
 const ActivityLog = require("../../models/ActivityLog");
 const Waitlist = require("../../models/Waitlist");
 const { logActivity } = require("../../utils/activityLogger");
-const { getBanks, resolveAccount, createSubaccount } = require("../../utils/paystack");
+const { getBanks, resolveAccount } = require("../../utils/nomba");
 const { getIO } = require("../../utils/socket");
 
 const cleanPhone = (num) => {
@@ -52,22 +52,8 @@ exports.updateProfile = async (req, res) => {
             // New Profile Creation: Check if user is from Waitlist
             const waitlistEntry = await Waitlist.findOne({ email: req.user.email });
             
-            // 🚀 SUBACCOUNT INIT: If bank details are provided during onboarding, set up Paystack immediately
+            // 🚀 SUBACCOUNT INIT: Removed Paystack logic, using Nomba Auto-sweep instead.
             let subaccountCode = null;
-            if (bankDetails && bankDetails.accountNumber && bankDetails.bankCode) {
-                try {
-                    const subaccount = await createSubaccount(
-                        displayName, 
-                        bankDetails.bankCode, 
-                        bankDetails.accountNumber,
-                        0 
-                    );
-                    subaccountCode = subaccount.subaccount_code;
-                } catch (err) {
-                    console.error("Onboarding Subaccount Error:", err.message);
-                    // We don't fail the whole onboarding if Paystack is down, but we log it
-                }
-            }
 
             const { LAUNCH_DATE } = require('../../config/pricing');
             const now = new Date();
@@ -260,21 +246,8 @@ exports.saveBankDetails = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid account number. Please check and try again." });
         }
 
-        // 3. Create Paystack Subaccount (ALWAYS New for Fresh Details)
-        // We create a new subaccount for every change to ensure the money goes to the right place immediately.
-        let subaccountCode;
-        try {
-            const subaccount = await createSubaccount(
-                profile.displayName, 
-                bankCode, 
-                accountNumber,
-                0 // Zero Platform Fee
-            );
-            subaccountCode = subaccount.subaccount_code;
-        } catch (err) {
-            console.error("Paystack Subacct Create Error:", err.message);
-            return res.status(500).json({ success: false, message: "Could not set up automatic payouts. Please try again later." });
-        }
+        // 3. Payout Strategy: Using Nomba Auto-sweep instead of Paystack Subaccounts.
+        // We no longer create Paystack subaccounts here.
         // 4. Save to Profile + SECURITY LOCK (Smart Check)
         // Only lock if an account already existed AND it wasn't empty (This is a CHANGE, not first setup)
         const isInitialSetup = !profile.bankDetails?.accountNumber || profile.bankDetails.accountNumber === "";
@@ -288,7 +261,6 @@ exports.saveBankDetails = async (req, res) => {
             lastBankChangeAt: new Date(),
             bankDetailsLockUntil: lockUntil
         };
-        profile.paystackSubaccountCode = subaccountCode;
         
         await profile.save();
 

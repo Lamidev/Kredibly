@@ -224,6 +224,68 @@ const verifyWebhookSignature = (signature, rawBody) => {
 };
 
 /**
+ * 🏦 GET LIST OF BANKS
+ * Fetches supported banks from Nomba for payouts.
+ */
+const getBanks = async () => {
+    try {
+        const token = await getAccessToken();
+        const response = await axios.get(
+            `${NOMBA_BASE_URL}/transfers/banks`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    accountId: NOMBA_ACCOUNT_ID
+                },
+                timeout: 15000
+            }
+        );
+        // Nomba returns { data: [{ code: "...", name: "..." }] }
+        return response.data?.data || [];
+    } catch (err) {
+        console.error('❌ Nomba getBanks Error:', err.response?.data || err.message);
+        return [];
+    }
+};
+
+/**
+ * 🔍 RESOLVE BANK ACCOUNT
+ * Verifies account number and returns the account name.
+ */
+const resolveAccount = async (accountNumber, bankCode) => {
+    try {
+        const token = await getAccessToken();
+        const response = await axios.post(
+            `${NOMBA_BASE_URL}/transfers/bank/lookup`,
+            {
+                accountNumber,
+                bankCode
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    accountId: NOMBA_ACCOUNT_ID
+                },
+                timeout: 15000
+            }
+        );
+        // Nomba returns { data: { accountName: "...", ... } }
+        const data = response.data?.data;
+        if (!data || !data.accountName) {
+            throw new Error(response.data?.description || 'Could not resolve account details');
+        }
+        return {
+            account_number: accountNumber,
+            account_name: data.accountName
+        };
+    } catch (err) {
+        console.error('❌ Nomba resolveAccount Error:', err.response?.data || err.message);
+        throw new Error(err.response?.data?.description || err.message || 'Failed to verify account number');
+    }
+};
+
+/**
  * 🔍 CHECK PAYMENT STATUS
  * Manually queries Nomba for transactions associated with an account reference.
  */
@@ -279,6 +341,22 @@ const checkPaymentStatusByReference = async (accountReference, accountNumber) =>
 };
 
 /**
+ * 🏦 GET NOMBA BANK CODE
+ * Translates common Paystack/Standard bank codes to Nomba-specific codes if they differ.
+ * Paystack uses '999992' for OPay, but Nomba/NIBSS often uses '305'.
+ */
+const getNombaBankCode = (code) => {
+    const mapping = {
+        '999992': '305',    // OPay (Paycom)
+        '999991': '302',    // PalmPay
+        '50515': '090405',  // Moniepoint
+        '50211': '090267',  // Kuda
+        '100004': '305',    // OPay Alternate
+    };
+    return mapping[code] || code;
+};
+
+/**
  * 💸 INITIATE BANK TRANSFER (Auto-Sweep)
  * Moves funds from Kredibly's Nomba wallet to merchant's registered bank.
  * Called automatically after a successful customer payment webhook.
@@ -295,12 +373,14 @@ const initiateTransfer = async ({ amount, bankCode, accountNumber, accountName, 
     try {
         const token = await getAccessToken();
 
+        const nombaBankCode = getNombaBankCode(bankCode);
+
         // 🚀 NOMBA V2: Transfers use the v2 API with slightly different fields
         const response = await axios.post(
             `https://api.nomba.com/v2/transfers/bank`,
             {
                 amount: Math.round(amount * 100), // Nomba v2 still expects kobo
-                bankCode,
+                bankCode: nombaBankCode,
                 accountNumber,
                 accountName,
                 narration: narration || 'Kredibly Invoice Settlement',
@@ -332,5 +412,7 @@ module.exports = {
     createNombaCheckoutOrder,
     verifyWebhookSignature,
     initiateTransfer,
-    checkPaymentStatusByReference
+    checkPaymentStatusByReference,
+    getBanks,
+    resolveAccount
 };
