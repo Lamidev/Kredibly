@@ -65,7 +65,7 @@ const SettingsPage = () => {
     const [resolving, setResolving] = useState(false);
     const [isPayoutSaving, setIsPayoutSaving] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
-    const [isEditingPayout, setIsEditingPayout] = useState(!profile?.paystackSubaccountCode);
+    const [isEditingPayout, setIsEditingPayout] = useState(!profile?.bankDetails?.accountNumber);
     const fileInputRef = React.useRef(null);
     const staffLimit = profile?.plan === 'chairman' ? 'Unlimited' : (profile?.plan === 'oga' ? 'Up to 2 Staff' : 'Owner Only');
 
@@ -526,7 +526,7 @@ const SettingsPage = () => {
                                 <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>Set where you receive money from debtors.</p>
                             </div>
                         </div>
-                        {profile?.paystackSubaccountCode && (
+                        {profile?.bankDetails?.accountNumber && (
                             <div style={{ background: 'rgba(76, 29, 149, 0.08)', color: 'var(--primary)', padding: '6px 12px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <CheckCircle size={12} /> AUTOMATED PAYOUTS ACTIVE
                             </div>
@@ -644,7 +644,7 @@ const SettingsPage = () => {
 
                                 <div style={{ marginTop: '8px' }}>
                                     <div style={{ display: 'flex', gap: '12px' }}>
-                                        {profile?.paystackSubaccountCode && (
+                                        {profile?.bankDetails?.accountNumber && (
                                             <button
                                                 type="button"
                                                 onClick={() => {
@@ -697,12 +697,12 @@ const SettingsPage = () => {
                                             {isPayoutSaving ? (
                                                 <><Loader2 size={20} className="spin-animation" /> Verifying...</>
                                             ) : (
-                                                <>{profile?.paystackSubaccountCode ? "Confirm New Details" : "Setup Secure Payouts"}</>
+                                                <>{profile?.bankDetails?.accountNumber ? "Confirm New Details" : "Setup Secure Payouts"}</>
                                             )}
                                         </button>
                                     </div>
                                     <p style={{ marginTop: '12px', fontSize: '0.75rem', color: '#64748B', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                                        <Shield size={12} /> {profile?.paystackSubaccountCode ? "Securely update your bank destination." : "Powered by Paystack Secure Split Settlements"}
+                                        <Shield size={12} /> {profile?.bankDetails?.accountNumber ? "Securely update your bank destination." : "Powered by Nomba Instant Settlements"}
                                     </p>
                                 </div>
                             </div>
