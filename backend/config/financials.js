@@ -14,7 +14,7 @@ const FINANCIAL_CONFIG = {
             LARGE: 50                // > ₦50,000
         },
         EMTL_STAMP_DUTY: 50,         // Government Electronic Money Transfer Levy
-        MIN_INSTANT_SWEEP: 5000,     // Wait until ₦5k to auto-sweep to avoid eating micro-transaction profits (1% max loss)
+        MIN_INSTANT_SWEEP: 0,        // Temporarily set to 0 for testing (normal: 5000)
         DVA_FEE_CAP: 1000            // Maximum Nomba will charge on DVA collection
     },
     
