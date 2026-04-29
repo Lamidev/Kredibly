@@ -491,8 +491,9 @@ async function internalProcessNombaPayment({ accountReference, accountNumber, am
         // 7. Check Sweep Threshold
         const bankDetails = business.bankDetails;
         const isLocked = bankDetails?.bankDetailsLockUntil && new Date() < new Date(bankDetails.bankDetailsLockUntil);
-        const threshold = FINANCIAL_CONFIG.NOMBA.MIN_INSTANT_SWEEP || 5000;
-        const meetsThreshold = currentWalletBalance >= threshold;
+        // We removed the 5k threshold. Instead, we sweep as long as the balance covers the transfer fee.
+        const threshold = FINANCIAL_CONFIG.NOMBA.SWEEP_FEE_FLAT || 50;
+        const meetsThreshold = currentWalletBalance > threshold;
 
         // 8. Notifications & Kreddy Alert
         if (business.whatsappNumber) {
@@ -507,12 +508,12 @@ async function internalProcessNombaPayment({ accountReference, accountNumber, am
             if (isLocked) {
                 customText += `🛡️ *Security:* Since you recently updated your bank details, settlements are escrowed for 24h. \n\n`;
                 msg += `🛡️ *Security:* Since you recently updated your bank details, settlements are escrowed for 24h. \n\n`;
-            } else if (!meetsThreshold) {
-                customText += `🛡️ *Settlement:* Because your wallet balance is under ₦${threshold.toLocaleString()}, this will automatically drop in your bank account tonight by 11:30 PM to save you transfer fees. 🚀\n\n`;
-                msg += `🛡️ *Settlement:* Because your wallet balance is under ₦${threshold.toLocaleString()}, this will automatically drop in your bank account tonight by 11:30 PM to save you transfer fees. 🚀\n\n`;
+            } else if (meetsThreshold) {
+                customText += `🛡️ *Settlement:* Money is being swept to your bank account automatically right now. 🚀\n\n`;
+                msg += `🛡️ *Settlement:* Money is being swept to your bank account automatically right now. 🚀\n\n`;
             } else {
-                customText += `🛡️ *Settlement:* Threshold met! Money is being swept to your bank account automatically right now. 🚀\n\n`;
-                msg += `🛡️ *Settlement:* Threshold met! Money is being swept to your bank account automatically right now. 🚀\n\n`;
+                customText += `🛡️ *Settlement:* Balance too low to cover the ₦${threshold} transfer fee. Will be swept once balance increases.\n\n`;
+                msg += `🛡️ *Settlement:* Balance too low to cover the ₦${threshold} transfer fee. Will be swept once balance increases.\n\n`;
             }
 
             customText += statusLine;
