@@ -97,7 +97,9 @@ const createDynamicVirtualAccount = async ({ amount, invoiceNumber, merchantName
             accountName: finalAccountName.substring(0, 30), // Nomba allows up to 30 chars
             bvn: '', // Not required for dynamic accounts in most cases
             expiryDate,
-            callbackUrl: `${process.env.BACKEND_URL}/api/payments/webhook/nomba`,
+            callbackUrl: process.env.BACKEND_URL.includes('localhost') 
+                ? `https://api.usekredibly.com/api/payments/webhook/nomba` 
+                : `${process.env.BACKEND_URL}/api/payments/webhook/nomba`,
             customerEmail: customerEmail || 'payments@usekredibly.com',
             amount: Math.round(amount * 100) // Nomba expects amount in kobo
         };
@@ -109,7 +111,7 @@ const createDynamicVirtualAccount = async ({ amount, invoiceNumber, merchantName
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
-                    accountId: NOMBA_ACCOUNT_ID
+                    accountId: process.env.NOMBA_ACCOUNT_ID
                 },
                 timeout: 15000
             }
@@ -173,7 +175,7 @@ const createNombaCheckoutOrder = async ({ amount, orderReference, customerEmail,
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
-                    accountId: NOMBA_ACCOUNT_ID
+                    accountId: process.env.NOMBA_ACCOUNT_ID
                 },
                 timeout: 15000
             }
@@ -234,8 +236,7 @@ const getBanks = async () => {
             `${NOMBA_BASE_URL}/transfers/banks`,
             {
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    accountId: NOMBA_ACCOUNT_ID
+                    Authorization: `Bearer ${token}`
                 },
                 timeout: 15000
             }
@@ -265,7 +266,7 @@ const resolveAccount = async (accountNumber, bankCode) => {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
-                    accountId: NOMBA_ACCOUNT_ID
+                    accountId: process.env.NOMBA_ACCOUNT_ID
                 },
                 timeout: 15000
             }
@@ -303,8 +304,7 @@ const checkPaymentStatusByReference = async (accountReference, accountNumber) =>
             {
                 params: { virtual_account: accountNumber },
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    accountId: process.env.NOMBA_ACCOUNT_ID
+                    Authorization: `Bearer ${token}`
                 },
                 timeout: 15000
             }
@@ -391,7 +391,7 @@ const initiateTransfer = async ({ amount, bankCode, accountNumber, accountName, 
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
-                    accountId: NOMBA_ACCOUNT_ID
+                    accountId: process.env.NOMBA_ACCOUNT_ID
                 },
                 timeout: 15000
             }
