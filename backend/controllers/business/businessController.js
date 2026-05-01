@@ -30,6 +30,12 @@ exports.updateProfile = async (req, res) => {
             profile.whatsappNumber = whatsappNumber ? cleanPhone(whatsappNumber) : profile.whatsappNumber;
             profile.address = address || profile.address;
             if (prefersGatewayFeeAbsorption !== undefined) profile.prefersGatewayFeeAbsorption = prefersGatewayFeeAbsorption;
+            if (now < LAUNCH_DATE) {
+                profile.trialExpiresAt = LAUNCH_DATE;
+                profile.plan = 'chairman';
+                profile.planStatus = 'trialing';
+                profile.isLaunchPromo = true; 
+            }
             if (assistantSettings) {
                 profile.assistantSettings = {
                     ...profile.assistantSettings,
@@ -77,8 +83,8 @@ exports.updateProfile = async (req, res) => {
                 staffNumbers: staffNumbers ? staffNumbers.map(n => cleanPhone(n)).filter(n => n) : [],
                 
                 // 🚀 PRE-LAUNCH STRATEGY: 
-                // Everyone is an Oga during pre-launch. Paid plans active from Launch Day (May 1st).
-                plan: 'oga', 
+                // Everyone is a Chairman during the extended pre-launch (May).
+                plan: 'chairman', 
                 planStatus: 'trialing',
                 trialExpiresAt: now < LAUNCH_DATE ? LAUNCH_DATE : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // Till launch, then 14d thereafter
                 hasUsedTrial: true,

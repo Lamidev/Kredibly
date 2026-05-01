@@ -79,10 +79,7 @@ const Dashboard = () => {
         }
     };
 
-    const handleDelete = async (e, sale) => {
-        e.stopPropagation();
-        setDeleteModal({ show: true, sale });
-    };
+
 
     const confirmDelete = async () => {
         try {
@@ -90,6 +87,7 @@ const Dashboard = () => {
             toast.success("Record deleted successfully");
             setDeleteModal({ show: false, sale: null });
         } catch (err) {
+            console.error("Delete record error:", err);
             toast.error("Failed to delete record");
             setDeleteModal({ show: false, sale: null });
         }
@@ -112,6 +110,7 @@ const Dashboard = () => {
             }, 1000);
             
         } catch (err) {
+            console.error("WhatsApp update error:", err);
             toast.error("Failed to update WhatsApp number");
         } finally {
             setUpdatingWhatsapp(false);
@@ -138,8 +137,6 @@ const Dashboard = () => {
 
     return (
         <div className="animate-fade-in" style={{ paddingBottom: '40px', position: 'relative' }}>
-
-
             {/* Executive Header */}
             <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
@@ -225,11 +222,11 @@ const Dashboard = () => {
                         </div>
                         <div>
                             <h3 style={{ fontSize: 'clamp(1.1rem, 4.5vw, 1.25rem)', fontWeight: 900, marginBottom: '4px', letterSpacing: '-0.02em' }}>
-                                Pioneer Special: 2 Months on Us!
+                                The May Takeover: Chairman Access for All! 👑
                             </h3>
                             <p style={{ fontSize: 'clamp(0.8rem, 3.5vw, 0.9rem)', color: '#94A3B8', fontWeight: 700, margin: 0, lineHeight: 1.4 }}>
                                 {new Date() < new Date('2026-06-01') 
-                                    ? "Grand Opening Special: Get 50% off for your first 2 months if you join before June 1st!" 
+                                    ? "Pre-Launch Gift: Enjoy 100% free Chairman status and AI features until our June 1st launch!" 
                                     : "Claim your 50% Grand Launch discount before they expire. Don't pay full price later!"}
                             </p>
                         </div>
@@ -281,9 +278,6 @@ const Dashboard = () => {
                         ₦{stats?.revenue?.toLocaleString() || 0}
                     </h2>
                 </motion.div>
-
-
-
                 <motion.div 
                     whileHover={{ y: -5 }}
                     className="dashboard-glass stat-card-premium" 

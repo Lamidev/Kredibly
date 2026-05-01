@@ -332,7 +332,7 @@ const extractInfoRobust = (text, context = {}) => {
     
     // Character Mapping: use preferredName if set, else plan-based title
     const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
-    const bossTitle = context.preferredName || planDefaultTitle;
+    const bossTitle = context.preferredName || context.displayName || planDefaultTitle;
 
     if (result.intent === "update_record") {
         if (result.data.dueDate) {
@@ -783,13 +783,16 @@ const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName,
             }
         ];
 
-        // Push button variable blindly to support cases where the merchant adds it.
+        // 🚀 SMART DYNAMIC BUTTON ROUTING
+        // Aligning with sendWhatsAppAlert logic: send the full path as the variable
+        const buttonPath = invoiceNumber ? `r/${invoiceNumber}` : `dashboard`;
+
         components.push({
             type: "button",
             sub_type: "url",
             index: "0",
             parameters: [
-                { type: "text", text: safeInvoice }
+                { type: "text", text: buttonPath }
             ]
         });
 
@@ -963,7 +966,7 @@ exports.handleIncoming = async (req, res) => {
 
         if (isFirstTime) {
             const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
-            const bossTitleToUse = profile.assistantSettings?.preferredName || whatsappProfileName || planDefaultTitle;
+            const bossTitleToUse = profile.assistantSettings?.preferredName || profile.displayName || whatsappProfileName || planDefaultTitle;
             
             // Initial save of preferred name if found
             if (whatsappProfileName && !profile.assistantSettings?.preferredName) {
@@ -1335,7 +1338,7 @@ Upgrade here: ${APP_URL}/pricing`);
         
         if (isGreeting && lowerText.split(' ').length <= 3) {
             const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
-            const bossTitle = profile.assistantSettings?.preferredName || planDefaultTitle;
+            const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;
             
             const wittyGreeting = await generateWittyIntro("greeting", { bossTitle });
             const statusLabel = plan === "chairman" ? "📊 *EMPIRE STATUS*" : "📊 *STATS*";
@@ -1345,7 +1348,7 @@ Upgrade here: ${APP_URL}/pricing`);
             return;
         } else if (isThanks) {
             const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
-            const bossTitle = profile.assistantSettings?.preferredName || planDefaultTitle;
+            const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;
             
             await sendReply(from, `You're very welcome, ${bossTitle}! 🫡 Always happy to keep your records straight. Let me know if you need anything else!`);
             return;        } else {
@@ -1354,7 +1357,7 @@ Upgrade here: ${APP_URL}/pricing`);
             const currentUsage = profile.monthlyUsage?.messages || 0;
 
             if (currentUsage >= msgLimit) {
-                const bossTitle = profile.assistantSettings?.preferredName || (plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss"));
+                const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || (plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss"));
                 const upgradePlan = plan === "hustler" ? "Oga" : "Chairman";
                 const upgradeLink = `https://usekredibly.com/settings`;
                 
@@ -1400,7 +1403,7 @@ Upgrade here: ${APP_URL}/pricing`);
                 if (!mediaId) return;
 
                 const planDefaultTitle = plan === "chairman" ? "Chairman" : "Oga";
-                const bossTitle = profile.assistantSettings?.preferredName || planDefaultTitle;
+                const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;
 
                 await sendReply(from, `${bossTitle}, I catch the voice note! 💎 Analyzing it now... 🎧`);
                 const media = await downloadWhatsAppMedia(mediaId);
@@ -1432,7 +1435,7 @@ Upgrade here: ${APP_URL}/pricing`);
                 if (!mediaId) return;
 
                 const planDefaultTitle = plan === "chairman" ? "Chairman" : "Oga";
-                const bossTitle = profile.assistantSettings?.preferredName || planDefaultTitle;
+                const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;
 
                 await sendReply(from, `${bossTitle}, I catch the image! 💎 Scanning it now... 🔍`);
                 const media = await downloadWhatsAppMedia(mediaId);
@@ -1541,7 +1544,7 @@ Upgrade here: ${APP_URL}/pricing`);
                          }
                          
                          await sale.save();
-                         await sendReply(from, `✅ *Record Updated!* \n\n${updatedConfirm}`);
+                         await sendReply(from, aiResponseItem.data.reply || `I've updated the record for *${sale.customerName}*.`);
                          isProcessed = true;
                      }
                  } 
@@ -1587,10 +1590,10 @@ Upgrade here: ${APP_URL}/pricing`);
                                }
                            } catch (err) { console.error("Sync Global Rename Error:", err); }
 
-                           await sendReply(from, `✅ *Update Successful!* \n\nChanged from *${oldN}* to *${sale.customerName}*. Receipt updated. 🛡️`);
+                           await sendReply(from, aiResponseItem.data.reply || `✅ *Update Successful!* \n\nChanged from *${oldN}* to *${sale.customerName}*. Receipt updated. 🛡️`);
                         } else {
                            await sale.save();
-                           await sendReply(from, `✅ *Update Successful!* \n\nRecorded for *${sale.customerName}*. Receipt updated. 🛡️`);
+                           await sendReply(from, aiResponseItem.data.reply || `✅ *Update Successful!* \n\nRecorded for *${sale.customerName}*. Receipt updated. 🛡️`);
                         }
                         isProcessed = true;
                      } else if (matches.length > 1) {
@@ -1624,39 +1627,55 @@ Upgrade here: ${APP_URL}/pricing`);
                      aiResponseItem.intent = "create_sale";
                  }
 
-                 if (!isProcessed && aiResponseItem.intent === "update_record" && aiResponseItem.sourceAccountName && plan === 'chairman') {
-                    const escapedSource = aiResponseItem.sourceAccountName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                    const aliasMatch = await CustomerAlias.findOne({
+                  if (!isProcessed && aiResponseItem.intent === "update_record" && aiResponseItem.sourceAccountName && plan === 'chairman') {
+                    console.log(`🧠 Chairman Smart Triage Active for: ${aiResponseItem.sourceAccountName}`);
+                    
+                    const potentialSales = await Sale.find({
                         businessId: profile._id,
-                        sourceName: { $regex: new RegExp(`^${escapedSource}$`, "i") }
-                    });
+                        status: { $ne: "paid" }
+                    }).sort({ updatedAt: -1 }).limit(10);
 
-                    if (aliasMatch) {
-                        console.log(`🧠 Alias found: ${aiResponseItem.sourceAccountName} -> ${aliasMatch.targetName}`);
-                        aiResponseItem.data.customerName = aliasMatch.targetName;
-                        // Trigger re-run of this intent with the correct name
-                        const escapedTarget = aliasMatch.targetName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                        const sale = await Sale.findOne({ businessId: profile._id, customerName: { $regex: new RegExp(`^${escapedTarget}$`, "i") }, status: { $ne: "paid" } });
-                        if (sale) {
-                            if (aiResponseItem.data.paidAmount > 0) sale.payments.push({ amount: aiResponseItem.data.paidAmount, method: "WhatsApp Alias Match" });
-                            await sale.save();
-                            await sendReply(from, `✅ *Payment Recorded (Alias Match)!* \n\nI recognized the account name *"${aiResponseItem.sourceAccountName}"* as *${sale.customerName}*. Record updated! 🛡️`);
-                            isProcessed = true;
-                        }
-                    } else if (aiResponseItem.data.paidAmount > 0) {
-                        // 🧐 SMART TRIAGE: Search by Amount if name is mystery
-                        const potentialSales = await Sale.find({
-                            businessId: profile._id,
-                            status: { $ne: "paid" }
-                        }).sort({ createdAt: -1 });
+                    if (potentialSales.length > 0) {
+                        const scoredSales = potentialSales.map(sale => {
+                            let score = 0;
+                            const balance = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
+                            
+                            // 1. Amount Match (+40)
+                            if (balance === aiResponseItem.data.paidAmount) score += 40;
+                            
+                            // 2. Exact Name Alias (+100 - Instant Winner)
+                            // (We'll check for aliases in a moment, but if direct customer name matches sourceAccountName)
+                            if (sale.customerName.toLowerCase() === aiResponseItem.sourceAccountName.toLowerCase()) score += 100;
 
-                        const filteredByAmount = potentialSales.filter(s => {
-                            const balance = s.totalAmount - s.payments.reduce((sum, p) => sum + p.amount, 0);
-                            return balance === aiResponseItem.data.paidAmount;
+                            // 3. Session Context (+30)
+                            if (session?.data?.customerName === sale.customerName) score += 30;
+
+                            // 4. View Recency (+25)
+                            if (sale.lastOpenedAt) {
+                                const hoursSinceView = (new Date() - new Date(sale.lastOpenedAt)) / (1000 * 60 * 60);
+                                if (hoursSinceView < 2) score += 25;
+                                else if (hoursSinceView < 24) score += 10;
+                            }
+
+                            // 5. Remark/Memo Match (+50)
+                            if (aiResponseItem.bankReference) {
+                                const ref = aiResponseItem.bankReference.toLowerCase();
+                                if (ref.includes(sale.customerName.toLowerCase())) score += 50;
+                                if (sale.description && ref.includes(sale.description.toLowerCase())) score += 40;
+                            }
+
+                            return { sale, score };
                         });
 
-                        if (filteredByAmount.length === 1) {
-                            const sale = filteredByAmount[0];
+                        // Sort by highest score
+                        scoredSales.sort((a, b) => b.score - a.score);
+                        const bestMatch = scoredSales[0];
+
+                        console.log(`🎯 Best Match: ${bestMatch.sale.customerName} (Score: ${bestMatch.score})`);
+
+                        if (bestMatch.score >= 40) {
+                            // ALWAYS ASK FOR CONFIDENCE (Chairman Safety Lock)
+                            const sale = bestMatch.sale;
                             await WhatsAppSession.findOneAndUpdate(
                                 { whatsappNumber: cleanFrom },
                                 {
@@ -1671,10 +1690,16 @@ Upgrade here: ${APP_URL}/pricing`);
                                 },
                                 { upsert: true }
                             );
-                            await sendReply(from, `🧐 *Smart Match Detected, ${bossTitle}!* \n\nI catch a ₦${aiResponseItem.data.paidAmount.toLocaleString()} transfer from *"${aiResponseItem.sourceAccountName}"*. \n\nI don't have that name, but *${sale.customerName}* owes that exact amount. Is this for her? 🛡️`);
+                            
+                            let tip = "";
+                            if (bestMatch.score >= 100) tip = "The name matches perfectly.";
+                            else if (aiResponseItem.bankReference) tip = `The memo says *"${aiResponseItem.bankReference}"*.`;
+                            else tip = `They recently viewed their invoice.`;
+
+                            await sendReply(from, `🧐 *Match Found, ${bossTitle}!* \n\nI catch a ₦${aiResponseItem.data.paidAmount.toLocaleString()} transfer from *"${aiResponseItem.sourceAccountName}"*. \n\n${tip} Is this for *${sale.customerName}*? 🛡️`);
                             isProcessed = true;
-                        } else if (potentialSales.length > 0) {
-                            // Manual Tagging Request
+                        } else {
+                            // MULTI-CHOICE TRIAGE
                             let msg = `🧐 *Mystery Payment Detected, ${bossTitle}!* \n\nI catch the ₦${aiResponseItem.data.paidAmount.toLocaleString()} transfer from *"${aiResponseItem.sourceAccountName}"*, but I don't recognize the name. \n\nWho should I credit this to?\n\n`;
                             potentialSales.slice(0, 5).forEach((s, i) => {
                                 const bal = s.totalAmount - s.payments.reduce((sum,p)=>sum+p.amount, 0);
@@ -1745,10 +1770,18 @@ Upgrade here: ${APP_URL}/pricing`);
                     saleId: newSale._id
                 });
 
-                const wittyIntro = await generateWittyIntro("create_sale", { bossTitle, extra: `₦${totalAmount.toLocaleString()} to ${newSale.customerName}` });
-                let reply = `✅ *Record Saved!* (#${newSale.invoiceNumber})\n\n${wittyIntro}\n`;
-                if (bal > 0) reply += `\n⏳ They still owe you *₦${bal.toLocaleString()}*`;
-                else reply += `\n✅ *Fully Paid!*`;
+                let reply = aiResponseItem.data.reply || "Record Saved!";
+                
+                // Add Invoice Number if not already mentioned by AI
+                if (!reply.includes(newSale.invoiceNumber)) {
+                    reply = `📄 *Invoice #${newSale.invoiceNumber}*\n\n${reply}`;
+                }
+
+                if (bal > 0 && !reply.includes(bal.toLocaleString())) {
+                    reply += `\n\n⏳ *Balance:* ₦${bal.toLocaleString()}`;
+                } else if (bal <= 0 && !reply.includes("Paid") && !reply.includes("paid")) {
+                    reply += `\n\n✅ *Fully Paid!*`;
+                }
 
                 // 📢 HUSTLER NUDGE
                 if (plan === "hustler" || !plan) {
@@ -2233,7 +2266,7 @@ Upgrade here: ${APP_URL}/pricing`);
                     });
 
                     // 3. Resolve boss title
-                    const bossTitle = profile.assistantSettings?.preferredName || (plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss"));
+                    const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || (plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss"));
 
                     let performanceMsg = `📊 *Today's Performance, ${bossTitle}!*\n\n`;
                     performanceMsg += `💰 Cash Collected: *₦${totalCashIn.toLocaleString()}*\n`;

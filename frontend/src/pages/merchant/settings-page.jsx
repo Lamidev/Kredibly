@@ -32,7 +32,7 @@ const SettingsPage = () => {
         const params = new URLSearchParams(location.search);
         if (params.get('checkout') === 'success') {
             toast.success("Payment Received! Validating your upgrade...");
-            navigate('/merchant/settings', { replace: true });
+            navigate('/settings', { replace: true });
             
             import('canvas-confetti').then((module) => {
                 const confetti = module.default;
@@ -158,9 +158,10 @@ const SettingsPage = () => {
         return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
     };
 
+
+
     const [lockCountdown, setLockCountdown] = useState("");
     
-    // Update Vault Lock Countdown
     useEffect(() => {
         const lockUntil = profile?.bankDetails?.bankDetailsLockUntil;
         if (!lockUntil || new Date(lockUntil) <= new Date()) {
@@ -330,8 +331,6 @@ const SettingsPage = () => {
                         </div>
                     </div>
                 </section>
-
-
                 {/* AI Assistant Section */}
                 <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
@@ -526,15 +525,19 @@ const SettingsPage = () => {
                                 <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>Set where you receive money from debtors.</p>
                             </div>
                         </div>
-                        {profile?.bankDetails?.accountNumber && (
-                            <div style={{ background: 'rgba(76, 29, 149, 0.08)', color: 'var(--primary)', padding: '6px 12px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <CheckCircle size={12} /> AUTOMATED PAYOUTS ACTIVE
-                            </div>
-                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                            {profile?.bankDetails?.accountNumber && (
+                                <div style={{ background: 'rgba(76, 29, 149, 0.08)', color: 'var(--primary)', padding: '6px 12px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <CheckCircle size={12} /> AUTOMATED PAYOUTS ACTIVE
+                                </div>
+                            )}
+                            {lockCountdown && (
+                                <div style={{ background: '#FFF1F2', color: '#E11D48', padding: '4px 10px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <Clock size={10} /> SECURITY LOCK: {lockCountdown}
+                                </div>
+                            )}
+                        </div>
                     </div>
-
-
-
                     <div style={{ position: 'relative', zIndex: 1 }}>
                         {!isEditingPayout ? (
                             /* READ ONLY VIEW */
@@ -592,7 +595,7 @@ const SettingsPage = () => {
                                             }}
                                             style={{ background: '#F8FAFC', appearance: 'none', paddingRight: '40px' }}
                                         >
-                                            <option value="">Choose a bank...</option>
+                                            <option value="">{fetchingBanks ? "Loading banks..." : "Choose a bank..."}</option>
                                             {banks.map(bank => (
                                                 <option key={bank.code} value={bank.code}>{bank.name}</option>
                                             ))}
@@ -862,7 +865,7 @@ const SettingsPage = () => {
                                             <span style={{ fontSize: '1rem', fontWeight: 900, color: '#0F172A' }}>₦3,000/mo</span>
                                         </div>
                                     </div>
-                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Voice Notes, Proactive Debt Reminders & 1 Staff. Pioneer Special active until May.</p>
+                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Voice Notes, Proactive Debt Reminders & 1 Staff. Pioneer Special active until June 1st.</p>
                                 </button>
                             )}
 

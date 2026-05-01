@@ -1,6 +1,8 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Image as ImageIcon, FileText, Link2, Share2, Download } from 'lucide-react';
+import { X, ImageIcon, FileText, Link2, Share2 } from 'lucide-react';
+import { Download } from 'lucide-react';
 
 const ShareActionSheet = ({ 
     isOpen, 
@@ -10,9 +12,10 @@ const ShareActionSheet = ({
     onCopyLink,
     title = "Share Official Document",
     subtitle = "Choose how you'd like to share or save this record",
-    canShareToApps = true
 }) => {
-    return (
+    if (!isOpen) return null;
+
+    return createPortal(
         <AnimatePresence>
             {isOpen && (
                 <>
@@ -25,154 +28,215 @@ const ShareActionSheet = ({
                         style={{
                             position: 'fixed',
                             inset: 0,
-                            background: 'rgba(15, 23, 42, 0.4)',
-                            backdropFilter: 'blur(8px)',
-                            zIndex: 50000
+                            background: 'rgba(15, 23, 42, 0.5)',
+                            backdropFilter: 'blur(12px)',
+                            zIndex: 10000,
                         }}
                     />
 
-                    {/* Action Sheet */}
-                    <motion.div
-                        initial={{ y: "100%" }}
-                        animate={{ y: 0 }}
-                        exit={{ y: "100%" }}
-                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                    {/* Centered Modal */}
+                    <div
                         style={{
                             position: 'fixed',
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            background: 'white',
-                            borderTopLeftRadius: '32px',
-                            borderTopRightRadius: '32px',
-                            padding: '32px 24px 48px',
-                            zIndex: 50001,
-                            maxWidth: '500px',
-                            margin: '0 auto',
-                            boxShadow: '0 -10px 25px -5px rgba(0,0,0,0.1)'
+                            inset: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 10001,
+                            padding: '20px',
                         }}
                     >
-                        {/* Handle for Mobile Drag (Visual only) */}
-                        <div style={{ width: '40px', height: '4px', background: '#E2E8F0', borderRadius: '2px', margin: '-16px auto 24px' }} />
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-                            <div>
-                                <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#0F172A', margin: 0 }}>{title}</h3>
-                                <p style={{ fontSize: '14px', color: '#64748B', fontWeight: 600, marginTop: '4px' }}>{subtitle}</p>
-                            </div>
-                            <button 
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                            style={{
+                                background: 'white',
+                                borderRadius: '32px',
+                                padding: '40px',
+                                width: '100%',
+                                maxWidth: '440px',
+                                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+                                position: 'relative',
+                            }}
+                        >
+                            {/* Close Button */}
+                            <button
                                 onClick={onClose}
-                                style={{ padding: '8px', background: '#F1F5F9', borderRadius: '50%', border: 'none', cursor: 'pointer' }}
+                                style={{
+                                    position: 'absolute',
+                                    top: '20px',
+                                    right: '20px',
+                                    padding: '8px',
+                                    background: '#F1F5F9',
+                                    borderRadius: '50%',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
                             >
                                 <X size={20} color="#64748B" />
                             </button>
-                        </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {/* Share as Image (Primary) */}
-                            {canShareToApps && (
-                                <button
-                                    onClick={() => { onShareImage(); onClose(); }}
-                                    style={{
-                                        width: '100%',
-                                        padding: '18px',
-                                        background: 'linear-gradient(135deg, #4C1D95, #2E1065)',
-                                        color: 'white',
-                                        borderRadius: '20px',
-                                        border: 'none',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '16px',
-                                        cursor: 'pointer',
-                                        boxShadow: '0 10px 20px -5px rgba(76, 29, 149, 0.2)'
-                                    }}
-                                >
-                                    <div style={{ padding: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}>
-                                        <Share2 size={20} color="white" />
-                                    </div>
-                                    <div style={{ textAlign: 'left' }}>
-                                        <p style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>Share to Apps</p>
-                                        <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>WhatsApp, Instagram, etc.</p>
-                                    </div>
-                                </button>
-                            )}
+                            {/* Icon Header */}
+                            <div style={{
+                                width: '72px',
+                                height: '72px',
+                                background: 'rgba(76, 29, 149, 0.08)',
+                                borderRadius: '24px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '0 auto 24px',
+                            }}>
+                                <Share2 size={32} color="#4C1D95" />
+                            </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                {/* Save to Gallery */}
+                            {/* Title */}
+                            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                                <h3 style={{
+                                    fontSize: '1.5rem',
+                                    fontWeight: 950,
+                                    color: '#0F172A',
+                                    margin: '0 0 8px',
+                                    letterSpacing: '-0.02em',
+                                }}>
+                                    {title}
+                                </h3>
+                                <p style={{
+                                    fontSize: '14px',
+                                    color: '#64748B',
+                                    fontWeight: 600,
+                                    margin: 0,
+                                    lineHeight: 1.5,
+                                }}>
+                                    {subtitle}
+                                </p>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+                                {/* Save Image */}
                                 <button
                                     onClick={() => { onShareImage(true); onClose(); }}
                                     style={{
-                                        padding: '16px',
+                                        width: '100%',
+                                        padding: '18px 24px',
                                         background: '#F0FDF4',
                                         color: '#166534',
                                         borderRadius: '20px',
                                         border: '1.5px solid #DCFCE7',
                                         display: 'flex',
-                                        flexDirection: 'column',
                                         alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '8px',
-                                        cursor: 'pointer'
+                                        gap: '16px',
+                                        cursor: 'pointer',
+                                        textAlign: 'left',
                                     }}
                                 >
-                                    <Download size={20} color="#10B981" />
-                                    <span style={{ fontSize: '13px', fontWeight: 800 }}>Save Image</span>
+                                    <div style={{
+                                        width: '40px', height: '40px',
+                                        background: 'rgba(16, 185, 129, 0.1)',
+                                        borderRadius: '12px',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        flexShrink: 0,
+                                    }}>
+                                        <Download size={20} color="#10B981" />
+                                    </div>
+                                    <div>
+                                        <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#166534' }}>Save as Image</p>
+                                        <p style={{ margin: 0, fontSize: '11px', color: '#4ADE80', fontWeight: 600 }}>Download PNG to your device</p>
+                                    </div>
                                 </button>
 
                                 {/* Download PDF */}
                                 <button
                                     onClick={() => { onDownloadPDF(); onClose(); }}
                                     style={{
-                                        padding: '16px',
+                                        width: '100%',
+                                        padding: '18px 24px',
                                         background: '#F8FAFC',
                                         color: '#0F172A',
                                         borderRadius: '20px',
                                         border: '1.5px solid #E2E8F0',
                                         display: 'flex',
-                                        flexDirection: 'column',
                                         alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '8px',
-                                        cursor: 'pointer'
+                                        gap: '16px',
+                                        cursor: 'pointer',
+                                        textAlign: 'left',
                                     }}
                                 >
-                                    <FileText size={20} color="#64748B" />
-                                    <span style={{ fontSize: '13px', fontWeight: 800 }}>Save PDF</span>
+                                    <div style={{
+                                        width: '40px', height: '40px',
+                                        background: '#F1F5F9',
+                                        borderRadius: '12px',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        flexShrink: 0,
+                                    }}>
+                                        <FileText size={20} color="#64748B" />
+                                    </div>
+                                    <div>
+                                        <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>Export as PDF</p>
+                                        <p style={{ margin: 0, fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>Official document for records</p>
+                                    </div>
                                 </button>
+
+                                {/* Copy Link */}
+                                <button
+                                    onClick={() => { onCopyLink(); onClose(); }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '18px 24px',
+                                        background: 'rgba(76, 29, 149, 0.04)',
+                                        color: '#4C1D95',
+                                        borderRadius: '20px',
+                                        border: '1.5px solid rgba(76, 29, 149, 0.1)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '16px',
+                                        cursor: 'pointer',
+                                        textAlign: 'left',
+                                    }}
+                                >
+                                    <div style={{
+                                        width: '40px', height: '40px',
+                                        background: 'rgba(76, 29, 149, 0.08)',
+                                        borderRadius: '12px',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        flexShrink: 0,
+                                    }}>
+                                        <Link2 size={20} color="#4C1D95" />
+                                    </div>
+                                    <div>
+                                        <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#4C1D95' }}>Copy Invoice Link</p>
+                                        <p style={{ margin: 0, fontSize: '11px', color: '#7C3AED', fontWeight: 600 }}>Paste and send via any channel</p>
+                                    </div>
+                                </button>
+
                             </div>
 
-                            {/* Copy Link */}
-                            <button
-                                onClick={() => { onCopyLink(); onClose(); }}
-                                style={{
-                                    width: '100%',
-                                    padding: '14px',
-                                    background: 'white',
-                                    color: '#475569',
-                                    borderRadius: '16px',
-                                    border: '1px solid #F1F5F9',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '8px',
-                                    cursor: 'pointer',
-                                    marginTop: '8px'
-                                }}
-                            >
-                                <Link2 size={16} color="#94A3B8" />
-                                <span style={{ fontSize: '13px', fontWeight: 700 }}>Copy Invoice Link</span>
-                            </button>
-                        </div>
-
-                        <div style={{ marginTop: '24px', textAlign: 'center' }}>
-                            <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                <Share2 size={10} style={{ marginRight: '4px' }} /> Secured Verified Sharing
+                            {/* Footer */}
+                            <p style={{
+                                textAlign: 'center',
+                                fontSize: '11px',
+                                color: '#CBD5E1',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                marginTop: '24px',
+                                marginBottom: 0,
+                            }}>
+                                🔒 Secured Verified Sharing
                             </p>
-                        </div>
-                    </motion.div>
+                        </motion.div>
+                    </div>
                 </>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     );
 };
 
