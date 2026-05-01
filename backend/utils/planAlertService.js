@@ -29,7 +29,7 @@ const sendIndividualPlanAlert = async (data) => {
             else return { status: "skipped", reason: `Notification not due (Days left: ${daysLeft})` };
         }
 
-        const bossTitle = profile.assistantSettings?.preferredName || (profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss"));
+        const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || (profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss"));
         let msg = "";
 
         switch (alertType) {

@@ -133,7 +133,7 @@ const scheduleRemindersWorker = () => {
                         await headsUp.save();
                         continue;
                     }
-                    const bossTitle = profile.assistantSettings?.preferredName || "Boss";
+                    const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || "Boss";
                     const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
                     const isProUser = profile.plan === "oga" || profile.plan === "chairman";
 
@@ -179,7 +179,7 @@ const scheduleRemindersWorker = () => {
 
                 const plan = acquired.businessId.plan || "hustler";
                 const planTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
-                const title = acquired.businessId.assistantSettings?.preferredName || planTitle;
+                const title = acquired.businessId.assistantSettings?.preferredName || acquired.businessId.displayName || planTitle;
 
                 const typeIcons = { debt: "⏳", task: "📝", meeting: "🤝", personal: "💡" };
                 const icon = typeIcons[reminder.type] || "🔔";
@@ -227,7 +227,7 @@ const scheduleRemindersWorker = () => {
                             to: user.email,
                             subject: `🔔 Task Reminder: ${title}`,
                             html: `<div style="font-family: sans-serif; padding: 20px; color: #333;">
-                                    <h2>Hey ${profile.assistantSettings?.preferredName || "Boss"},</h2>
+                                    <h2>Hey ${profile.assistantSettings?.preferredName || profile.displayName || "Boss"},</h2>
                                     <p>You set a reminder for: <b>"${acquired.description}"</b></p>
                                     <p>Kreddy is reminding you to get it done! 🛡️</p>
                                     <hr />
@@ -502,7 +502,7 @@ const scheduleBankLockChecker = () => {
                 await profile.save();
 
                 const planTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
-                const bossTitle = profile.assistantSettings?.preferredName || planTitle;
+                const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planTitle;
                 const msg = `🔓 *Security Update: Lock Lifted!*\n\n${bossTitle}, your bank detail security lock has expired. \n\n⚡ *Instant Settlements* have been resumed for your account. Every payment will now go directly to your bank account again.\n\n_Kreddy is keeping your money moving safely!_ 🛡️`;
                 
                 await sendWhatsAppAlert(profile.whatsappNumber, bossTitle, msg).catch(e => {});

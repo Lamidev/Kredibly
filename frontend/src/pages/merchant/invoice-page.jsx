@@ -48,14 +48,8 @@ const InvoicePage = () => {
     const auth = useAuth();
     const salesContext = useSales();
 
-    // 🛡️ Safety Guard: Handle transient context loss during Hot Module Replacement (HMR)
-    if (!auth || !salesContext) {
-        console.warn("🛡️ Kreddy Guard: Context trace lost, waiting for React dispatcher...");
-        return null;
-    }
-
-    const { profile } = auth;
-    const { updateSale, addPayment, deleteSale } = salesContext;
+    const { profile } = auth || {};
+    const { updateSale, addPayment, deleteSale } = salesContext || {};
 
     const [sale, setSale] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -78,6 +72,13 @@ const InvoicePage = () => {
     const [paymentAmount, setPaymentAmount] = useState("");
     const [paymentMethod, setPaymentMethod] = useState("Transfer");
     const [processing, setProcessing] = useState(false);
+
+    // 🛡️ Safety Guard: must come AFTER all hooks to respect Rules of Hooks
+    // This handles transient context loss during Hot Module Replacement (HMR)
+    if (!auth || !salesContext) {
+        console.warn("🛡️ Kreddy Guard: Context trace lost, waiting for React dispatcher...");
+        return null;
+    }
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -479,6 +480,11 @@ const InvoicePage = () => {
 
     const paidAmount = sale.payments.reduce((sum, p) => sum + p.amount, 0);
     const balance = sale.totalAmount - paidAmount;
+
+    // Date of last payment (used for the "SETTLED" stamp on the receipt PDF)
+    const settlementDate = sale.payments.length > 0
+        ? new Date(sale.payments[sale.payments.length - 1].date)
+        : new Date(sale.createdAt);
 
     return (
         <div className="animate-fade-in" style={{

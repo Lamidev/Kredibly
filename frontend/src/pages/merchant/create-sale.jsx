@@ -68,7 +68,7 @@ const CreateSale = () => {
                 
                 // 300ms Delay for action smoothness: Let the user feel the victory
                 setTimeout(() => {
-                    navigate(`/sales/${res.data._id}`); 
+                    navigate(`/dashboard/invoice/${res.data.invoiceNumber}`);
                 }, 300);
             }
         } catch (err) {

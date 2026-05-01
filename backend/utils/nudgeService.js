@@ -19,7 +19,7 @@ const sendIndividualDebtNudge = async (data) => {
             const profile = reminder.businessId;
             const sale = reminder.saleId;
             const planFTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
-            const bossTitle = profile.assistantSettings?.preferredName || planFTitle;
+            const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planFTitle;
             const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
 
             const msg = `🤔 *Did They Pay, ${bossTitle}?*\n\nYesterday, you had a reminder to collect from *${sale.customerName}*.\n\nMy records show they still owe *₦${bal.toLocaleString()}*. \n\nDid they pay offline? If yes, just say: _"${sale.customerName} paid"_. \n\nIf not, would you like me to snooze this reminder for later, or send them another message?`;
@@ -55,7 +55,7 @@ const sendIndividualDebtNudge = async (data) => {
 
             const profile = sale.businessId;
             const planETitle = profile.plan === "chairman" ? "Chairman" : "Oga";
-            const bossTitle = profile.assistantSettings?.preferredName || planETitle;
+            const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planETitle;
             const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
             
             const msg = `🚩 *Overdue Alert, ${bossTitle}!*\n\n*${sale.customerName}* was supposed to pay ₦${bal.toLocaleString()} yesterday, but the record is still unpaid.\n\nShould I draft a follow-up link for you to forward to them? \n\n_Type: "Send link to ${sale.customerName}"_`;
@@ -89,7 +89,7 @@ const sendIndividualDebtNudge = async (data) => {
             if (!sales.length) return { status: "skipped" };
 
             const profile = sales[0].businessId;
-            const bossTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
+            const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || (profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss"));
             const tone = profile.assistantSettings?.reminderTemplate || "friendly";
 
             const totalBal = sales.reduce((sum, s) => sum + (s.totalAmount - s.payments.reduce((pSum, p) => pSum + p.amount, 0)), 0);
