@@ -13,18 +13,7 @@ const NOMBA_BASE_URL = process.env.NOMBA_ENV === 'production'
     ? 'https://api.nomba.com/v1'
     : 'https://api.nomba.com/v1'; // Nomba uses same base, sandbox toggled via keys
 
-// 🛡️ STATIC PROXY CONFIGURATION (For Render Static IP)
-let nombaAgent = null;
-if (process.env.PROXY_HOST) {
-    try {
-        const { HttpsProxyAgent } = require('https-proxy-agent');
-        const proxyUrl = `http://${process.env.PROXY_USER}:${process.env.PROXY_PASS}@${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`;
-        nombaAgent = new HttpsProxyAgent(proxyUrl);
-        console.log(`🛡️ Nomba Proxy: Active [${process.env.PROXY_HOST}]`);
-    } catch (e) {
-        console.error("❌ Failed to initialize Nomba Proxy Agent:", e.message);
-    }
-}
+// 🛡️ Nomba Integration: Production ready with static IP whitelisting.
 
 let cachedToken = null;
 let tokenExpiresAt = null;
@@ -55,7 +44,6 @@ const getAccessToken = async () => {
                     accountId: NOMBA_ACCOUNT_ID // ← Required by Nomba even for token issuance
                 },
                 timeout: 15000,
-                httpsAgent: nombaAgent,
                 proxy: false
             }
         );
@@ -129,7 +117,6 @@ const createDynamicVirtualAccount = async ({ amount, invoiceNumber, merchantName
                     accountId: process.env.NOMBA_ACCOUNT_ID
                 },
                 timeout: 15000,
-                httpsAgent: nombaAgent,
                 proxy: false
             }
         );
@@ -195,7 +182,6 @@ const createNombaCheckoutOrder = async ({ amount, orderReference, customerEmail,
                     accountId: process.env.NOMBA_ACCOUNT_ID
                 },
                 timeout: 15000,
-                httpsAgent: nombaAgent,
                 proxy: false
             }
         );
@@ -258,7 +244,6 @@ const getBanks = async () => {
                     Authorization: `Bearer ${token}`
                 },
                 timeout: 15000,
-                httpsAgent: nombaAgent,
                 proxy: false
             }
         );
@@ -290,7 +275,6 @@ const resolveAccount = async (accountNumber, bankCode) => {
                     accountId: process.env.NOMBA_ACCOUNT_ID
                 },
                 timeout: 15000,
-                httpsAgent: nombaAgent,
                 proxy: false
             }
         );
@@ -330,7 +314,6 @@ const checkPaymentStatusByReference = async (accountReference, accountNumber) =>
                     Authorization: `Bearer ${token}`
                 },
                 timeout: 15000,
-                httpsAgent: nombaAgent,
                 proxy: false
             }
         );
@@ -419,7 +402,6 @@ const initiateTransfer = async ({ amount, bankCode, accountNumber, accountName, 
                     accountId: process.env.NOMBA_ACCOUNT_ID
                 },
                 timeout: 15000,
-                httpsAgent: nombaAgent,
                 proxy: false
             }
         );
