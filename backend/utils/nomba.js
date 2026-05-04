@@ -13,6 +13,8 @@ const NOMBA_BASE_URL = process.env.NOMBA_ENV === 'production'
     ? 'https://api.nomba.com/v1'
     : 'https://api.nomba.com/v1'; // Nomba uses same base, sandbox toggled via keys
 
+// 🛡️ Nomba Integration: Production ready with static IP whitelisting.
+
 let cachedToken = null;
 let tokenExpiresAt = null;
 
@@ -41,7 +43,8 @@ const getAccessToken = async () => {
                     'Content-Type': 'application/json',
                     accountId: NOMBA_ACCOUNT_ID // ← Required by Nomba even for token issuance
                 },
-                timeout: 15000
+                timeout: 15000,
+                proxy: false
             }
         );
 
@@ -113,7 +116,8 @@ const createDynamicVirtualAccount = async ({ amount, invoiceNumber, merchantName
                     'Content-Type': 'application/json',
                     accountId: process.env.NOMBA_ACCOUNT_ID
                 },
-                timeout: 15000
+                timeout: 15000,
+                proxy: false
             }
         );
 
@@ -177,7 +181,8 @@ const createNombaCheckoutOrder = async ({ amount, orderReference, customerEmail,
                     'Content-Type': 'application/json',
                     accountId: process.env.NOMBA_ACCOUNT_ID
                 },
-                timeout: 15000
+                timeout: 15000,
+                proxy: false
             }
         );
 
@@ -238,7 +243,8 @@ const getBanks = async () => {
                 headers: {
                     Authorization: `Bearer ${token}`
                 },
-                timeout: 15000
+                timeout: 15000,
+                proxy: false
             }
         );
         // Nomba returns { data: [{ code: "...", name: "..." }] }
@@ -268,7 +274,8 @@ const resolveAccount = async (accountNumber, bankCode) => {
                     'Content-Type': 'application/json',
                     accountId: process.env.NOMBA_ACCOUNT_ID
                 },
-                timeout: 15000
+                timeout: 15000,
+                proxy: false
             }
         );
         // Nomba returns { data: { accountName: "...", ... } }
@@ -306,7 +313,8 @@ const checkPaymentStatusByReference = async (accountReference, accountNumber) =>
                 headers: {
                     Authorization: `Bearer ${token}`
                 },
-                timeout: 15000
+                timeout: 15000,
+                proxy: false
             }
         );
 
@@ -393,7 +401,8 @@ const initiateTransfer = async ({ amount, bankCode, accountNumber, accountName, 
                     'Content-Type': 'application/json',
                     accountId: process.env.NOMBA_ACCOUNT_ID
                 },
-                timeout: 15000
+                timeout: 15000,
+                proxy: false
             }
         );
 
