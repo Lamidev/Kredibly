@@ -1,4 +1,11 @@
 const axios = require('axios');
+const https = require('https');
+const http = require('http');
+
+// 🌐 NETWORK AGENTS: Force IPv4 to match Nomba Whitelisting (prevents 403 Unknown Source on IPv6 servers)
+const ipv4HttpsAgent = new https.Agent({ family: 4 });
+const ipv4HttpAgent = new http.Agent({ family: 4 });
+
 
 /**
  * 🟢 KREDIBLY NOMBA INTEGRATION ENGINE
@@ -117,7 +124,9 @@ const createDynamicVirtualAccount = async ({ amount, invoiceNumber, merchantName
                     accountId: process.env.NOMBA_ACCOUNT_ID
                 },
                 timeout: 15000,
-                proxy: false
+                proxy: false,
+                httpsAgent: ipv4HttpsAgent,
+                httpAgent: ipv4HttpAgent
             }
         );
 
@@ -182,7 +191,9 @@ const createNombaCheckoutOrder = async ({ amount, orderReference, customerEmail,
                     accountId: process.env.NOMBA_ACCOUNT_ID
                 },
                 timeout: 15000,
-                proxy: false
+                proxy: false,
+                httpsAgent: ipv4HttpsAgent,
+                httpAgent: ipv4HttpAgent
             }
         );
 
@@ -244,7 +255,9 @@ const getBanks = async () => {
                     Authorization: `Bearer ${token}`
                 },
                 timeout: 15000,
-                proxy: false
+                proxy: false,
+                httpsAgent: ipv4HttpsAgent,
+                httpAgent: ipv4HttpAgent
             }
         );
         // Nomba returns { data: [{ code: "...", name: "..." }] }
@@ -275,7 +288,9 @@ const resolveAccount = async (accountNumber, bankCode) => {
                     accountId: process.env.NOMBA_ACCOUNT_ID
                 },
                 timeout: 15000,
-                proxy: false
+                proxy: false,
+                httpsAgent: ipv4HttpsAgent,
+                httpAgent: ipv4HttpAgent
             }
         );
         // Nomba returns { data: { accountName: "...", ... } }
@@ -314,7 +329,9 @@ const checkPaymentStatusByReference = async (accountReference, accountNumber) =>
                     Authorization: `Bearer ${token}`
                 },
                 timeout: 15000,
-                proxy: false
+                proxy: false,
+                httpsAgent: ipv4HttpsAgent,
+                httpAgent: ipv4HttpAgent
             }
         );
 
@@ -402,7 +419,9 @@ const initiateTransfer = async ({ amount, bankCode, accountNumber, accountName, 
                     accountId: process.env.NOMBA_ACCOUNT_ID
                 },
                 timeout: 15000,
-                proxy: false
+                proxy: false,
+                httpsAgent: ipv4HttpsAgent,
+                httpAgent: ipv4HttpAgent
             }
         );
 
