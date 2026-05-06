@@ -246,8 +246,13 @@ const processingLocks = new Set();
  */
 const internalProcessNombaPayment = async (accountReference, accountNumber, amount, transactionReference, payer, nombaPayload = null) => {
     // 🛡️ Lock to prevent simultaneous double-processing
-    const lockKey = `${transactionReference}`;
-    if (processingLocks.has(lockKey)) return { success: true, message: "Processing in progress" };
+    // Use accountReference (VA reference) as the lock key — it's the SAME 
+    // whether the trigger comes from webhook or manual check
+    const lockKey = accountReference || accountNumber || transactionReference;
+    if (processingLocks.has(lockKey)) {
+        console.log(`🔐 Lock active for ${lockKey}, skipping duplicate.`);
+        return { success: true, message: "Processing in progress" };
+    }
     processingLocks.add(lockKey);
 
     try {
@@ -272,7 +277,11 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
             return { success: true, message: "Already paid" };
         }
 
-        const isDuplicate = sale.payments?.some(p => p.reference === transactionReference);
+        const isDuplicate = sale.payments?.some(p => 
+            p.reference === transactionReference || 
+            p.reference === accountReference ||
+            p.reference === accountNumber
+        );
         if (isDuplicate) {
             processingLocks.delete(lockKey);
             return { success: true, message: "Already processed" };
@@ -346,8 +355,8 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 }
 
                 const bankDetails = business.bankDetails;
-                const threshold = 100; 
                 const delay = 15000;
+                const threshold = 25; // Covers ₦20 transfer fee + ₦5 safety
 
                 if (bankDetails?.bankCode && bankDetails?.accountNumber && nombaActualBalance > threshold) {
                     const sweepAmount = Math.floor(nombaActualBalance - threshold);
