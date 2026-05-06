@@ -1210,7 +1210,7 @@ const PublicInvoicePage = () => {
                                                 <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
                                                     <div style={{ 
                                                         background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)', 
-                                                        padding: isMobile ? '32px 20px' : '40px', 
+                                                        padding: isMobile ? '32px 16px' : '40px', 
                                                         borderRadius: '32px', 
                                                         color: 'white', 
                                                         position: 'relative', 
@@ -1266,7 +1266,7 @@ const PublicInvoicePage = () => {
                                                         <div style={{ 
                                                             background: 'rgba(255, 255, 255, 0.03)', 
                                                             borderRadius: '24px', 
-                                                            padding: isMobile ? '24px 16px' : '32px', 
+                                                            padding: isMobile ? '24px 12px' : '32px', 
                                                             border: '1px solid rgba(255, 255, 255, 0.08)',
                                                             position: 'relative',
                                                             zIndex: 10
@@ -1281,7 +1281,7 @@ const PublicInvoicePage = () => {
                                                                 <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '20px' : '0' }}>
                                                                     <p style={{ 
                                                                         margin: 0, 
-                                                                        fontSize: isMobile ? 'clamp(32px, 10vw, 42px)' : '36px', 
+                                                                        fontSize: isMobile ? 'clamp(28px, 8.5vw, 36px)' : '36px', 
                                                                         fontWeight: 950, 
                                                                         color: 'white', 
                                                                         letterSpacing: '1px', 
@@ -1383,7 +1383,7 @@ const PublicInvoicePage = () => {
             </div>
             
             <style dangerouslySetInnerHTML={{ __html: `
-                .invoice-main-content { padding: 24px 16px 0; }
+                .invoice-main-content { padding: 24px 12px 0; }
                 @media (min-width: 768px) { .invoice-main-content { padding: 40px 16px 0; } }
                 @media (max-width: 480px) { .spin-animation { width: 16px !important; height: 16px !important; } }
                 .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.05); }
