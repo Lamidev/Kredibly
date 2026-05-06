@@ -66,8 +66,23 @@ const SettingsPage = () => {
     const [isPayoutSaving, setIsPayoutSaving] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [isEditingPayout, setIsEditingPayout] = useState(!profile?.bankDetails?.accountNumber);
+    
+    // KYC State
+    const [activeTab, setActiveTab] = useState('profile');
+    const [kycType, setKycType] = useState(profile?.kyc?.method || "bvn");
+    const [idNumber, setIdNumber] = useState("");
+    const [dob, setDob] = useState("");
+    const [isVerifying, setIsVerifying] = useState(false);
+    
     const fileInputRef = React.useRef(null);
     const staffLimit = profile?.plan === 'chairman' ? 'Unlimited' : (profile?.plan === 'oga' ? 'Up to 2 Staff' : 'Owner Only');
+
+    // Handle Tab Change from URL
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const tab = params.get('tab');
+        if (tab) setActiveTab(tab);
+    }, [location]);
 
 
     // Fetch Banks on load
@@ -127,6 +142,29 @@ const SettingsPage = () => {
         };
         resolve();
     }, [form.accountNumber, form.bankCode, isEditingPayout]);
+
+    const handleVerifyKYC = async () => {
+        if (!idNumber || idNumber.length < 10) return toast.error("Please enter a valid ID number");
+        setIsVerifying(true);
+        try {
+            const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+            const res = await axios.post(`${API_URL}/business/kyc/verify`, {
+                type: kycType,
+                idNumber,
+                dob
+            }, { withCredentials: true });
+            
+            if (res.data.success) {
+                toast.success("Identity Verified Successfully!");
+                // Refresh profile via context
+                await updateProfile({}); 
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Verification failed. Check your details.");
+        } finally {
+            setIsVerifying(false);
+        }
+    };
 
     const handlePayoutSave = async (password) => {
         setIsPayoutSaving(true);
@@ -270,678 +308,658 @@ const SettingsPage = () => {
     };
 
     return (
-        <div className="animate-fade-in" style={{ maxWidth: '800px' }}>
-            <div style={{ marginBottom: '32px' }}>
-                <h1 style={{ fontSize: 'clamp(1.6rem, 8vw, 2.5rem)', fontWeight: 900, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.03em' }}>Settings</h1>
-                <p style={{ color: '#64748B', fontWeight: 500, margin: 0 }}>Manage your business identity, Kreddy (your AI partner), and payments.</p>
+        <div className="animate-fade-in" style={{ maxWidth: '900px' }}>
+            <div style={{ marginBottom: '40px' }}>
+                <h1 style={{ fontSize: 'clamp(1.6rem, 8vw, 2.5rem)', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.03em' }}>Settings</h1>
+                <p style={{ color: '#64748B', fontWeight: 600, margin: 0 }}>Manage your business identity, Kreddy (your AI partner), and payouts.</p>
+            </div>
+
+            {/* Tab Navigation */}
+            <div style={{ 
+                display: 'flex', 
+                gap: '8px', 
+                marginBottom: '40px', 
+                padding: '6px', 
+                background: 'rgba(15, 23, 42, 0.03)', 
+                borderRadius: '18px',
+                overflowX: 'auto',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                maskImage: 'linear-gradient(to right, black 85%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to right, black 85%, transparent 100%)'
+            }} className="no-scrollbar">
+                {[
+                    { id: 'profile', label: 'Identity', icon: UserIcon },
+                    { id: 'payout', label: 'Payouts', icon: CreditCard },
+                    { id: 'kyc', label: 'Trust & Verification', icon: Shield },
+                    { id: 'ai', label: 'Kreddy AI', icon: MessageCircle },
+                    { id: 'staff', label: 'Staff', icon: Building2 },
+                    { id: 'plan', label: 'Plan', icon: Zap }
+                ].map((tab) => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '12px 20px',
+                            borderRadius: '14px',
+                            border: 'none',
+                            background: activeTab === tab.id ? 'white' : 'transparent',
+                            color: activeTab === tab.id ? 'var(--primary)' : '#64748B',
+                            fontWeight: 850,
+                            fontSize: '0.85rem',
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap',
+                            boxShadow: activeTab === tab.id ? '0 4px 12px rgba(0,0,0,0.05)' : 'none',
+                            transition: 'all 0.2s ease'
+                        }}
+                    >
+                        <tab.icon size={16} />
+                        {tab.label}
+                        {tab.id === 'kyc' && profile?.kyc?.status !== 'verified' && (
+                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#EF4444' }} />
+                        )}
+                    </button>
+                ))}
             </div>
 
             <div style={{ display: 'grid', gap: '32px' }}>
-                {/* Profile Section */}
-                <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-                        <div style={{ background: '#F0F9FF', color: '#0EA5E9', padding: '10px', borderRadius: '12px' }}>
-                            <UserIcon size={24} />
+                {activeTab === 'profile' && (
+                    <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+                            <div style={{ background: '#F0F9FF', color: '#0EA5E9', padding: '10px', borderRadius: '12px' }}>
+                                <UserIcon size={24} />
+                            </div>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Business Identity</h2>
                         </div>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Business Identity</h2>
-                    </div>
 
-                    <div className="grid-2-col-responsive">
-                        <div className="input-group">
-                            <label className="input-label">Display Name</label>
-                            <input
-                                className="input-field"
-                                value={form.displayName}
-                                onChange={(e) => setForm({ ...form, displayName: e.target.value })}
-                                style={{ background: '#F8FAFC' }}
-                            />
+                        <div className="grid-2-col-responsive">
+                            <div className="input-group">
+                                <label className="input-label">Display Name</label>
+                                <input
+                                    className="input-field"
+                                    value={form.displayName}
+                                    onChange={(e) => setForm({ ...form, displayName: e.target.value })}
+                                    style={{ background: '#F8FAFC' }}
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">WhatsApp Number</label>
+                                <input
+                                    className="input-field"
+                                    value={form.whatsappNumber}
+                                    onChange={(e) => setForm({ ...form, whatsappNumber: e.target.value })}
+                                    style={{ background: '#F8FAFC' }}
+                                />
+                            </div>
                         </div>
-                        <div className="input-group">
-                            <label className="input-label">WhatsApp Number</label>
-                            <input
-                                className="input-field"
-                                value={form.whatsappNumber}
-                                onChange={(e) => setForm({ ...form, whatsappNumber: e.target.value })}
-                                style={{ background: '#F8FAFC' }}
-                            />
-                        </div>
-                    </div>
 
-                    <div style={{ marginTop: '32px', padding: '24px', background: '#F8FAFC', borderRadius: '20px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-                        <div
-                            onClick={() => fileInputRef.current.click()}
-                            style={{ width: '80px', height: '80px', borderRadius: '20px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #CBD5E1', cursor: 'pointer', overflow: 'hidden', fontWeight: 800, fontSize: '1.5rem', color: 'var(--primary)', position: 'relative' }}
-                        >
-                            {form.logoUrl ? (
-                                <img src={form.logoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            ) : (
-                                getInitials(form.displayName)
-                            )}
-                            {uploading && <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner" /></div>}
-                        </div>
-                        <input ref={fileInputRef} type="file" hidden onChange={handleLogoUpload} />
-                        <div>
-                            <p style={{ margin: '0 0 4px 0', fontWeight: 800, color: '#1E293B' }}>Business Logo</p>
-                            <button
+                        <div style={{ marginTop: '32px', padding: '24px', background: '#F8FAFC', borderRadius: '20px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                            <div
                                 onClick={() => fileInputRef.current.click()}
-                                style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', padding: 0 }}
+                                style={{ width: '80px', height: '80px', borderRadius: '20px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #CBD5E1', cursor: 'pointer', overflow: 'hidden', fontWeight: 800, fontSize: '1.5rem', color: 'var(--primary)', position: 'relative' }}
                             >
-                                Change Photo
-                            </button>
-                        </div>
-                    </div>
-                </section>
-                {/* AI Assistant Section */}
-                <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-                        <div style={{ background: '#F5F3FF', color: 'var(--primary)', padding: '10px', borderRadius: '12px' }}>
-                            <MessageCircle size={24} />
-                        </div>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Kreddy (AI Partner)</h2>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', background: '#F8FAFC', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
-                        <div>
-                            <p style={{ fontWeight: 700, color: '#1E293B', marginBottom: '4px' }}>Proactive Debt Reminders</p>
-                            <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0 }}>Kreddy will automatically nudge customers when their balance is due.</p>
-                        </div>
-                        <div style={{ position: 'relative', display: 'inline-block', width: '50px', height: '28px' }}>
-                            <input
-                                type="checkbox"
-                                id="reminder-toggle"
-                                checked={form.enableReminders}
-                                onChange={(e) => setForm({ ...form, enableReminders: e.target.checked })}
-                                style={{ opacity: 0, width: 0, height: 0 }}
-                            />
-                            <label
-                                htmlFor="reminder-toggle"
-                                style={{
-                                    position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                                    backgroundColor: form.enableReminders ? 'var(--primary)' : '#CBD5E1', borderRadius: '34px', transition: '.4s'
-                                }}
-                            >
-                                <span style={{
-                                    position: 'absolute', content: '""', height: '20px', width: '20px', left: '4px', bottom: '4px',
-                                    backgroundColor: 'white', borderRadius: '50%', transition: '.4s',
-                                    transform: form.enableReminders ? 'translateX(22px)' : 'translateX(0)'
-                                }}></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div style={{ marginTop: '24px' }}>
-                        <p style={{ fontWeight: 700, color: '#1E293B', marginBottom: '12px', fontSize: '0.95rem' }}>Reminder Tone</p>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                            <button 
-                                onClick={() => setForm({ ...form, reminderTemplate: 'friendly' })}
-                                style={{ 
-                                    padding: '16px', borderRadius: '16px', border: '2px solid', 
-                                    borderColor: form.reminderTemplate === 'friendly' ? 'var(--primary)' : '#F1F5F9',
-                                    background: form.reminderTemplate === 'friendly' ? '#F5F3FF' : 'white',
-                                    textAlign: 'left', cursor: 'pointer', transition: '0.2s'
-                                }}
-                            >
-                                <p style={{ margin: 0, fontWeight: 800, color: form.reminderTemplate === 'friendly' ? 'var(--primary)' : '#475569', fontSize: '0.9rem' }}>Friendly Nudge</p>
-                                <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>Soft, professional reminder for early debts.</p>
-                            </button>
-                            <button 
-                                onClick={() => setForm({ ...form, reminderTemplate: 'formal' })}
-                                style={{ 
-                                    padding: '16px', borderRadius: '16px', border: '2px solid', 
-                                    borderColor: form.reminderTemplate === 'formal' ? 'var(--primary)' : '#F1F5F9',
-                                    background: form.reminderTemplate === 'formal' ? '#F5F3FF' : 'white',
-                                    textAlign: 'left', cursor: 'pointer', transition: '0.2s'
-                                }}
-                            >
-                                <p style={{ margin: 0, fontWeight: 800, color: form.reminderTemplate === 'formal' ? 'var(--primary)' : '#475569', fontSize: '0.9rem' }}>Formal Statement</p>
-                                <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>Strict & clear for overdue accounts.</p>
-                            </button>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Staff Management Section */}
-                <section 
-                    className="glass-card" 
-                    style={{ 
-                        padding: 'clamp(20px, 5%, 32px)', 
-                        background: 'white', 
-                        borderRadius: '24px', 
-                        border: '1px solid #E2E8F0', 
-                        marginBottom: '32px',
-                        position: 'relative',
-                        overflow: 'hidden'
-                    }}
-                >
-                    {profile?.plan === 'hustler' && profile?.planStatus !== 'trialing' && (
-                        <div style={{
-                            position: 'absolute',
-                            inset: 0,
-                            background: 'rgba(255, 255, 255, 0.7)',
-                            backdropFilter: 'blur(4px)',
-                            zIndex: 10,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '24px',
-                            textAlign: 'center'
-                        }}>
-                            <div style={{ background: '#FFF7ED', color: '#F97316', padding: '16px', borderRadius: '24px', marginBottom: '16px' }}>
-                                <Shield size={32} />
+                                {form.logoUrl ? (
+                                    <img src={form.logoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    getInitials(form.displayName)
+                                )}
+                                {uploading && <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner" /></div>}
                             </div>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#1E293B', marginBottom: '8px' }}>Staff Access Locked</h3>
-                            <p style={{ color: '#64748B', fontWeight: 600, fontSize: '0.9rem', maxWidth: '300px', marginBottom: '20px' }}>
-                                Add staff members to record sales while you monitor their activities from anywhere.
-                            </p>
-                            <button 
-                                onClick={() => {
-                                    setSelectedPlan('oga');
-                                    setShowCheckout(true);
-                                }}
-                                className="btn-primary" 
-                                style={{ width: 'auto', padding: '12px 24px' }}
-                            >
-                                Upgrade to Oga
-                            </button>
-                        </div>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ background: '#FFF7ED', color: '#F97316', padding: '10px', borderRadius: '12px' }}>
-                                <Shield size={24} />
-                            </div>
+                            <input ref={fileInputRef} type="file" hidden onChange={handleLogoUpload} />
                             <div>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Staff Management</h2>
-                                <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>Enables the "Oga Monitor" security feature.</p>
-                            </div>
-                        </div>
-                        <div style={{ 
-                            background: '#F1F5F9', 
-                            padding: '6px 14px', 
-                            borderRadius: '100px', 
-                            fontSize: '0.75rem', 
-                            fontWeight: 800, 
-                            color: '#475569',
-                            border: '1px solid #E2E8F0'
-                        }}>
-                            {staffLimit}
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
-                        <input 
-                            className="input-field" 
-                            placeholder="Staff WhatsApp (e.g. 080123...)" 
-                            value={newStaffPhone}
-                            onChange={(e) => setNewStaffPhone(e.target.value)}
-                            style={{ flex: 1 }}
-                        />
-                        <button 
-                            className="btn-primary" 
-                            style={{ width: 'auto', padding: '0 24px', flexShrink: 0, height: '54px' }}
-                            type="button"
-                            onClick={addStaff}
-                        >
-                            Add Staff
-                        </button>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {form.staffNumbers.length === 0 && (
-                            <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: '0.85rem', padding: '20px', border: '2px dashed #F1F5F9', borderRadius: '16px' }}>
-                                No staff members added yet. Add them to allow them to record sales while you receive alerts!
-                            </p>
-                        )}
-                        {form.staffNumbers.map((phone, idx) => (
-                            <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: '#F8FAFC', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <Smartphone size={18} color="#64748B" />
-                                    <span style={{ fontWeight: 700, color: '#1E293B' }}>{phone}</span>
-                                </div>
-                                <button 
-                                    onClick={() => removeStaff(phone)}
-                                    type="button"
-                                    style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '8px' }}
-                                >
-                                    <Upload size={18} style={{ transform: 'rotate(180deg)' }} /> 
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-
-                {/* Payout Settings Section - THE PREMUM REDESIGN */}
-                <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0', overflow: 'hidden', position: 'relative' }}>
-                    <div style={{ position: 'absolute', top: 0, right: 0, width: '150px', height: '150px', background: 'radial-gradient(circle, rgba(76, 29, 149, 0.05) 0%, transparent 70%)', zIndex: 0 }} />
-                    
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', position: 'relative', zIndex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ background: 'rgba(76, 29, 149, 0.08)', color: 'var(--primary)', padding: '10px', borderRadius: '12px' }}>
-                                <CreditCard size={24} />
-                            </div>
-                            <div>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Payout Settings</h2>
-                                <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>Set where you receive money from debtors.</p>
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                            {profile?.bankDetails?.accountNumber && (
-                                <div style={{ background: 'rgba(76, 29, 149, 0.08)', color: 'var(--primary)', padding: '6px 12px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <CheckCircle size={12} /> AUTOMATED PAYOUTS ACTIVE
-                                </div>
-                            )}
-                            {lockCountdown && (
-                                <div style={{ background: '#FFF1F2', color: '#E11D48', padding: '4px 10px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <Clock size={10} /> SECURITY LOCK: {lockCountdown}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                    <div style={{ position: 'relative', zIndex: 1 }}>
-                        {!isEditingPayout ? (
-                            /* READ ONLY VIEW */
-                            <div style={{ 
-                                background: '#F8FAFC', 
-                                padding: '24px', 
-                                borderRadius: '20px', 
-                                border: '1px solid #E2E8F0',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '16px'
-                            }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
-                                    <div>
-                                        <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Active Destination Account</p>
-                                        <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#1E293B', margin: 0 }}>{form.accountName || profile?.bankDetails?.accountName}</h3>
-                                        <p style={{ fontSize: '1rem', fontWeight: 700, color: '#64748B', margin: '4px 0 0 0' }}>
-                                            {form.bankName || profile?.bankDetails?.bankName} • {form.accountNumber || profile?.bankDetails?.accountNumber}
-                                        </p>
-                                    </div>
-                                    <div style={{ background: '#F0F9FF', color: '#0EA5E9', padding: '12px', borderRadius: '14px' }}>
-                                        <Building2 size={24} />
-                                    </div>
-                                </div>
+                                <p style={{ margin: '0 0 4px 0', fontWeight: 800, color: '#1E293B' }}>Business Logo</p>
                                 <button
-                                    onClick={() => setIsEditingPayout(true)}
-                                    style={{ 
-                                        marginTop: '8px',
-                                        background: 'white', 
-                                        border: '1px solid #E2E8F0', 
-                                        padding: '12px', 
-                                        borderRadius: '12px', 
-                                        fontWeight: 800, 
-                                        fontSize: '0.85rem', 
-                                        color: 'var(--primary)',
-                                        cursor: 'pointer'
-                                    }}
-                                    className="hover-scale"
+                                    onClick={() => fileInputRef.current.click()}
+                                    style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', padding: 0 }}
                                 >
-                                    Change Payout Details
+                                    Change Photo
                                 </button>
                             </div>
-                        ) : (
-                            /* EDIT MODE FORM */
-                            <div style={{ display: 'grid', gap: '24px' }}>
-                                <div className="input-group">
-                                    <label className="input-label">Select Bank</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <select
-                                            className="input-field"
-                                            value={form.bankCode}
-                                            onChange={(e) => {
-                                                const selectedBank = banks.find(b => b.code === e.target.value);
-                                                setForm({ ...form, bankCode: e.target.value, bankName: selectedBank?.name || "" });
-                                            }}
-                                            style={{ background: '#F8FAFC', appearance: 'none', paddingRight: '40px' }}
-                                        >
-                                            <option value="">{fetchingBanks ? "Loading banks..." : "Choose a bank..."}</option>
-                                            {banks.map(bank => (
-                                                <option key={bank.code} value={bank.code}>{bank.name}</option>
-                                            ))}
-                                        </select>
-                                        <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748B' }}>
-                                            <Building2 size={18} />
+                        </div>
+                        
+                        {/* Consolidated Save Button into the global footer below */}
+                    </section>
+                )}
+
+                {activeTab === 'payout' && (
+                    <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0', overflow: 'hidden', position: 'relative' }}>
+                        <div style={{ position: 'absolute', top: 0, right: 0, width: '150px', height: '150px', background: 'radial-gradient(circle, rgba(76, 29, 149, 0.05) 0%, transparent 70%)', zIndex: 0 }} />
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', position: 'relative', zIndex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ background: 'rgba(76, 29, 149, 0.08)', color: 'var(--primary)', padding: '10px', borderRadius: '12px' }}>
+                                    <CreditCard size={24} />
+                                </div>
+                                <div>
+                                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Payout Settings</h2>
+                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>Set where you receive money from debtors.</p>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                                {profile?.bankDetails?.accountNumber && (
+                                    <div style={{ background: 'rgba(76, 29, 149, 0.08)', color: 'var(--primary)', padding: '6px 12px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <CheckCircle size={12} /> AUTOMATED PAYOUTS ACTIVE
+                                    </div>
+                                )}
+                                {lockCountdown && (
+                                    <div style={{ background: '#FFF1F2', color: '#E11D48', padding: '4px 10px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <Clock size={10} /> SECURITY LOCK: {lockCountdown}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div style={{ position: 'relative', zIndex: 1 }}>
+                            {!isEditingPayout ? (
+                                <div style={{ 
+                                    background: '#F8FAFC', 
+                                    padding: '24px', 
+                                    borderRadius: '20px', 
+                                    border: '1px solid #E2E8F0',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '16px'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+                                        <div>
+                                            <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Active Destination Account</p>
+                                            <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#1E293B', margin: 0 }}>{form.accountName || profile?.bankDetails?.accountName}</h3>
+                                            <p style={{ fontSize: '1rem', fontWeight: 700, color: '#64748B', margin: '4px 0 0 0' }}>
+                                                {form.bankName || profile?.bankDetails?.bankName} • {form.accountNumber || profile?.bankDetails?.accountNumber}
+                                            </p>
+                                        </div>
+                                        <div style={{ background: '#F0F9FF', color: '#0EA5E9', padding: '12px', borderRadius: '14px' }}>
+                                            <Building2 size={24} />
                                         </div>
                                     </div>
+                                    <button
+                                        onClick={() => setIsEditingPayout(true)}
+                                        style={{ 
+                                            marginTop: '8px',
+                                            background: 'white', 
+                                            border: '1px solid #E2E8F0', 
+                                            padding: '12px', 
+                                            borderRadius: '12px', 
+                                            fontWeight: 800, 
+                                            fontSize: '0.85rem', 
+                                            color: 'var(--primary)',
+                                            cursor: 'pointer'
+                                        }}
+                                        className="hover-scale"
+                                    >
+                                        Change Payout Details
+                                    </button>
                                 </div>
-
-                                <div className="grid-2-col-responsive" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.5fr)' }}>
+                            ) : (
+                                <div style={{ display: 'grid', gap: '24px' }}>
                                     <div className="input-group">
-                                        <label className="input-label">Account Number</label>
+                                        <label className="input-label">Select Bank</label>
                                         <div style={{ position: 'relative' }}>
-                                            <input
+                                            <select
                                                 className="input-field"
-                                                value={form.accountNumber}
-                                                maxLength={10}
-                                                onChange={(e) => setForm({ ...form, accountNumber: e.target.value.replace(/\D/g, '') })}
-                                                placeholder="10 digit account number"
-                                                style={{ background: '#F8FAFC', paddingRight: '40px' }}
-                                            />
-                                            <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }}>
-                                                {resolving ? <Loader2 size={18} className="spin-animation" /> : <Search size={18} />}
+                                                value={form.bankCode}
+                                                onChange={(e) => {
+                                                    const selectedBank = banks.find(b => b.code === e.target.value);
+                                                    setForm({ ...form, bankCode: e.target.value, bankName: selectedBank?.name || "" });
+                                                }}
+                                                style={{ background: '#F8FAFC', appearance: 'none', paddingRight: '40px' }}
+                                            >
+                                                <option value="">{fetchingBanks ? "Loading banks..." : "Choose a bank..."}</option>
+                                                {banks.map(bank => (
+                                                    <option key={bank.code} value={bank.code}>{bank.name}</option>
+                                                ))}
+                                            </select>
+                                            <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748B' }}>
+                                                <Building2 size={18} />
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="input-group">
-                                        <label className="input-label">Account Name</label>
-                                        <div style={{ 
-                                            padding: '14px', 
-                                            background: form.accountName ? 'rgba(76, 29, 149, 0.04)' : '#F1F5F9', 
-                                            borderRadius: '12px', 
-                                            border: '1.5px solid',
-                                            borderColor: form.accountName ? 'rgba(76, 29, 149, 0.2)' : '#E5E7EB',
-                                            height: '54px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            color: form.accountName ? 'var(--primary)' : '#94A3B8',
-                                            fontWeight: 700,
-                                            fontSize: '0.95rem',
-                                            transition: 'all 0.3s ease'
-                                        }}>
-                                            {form.accountName || "Type account number..."}
-                                            {form.accountName && <CheckCircle size={16} style={{ marginLeft: 'auto', color: 'var(--primary)' }} />}
+
+                                    <div className="grid-2-col-responsive" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.5fr)' }}>
+                                        <div className="input-group">
+                                            <label className="input-label">Account Number</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <input
+                                                    className="input-field"
+                                                    value={form.accountNumber}
+                                                    maxLength={10}
+                                                    onChange={(e) => setForm({ ...form, accountNumber: e.target.value.replace(/\D/g, '') })}
+                                                    placeholder="10 digit account number"
+                                                    style={{ background: '#F8FAFC', paddingRight: '40px' }}
+                                                />
+                                                <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }}>
+                                                    {resolving ? <Loader2 size={18} className="spin-animation" /> : <Search size={18} />}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="input-group">
+                                            <label className="input-label">Account Name</label>
+                                            <div style={{ 
+                                                padding: '14px', 
+                                                background: form.accountName ? 'rgba(76, 29, 149, 0.04)' : '#F1F5F9', 
+                                                borderRadius: '12px', 
+                                                border: '1.5px solid',
+                                                borderColor: form.accountName ? 'rgba(76, 29, 149, 0.2)' : '#E5E7EB',
+                                                height: '54px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                color: form.accountName ? 'var(--primary)' : '#94A3B8',
+                                                fontWeight: 700,
+                                                fontSize: '0.95rem',
+                                                transition: 'all 0.3s ease'
+                                            }}>
+                                                {form.accountName || "Type account number..."}
+                                                {form.accountName && <CheckCircle size={16} style={{ marginLeft: 'auto', color: 'var(--primary)' }} />}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ marginTop: '8px' }}>
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                            {profile?.bankDetails?.accountNumber && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setIsEditingPayout(false);
+                                                        setForm(prev => ({ 
+                                                            ...prev, 
+                                                            bankName: profile.bankDetails?.bankName || "",
+                                                            accountNumber: profile.bankDetails?.accountNumber || "",
+                                                            accountName: profile.bankDetails?.accountName || ""
+                                                        }));
+                                                    }}
+                                                    style={{ 
+                                                        flex: 1, 
+                                                        padding: '16px', 
+                                                        borderRadius: '14px', 
+                                                        border: '1.5px solid #E2E8F0', 
+                                                        background: 'white', 
+                                                        fontWeight: 700, 
+                                                        color: '#64748B', 
+                                                        cursor: 'pointer' 
+                                                    }}
+                                                >
+                                                    Cancel
+                                                </button>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPasswordModal(true)}
+                                                disabled={isPayoutSaving || !form.bankCode || form.accountNumber.length !== 10 || !form.accountName}
+                                                style={{
+                                                    flex: 2,
+                                                    padding: '16px',
+                                                    borderRadius: '14px',
+                                                    background: 'var(--primary)',
+                                                    color: 'white',
+                                                    fontWeight: 800,
+                                                    fontSize: '0.95rem',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '10px',
+                                                    boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.25)',
+                                                    transition: 'all 0.3s ease'
+                                                }}
+                                                className="hover-scale"
+                                            >
+                                                {isPayoutSaving ? (
+                                                    <><Loader2 size={20} className="spin-animation" /> Verifying...</>
+                                                ) : (
+                                                    <>{profile?.bankDetails?.accountNumber ? "Confirm New Details" : "Setup Secure Payouts"}</>
+                                                )}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
+                            )}
+                        </div>
 
-                                <div style={{ marginTop: '8px' }}>
-                                    <div style={{ display: 'flex', gap: '12px' }}>
-                                        {profile?.bankDetails?.accountNumber && (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setIsEditingPayout(false);
-                                                    // Reset form to what is in the profile
-                                                    setForm(prev => ({ 
-                                                        ...prev, 
-                                                        bankName: profile.bankDetails?.bankName || "",
-                                                        accountNumber: profile.bankDetails?.accountNumber || "",
-                                                        accountName: profile.bankDetails?.accountName || ""
-                                                    }));
-                                                }}
-                                                style={{ 
-                                                    flex: 1, 
-                                                    padding: '16px', 
-                                                    borderRadius: '14px', 
-                                                    border: '1.5px solid #E2E8F0', 
-                                                    background: 'white', 
-                                                    fontWeight: 700, 
-                                                    color: '#64748B', 
-                                                    cursor: 'pointer' 
-                                                }}
-                                            >
-                                                Cancel
-                                            </button>
-                                        )}
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPasswordModal(true)}
-                                            disabled={isPayoutSaving || !form.bankCode || form.accountNumber.length !== 10 || !form.accountName}
-                                            style={{
-                                                flex: 2,
-                                                padding: '16px',
-                                                borderRadius: '14px',
-                                                background: 'var(--primary)',
-                                                color: 'white',
-                                                fontWeight: 800,
-                                                fontSize: '0.95rem',
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '10px',
-                                                boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.25)',
-                                                transition: 'all 0.3s ease'
-                                            }}
-                                            className="hover-scale"
-                                        >
-                                            {isPayoutSaving ? (
-                                                <><Loader2 size={20} className="spin-animation" /> Verifying...</>
-                                            ) : (
-                                                <>{profile?.bankDetails?.accountNumber ? "Confirm New Details" : "Setup Secure Payouts"}</>
-                                            )}
-                                        </button>
+                        <div style={{ marginTop: '32px', paddingTop: '32px', borderTop: '1px solid #F1F5F9', position: 'relative', zIndex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', background: 'rgba(76, 29, 149, 0.04)', borderRadius: '20px', border: '1px solid rgba(76, 29, 149, 0.1)' }}>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                        <p style={{ fontWeight: 800, color: '#1E293B', margin: 0 }}>Transaction Fee Recovery</p>
+                                        <span style={{ fontSize: '10px', fontWeight: 900, background: 'var(--primary)', color: 'white', padding: '2px 8px', borderRadius: '100px', textTransform: 'uppercase' }}>Smart</span>
                                     </div>
-                                    <p style={{ marginTop: '12px', fontSize: '0.75rem', color: '#64748B', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                                        <Shield size={12} /> {profile?.bankDetails?.accountNumber ? "Securely update your bank destination." : "Powered by Nomba Instant Settlements"}
+                                    <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0, fontWeight: 600 }}>
+                                        {form.prefersGatewayFeeAbsorption 
+                                            ? "You are absorbing all gateway fees. Customers pay exactly the invoice amount." 
+                                            : "Customers cover the Gateway fee. You receive exactly the invoice amount."}
                                     </p>
                                 </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div style={{ marginTop: '32px', paddingTop: '32px', borderTop: '1px solid #F1F5F9', position: 'relative', zIndex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', background: 'rgba(76, 29, 149, 0.04)', borderRadius: '20px', border: '1px solid rgba(76, 29, 149, 0.1)' }}>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                    <p style={{ fontWeight: 800, color: '#1E293B', margin: 0 }}>Transaction Fee Recovery</p>
-                                    <span style={{ fontSize: '10px', fontWeight: 900, background: 'var(--primary)', color: 'white', padding: '2px 8px', borderRadius: '100px', textTransform: 'uppercase' }}>Smart</span>
+                                <div style={{ position: 'relative', display: 'inline-block', width: '60px', height: '32px', marginLeft: '20px' }}>
+                                    <input
+                                        type="checkbox"
+                                        id="fee-toggle"
+                                        checked={!form.prefersGatewayFeeAbsorption}
+                                        onChange={(e) => setForm({ ...form, prefersGatewayFeeAbsorption: !e.target.checked })}
+                                        style={{ opacity: 0, width: 0, height: 0 }}
+                                    />
+                                    <label
+                                        htmlFor="fee-toggle"
+                                        style={{
+                                            position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                                            backgroundColor: !form.prefersGatewayFeeAbsorption ? 'var(--primary)' : '#CBD5E1', borderRadius: '34px', transition: '.4s'
+                                        }}
+                                    >
+                                        <span style={{
+                                            position: 'absolute', content: '""', height: '24px', width: '24px', left: '4px', bottom: '4px',
+                                            backgroundColor: 'white', borderRadius: '50%', transition: '.4s',
+                                            transform: !form.prefersGatewayFeeAbsorption ? 'translateX(28px)' : 'translateX(0)',
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                        }}></span>
+                                    </label>
                                 </div>
-                                <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0, fontWeight: 600 }}>
-                                    {form.prefersGatewayFeeAbsorption 
-                                        ? "You are absorbing all gateway fees. Customers pay exactly the invoice amount." 
-                                        : "Customers cover the Gateway fee. You receive exactly the invoice amount."}
-                                    <br />
-                                    <span style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '4px', display: 'block', fontStyle: 'italic' }}>
-                                        *To protect your profits, funds auto-sweep to your bank when wallet hits ₦5,000 (Cost: ₦50). Balances under ₦5,000 are swept free every night at 11:30 PM.
-                                    </span>
+                            </div>
+                        </div>
+                    </section>
+                )}
+
+                {activeTab === 'kyc' && (
+                    <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ background: profile?.kyc?.status === 'verified' ? '#F0FDF4' : '#F5F3FF', color: profile?.kyc?.status === 'verified' ? '#22C55E' : 'var(--primary)', padding: '10px', borderRadius: '12px' }}>
+                                    <Shield size={24} />
+                                </div>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Identity & Trust</h2>
+                            </div>
+                            <div style={{ 
+                                background: profile?.kyc?.status === 'verified' ? '#F0FDF4' : '#F5F3FF', 
+                                color: profile?.kyc?.status === 'verified' ? '#166534' : 'var(--primary)',
+                                padding: '6px 14px', 
+                                borderRadius: '100px', 
+                                fontSize: '0.75rem', 
+                                fontWeight: 900,
+                                border: '1px solid',
+                                borderColor: profile?.kyc?.status === 'verified' ? '#DCFCE7' : 'rgba(76, 29, 149, 0.1)'
+                            }}>
+                                {profile?.kyc?.status?.toUpperCase() || 'PENDING'}
+                            </div>
+                        </div>
+
+                        {profile?.kyc?.status === 'verified' ? (
+                            <div style={{ textAlign: 'center', padding: '40px 20px', background: 'rgba(34, 197, 94, 0.02)', borderRadius: '24px', border: '1.5px dashed #22C55E' }}>
+                                <div style={{ width: '64px', height: '64px', background: '#DCFCE7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#166534' }}>
+                                    <CheckCircle size={32} />
+                                </div>
+                                <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#166534', margin: '0 0 8px 0' }}>Fully Verified</h3>
+                                <p style={{ fontSize: '0.9rem', color: '#166534', fontWeight: 700, margin: 0 }}>
+                                    Your identity was verified via {profile.kyc.method.toUpperCase()} on {new Date(profile.kyc.verifiedAt).toLocaleDateString()}.
                                 </p>
                             </div>
-                            <div style={{ position: 'relative', display: 'inline-block', width: '60px', height: '32px', marginLeft: '20px' }}>
+                        ) : (
+                            <div style={{ display: 'grid', gap: '32px' }}>
+                                <div style={{ background: '#F8FAFC', padding: '24px', borderRadius: '20px', border: '1px solid #E2E8F0' }}>
+                                    <p style={{ margin: '0 0 16px 0', fontSize: '0.95rem', fontWeight: 700, color: '#475569', lineHeight: 1.5 }}>
+                                        Verify your identity to unlock instant payouts and increase your transaction limits.
+                                    </p>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '12px' }}>
+                                    {['bvn', 'nin'].map(type => (
+                                        <div 
+                                            key={type}
+                                            onClick={() => setKycType(type)}
+                                            style={{ 
+                                                flex: 1, 
+                                                padding: '16px', 
+                                                borderRadius: '16px', 
+                                                border: kycType === type ? '2px solid var(--primary)' : '1.5px solid #E2E8F0',
+                                                background: kycType === type ? 'rgba(76, 29, 149, 0.02)' : 'white',
+                                                cursor: 'pointer',
+                                                textAlign: 'center'
+                                            }}
+                                        >
+                                            <p style={{ margin: 0, fontWeight: 900, color: kycType === type ? 'var(--primary)' : '#64748B', fontSize: '0.9rem', textTransform: 'uppercase' }}>{type}</p>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="grid-2-col-responsive">
+                                    <div className="input-group">
+                                        <label className="input-label">{kycType.toUpperCase()} Number</label>
+                                        <input 
+                                            className="input-field" 
+                                            placeholder={`Enter 11-digit ${kycType.toUpperCase()}`}
+                                            value={idNumber}
+                                            maxLength={11}
+                                            onChange={(e) => setIdNumber(e.target.value.replace(/\D/g, ''))}
+                                            style={{ background: '#F8FAFC' }}
+                                        />
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="input-label">Date of Birth</label>
+                                        <input 
+                                            type="date" 
+                                            className="input-field" 
+                                            value={dob}
+                                            onChange={(e) => setDob(e.target.value)}
+                                            style={{ background: '#F8FAFC' }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <button 
+                                    className="btn-primary" 
+                                    onClick={handleVerifyKYC} 
+                                    disabled={isVerifying || idNumber.length < 10}
+                                    style={{ height: '60px' }}
+                                >
+                                    {isVerifying ? <Loader2 className="spin" size={24} /> : "Verify Identity"}
+                                </button>
+                            </div>
+                        )}
+                    </section>
+                )}
+
+                {activeTab === 'ai' && (
+                    <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+                            <div style={{ background: '#F5F3FF', color: 'var(--primary)', padding: '10px', borderRadius: '12px' }}>
+                                <MessageCircle size={24} />
+                            </div>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Kreddy (AI Partner)</h2>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', background: '#F8FAFC', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
+                            <div>
+                                <p style={{ fontWeight: 700, color: '#1E293B', marginBottom: '4px' }}>Proactive Debt Reminders</p>
+                                <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0 }}>Kreddy will automatically nudge customers when their balance is due.</p>
+                            </div>
+                            <div style={{ position: 'relative', display: 'inline-block', width: '50px', height: '28px' }}>
                                 <input
                                     type="checkbox"
-                                    id="fee-toggle"
-                                    checked={!form.prefersGatewayFeeAbsorption}
-                                    onChange={(e) => setForm({ ...form, prefersGatewayFeeAbsorption: !e.target.checked })}
+                                    id="reminder-toggle"
+                                    checked={form.enableReminders}
+                                    onChange={(e) => setForm({ ...form, enableReminders: e.target.checked })}
                                     style={{ opacity: 0, width: 0, height: 0 }}
                                 />
                                 <label
-                                    htmlFor="fee-toggle"
+                                    htmlFor="reminder-toggle"
                                     style={{
                                         position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                                        backgroundColor: !form.prefersGatewayFeeAbsorption ? 'var(--primary)' : '#CBD5E1', borderRadius: '34px', transition: '.4s'
+                                        backgroundColor: form.enableReminders ? 'var(--primary)' : '#CBD5E1', borderRadius: '34px', transition: '.4s'
                                     }}
                                 >
                                     <span style={{
-                                        position: 'absolute', content: '""', height: '24px', width: '24px', left: '4px', bottom: '4px',
+                                        position: 'absolute', content: '""', height: '20px', width: '20px', left: '4px', bottom: '4px',
                                         backgroundColor: 'white', borderRadius: '50%', transition: '.4s',
-                                        transform: !form.prefersGatewayFeeAbsorption ? 'translateX(28px)' : 'translateX(0)',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                        transform: form.enableReminders ? 'translateX(22px)' : 'translateX(0)'
                                     }}></span>
                                 </label>
                             </div>
                         </div>
-                        <p style={{ marginTop: '12px', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600, textAlign: 'center' }}>
-                            Tip: Most merchants pass fees to customers to ensure they get their full money instantly.
-                        </p>
-                    </div>
-                </section>
 
-
-
-                {/* Subscription & Plan Section */}
-                <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                        <div style={{ background: '#FFF1F2', color: '#E11D48', padding: '10px', borderRadius: '12px' }}>
-                            <Zap size={24} />
-                        </div>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Subscription & Plan</h2>
-                    </div>
-
-                    <div style={{ 
-                        padding: '24px', 
-                        background: profile?.plan === 'chairman' ? 'linear-gradient(135deg, #0F172A, #1E293B)' : 
-                                    profile?.plan === 'oga' ? 'linear-gradient(135deg, #B45309, #D97706)' : 
-                                    '#F8FAFC', 
-                        borderRadius: '20px', 
-                        border: '1px solid #E2E8F0',
-                        color: (profile?.plan === 'oga' || profile?.plan === 'chairman') ? 'white' : '#1E293B'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
-                            <div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                    <span style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.8, letterSpacing: '0.05em' }}>Current Plan</span>
-                                    {profile?.isFoundingMember && (
-                                        <span style={{ fontSize: '0.65rem', fontWeight: 900, background: '#4ADE80', color: '#064E3B', padding: '2px 8px', borderRadius: '6px' }}>★ FOUNDING MEMBER</span>
-                                    )}
-                                </div>
-                                <h3 style={{ fontSize: 'clamp(1.25rem, 5vw, 1.75rem)', fontWeight: 950, margin: 0, letterSpacing: '-0.02em' }}>
-                                    {profile?.plan?.toUpperCase() || 'HUSTLER'}
-                                </h3>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                                <p style={{ fontSize: '0.85rem', fontWeight: 700, opacity: 0.8, marginBottom: '4px' }}>Status</p>
-                                <span style={{ 
-                                    fontSize: '0.8rem', 
-                                    fontWeight: 800, 
-                                    background: 'rgba(255,255,255,0.2)', 
-                                    padding: '6px 16px', 
-                                    borderRadius: '100px',
-                                    border: '1px solid rgba(255,255,255,0.1)'
-                                }}>
-                                    {profile?.planStatus?.toUpperCase() || 'ACTIVE'}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                            <div style={{ 
-                                display: 'grid', 
-                                gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', 
-                                gap: '16px', 
-                                marginBottom: '24px' 
-                            }}>
-                                <div>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>Intelligence</p>
-                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? 'Standard' : 'Genius +'}</p>
-                                </div>
-                                <div>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>Sales Records</p>
-                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? '10/mo' : 'Unlimited'}</p>
-                                </div>
-                                <div>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>Staff Limit</p>
-                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? 'Owner' : profile?.plan === 'oga' ? 'Owner + 1' : 'Unlimited'}</p>
-                                </div>
-                                <div>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px', letterSpacing: '0.05em' }}>AI Quota</p>
-                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{profile?.plan === 'hustler' ? '50/mo' : profile?.plan === 'oga' ? '150/mo' : '150/mo'}</p>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <Clock size={14} />
-                                <p style={{ fontSize: '0.8rem', fontWeight: 600, margin: 0, opacity: 0.9 }}>
-                                    {profile?.planStatus === 'trialing' ? 
-                                        `Free trial ends: ${new Date(profile?.trialExpiresAt).toLocaleDateString()}` :
-                                        profile?.isFoundingMember ? 
-                                        `Pioneer active until: ${new Date(profile?.trialExpiresAt).toLocaleDateString()}` :
-                                        'Plan renews automatically.'
-                                    }
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style={{ marginTop: '32px' }}>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#94A3B8', textAlign: 'center', marginBottom: '20px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Premium Upgrades</p>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(clamp(200px, 100%, 250px), 1fr))', gap: '16px' }}>
-                            {profile?.plan !== 'oga' && profile?.plan !== 'chairman' && (
+                        <div style={{ marginTop: '24px' }}>
+                            <p style={{ fontWeight: 700, color: '#1E293B', marginBottom: '12px', fontSize: '0.95rem' }}>Reminder Tone</p>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                 <button 
-                                    type="button"
-                                    onClick={() => {
-                                        setSelectedPlan('oga');
-                                        setShowCheckout(true);
+                                    onClick={() => setForm({ ...form, reminderTemplate: 'friendly' })}
+                                    style={{ 
+                                        padding: '16px', borderRadius: '16px', border: '2px solid', 
+                                        borderColor: form.reminderTemplate === 'friendly' ? 'var(--primary)' : '#F1F5F9',
+                                        background: form.reminderTemplate === 'friendly' ? '#F5F3FF' : 'white',
+                                        textAlign: 'left', cursor: 'pointer'
                                     }}
-                                    className="glass-card clickable-card"
-                                    style={{ padding: '24px', border: '1px solid var(--primary)', background: 'white', cursor: 'pointer', textAlign: 'left', width: '100%', position: 'relative', overflow: 'hidden' }}
                                 >
-                                    <div style={{ position: 'absolute', top: '0', left: '0', background: 'var(--primary)', color: 'white', fontSize: '0.6rem', fontWeight: 900, padding: '4px 12px', borderRadius: '0 0 12px 0', textTransform: 'uppercase' }}>50% OFF PIONEER</div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', marginTop: '8px' }}>
-                                        <span style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--primary)' }}>OGA PLAN</span>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', textDecoration: 'line-through', marginRight: '6px' }}>₦6,000</span>
-                                            <span style={{ fontSize: '1rem', fontWeight: 900, color: '#0F172A' }}>₦3,000/mo</span>
-                                        </div>
-                                    </div>
-                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Voice Notes, Proactive Debt Reminders & 1 Staff. Pioneer Special active until June 1st.</p>
+                                    <p style={{ margin: 0, fontWeight: 800, color: form.reminderTemplate === 'friendly' ? 'var(--primary)' : '#475569' }}>Friendly Nudge</p>
+                                    <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>Soft, professional reminder.</p>
                                 </button>
-                            )}
-
-
-                            {profile?.plan !== 'chairman' && (
                                 <button 
-                                    type="button"
-                                    onClick={() => {
-                                        setSelectedPlan('chairman');
-                                        setShowCheckout(true);
+                                    onClick={() => setForm({ ...form, reminderTemplate: 'formal' })}
+                                    style={{ 
+                                        padding: '16px', borderRadius: '16px', border: '2px solid', 
+                                        borderColor: form.reminderTemplate === 'formal' ? 'var(--primary)' : '#F1F5F9',
+                                        background: form.reminderTemplate === 'formal' ? '#F5F3FF' : 'white',
+                                        textAlign: 'left', cursor: 'pointer'
                                     }}
-                                    className="glass-card clickable-card"
-                                    style={{ padding: '24px', border: '1px solid #8B5CF6', background: 'white', cursor: 'pointer', textAlign: 'left', width: '100%', position: 'relative', overflow: 'hidden' }}
                                 >
-                                    <div style={{ position: 'absolute', top: '0', left: '0', background: '#8B5CF6', color: 'white', fontSize: '0.6rem', fontWeight: 900, padding: '4px 12px', borderRadius: '0 0 12px 0', textTransform: 'uppercase' }}>FOUNDER PRE-ORDER</div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', marginTop: '8px' }}>
-                                        <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#8B5CF6' }}>CHAIRMAN</span>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', textDecoration: 'line-through', marginRight: '6px' }}>₦9,000</span>
-                                            <span style={{ fontSize: '1rem', fontWeight: 900, color: '#0F172A' }}>₦4,500/mo</span>
-                                        </div>
-                                    </div>
-                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Image Recognition Receipts, White-Labeling & Unlimited Staff. Best for Scale.</p>
+                                    <p style={{ margin: 0, fontWeight: 800, color: form.reminderTemplate === 'formal' ? 'var(--primary)' : '#475569' }}>Formal Statement</p>
+                                    <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>Strict & clear for overdue accounts.</p>
                                 </button>
-                            )}
-
-                            {profile?.plan !== 'hustler' && (
-                                <button 
-                                    type="button"
-                                    onClick={() => {
-                                        setSelectedPlan(profile.plan);
-                                        setShowCheckout(true);
-                                    }}
-                                    className="glass-card clickable-card"
-                                    style={{ padding: '24px', border: '1px solid #E2E8F0', background: 'white', cursor: 'pointer', textAlign: 'left', width: '100%', position: 'relative', overflow: 'hidden' }}
-                                >
-                                    <div style={{ position: 'absolute', top: '0', left: '0', background: '#334155', color: 'white', fontSize: '0.6rem', fontWeight: 900, padding: '4px 12px', borderRadius: '0 0 12px 0', textTransform: 'uppercase' }}>SPECIAL RENEWAL</div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', marginTop: '8px' }}>
-                                        <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#334155' }}>RENEW {profile.plan.toUpperCase()}</span>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', textDecoration: 'line-through', marginRight: '6px' }}>
-                                                ₦{profile.plan === 'oga' ? '6,000' : '9,000'}
-                                            </span>
-                                            <span style={{ fontSize: '1rem', fontWeight: 900, color: '#0F172A' }}>
-                                                ₦{profile.plan === 'oga' ? '3,000' : '4,500'}/mo
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>Maintain all your premium data, staff access, and Kreddy intelligence features.</p>
-                                </button>
-                            )}
+                            </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
+                )}
+
+                {activeTab === 'staff' && (
+                    <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0', position: 'relative', overflow: 'hidden' }}>
+                        {profile?.plan === 'hustler' && profile?.planStatus !== 'trialing' && (
+                            <div style={{ position: 'absolute', inset: 0, background: 'rgba(255, 255, 255, 0.7)', backdropFilter: 'blur(4px)', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center' }}>
+                                <Shield size={32} color="#F97316" style={{ marginBottom: '16px' }} />
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#1E293B', marginBottom: '8px' }}>Staff Access Locked</h3>
+                                <p style={{ color: '#64748B', fontWeight: 600, fontSize: '0.9rem', maxWidth: '300px', marginBottom: '20px' }}>Upgrade to Oga or Chairman to add staff members.</p>
+                                <button onClick={() => { setSelectedPlan('oga'); setShowCheckout(true); }} className="btn-primary" style={{ width: 'auto', padding: '12px 24px' }}>Upgrade Now</button>
+                            </div>
+                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ background: '#FFF7ED', color: '#F97316', padding: '10px', borderRadius: '12px' }}>
+                                    <Shield size={24} />
+                                </div>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Staff Management</h2>
+                            </div>
+                            <div style={{ background: '#F1F5F9', padding: '6px 14px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 800, color: '#475569' }}>{staffLimit}</div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                            <input className="input-field" placeholder="Staff WhatsApp Number" value={newStaffPhone} onChange={(e) => setNewStaffPhone(e.target.value)} style={{ flex: 1 }} />
+                            <button className="btn-primary" style={{ width: 'auto', padding: '0 24px' }} onClick={addStaff}>Add Staff</button>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {form.staffNumbers.map((phone, idx) => (
+                                <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: '#F8FAFC', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
+                                    <span style={{ fontWeight: 700, color: '#1E293B' }}>{phone}</span>
+                                    <button onClick={() => removeStaff(phone)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer' }}><Upload size={18} style={{ transform: 'rotate(180deg)' }} /></button>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {activeTab === 'plan' && (
+                    <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                            <div style={{ background: '#FFF1F2', color: '#E11D48', padding: '10px', borderRadius: '12px' }}>
+                                <Zap size={24} />
+                            </div>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Subscription & Plan</h2>
+                        </div>
+
+                        <div style={{ padding: '24px', background: '#F8FAFC', borderRadius: '20px', border: '1px solid #E2E8F0' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <p style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', color: '#64748B', marginBottom: '4px' }}>Current Plan</p>
+                                    <h3 style={{ fontSize: '1.5rem', fontWeight: 950, margin: 0 }}>{profile?.plan?.toUpperCase() || 'HUSTLER'}</h3>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#64748B', marginBottom: '4px' }}>Status</p>
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 800, background: '#DCFCE7', color: '#166534', padding: '4px 12px', borderRadius: '100px' }}>{profile?.planStatus?.toUpperCase() || 'ACTIVE'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: '32px' }}>
+                            <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#94A3B8', textAlign: 'center', marginBottom: '20px', textTransform: 'uppercase' }}>Available Upgrades</p>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+                                {profile?.plan !== 'hustler' && (
+                                    <div className="glass-card" style={{ padding: '24px', border: '1px solid #E2E8F0', background: 'white', textAlign: 'left', opacity: profile?.plan === 'hustler' ? 1 : 0.8 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                            <span style={{ fontWeight: 900, color: '#64748B' }}>HUSTLER</span>
+                                            <span style={{ fontWeight: 900 }}>Free</span>
+                                        </div>
+                                        <p style={{ fontSize: '0.75rem', color: '#64748B', margin: '0 0 16px 0' }}>Basic invoice tracking & receipts.</p>
+                                        {profile?.plan !== 'hustler' && (
+                                            <button onClick={() => toast.info("To downgrade to Hustler, please contact support or wait for your current cycle to end.")} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #E2E8F0', background: 'white', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer' }}>Downgrade</button>
+                                        )}
+                                    </div>
+                                )}
+                                
+                                <button 
+                                    onClick={() => { setSelectedPlan('oga'); setShowCheckout(true); }} 
+                                    className="glass-card clickable-card" 
+                                    style={{ 
+                                        padding: '24px', 
+                                        border: profile?.plan === 'oga' ? '2px solid var(--primary)' : '1px solid #E2E8F0', 
+                                        background: profile?.plan === 'oga' ? 'rgba(76, 29, 149, 0.02)' : 'white', 
+                                        textAlign: 'left' 
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                        <span style={{ fontWeight: 900, color: 'var(--primary)' }}>OGA PLAN</span>
+                                        <span style={{ fontWeight: 900 }}>₦3,000/mo</span>
+                                    </div>
+                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: '0 0 16px 0' }}>Voice Notes, Proactive Reminders & 1 Staff.</p>
+                                    <div style={{ width: '100%', padding: '10px', borderRadius: '10px', background: profile?.plan === 'oga' ? 'var(--primary)' : 'white', border: profile?.plan === 'oga' ? 'none' : '1px solid var(--primary)', color: profile?.plan === 'oga' ? 'white' : 'var(--primary)', fontWeight: 800, fontSize: '0.8rem', textAlign: 'center' }}>
+                                        {profile?.plan === 'oga' ? 'Current Plan' : (profile?.plan === 'chairman' ? 'Downgrade' : 'Upgrade')}
+                                    </div>
+                                </button>
+
+                                <button 
+                                    onClick={() => { setSelectedPlan('chairman'); setShowCheckout(true); }} 
+                                    className="glass-card clickable-card" 
+                                    style={{ 
+                                        padding: '24px', 
+                                        border: profile?.plan === 'chairman' ? '2px solid #8B5CF6' : '1px solid #E2E8F0', 
+                                        background: profile?.plan === 'chairman' ? 'rgba(139, 92, 246, 0.02)' : 'white', 
+                                        textAlign: 'left' 
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                        <span style={{ fontWeight: 900, color: '#8B5CF6' }}>CHAIRMAN</span>
+                                        <span style={{ fontWeight: 900 }}>₦4,500/mo</span>
+                                    </div>
+                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: '0 0 16px 0' }}>Unlimited Staff, AI Insights & White-labeling.</p>
+                                    <div style={{ width: '100%', padding: '10px', borderRadius: '10px', background: profile?.plan === 'chairman' ? '#8B5CF6' : 'white', border: profile?.plan === 'chairman' ? 'none' : '1px solid #8B5CF6', color: profile?.plan === 'chairman' ? 'white' : '#8B5CF6', fontWeight: 800, fontSize: '0.8rem', textAlign: 'center' }}>
+                                        {profile?.plan === 'chairman' ? 'Current Plan' : 'Upgrade'}
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                )}
 
                 {showCheckout && (
                     <CheckoutModal 
                         plan={selectedPlan}
-                        billingCycle={new Date() < new Date('2026-06-01') ? 'launch' : 'monthly'}
+                        billingCycle="monthly"
                         userEmail={currentUser?.email}
                         onClose={() => setShowCheckout(false)}
-                        onSuccess={async (reference, plan, billingCycle, couponCode) => {
+                        onSuccess={async (reference) => {
                             try {
                                 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
-                                await axios.post(`${API_URL}/payments/verify`, {
-                                    reference: reference.reference,
-                                    plan,
-                                    billingCycle,
-                                    couponCode
-                                }, { withCredentials: true });
-                                
-                                // Modal handles the success UI, we just trigger reload after delay
-                                setTimeout(() => window.location.reload(), 4500);
+                                await axios.post(`${API_URL}/payments/verify`, { reference: reference.reference, plan: selectedPlan }, { withCredentials: true });
+                                setTimeout(() => window.location.reload(), 2000);
                             } catch (err) {
-                                toast.error("Payment verified but upgrade failed. Contact support.");
-                                throw err;
+                                toast.error("Verification failed. Contact support.");
                             }
                         }}
                     />
@@ -960,7 +978,7 @@ const SettingsPage = () => {
                         disabled={saving}
                         onClick={handleSave}
                     >
-                        {saving ? "Saving changes..." : <><Save size={20} /> Save All Settings</>}
+                        {saving ? "Saving..." : <><Save size={20} /> Save All Changes</>}
                     </button>
                 </div>
             </div>

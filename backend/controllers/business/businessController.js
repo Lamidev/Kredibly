@@ -17,7 +17,7 @@ const cleanPhone = (num) => {
 
 exports.updateProfile = async (req, res) => {
     try {
-        const { displayName, entityType, sellMode, logoUrl, phoneNumber, whatsappNumber, address, assistantSettings, bankDetails, staffNumbers, prefersGatewayFeeAbsorption } = req.body;
+        const { displayName, entityType, sellMode, logoUrl, phoneNumber, whatsappNumber, address, assistantSettings, bankDetails, staffNumbers, prefersGatewayFeeAbsorption, kyc } = req.body;
 
         let profile = await BusinessProfile.findOne({ ownerId: req.user._id });
 
@@ -43,6 +43,12 @@ exports.updateProfile = async (req, res) => {
                 };
             }
             if (bankDetails) profile.bankDetails = bankDetails;
+            if (kyc) {
+                profile.kyc = {
+                    ...profile.kyc,
+                    ...kyc
+                };
+            }
             if (staffNumbers) {
                 const planLimit = profile.plan === 'chairman' ? Infinity : (profile.plan === 'oga' ? 1 : 0);
                 if (staffNumbers.length > planLimit) {
@@ -89,7 +95,8 @@ exports.updateProfile = async (req, res) => {
                 trialExpiresAt: now < LAUNCH_DATE ? LAUNCH_DATE : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // Till launch, then 14d thereafter
                 hasUsedTrial: true,
                 isLaunchPromo: true, 
-                walletBalance: 0 
+                walletBalance: 0,
+                kyc: kyc || { status: 'pending', method: 'none' }
             });
 
             await profile.save();
@@ -303,4 +310,66 @@ exports.saveBankDetails = async (req, res) => {
         console.error("Save Bank Details Error:", error);
         res.status(500).json({ success: false, message: error.message });
     }
+};
+
+/**
+ * Placeholder for KYC Verification (To be integrated with Dojah/SmileID)
+ */
+exports.verifyKYC = async (req, res) => {
+    try {
+        const { type, idNumber, dob } = req.body;
+        const profile = await BusinessProfile.findOne({ ownerId: req.user._id });
+
+        if (!profile) return res.status(404).json({ success: false, message: "Profile not found" });
+
+        console.log(`🛡️ KYC Attempt: ${type} for ${profile.displayName} [${idNumber}]`);
+
+        // DUMMY LOGIC: Accept anything that starts with '2' for demo, otherwise pending
+        // In production, this will call SmileID/Dojah
+        if (idNumber && idNumber.length >= 10) {
+            profile.kyc = {
+                status: 'verified',
+                method: type,
+                idNumber: idNumber.substring(0, 4) + '****',
+                verifiedAt: new Date()
+            };
+            await profile.save();
+
+            await logActivity({
+                userId: req.user._id,
+                businessId: profile._id,
+                action: "KYC_VERIFIED",
+                details: `Identity verified via ${type.toUpperCase()}`
+            });
+
+            // 💸 TRIGGER ESCROW RELEASE
+            const { releaseMerchantEscrow } = require("../../utils/payouts");
+            // Run in background
+            releaseMerchantEscrow(profile._id).catch(e => console.error("Escrow Release Post-KYC Fail:", e.message));
+
+            return res.status(200).json({ 
+                success: true, 
+                message: "Identity Verified Successfully! Any held funds are now being released.",
+                data: profile.kyc
+            });
+        } else {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Invalid ID number. Please check and try again." 
+            });
+        }
+
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+module.exports = {
+  updateProfile: exports.updateProfile,
+  getProfile: exports.getProfile,
+  getActivityLogs: exports.getActivityLogs,
+  getBankList: exports.getBankList,
+  resolveAccountDetails: exports.resolveAccountDetails,
+  saveBankDetails: exports.saveBankDetails,
+  verifyKYC: exports.verifyKYC
 };

@@ -196,7 +196,7 @@ const Dashboard = () => {
                 </motion.div>
             </div>
 
-            {/* 🚀 Grand Launch Urgency Banner */}
+            {/* 🚀 Grand Launch Urgency Banner - Refined Dark Theme */}
             {(profile?.plan === 'hustler' || profile?.planStatus === 'trialing') && (
                 <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -221,9 +221,12 @@ const Dashboard = () => {
                             <Sparkles size={28} className="text-secondary" fill="currentColor" />
                         </div>
                         <div>
-                            <h3 style={{ fontSize: 'clamp(1.1rem, 4.5vw, 1.25rem)', fontWeight: 900, marginBottom: '4px', letterSpacing: '-0.02em' }}>
-                                The May Takeover: Chairman Access for All! 👑
-                            </h3>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                <span style={{ background: 'rgba(255,255,255,0.1)', color: 'white', fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '100px', textTransform: 'uppercase' }}>Limited Time</span>
+                                <h3 style={{ fontSize: 'clamp(1.1rem, 4.5vw, 1.25rem)', fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>
+                                    The May Takeover
+                                </h3>
+                            </div>
                             <p style={{ fontSize: 'clamp(0.8rem, 3.5vw, 0.9rem)', color: '#94A3B8', fontWeight: 700, margin: 0, lineHeight: 1.4 }}>
                                 {new Date() < new Date('2026-06-01') 
                                     ? "Pre-Launch Gift: Enjoy 100% free Chairman status and AI features until our June 1st launch!" 
@@ -247,6 +250,56 @@ const Dashboard = () => {
                         className="hover-scale"
                     >
                         Secure My Discount
+                    </button>
+                </motion.div>
+            )}
+
+            {/* 🛡️ KYC Compliance Nudge */}
+            {profile?.kyc?.status !== 'verified' && (
+                <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{ 
+                        background: 'white', 
+                        padding: '24px 32px', 
+                        borderRadius: '32px', 
+                        marginBottom: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '24px',
+                        border: '1px solid #E2E8F0',
+                        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.02)'
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                        <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Shield size={28} color="var(--primary)" />
+                        </div>
+                        <div>
+                            <h4 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#1E293B', margin: '0 0 4px 0' }}>Trust & Verification Required</h4>
+                            <p style={{ fontSize: '0.9rem', color: '#64748B', fontWeight: 600, margin: 0 }}>
+                                Complete your identity verification to unlock <span style={{ color: 'var(--primary)', fontWeight: 800 }}>Instant Payouts</span> and higher limits.
+                            </p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={() => navigate('/settings?tab=kyc')}
+                        style={{ 
+                            padding: '14px 32px', 
+                            borderRadius: '16px', 
+                            background: 'var(--primary)', 
+                            color: 'white', 
+                            fontWeight: 900, 
+                            border: 'none', 
+                            cursor: 'pointer',
+                            fontSize: '0.9rem',
+                            boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.2)'
+                        }}
+                        className="hover-scale"
+                    >
+                        Complete Verification
                     </button>
                 </motion.div>
             )}

@@ -144,6 +144,22 @@ const BusinessProfileSchema = new mongoose.Schema({
         type: Boolean,
         default: true // Default: Merchant absorbs the fees (Customer pays exactly what is on the invoice)
     },
+    kyc: {
+        status: {
+            type: String,
+            enum: ["pending", "verified", "failed", "skipped"],
+            default: "pending"
+        },
+        method: {
+            type: String,
+            enum: ["bvn", "nin", "none"],
+            default: "none"
+        },
+        bvn: { type: String, default: "" },
+        nin: { type: String, default: "" },
+        verifiedAt: { type: Date },
+        rejectionReason: { type: String, default: "" }
+    },
     lastSummaryAt: {
         type: Date,
         default: null

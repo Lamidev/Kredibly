@@ -12,6 +12,9 @@ router.get("/banks", protect, businessController.getBankList);
 router.get("/resolve-account/:bankCode/:accountNumber", protect, businessController.resolveAccountDetails);
 router.post("/payout-settings", protect, businessController.saveBankDetails);
 
+// KYC & Compliance
+router.post("/kyc/verify", protect, businessController.verifyKYC);
+
 // Invoice Payment Initialization
 const paymentController = require("../../controllers/common/paymentController");
 router.post("/paystack/initialize", paymentController.initializePaystackPayment);

@@ -139,9 +139,16 @@ const AdminMissionControl = () => {
 
     return (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-            <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                <div>
-                    <h1 style={{ fontSize: '2rem', fontWeight: 950, color: '#0F172A', letterSpacing: '-0.04em', margin: 0 }}>Mission Control</h1>
+            <div style={{ 
+                marginBottom: '32px', 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '20px'
+            }}>
+                <div style={{ flex: '1 1 300px' }}>
+                    <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', fontWeight: 950, color: '#0F172A', letterSpacing: '-0.04em', margin: 0 }}>Mission Control</h1>
                     <p style={{ color: '#64748B', fontWeight: 700, fontSize: '0.95rem', marginTop: '4px' }}>Real-time platform pulse & operational oversight.</p>
                 </div>
                 <button 
@@ -151,7 +158,8 @@ const AdminMissionControl = () => {
                         display: 'flex', alignItems: 'center', gap: '8px', 
                         padding: '12px 20px', borderRadius: '16px', background: 'white', 
                         border: '1px solid #E2E8F0', cursor: 'pointer', fontWeight: 800,
-                        fontSize: '0.85rem', color: '#1E293B', transition: 'all 0.2s'
+                        fontSize: '0.85rem', color: '#1E293B', transition: 'all 0.2s',
+                        whiteSpace: 'nowrap'
                     }}
                     onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
                     onMouseLeave={e => e.currentTarget.style.borderColor = '#E2E8F0'}
@@ -191,16 +199,23 @@ const AdminMissionControl = () => {
                 <div style={{ position: 'absolute', top: '-100px', right: '-100px', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%)', filter: 'blur(40px)' }} />
                 
                 <div style={{ position: 'relative', zIndex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-                        <div>
+                    <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'flex-start', 
+                        marginBottom: '24px',
+                        flexWrap: 'wrap',
+                        gap: '16px'
+                    }}>
+                        <div style={{ flex: '1 1 300px' }}>
                             <h3 style={{ margin: 0, fontWeight: 950, fontSize: '1.25rem', color: 'white', display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <Shield size={22} color="#818CF8" /> Kreddy Growth Engine
                             </h3>
                             <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>Manage the daily street-smart advice and morning report dispatch.</p>
                         </div>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                             {/* Tone Toggle */}
-                            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', marginRight: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
                                 {['English', 'Pidgin'].map(t => (
                                     <button
                                         key={t}
@@ -215,7 +230,6 @@ const AdminMissionControl = () => {
                                     </button>
                                 ))}
                             </div>
-
                             <span style={{ 
                                 padding: '6px 14px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 900, 
                                 background: adviceStatus === 'pending' ? '#FEF3C7' : '#DCFCE7', 
@@ -223,22 +237,22 @@ const AdminMissionControl = () => {
                                 display: 'flex', alignItems: 'center', gap: '6px'
                             }}>
                                 <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }} />
-                                {adviceStatus === 'pending' ? 'REVIEW REQUIRED' : 'BATCH APPROVED'}
+                                {adviceStatus === 'pending' ? 'REVIEW' : 'APPROVED'}
                             </span>
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '24px', padding: '24px' }}>
                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 900, color: 'rgba(255,255,255,0.4)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Today's Drafted Business Tip (Gemini 2.5)
+                                Today's Drafted Business Tip
                             </label>
                             <textarea 
                                 value={advice}
                                 onChange={(e) => setAdvice(e.target.value)}
                                 style={{ 
                                     width: '100%', background: 'transparent', border: 'none', color: 'white', 
-                                    fontSize: '1.1rem', fontWeight: 700, lineHeight: '1.6', height: '180px', 
+                                    fontSize: 'clamp(0.95rem, 3vw, 1.1rem)', fontWeight: 700, lineHeight: '1.6', minHeight: '150px', 
                                     resize: 'none', outline: 'none'
                                 }}
                                 placeholder="Loading daily advice..."
@@ -332,7 +346,7 @@ const AdminMissionControl = () => {
                     scrollbarWidth: 'thin'
                 }}>
                     <AnimatePresence mode="popLayout">
-                        {feed.map((item) => (
+                         {feed.map((item) => (
                             <motion.div 
                                 layout
                                 key={item._id + item.timestamp}
@@ -340,58 +354,59 @@ const AdminMissionControl = () => {
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 style={{ 
-                                    padding: '20px', 
+                                    padding: 'clamp(16px, 4vw, 20px)', 
                                     borderRadius: '20px', 
                                     background: '#F8FAFC', 
                                     border: `1px solid ${item.status === 'failed' ? '#FEE2E2' : '#E2E8F0'}`,
                                     display: 'flex',
-                                    gap: '20px',
-                                    alignItems: 'center'
+                                    gap: 'clamp(12px, 3vw, 20px)',
+                                    alignItems: 'center',
+                                    flexWrap: 'wrap'
                                 }}
                             >
                                 {/* EVENT ICON */}
                                 <div style={{ 
-                                    width: '52px', height: '52px', borderRadius: '16px', 
+                                    width: '48px', height: '48px', borderRadius: '16px', 
                                     background: item.color === 'purple' ? '#F5F3FF' : (item.color === 'green' ? '#ECFDF5' : (item.color === 'blue' ? '#F0F9FF' : '#F1F5F9')),
                                     color: item.color === 'purple' ? '#8B5CF6' : (item.color === 'green' ? '#10B981' : (item.color === 'blue' ? '#0EA5E9' : '#64748B')),
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                                 }}>
-                                    {item.type === 'JOB' ? <Zap size={24} /> : (item.type === 'SALE' ? <TrendingUp size={24} /> : (item.type === 'SUB' ? <CreditCard size={24} /> : <Activity size={24} />))}
+                                    {item.type === 'JOB' ? <Zap size={22} /> : (item.type === 'SALE' ? <TrendingUp size={22} /> : (item.type === 'SUB' ? <CreditCard size={22} /> : <Activity size={22} />))}
                                 </div>
-
+ 
                                 {/* CONTENT */}
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-                                        <h4 style={{ margin: 0, fontWeight: 900, fontSize: '1rem', color: '#1E293B' }}>
+                                <div style={{ flex: '1 1 200px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '4px' }}>
+                                        <h4 style={{ margin: 0, fontWeight: 900, fontSize: '0.95rem', color: '#1E293B' }}>
                                             {item.merchant} 
-                                            <span style={{ fontSize: '0.75rem', fontWeight: 700, marginLeft: '12px', padding: '2px 8px', borderRadius: '6px', background: 'rgba(0,0,0,0.03)', color: '#64748B' }}>
+                                            <span style={{ fontSize: '0.7rem', fontWeight: 700, marginLeft: '8px', padding: '2px 8px', borderRadius: '6px', background: 'rgba(0,0,0,0.03)', color: '#64748B' }}>
                                                 {item.event.replace(/_/g, ' ')}
                                             </span>
                                         </h4>
-                                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94A3B8' }}>
-                                            {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {new Date(item.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94A3B8' }}>
+                                            {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 650, color: item.status === 'failed' ? '#EF4444' : '#475569' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                                        <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 650, color: item.status === 'failed' ? '#EF4444' : '#475569' }}>
                                             {item.details}
                                         </p>
                                         
                                         {/* ACTION BUTTONS FOR JOBS */}
                                         {item.type === 'JOB' && (
-                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                            <div style={{ display: 'flex', gap: '6px' }}>
                                                 {item.status === 'failed' && (
                                                     <button onClick={() => handleJobAction(item._id, 'retry')} style={actionBtnStyle('#10B981')} title="Retry Operation">
-                                                        <Play size={14} fill="currentColor" />
+                                                        <Play size={12} fill="currentColor" />
                                                     </button>
                                                 )}
                                                 {item.status === 'pending' && (
                                                     <button onClick={() => handleJobAction(item._id, 'cancel')} style={actionBtnStyle('#F97316')} title="Cancel Task">
-                                                        <XCircle size={14} />
+                                                        <XCircle size={12} />
                                                     </button>
                                                 )}
                                                 <button onClick={() => handleJobAction(item._id, 'delete')} style={actionBtnStyle('#EF4444')} title="Purge Record">
-                                                    <Trash2 size={14} />
+                                                    <Trash2 size={12} />
                                                 </button>
                                             </div>
                                         )}
