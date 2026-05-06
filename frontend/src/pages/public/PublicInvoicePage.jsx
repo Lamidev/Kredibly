@@ -771,9 +771,10 @@ const PublicInvoicePage = () => {
             </style>
 
             {/* 🛡️ Verifying Payment Overlay (Hardened Stacking Context) */}
-            <AnimatePresence>
+            <AnimatePresence mode="wait">
                 {isAutoVerifying && (
                     <motion.div 
+                        key="verification-overlay"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -969,11 +970,11 @@ const PublicInvoicePage = () => {
                 <nav style={{ maxWidth: '42rem', margin: '0 auto', width: '100%', position: 'relative', zIndex: 10, padding: '24px 16px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         {sale?.businessId?.plan === 'chairman' ? (
-                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '32px', opacity: 1 }} />
+                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '18px', opacity: 0.9 }} />
                         ) : (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 {sale?.businessId?.logoUrl ? (
-                                    <img src={sale.businessId.logoUrl} alt={sale.businessId.displayName} style={{ height: '32px', objectFit: 'contain' }} />
+                                    <img src={sale.businessId.logoUrl} alt={sale.businessId.displayName} style={{ height: '18px', objectFit: 'contain' }} />
                                 ) : (
                                     <span style={{ fontFamily: 'Outfit', fontSize: '18px', fontWeight: 900, color: primaryColor, letterSpacing: '-0.02em' }}>{sale?.businessId?.displayName}</span>
                                 )}
@@ -1184,7 +1185,7 @@ const PublicInvoicePage = () => {
                                         </AnimatePresence>
 
                                         {/* Payment Button / DVA Card */}
-                                        <div style={{ marginTop: '8px' }}>
+                                        <div key="payment-action-area" style={{ marginTop: '8px' }}>
                                             {!nombaData && (sale?.businessId?.prefersGatewayFeeAbsorption === false || String(sale?.businessId?.prefersGatewayFeeAbsorption) === 'false') && rawInputAmount > 0 && (
                                                 <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '16px', border: '1px solid #E2E8F0', marginBottom: '16px', fontSize: '12px' }}>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748B', marginBottom: '4px', fontWeight: 600 }}>

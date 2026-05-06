@@ -13,14 +13,13 @@ const ShareActionSheet = ({
     title = "Share Official Document",
     subtitle = "Choose how you'd like to share or save this record",
 }) => {
-    if (!isOpen) return null;
-
     return createPortal(
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
             {isOpen && (
                 <>
                     {/* Backdrop */}
                     <motion.div
+                        key="sharesheet-backdrop"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -47,6 +46,7 @@ const ShareActionSheet = ({
                         }}
                     >
                         <motion.div
+                            key="sharesheet-modal"
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
