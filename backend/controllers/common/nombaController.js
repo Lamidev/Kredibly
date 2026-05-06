@@ -320,25 +320,19 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 // Execute Sweep
                 let nombaActualBalance = parseFloat(nombaPayload?.data?.merchant?.walletBalance || 0);
                 
-                // 🔄 Manual Verification Fallback: If no payload (manual click) OR payload balance is 0, fetch real-time
                 if (!nombaPayload || nombaActualBalance === 0) {
                     const { getMerchantBalance } = require('../../utils/nomba');
                     const realTimeBalance = await getMerchantBalance();
                     if (realTimeBalance !== null) {
                         nombaActualBalance = realTimeBalance;
-                        console.log(`💰 Real-time Nomba Balance: ₦${nombaActualBalance}`);
-                    } else {
-                        console.warn('⚠️ Could not verify real-time balance. Skipping auto-sweep for safety.');
-                        nombaActualBalance = 0;
                     }
                 }
 
                 const bankDetails = business.bankDetails;
-                const isLocked = bankDetails?.bankDetailsLockUntil && new Date() < new Date(bankDetails.bankDetailsLockUntil);
                 const threshold = 100; 
-                const delay = 15000; // 15s underground delay
+                const delay = 15000;
 
-                if (bankDetails?.bankCode && bankDetails?.accountNumber && !isLocked && !business.isCompromised && nombaActualBalance > threshold) {
+                if (bankDetails?.bankCode && bankDetails?.accountNumber && nombaActualBalance > threshold) {
                     const sweepAmount = Math.floor(nombaActualBalance - threshold);
                     if (sweepAmount > 0) {
                         console.log(`⚡ Underground Settlement Started (₦${sweepAmount}) - Waiting ${delay/1000}s...`);
@@ -358,6 +352,9 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 }
             } catch (sweepErr) {
                 console.error(`❌ Underground Sweep FAILED:`, sweepErr.message);
+            } finally {
+                // 🔐 RELEASE LOCK AFTER 30s FOR SAFETY
+                setTimeout(() => processingLocks.delete(lockKey), 30000);
             }
         })();
 
@@ -367,7 +364,6 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
             sendWhatsAppPaymentAlert(business.whatsappNumber, creditAmount, sale.invoiceNumber, sale.customerName || payer, "", business.displayName, "");
         }
 
-        processingLocks.delete(lockKey);
         return { success: true, message: "Payment processed!" };
     } catch (err) {
         processingLocks.delete(lockKey);
