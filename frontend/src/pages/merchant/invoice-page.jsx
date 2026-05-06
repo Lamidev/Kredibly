@@ -941,72 +941,86 @@ const InvoicePage = () => {
                     initial={{ opacity: 0 }} 
                     animate={{ opacity: 1 }} 
                     exit={{ opacity: 0 }} 
-                    style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.6)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)', padding: '20px' }}
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(255, 255, 255, 0.4)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px) saturate(180%)', padding: '20px' }}
                 >
                     <motion.div 
-                        initial={{ scale: 0.9, opacity: 0 }} 
-                        animate={{ scale: 1, opacity: 1 }} 
+                        initial={{ scale: 0.95, opacity: 0, y: 40 }} 
+                        animate={{ scale: 1, opacity: 1, y: 0 }} 
                         className="animate-scale-in" 
-                        style={{ background: 'white', padding: '40px', width: '100%', maxWidth: '480px', borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', textAlign: 'center' }}
+                        style={{ background: 'rgba(255, 255, 255, 0.95)', padding: '40px', width: '100%', maxWidth: '480px', borderRadius: '40px', boxShadow: '0 40px 100px -20px rgba(15, 23, 42, 0.15)', textAlign: 'center', border: '1px solid rgba(255, 255, 255, 0.5)' }}
                     >
                         <div style={{ position: 'relative' }}>
                             <button 
                                 onClick={() => setShowSuccessModal(false)}
-                                style={{ position: 'absolute', top: '-24px', right: '-24px', background: '#F1F5F9', border: 'none', borderRadius: '12px', padding: '8px', cursor: 'pointer', color: '#334155' }}
+                                style={{ position: 'absolute', top: '-24px', right: '-24px', background: '#F1F5F9', border: 'none', borderRadius: '16px', padding: '10px', cursor: 'pointer', color: '#64748B' }}
                             >
                                 <X size={20} />
                             </button>
                             {showCelebration ? (
-                                <div style={{ background: '#F0FDF4', color: '#16A34A', width: '80px', height: '80px', borderRadius: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', position: 'relative' }}>
-                                    <CheckCircle size={40} strokeWidth={3} />
-                                    <motion.div 
+                                <div style={{ position: 'relative', width: '100px', height: '100px', margin: '0 auto 28px' }}>
+                                    <motion.div
                                         initial={{ scale: 0 }}
-                                        animate={{ scale: 1.2 }}
-                                        transition={{ delay: 0.2, type: "spring" }}
-                                        style={{ position: 'absolute', top: -5, right: -5, background: '#16A34A', border: '4px solid white', width: '24px', height: '24px', borderRadius: '50%' }} 
-                                    />
+                                        animate={{ scale: 1 }}
+                                        style={{
+                                            position: 'absolute', inset: 0,
+                                            background: 'linear-gradient(135deg, #10B981, #059669)',
+                                            borderRadius: '35%',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            boxShadow: '0 15px 30px -10px rgba(16, 185, 129, 0.4)',
+                                            transform: 'rotate(10deg)'
+                                        }}
+                                    >
+                                        <CheckCircle size={48} color="white" strokeWidth={3} />
+                                    </motion.div>
                                 </div>
                             ) : (
-                                <div style={{ background: 'rgba(76, 29, 149, 0.1)', color: 'var(--primary)', width: '80px', height: '80px', borderRadius: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                <div style={{ background: 'rgba(76, 29, 149, 0.05)', color: 'var(--primary)', width: '80px', height: '80px', borderRadius: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
                                     <FileText size={40} strokeWidth={2.5} />
                                 </div>
                             )}
                         </div>
                         
-                        <h3 style={{ fontSize: '1.8rem', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.03em' }}>
-                            {balance <= 0 ? 'Digital Receipt' : 'Official Invoice'}
-                        </h3>
-                        <p style={{ color: '#334155', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>
-                            {showCelebration ? "Transaction secured! Share the link or download the receipt." : "View, share, or download the latest version of this invoice."}
+                        <h2 style={{ fontSize: '2.2rem', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.05em', fontFamily: 'Outfit', lineHeight: 1 }}>
+                            {balance <= 0 ? 'Receipt Ready!' : 'Invoice Ready!'}
+                        </h2>
+                        <p style={{ color: '#64748B', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '1rem' }}>
+                            {showCelebration ? "Transaction secured! Your ledger has been updated." : "The latest version of this document is ready for sharing."}
                         </p>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <button 
                                 onClick={handleShare}
-                                style={{ padding: '20px', background: '#4C1D95', color: 'white', borderRadius: '20px', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', border: 'none', cursor: 'pointer', boxShadow: '0 10px 25px -5px rgba(76, 29, 149, 0.4)' }}
+                                style={{ padding: '22px', background: '#4C1D95', color: 'white', borderRadius: '24px', fontWeight: 900, fontSize: '1.05rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', border: 'none', cursor: 'pointer', boxShadow: '0 15px 35px -10px rgba(76, 29, 149, 0.4)' }}
                             >
                                 <Share2 size={22} />
-                                Share {balance <= 0 ? 'Receipt' : 'Invoice'} Link
+                                Share Payment Link
                             </button>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                 <button 
                                     onClick={handleDownloadPDF}
                                     disabled={!!generating}
-                                    style={{ padding: '20px', background: 'var(--primary)', color: 'white', borderRadius: '20px', fontWeight: 900, fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: generating ? 'not-allowed' : 'pointer', border: 'none', boxShadow: '0 10px 20px -5px var(--primary-glow)', opacity: generating ? 0.7 : 1 }}
+                                    style={{ padding: '20px', background: 'white', color: '#0F172A', borderRadius: '24px', fontWeight: 900, fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: generating ? 'not-allowed' : 'pointer', border: '2px solid #F1F5F9' }}
                                 >
                                     {generating === 'pdf' ? <Loader2 size={18} className="spin-animation" /> : <FileText size={18} />} 
-                                    {generating === 'pdf' ? '...' : 'PDF'}
+                                    PDF
                                 </button>
                                 <button 
                                     onClick={handleDownloadImage}
                                     disabled={!!generating}
-                                    style={{ padding: '20px', background: 'white', color: 'var(--primary)', border: '2.5px solid var(--primary)', borderRadius: '20px', fontWeight: 900, fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: generating ? 'not-allowed' : 'pointer', opacity: generating ? 0.7 : 1 }}
+                                    style={{ padding: '20px', background: 'white', color: '#0F172A', borderRadius: '24px', fontWeight: 900, fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: generating ? 'not-allowed' : 'pointer', border: '2px solid #F1F5F9' }}
                                 >
                                     {generating === 'image' ? <Loader2 size={18} className="spin-animation" /> : <ImageIcon size={18} />}
-                                    {generating === 'image' ? '...' : 'Image'}
+                                    Image
                                 </button>
                             </div>
                         </div>
+                        
+                        <button 
+                            onClick={() => setShowSuccessModal(false)}
+                            style={{ width: '100%', background: 'transparent', border: 'none', color: '#94A3B8', fontWeight: 800, fontSize: '14px', cursor: 'pointer', marginTop: '24px' }}
+                        >
+                            Return to Invoice
+                        </button>
                     </motion.div>
                 </motion.div>,
                 document.body

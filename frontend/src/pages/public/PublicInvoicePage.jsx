@@ -14,7 +14,8 @@ import {
     Image as ImageIcon,
     ArrowRight,
     CheckCircle,
-    CreditCard
+    CreditCard,
+    Copy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -783,19 +784,28 @@ const PublicInvoicePage = () => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            backgroundColor: 'rgba(0,0,0,0.7)',
-                            backdropFilter: 'blur(12px)',
-                            WebkitBackdropFilter: 'blur(12px)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.4)',
+                            backdropFilter: 'blur(16px) saturate(180%)',
+                            WebkitBackdropFilter: 'blur(16px) saturate(180%)',
                             pointerEvents: 'all'
                         }}
                     >
                         <div className="text-center p-8">
-                            <div className="relative mb-6 mx-auto w-24 h-24">
-                                <div className="absolute inset-0 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin"></div>
-                                <div className="absolute inset-4 rounded-full border-4 border-white/10 border-b-white/40 animate-spin-slow"></div>
+                            <div className="relative mb-8 mx-auto w-24 h-24">
+                                <motion.div 
+                                    animate={{ 
+                                        scale: [1, 1.1, 1],
+                                        rotate: 360
+                                    }}
+                                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                                    style={{ position: 'absolute', inset: 0, rounded: '50%', border: '4px solid #F1F5F9', borderTopColor: '#10B981', borderRadius: '50%' }} 
+                                />
+                                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <ShieldCheck size={40} className="text-emerald-500" />
+                                </div>
                             </div>
-                            <h3 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit' }}>Verifying Payment...</h3>
-                            <p className="text-white/60">We've detected your transfer. Just a moment! 🛡️</p>
+                            <h3 className="text-3xl font-black text-slate-900 mb-2" style={{ fontFamily: 'Outfit', letterSpacing: '-0.04em' }}>Verifying Settlement</h3>
+                            <p className="text-slate-500 font-semibold">We've detected your transfer. Securing your receipt... 🛡️</p>
                         </div>
                     </motion.div>
                 )}
@@ -1194,73 +1204,115 @@ const PublicInvoicePage = () => {
                                             )}
 
                                             {nombaData ? (
-                                                <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-                                                    <div style={{ background: '#0F172A', padding: isMobile ? '28px 20px' : '24px', borderRadius: '24px', color: 'white', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.3)' }}>
-                                                        {/* 📡 Live Status Banner */}
+                                                <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+                                                    <div style={{ 
+                                                        background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)', 
+                                                        padding: isMobile ? '32px 20px' : '40px', 
+                                                        borderRadius: '32px', 
+                                                        color: 'white', 
+                                                        position: 'relative', 
+                                                        overflow: 'hidden', 
+                                                        boxShadow: '0 30px 60px -15px rgba(15, 23, 42, 0.4)' 
+                                                    }}>
+                                                        {/* Decorative Background Elements */}
+                                                        <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '150px', height: '150px', background: 'radial-gradient(circle, rgba(76, 29, 149, 0.2) 0%, transparent 70%)', borderRadius: '50%' }} />
+                                                        <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '100px', height: '100px', background: 'radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%)', borderRadius: '50%' }} />
+                                                        
+                                                        {/* 📡 Live Status Header */}
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', position: 'relative', zIndex: 10 }}>
+                                                            <div style={{ 
+                                                                display: 'flex', 
+                                                                alignItems: 'center', 
+                                                                gap: '10px', 
+                                                                background: 'rgba(16, 185, 129, 0.1)', 
+                                                                border: '1px solid rgba(16, 185, 129, 0.2)',
+                                                                padding: '8px 16px',
+                                                                borderRadius: '100px',
+                                                            }}>
+                                                                <div className="pulse-dot" style={{ width: '8px', height: '8px', background: '#10B981', borderRadius: '50%' }} />
+                                                                <span style={{ fontSize: '11px', fontWeight: 900, color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Awaiting Transfer</span>
+                                                            </div>
+                                                            <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '8px 16px', borderRadius: '100px', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                <Clock size={14} color="#FCA5A5" />
+                                                                <span style={{ fontSize: '12px', fontWeight: 900, color: '#FCA5A5', fontFamily: 'monospace' }}>{timeLeft || '44:59'}</span>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Financial Details */}
+                                                        <div style={{ marginBottom: isMobile ? '32px' : '40px', position: 'relative', zIndex: 10 }}>
+                                                            <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Total Settlement Value</p>
+                                                            <h2 style={{ 
+                                                                fontSize: isMobile ? 'clamp(32px, 9vw, 40px)' : '48px', 
+                                                                fontWeight: 950, 
+                                                                margin: 0, 
+                                                                fontFamily: 'Outfit', 
+                                                                letterSpacing: '-0.04em', 
+                                                                color: '#F8FAFC',
+                                                                lineHeight: 1.1
+                                                            }}>
+                                                                ₦{nombaData.amount.toLocaleString()}
+                                                            </h2>
+                                                            {nombaData.gatewayFee > 0 && (
+                                                                <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>
+                                                                    Includes ₦{nombaData.gatewayFee.toLocaleString()} secure processing fee
+                                                                </p>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Bank Details Terminal */}
                                                         <div style={{ 
-                                                            display: 'flex', 
-                                                            alignItems: 'center', 
-                                                            gap: '8px', 
-                                                            background: 'rgba(16, 185, 129, 0.1)', 
-                                                            border: '1px solid rgba(16, 185, 129, 0.2)',
-                                                            padding: '6px 12px',
-                                                            borderRadius: '100px',
-                                                            width: 'fit-content',
-                                                            marginBottom: '20px',
+                                                            background: 'rgba(255, 255, 255, 0.03)', 
+                                                            borderRadius: '24px', 
+                                                            padding: isMobile ? '24px 16px' : '32px', 
+                                                            border: '1px solid rgba(255, 255, 255, 0.08)',
                                                             position: 'relative',
                                                             zIndex: 10
                                                         }}>
-                                                            <div className="pulse-dot" style={{ width: '6px', height: '6px', background: '#10B981', borderRadius: '50%' }} />
-                                                            <span style={{ fontSize: '10px', fontWeight: 900, color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Monitoring for your transfer...</span>
-                                                        </div>
-
-                                                        <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '100px', height: '100px', background: 'radial-gradient(circle, rgba(124, 58, 237, 0.3) 0%, transparent 70%)', borderRadius: '50%' }} />
-                                                        
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', position: 'relative', zIndex: 2 }}>
-                                                            <div>
-                                                                <p style={{ margin: 0, fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>Total Amount to Pay</p>
-                                                                <h2 style={{ fontSize: isMobile ? '32px' : '28px', fontWeight: 950, margin: '4px 0 0' }}>₦{nombaData.amount.toLocaleString()}</h2>
-                                                                {nombaData.gatewayFee > 0 && (
-                                                                    <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#94A3B8', fontWeight: 700 }}>
-                                                                        (₦{nombaData.baseAmount.toLocaleString()} + ₦{nombaData.gatewayFee.toLocaleString()} processing fee)
-                                                                    </p>
-                                                                )}
+                                                            <div style={{ marginBottom: '24px' }}>
+                                                                <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#64748B', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Destination Bank</p>
+                                                                <p style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#F1F5F9' }}>{nombaData.bankName}</p>
                                                             </div>
-                                                            <div style={{ background: 'rgba(239, 68, 68, 0.15)', padding: '6px 12px', borderRadius: '100px', border: '1px solid rgba(239, 68, 68, 0.2)', height: 'fit-content' }}>
-                                                                <span style={{ fontSize: '11px', fontWeight: 900, color: '#FCA5A5' }}>{timeLeft || '44:59'}</span>
-                                                            </div>
-                                                        </div>
-
-                                                        <div style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: '16px', padding: isMobile ? '24px 16px' : '20px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                                                            <div style={{ marginBottom: '16px' }}>
-                                                                <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#94A3B8', fontWeight: 800 }}>BANK NAME</p>
-                                                                <p style={{ margin: 0, fontSize: '14px', fontWeight: 800 }}>{nombaData.bankName}</p>
-                                                            </div>
-                                                            <div style={{ marginBottom: '16px' }}>
-                                                                <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#94A3B8', fontWeight: 800 }}>ACCOUNT NUMBER</p>
-                                                                <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '16px' : '0' }}>
-                                                                    <p style={{ margin: 0, fontSize: isMobile ? '32px' : '24px', fontWeight: 950, color: '#A78BFA', letterSpacing: '1px' }}>{nombaData.accountNumber}</p>
+                                                            
+                                                            <div style={{ marginBottom: '24px' }}>
+                                                                <p style={{ margin: '0 0 8px', fontSize: '10px', color: '#64748B', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Account Number</p>
+                                                                <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '20px' : '0' }}>
+                                                                    <p style={{ 
+                                                                        margin: 0, 
+                                                                        fontSize: isMobile ? 'clamp(32px, 10vw, 42px)' : '36px', 
+                                                                        fontWeight: 950, 
+                                                                        color: 'white', 
+                                                                        letterSpacing: '1px', 
+                                                                        fontFamily: 'Outfit', 
+                                                                        lineHeight: 1 
+                                                                    }}>{nombaData.accountNumber}</p>
                                                                     <button 
-                                                                        onClick={() => { navigator.clipboard.writeText(nombaData.accountNumber); toast.success('Copied!'); }} 
+                                                                        onClick={() => { navigator.clipboard.writeText(nombaData.accountNumber); toast.success('Copied to clipboard!'); }} 
                                                                         style={{ 
-                                                                            padding: isMobile ? '12px 24px' : '8px 16px', 
+                                                                            padding: '14px 24px', 
                                                                             background: 'white', 
                                                                             color: '#0F172A', 
                                                                             border: 'none', 
-                                                                            borderRadius: '12px', 
-                                                                            fontSize: isMobile ? '14px' : '12px', 
+                                                                            borderRadius: '16px', 
+                                                                            fontSize: '14px', 
                                                                             fontWeight: 900, 
                                                                             cursor: 'pointer',
-                                                                            width: isMobile ? '100%' : 'auto'
+                                                                            width: isMobile ? '100%' : 'auto',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            gap: '8px',
+                                                                            boxShadow: '0 10px 20px rgba(0,0,0,0.2)'
                                                                         }}
                                                                     >
+                                                                        <Copy size={16} />
                                                                         {isMobile ? 'Copy Account Number' : 'Copy'}
                                                                     </button>
                                                                 </div>
                                                             </div>
-                                                            <div>
-                                                                <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#94A3B8', fontWeight: 800 }}>ACCOUNT NAME</p>
-                                                                <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, wordBreak: 'break-word' }}>{nombaData.accountName || `${sale?.businessId?.displayName?.toUpperCase()}`}</p>
+                                                            
+                                                            <div style={{ paddingTop: '24px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                                                                <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#64748B', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Account Name</p>
+                                                                <p style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#94A3B8', wordBreak: 'break-word', lineHeight: 1.4 }}>{nombaData.accountName || `${sale?.businessId?.displayName?.toUpperCase()}`}</p>
                                                             </div>
                                                         </div>
                                                     </div>
