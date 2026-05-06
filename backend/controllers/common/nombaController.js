@@ -245,35 +245,38 @@ const processingLocks = new Set();
  * 🛠️ UNIFIED NOMBA PAYMENT PROCESSOR
  */
 const internalProcessNombaPayment = async (accountReference, accountNumber, amount, transactionReference, payer, nombaPayload = null) => {
-    // 🛡️ Lock to prevent simultaneous double-processing
-    // Use accountReference (VA reference) as the lock key — it's the SAME 
-    // whether the trigger comes from webhook or manual check
-    const lockKey = accountReference || accountNumber || transactionReference;
-    if (processingLocks.has(lockKey)) {
-        console.log(`🔐 Lock active for ${lockKey}, skipping duplicate.`);
-        return { success: true, message: "Processing in progress" };
-    }
-    processingLocks.add(lockKey);
-
     try {
-        let vaRecord = await VirtualAccount.findOne({ reference: accountReference });
-        if (!vaRecord && accountNumber) {
-            vaRecord = await VirtualAccount.findOne({ accountNumber: accountNumber, status: 'active' });
-        }
+        // 🛡️ ATOMIC LOCK: Atomically mark the VA as 'processing'
+        // This prevents race conditions across multiple server instances
+        const vaRecord = await VirtualAccount.findOneAndUpdate(
+            { 
+                $or: [
+                    { reference: accountReference, status: 'active' },
+                    { accountNumber: accountNumber, status: 'active' }
+                ]
+            },
+            { status: 'processing' },
+            { new: true }
+        );
         
         if (!vaRecord) {
-            processingLocks.delete(lockKey);
-            return { success: false, message: "Virtual account not found" };
+            // Check if it was already used by a previous successful request
+            const alreadyUsed = await VirtualAccount.findOne({ 
+                $or: [{ reference: accountReference }, { accountNumber: accountNumber }],
+                status: 'used' 
+            });
+            return { 
+                success: !!alreadyUsed, 
+                message: alreadyUsed ? "Already processed" : "Virtual account not found or already processing" 
+            };
         }
 
         const sale = await Sale.findById(vaRecord.saleId).populate('businessId');
         if (!sale) {
-            processingLocks.delete(lockKey);
             return { success: false, message: "Sale record not found" };
         }
 
         if (sale.status === 'paid') {
-            processingLocks.delete(lockKey);
             return { success: true, message: "Already paid" };
         }
 
@@ -283,7 +286,6 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
             p.reference === accountNumber
         );
         if (isDuplicate) {
-            processingLocks.delete(lockKey);
             return { success: true, message: "Already processed" };
         }
 
@@ -354,6 +356,29 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                     }
                 }
 
+                // 🛡️ KYC COMPLIANCE CHECK (The Payout Guard)
+                if (business.kyc?.status !== 'verified') {
+                    console.log(`🛡️ KYC HOLD: Merchant ${business.displayName} is not verified. Holding ₦${amount} in Escrow.`);
+                    
+                    const EscrowPayment = require('../../models/EscrowPayment');
+                    await EscrowPayment.create({
+                        businessId: business._id,
+                        saleId: sale._id,
+                        amount: amount,
+                        reference: transactionReference || accountReference,
+                        status: 'pending',
+                        releaseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Default 30 days if never verified
+                    });
+
+                    // 🔔 Notify Merchant via WhatsApp about the HOLD
+                    if (business.whatsappNumber) {
+                        const { sendWhatsAppAlert } = require('../whatsapp/whatsappController');
+                        const kycMsg = `Chief! ₦${amount.toLocaleString()} has been received for Invoice #${sale.invoiceNumber}. 💰\n\n🛡️ *KYC HOLD:* To release this money to your bank account instantly, please complete your identity verification on your dashboard.`;
+                        await sendWhatsAppAlert(business.whatsappNumber, "Boss", kycMsg).catch(e => console.error("KYC Hold WA Fail:", e.message));
+                    }
+                    return; // ⛔ STOP THE SWEEP
+                }
+
                 const bankDetails = business.bankDetails;
                 const delay = 15000;
                 const threshold = 25; // Covers ₦20 transfer fee + ₦5 safety
@@ -402,9 +427,6 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 }
             } catch (sweepErr) {
                 console.error(`❌ Underground Sweep FAILED:`, sweepErr.message);
-            } finally {
-                // 🔐 RELEASE LOCK AFTER 30s FOR SAFETY
-                setTimeout(() => processingLocks.delete(lockKey), 30000);
             }
         })();
 
@@ -416,8 +438,19 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
 
         return { success: true, message: "Payment processed!" };
     } catch (err) {
-        processingLocks.delete(lockKey);
         console.error('❌ internalProcessNombaPayment Error:', err);
+        // Rollback VA status if something failed during processing
+        if (accountReference || accountNumber) {
+            await VirtualAccount.updateOne(
+                { 
+                    $or: [
+                        { reference: accountReference, status: 'processing' },
+                        { accountNumber: accountNumber, status: 'processing' }
+                    ]
+                },
+                { status: 'active' }
+            ).catch(e => console.error("Lock rollback failed:", e.message));
+        }
         return { success: false, message: err.message };
     }
 };
@@ -427,9 +460,31 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
  */
 async function processSubscriptionWebhook(reference, amount, payer, txRef) {
     try {
+        const Payment = require("../../models/Payment");
         const parts = reference.split('-');
         const plan = parts[1].toLowerCase();
         const businessId = parts[2];
+        const billingCycle = 'monthly'; 
+
+        // 🛡️ ATOMIC LOCK: Create the payment record with unique reference
+        // This ensures that even across multiple servers, only one process continues.
+        try {
+            await Payment.create({
+                businessId,
+                reference: txRef || reference,
+                amount,
+                plan,
+                billingCycle,
+                status: 'success',
+                paidAt: new Date()
+            });
+        } catch (dbErr) {
+            if (dbErr.code === 11000) {
+                console.log(`ℹ️ Subscription ${txRef || reference} already logged.`);
+                return;
+            }
+            throw dbErr;
+        }
 
         const business = await BusinessProfile.findById(businessId);
         if (!business) return;
@@ -440,14 +495,24 @@ async function processSubscriptionWebhook(reference, amount, payer, txRef) {
         business.plan = plan;
         business.planStatus = 'active';
         business.trialExpiresAt = nextBilling;
-        business.subscriptionHistory.push({ date: new Date(), plan, amount, reference: txRef, provider: 'nomba', expiresAt: nextBilling });
+        business.subscriptionHistory.push({ 
+            date: new Date(), 
+            plan, 
+            amount, 
+            reference: txRef || reference, 
+            provider: 'nomba', 
+            expiresAt: nextBilling 
+        });
 
         await business.save();
         if (business.whatsappNumber) {
+            const { sendWhatsAppAlert } = require('../whatsapp/whatsappController');
             const msg = `🎉 *Upgrade Successful!*\n\nHigh Power! Your Kredibly subscription has been upgraded to *${plan.toUpperCase()}*.`;
-            await sendWhatsAppAlert(business.whatsappNumber, msg);
+            await sendWhatsAppAlert(business.whatsappNumber, "Chief", msg).catch(e => console.error("WA Sub Alert Fail:", e.message));
         }
-    } catch (error) { console.error('❌ Subscription Webhook Error:', error); }
+    } catch (error) { 
+        console.error('❌ Subscription Webhook Error:', error); 
+    }
 }
 
 exports.processDailyNombaSettlements = async () => {

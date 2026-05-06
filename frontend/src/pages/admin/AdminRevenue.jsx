@@ -245,7 +245,7 @@ const AdminRevenue = () => {
                                                     )}
                                                     <div>
                                                         <p style={{ margin: 0, fontWeight: 900, fontSize: '0.9rem' }}>{p.merchantName}</p>
-                                                        <p style={{ margin: 0, fontSize: '0.7rem', color: '#64748B', fontWeight: 600 }}>Paystack Receiver</p>
+                                                        <p style={{ margin: 0, fontSize: '0.7rem', color: '#64748B', fontWeight: 600 }}>{p.method} Receiver</p>
                                                     </div>
                                                 </div>
                                             </td>

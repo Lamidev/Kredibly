@@ -243,10 +243,27 @@ exports.getInvoicePayments = async (req, res) => {
             });
         });
 
-        // Sort by date descending
+        // Sort by date descending first so newest entries win deduplication
         flattened.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        res.status(200).json({ success: true, data: flattened.slice(0, 100) });
+        // Deduplicate: Group by reference if available, otherwise by invoice+amount+minute-window
+        // This catches duplicates even if they arrived milliseconds apart
+        const seen = new Set();
+        const deduplicated = flattened.filter(p => {
+            let key;
+            if (p.reference) {
+                key = p.reference; // Most reliable: unique transaction reference
+            } else {
+                // Round timestamp to nearest minute to catch near-simultaneous duplicates
+                const minuteWindow = Math.floor(new Date(p.date).getTime() / 60000);
+                key = `${p.invoiceNumber}-${p.amount}-${minuteWindow}`;
+            }
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+
+        res.status(200).json({ success: true, data: deduplicated.slice(0, 100) });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -409,13 +426,28 @@ exports.getMissionControlFeed = async (req, res) => {
             });
         });
 
+        // Deduplicate the feed before slicing — catches duplicate payment events
+        const feedSeen = new Set();
+        const dedupedFeed = feed.filter(item => {
+            let key;
+            if (item.type === 'SALE') {
+                const minuteWindow = Math.floor(new Date(item.timestamp).getTime() / 60000);
+                key = `SALE-${item.details}-${minuteWindow}`;
+            } else {
+                key = `${item.type}-${item._id}`;
+            }
+            if (feedSeen.has(key)) return false;
+            feedSeen.add(key);
+            return true;
+        });
+
         // Final Sort
-        feed.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        dedupedFeed.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
         res.status(200).json({
             success: true,
             stats: statsObj,
-            feed: feed.slice(0, 100)
+            feed: dedupedFeed.slice(0, 10)
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
