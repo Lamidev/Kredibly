@@ -26,6 +26,8 @@ const PaymentSuccessModal = ({
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    const isFullyPaid = (balanceRemaining || 0) <= 0;
+
     return createPortal(
         <AnimatePresence mode="wait">
             {isOpen && (
