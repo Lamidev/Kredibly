@@ -227,25 +227,45 @@ exports.handleNombaWebhook = async (req, res) => {
     }
 };
 
+// In-memory lock to prevent simultaneous duplicate processing
+const processingLocks = new Set();
+
 /**
  * 🛠️ UNIFIED NOMBA PAYMENT PROCESSOR
  */
 const internalProcessNombaPayment = async (accountReference, accountNumber, amount, transactionReference, payer, nombaPayload = null) => {
+    // 🛡️ Lock to prevent simultaneous double-processing
+    const lockKey = `${transactionReference}`;
+    if (processingLocks.has(lockKey)) return { success: true, message: "Processing in progress" };
+    processingLocks.add(lockKey);
+
     try {
         let vaRecord = await VirtualAccount.findOne({ reference: accountReference });
         if (!vaRecord && accountNumber) {
             vaRecord = await VirtualAccount.findOne({ accountNumber: accountNumber, status: 'active' });
         }
         
-        if (!vaRecord) return { success: false, message: "Virtual account not found" };
+        if (!vaRecord) {
+            processingLocks.delete(lockKey);
+            return { success: false, message: "Virtual account not found" };
+        }
 
         const sale = await Sale.findById(vaRecord.saleId).populate('businessId');
-        if (!sale) return { success: false, message: "Sale record not found" };
+        if (!sale) {
+            processingLocks.delete(lockKey);
+            return { success: false, message: "Sale record not found" };
+        }
 
-        if (sale.status === 'paid') return { success: true, message: "Already paid" };
+        if (sale.status === 'paid') {
+            processingLocks.delete(lockKey);
+            return { success: true, message: "Already paid" };
+        }
 
         const isDuplicate = sale.payments?.some(p => p.reference === transactionReference);
-        if (isDuplicate) return { success: true, message: "Already processed" };
+        if (isDuplicate) {
+            processingLocks.delete(lockKey);
+            return { success: true, message: "Already processed" };
+        }
 
         const creditAmount = (vaRecord.amount && Math.abs(amount - vaRecord.amount) < 2) ? (vaRecord.baseAmount || amount) : amount;
         const netToWallet = FINANCIAL_CONFIG.calculateNetAmount(amount);
@@ -286,7 +306,7 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
         const bankDetails = business.bankDetails;
         const isLocked = bankDetails?.bankDetailsLockUntil && new Date() < new Date(bankDetails.bankDetailsLockUntil);
         const threshold = 100; // Increased threshold for safety
-        const delay = 7000; // 7 seconds delay for ledger sync
+        const delay = 15000; // 15 seconds delay for ledger sync
 
         if (bankDetails?.bankCode && bankDetails?.accountNumber && !isLocked && !business.isCompromised && nombaActualBalance > threshold) {
             try {
@@ -335,8 +355,10 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
             await sendWhatsAppPaymentAlert(business.whatsappNumber, creditAmount, sale.invoiceNumber, sale.customerName || payer, "", business.displayName, "");
         }
 
+        processingLocks.delete(lockKey);
         return { success: true, message: "Payment processed!" };
     } catch (err) {
+        processingLocks.delete(lockKey);
         console.error('❌ internalProcessNombaPayment Error:', err);
         return { success: false, message: err.message };
     }
