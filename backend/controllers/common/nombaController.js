@@ -355,8 +355,8 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 }
 
                 const bankDetails = business.bankDetails;
-                const threshold = 100; 
                 const delay = 15000;
+                const threshold = 25; // Covers ₦20 transfer fee + ₦5 safety
 
                 if (bankDetails?.bankCode && bankDetails?.accountNumber && nombaActualBalance > threshold) {
                     const sweepAmount = Math.floor(nombaActualBalance - threshold);
