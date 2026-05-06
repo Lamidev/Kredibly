@@ -226,18 +226,24 @@ const verifyWebhookSignature = (signature, rawBody) => {
         const secret = process.env.NOMBA_WEBHOOK_SECRET || NOMBA_PRIVATE_KEY;
         
         const payload = Buffer.isBuffer(rawBody) ? rawBody : String(rawBody);
-        const expected512 = crypto.createHmac('sha512', secret).update(payload).digest('hex');
-        if (signature === expected512) return true;
-
-        const expected256 = crypto.createHmac('sha256', secret).update(payload).digest('hex');
-        if (signature === expected256) return true;
-
-        console.warn(`🛡️ Nomba Signature Mismatch!`);
-        console.warn(`- Header Signature: ${signature}`);
-        console.warn(`- Expected (SHA512): ${expected512}`);
-        console.warn(`- Expected (SHA256): ${expected256}`);
-        console.warn(`- Payload Length: ${payload.length}`);
         
+        // Try SHA512 (Base64 is common for Nomba)
+        const hmac512 = crypto.createHmac('sha512', secret).update(payload);
+        if (signature === hmac512.digest('base64')) return true;
+        
+        // Try SHA512 (Hex as fallback)
+        const hmac512Hex = crypto.createHmac('sha512', secret).update(payload);
+        if (signature === hmac512Hex.digest('hex')) return true;
+
+        // Try SHA256 (Base64)
+        const hmac256 = crypto.createHmac('sha256', secret).update(payload);
+        if (signature === hmac256.digest('base64')) return true;
+
+        // Try SHA256 (Hex)
+        const hmac256Hex = crypto.createHmac('sha256', secret).update(payload);
+        if (signature === hmac256Hex.digest('hex')) return true;
+
+        console.warn(`🛡️ Nomba Signature Mismatch! (Payload Length: ${payload.length})`);
         return false;
     } catch (err) {
         console.error('❌ Nomba Webhook Verification Error:', err.message);
