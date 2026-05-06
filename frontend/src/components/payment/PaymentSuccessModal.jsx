@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Download, X, Share2, Sparkles, FileText, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Download, X, Share2, Sparkles, FileText, ArrowRight, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useAuth } from '../../context/AuthContext';
