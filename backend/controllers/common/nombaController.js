@@ -149,7 +149,13 @@ exports.verifyNombaPaymentStatus = async (req, res) => {
         const va = await VirtualAccount.findOne({ reference: accountRef });
         if (!va) return res.status(404).json({ success: false, message: 'Virtual account not found' });
 
-        console.log(`🔍 Manually verifying Nomba payment for ${accountRef}...`);
+        // Check if already paid first to avoid redundant logging
+        const sale = await Sale.findById(va.saleId);
+        if (sale?.status === 'paid') {
+            return res.status(200).json({ success: true, message: 'Already paid', data: { paid: true } });
+        }
+
+        console.log(`🔍 Checking Nomba payment status for ${accountRef}...`);
         const status = await checkPaymentStatusByReference(va.reference, va.accountNumber);
 
         if (status.paid) {

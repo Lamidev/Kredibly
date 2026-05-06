@@ -227,13 +227,17 @@ const PublicInvoicePage = () => {
         console.log("🔄 Starting smart polling for Nomba status...");
         
         const pollInterval = setInterval(async () => {
-            if (nombaData && !verifyingPayment) {
+            // Extra safety: Check state again before hitting API
+            if (nombaData && !verifyingPayment && !isProcessingSuccess.current && !isPaid) {
                 // We perform a 'silent' check (no UI overlay) to keep it smooth
                 await runPaymentVerification(true);
             }
         }, 25000); // Check every 25s as a fail-safe
 
-        return () => clearInterval(pollInterval);
+        return () => {
+            console.log("🛑 Stopping smart polling...");
+            clearInterval(pollInterval);
+        };
     }, [nombaData, sale?._id, showSuccessModal, isPaid, id]);
 
     // 🔌 Real-time Socket Setup for live payment verification
