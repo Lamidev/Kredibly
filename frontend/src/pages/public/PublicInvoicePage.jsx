@@ -1157,9 +1157,11 @@ const PublicInvoicePage = () => {
                                         </div>
 
                                         {/* Custom Amount Input */}
-                                        <AnimatePresence>
+                                        <AnimatePresence mode="wait">
                                             {paymentMode === 'partial' && (
-                                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden', marginBottom: '24px' }}>
+                                                <motion.div 
+                                                    key="custom-amount-input"
+                                                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden', marginBottom: '24px' }}>
                                                     <div style={{ background: '#F8FAFC', padding: '20px', borderRadius: '20px', border: '2px solid #E2E8F0' }}>
                                                         <label style={{ display: 'block', fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>Enter Amount (₦)</label>
                                                         <input 
@@ -1398,16 +1400,18 @@ const PublicInvoicePage = () => {
             {/* Hidden Transaction Slip for Capture */}
             <div style={{ position: 'fixed', left: '-9999px', top: 0, display: 'inline-block', overflow: 'hidden', height: 'auto' }}>
                 {currentTransaction && (
-                    <TransactionSlip 
-                        amount={currentTransaction.amount}
-                        businessName={sale?.businessId?.displayName}
-                        customerName={sale?.customerName}
-                        reference={currentTransaction.reference}
-                        date={currentTransaction.date}
-                        balance={currentTransaction.balance}
-                        isFullyPaid={currentTransaction.isFullyPaid}
-                        logoUrl={sale?.businessId?.logoUrl}
-                    />
+                    <div key={`slip-${currentTransaction.reference}`}>
+                        <TransactionSlip 
+                            amount={currentTransaction.amount}
+                            businessName={sale?.businessId?.displayName}
+                            customerName={sale?.customerName}
+                            reference={currentTransaction.reference}
+                            date={currentTransaction.date}
+                            balance={currentTransaction.balance}
+                            isFullyPaid={currentTransaction.isFullyPaid}
+                            logoUrl={sale?.businessId?.logoUrl}
+                        />
+                    </div>
                 )}
             </div>
 
