@@ -202,6 +202,11 @@ exports.handleNombaWebhook = async (req, res) => {
         }
 
         const event = req.body;
+        if (event.event_type !== 'payment_success' && event.event_type !== 'vact_transfer') {
+            console.log(`ℹ️ Ignoring non-payment event: ${event.event_type}`);
+            return;
+        }
+
         const txData = event?.data?.transaction || {};
         const custData = event?.data?.customer || {};
         const legacyData = event?.data || {};
