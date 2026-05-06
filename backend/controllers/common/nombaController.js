@@ -269,14 +269,17 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
         // Execute Sweep
         let nombaActualBalance = parseFloat(nombaPayload?.data?.merchant?.walletBalance || 0);
         
-        // 🔄 Manual Verification Fallback: If no payload, fetch real-time balance directly from Nomba
-        if (!nombaPayload) {
+        // 🔄 Manual Verification Fallback: If no payload (manual click) OR payload balance is 0, fetch real-time
+        if (!nombaPayload || nombaActualBalance === 0) {
             const { getMerchantBalance } = require('../../utils/nomba');
             const realTimeBalance = await getMerchantBalance();
             if (realTimeBalance !== null) {
                 nombaActualBalance = realTimeBalance;
+                console.log(`💰 Real-time Nomba Balance: ₦${nombaActualBalance}`);
             } else {
-                nombaActualBalance = currentWalletBalance; // Last resort
+                // If fetching fails, we CANNOT sweep safely, so we set to 0 to skip
+                console.warn('⚠️ Could not verify real-time balance. Skipping auto-sweep for safety.');
+                nombaActualBalance = 0;
             }
         }
 
