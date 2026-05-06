@@ -360,7 +360,8 @@ const checkPaymentStatusByReference = async (accountReference, accountNumber) =>
                 paid: true,
                 amount: rawAmount, // Use raw amount as it is "100.0" in the verified response
                 transactionReference: successTx.transactionReference || successTx.paymentVendorReference || accountReference,
-                payer: successTx.senderName || 'Bank Transfer'
+                payer: successTx.senderName || 'Bank Transfer',
+                walletBalance: parseFloat(successTx.walletBalance || 0)
             };
         }
 

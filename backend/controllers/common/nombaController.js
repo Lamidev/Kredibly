@@ -159,7 +159,7 @@ exports.verifyNombaPaymentStatus = async (req, res) => {
                 status.amount,
                 status.transactionReference,
                 status.payer,
-                null // No webhook payload for manual verification
+                { data: { merchant: { walletBalance: status.walletBalance } } } // Mock payload for sweep
             );
             
             if (result.success) {
