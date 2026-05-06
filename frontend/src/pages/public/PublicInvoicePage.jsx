@@ -770,7 +770,7 @@ const PublicInvoicePage = () => {
                 `}
             </style>
 
-            {/* 🛡️ Verifying Payment Overlay (Hardened Stacking Context) */}
+            {/* 🛡️ Premium Verifying Payment Overlay */}
             <AnimatePresence mode="wait">
                 {isAutoVerifying && (
                     <motion.div 
@@ -785,28 +785,47 @@ const PublicInvoicePage = () => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            backgroundColor: 'rgba(255, 255, 255, 0.4)',
-                            backdropFilter: 'blur(16px) saturate(180%)',
-                            WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+                            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                            backdropFilter: 'blur(24px) saturate(200%)',
+                            WebkitBackdropFilter: 'blur(24px) saturate(200%)',
                             pointerEvents: 'all'
                         }}
                     >
-                        <div className="text-center p-8">
-                            <div className="relative mb-8 mx-auto w-24 h-24">
+                        <div style={{ textAlign: 'center', padding: '40px', maxWidth: '400px', width: '90%' }}>
+                            <div style={{ position: 'relative', width: '120px', height: '120px', margin: '0 auto 40px' }}>
+                                {/* Spinning Pulse Outer */}
                                 <motion.div 
-                                    animate={{ 
-                                        scale: [1, 1.1, 1],
-                                        rotate: 360
-                                    }}
-                                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                                    style={{ position: 'absolute', inset: 0, rounded: '50%', border: '4px solid #F1F5F9', borderTopColor: '#10B981', borderRadius: '50%' }} 
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                                    style={{ position: 'absolute', inset: 0, border: '2px dashed rgba(16, 185, 129, 0.3)', borderRadius: '50%' }} 
+                                />
+                                {/* Inner Orbit */}
+                                <motion.div 
+                                    animate={{ rotate: -360 }}
+                                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                                    style={{ position: 'absolute', inset: '10px', border: '4px solid transparent', borderTopColor: '#10B981', borderRadius: '50%' }} 
                                 />
                                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <ShieldCheck size={40} className="text-emerald-500" />
+                                    <motion.div
+                                        animate={{ scale: [1, 1.1, 1] }}
+                                        transition={{ duration: 2, repeat: Infinity }}
+                                    >
+                                        <ShieldCheck size={48} color="#10B981" />
+                                    </motion.div>
                                 </div>
                             </div>
-                            <h3 className="text-3xl font-black text-slate-900 mb-2" style={{ fontFamily: 'Outfit', letterSpacing: '-0.04em' }}>Verifying Settlement</h3>
-                            <p className="text-slate-500 font-semibold">We've detected your transfer. Securing your receipt... 🛡️</p>
+                            
+                            <motion.div
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.2 }}
+                            >
+                                <h3 style={{ fontFamily: 'Outfit', fontSize: '28px', fontWeight: 950, color: 'white', marginBottom: '12px', letterSpacing: '-0.04em' }}>Securing Settlement</h3>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'rgba(255, 255, 255, 0.6)', fontWeight: 600, fontSize: '15px' }}>
+                                    <Loader2 size={16} className="spin-animation" />
+                                    <span>Verifying nodes...</span>
+                                </div>
+                            </motion.div>
                         </div>
                     </motion.div>
                 )}
@@ -1281,7 +1300,7 @@ const PublicInvoicePage = () => {
                                                                 <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '20px' : '0' }}>
                                                                     <p style={{ 
                                                                         margin: 0, 
-                                                                        fontSize: isMobile ? 'clamp(28px, 8.5vw, 36px)' : '36px', 
+                                                                        fontSize: isMobile ? 'clamp(24px, 7.5vw, 32px)' : '36px', 
                                                                         fontWeight: 950, 
                                                                         color: 'white', 
                                                                         letterSpacing: '1px', 

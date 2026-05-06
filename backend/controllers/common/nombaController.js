@@ -561,13 +561,19 @@ async function internalProcessNombaPayment({ accountReference, accountNumber, am
         }
 
         // 9. Execute Sweep if Threshold Met
+        // ⚡ SMART SWEEP: We use the actual balance reported by Nomba in the webhook as our source of truth
+        const nombaActualBalance = parseFloat(req.body?.data?.merchant?.walletBalance || currentWalletBalance);
+        
         if (bankDetails?.bankCode && bankDetails?.accountNumber && !isLocked && !business.isCompromised) {
             if (meetsThreshold) {
                 try {
-                    const sweepAmount = currentWalletBalance - FINANCIAL_CONFIG.NOMBA.SWEEP_FEE_FLAT;
+                    // We attempt to sweep the actual balance available in Nomba minus the transfer fee
+                    const sweepAmount = Math.floor(nombaActualBalance - FINANCIAL_CONFIG.NOMBA.SWEEP_FEE_FLAT);
+                    
                     if (sweepAmount > 0) {
-                        console.log(`⚡ Instant Settlement Triggered (₦${sweepAmount})...`);
+                        console.log(`⚡ Instant Settlement Triggered (₦${sweepAmount}) [Nomba Real Balance: ₦${nombaActualBalance}]...`);
                         
+                        // Small delay to ensure Nomba's internal ledger is ready
                         await new Promise(resolve => setTimeout(resolve, 3000));
 
                         const sweepRes = await initiateTransfer({
@@ -578,8 +584,9 @@ async function internalProcessNombaPayment({ accountReference, accountNumber, am
                             narration: `Kredibly Settlement (Instant)`
                         });
                         
-                        // Deduct from wallet since we swept everything
-                        await BusinessProfile.findByIdAndUpdate(business._id, { $inc: { walletBalance: -currentWalletBalance } });
+                        // Success! Now we deduct exactly what we swept + the fee from our local DB
+                        const totalDeducted = sweepAmount + FINANCIAL_CONFIG.NOMBA.SWEEP_FEE_FLAT;
+                        await BusinessProfile.findByIdAndUpdate(business._id, { $inc: { walletBalance: -totalDeducted } });
                         console.log(`✅ Auto-swept ₦${sweepAmount} instantly. Ref: ${sweepRes?.data?.transactionId || 'N/A'}`);
                     }
                 } catch (sweepErr) {
