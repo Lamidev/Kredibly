@@ -285,14 +285,15 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
 
         const bankDetails = business.bankDetails;
         const isLocked = bankDetails?.bankDetailsLockUntil && new Date() < new Date(bankDetails.bankDetailsLockUntil);
-        const threshold = 50; 
+        const threshold = 100; // Increased threshold for safety
+        const delay = 7000; // 7 seconds delay for ledger sync
 
         if (bankDetails?.bankCode && bankDetails?.accountNumber && !isLocked && !business.isCompromised && nombaActualBalance > threshold) {
             try {
                 const sweepAmount = Math.floor(nombaActualBalance - threshold);
                 if (sweepAmount > 0) {
-                    console.log(`⚡ Instant Settlement Triggered (₦${sweepAmount})...`);
-                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    console.log(`⚡ Instant Settlement Triggered (₦${sweepAmount}) in ${delay/1000}s...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
                     await initiateTransfer({
                         amount: sweepAmount,
                         bankCode: bankDetails.bankCode,
