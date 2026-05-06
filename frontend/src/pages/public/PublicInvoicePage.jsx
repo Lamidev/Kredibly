@@ -969,15 +969,15 @@ const PublicInvoicePage = () => {
                 <nav style={{ maxWidth: '42rem', margin: '0 auto', width: '100%', position: 'relative', zIndex: 10, padding: '24px 16px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         {sale?.businessId?.plan === 'chairman' ? (
+                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '32px', opacity: 1 }} />
+                        ) : (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 {sale?.businessId?.logoUrl ? (
-                                    <img src={sale.businessId.logoUrl} alt={sale.businessId.displayName} style={{ height: '36px', objectFit: 'contain' }} />
+                                    <img src={sale.businessId.logoUrl} alt={sale.businessId.displayName} style={{ height: '32px', objectFit: 'contain' }} />
                                 ) : (
-                                    <span style={{ fontFamily: 'Outfit', fontSize: '20px', fontWeight: 900, color: primaryColor, letterSpacing: '-0.02em' }}>{sale?.businessId?.displayName}</span>
+                                    <span style={{ fontFamily: 'Outfit', fontSize: '18px', fontWeight: 900, color: primaryColor, letterSpacing: '-0.02em' }}>{sale?.businessId?.displayName}</span>
                                 )}
                             </div>
-                        ) : (
-                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '28px', opacity: 0.9 }} />
                         )}
                     </div>
 
@@ -1039,9 +1039,7 @@ const PublicInvoicePage = () => {
                             {/* Merchant Header */}
                             <div style={{ padding: '32px', borderBottom: '1px solid #F8FAFC', display: 'flex', alignItems: 'center', gap: '20px' }}>
                                 <div style={{ width: '64px', height: '64px', background: '#F8FAFC', borderRadius: '20px', overflow: 'hidden', border: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    {sale.businessId?.plan === 'chairman' ? (
-                                        <img src="/krediblyrevamped.png" alt="Kredibly" style={{ width: '80%', height: 'auto', opacity: 0.8 }} />
-                                    ) : sale.businessId?.logoUrl ? (
+                                    {sale.businessId?.logoUrl ? (
                                         <img src={sale.businessId.logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     ) : (
                                         <Building2 size={24} color={primaryColor} />
