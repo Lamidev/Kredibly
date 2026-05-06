@@ -149,7 +149,13 @@ exports.verifyNombaPaymentStatus = async (req, res) => {
         const va = await VirtualAccount.findOne({ reference: accountRef });
         if (!va) return res.status(404).json({ success: false, message: 'Virtual account not found' });
 
-        console.log(`🔍 Manually verifying Nomba payment for ${accountRef}...`);
+        // Check if already paid first to avoid redundant logging
+        const sale = await Sale.findById(va.saleId);
+        if (sale?.status === 'paid') {
+            return res.status(200).json({ success: true, message: 'Already paid', data: { paid: true } });
+        }
+
+        console.log(`🔍 Checking Nomba payment status for ${accountRef}...`);
         const status = await checkPaymentStatusByReference(va.reference, va.accountNumber);
 
         if (status.paid) {
@@ -286,49 +292,7 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
         const updatedBusiness = await BusinessProfile.findById(business._id);
         const currentWalletBalance = updatedBusiness.walletBalance;
 
-        // Execute Sweep
-        let nombaActualBalance = parseFloat(nombaPayload?.data?.merchant?.walletBalance || 0);
-        
-        // 🔄 Manual Verification Fallback: If no payload (manual click) OR payload balance is 0, fetch real-time
-        if (!nombaPayload || nombaActualBalance === 0) {
-            const { getMerchantBalance } = require('../../utils/nomba');
-            const realTimeBalance = await getMerchantBalance();
-            if (realTimeBalance !== null) {
-                nombaActualBalance = realTimeBalance;
-                console.log(`💰 Real-time Nomba Balance: ₦${nombaActualBalance}`);
-            } else {
-                // If fetching fails, we CANNOT sweep safely, so we set to 0 to skip
-                console.warn('⚠️ Could not verify real-time balance. Skipping auto-sweep for safety.');
-                nombaActualBalance = 0;
-            }
-        }
-
-        const bankDetails = business.bankDetails;
-        const isLocked = bankDetails?.bankDetailsLockUntil && new Date() < new Date(bankDetails.bankDetailsLockUntil);
-        const threshold = 100; // Increased threshold for safety
-        const delay = 15000; // 15 seconds delay for ledger sync
-
-        if (bankDetails?.bankCode && bankDetails?.accountNumber && !isLocked && !business.isCompromised && nombaActualBalance > threshold) {
-            try {
-                const sweepAmount = Math.floor(nombaActualBalance - threshold);
-                if (sweepAmount > 0) {
-                    console.log(`⚡ Instant Settlement Triggered (₦${sweepAmount}) in ${delay/1000}s...`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    await initiateTransfer({
-                        amount: sweepAmount,
-                        bankCode: bankDetails.bankCode,
-                        accountNumber: bankDetails.accountNumber,
-                        accountName: bankDetails.accountName || business.displayName,
-                        narration: `Kredibly Settlement (Instant)`
-                    });
-                    await BusinessProfile.findByIdAndUpdate(business._id, { $inc: { walletBalance: -(sweepAmount + threshold) } });
-                }
-            } catch (sweepErr) {
-                console.error(`❌ Auto-sweep FAILED:`, sweepErr.message);
-            }
-        }
-
-        // Socket Notification
+        // 🔔 Socket Notification (Instant UI Update)
         try {
             const { getIO } = require('../../utils/socket');
             const io = getIO();
@@ -349,10 +313,58 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
             }
         } catch (sErr) { console.error("Socket error:", sErr.message); }
 
-        // WhatsApp Notification
+        // 🚀 BACKGROUND TASK: Execute Sweep "Underground"
+        // We do NOT await this so the user gets an instant response
+        (async () => {
+            try {
+                // Execute Sweep
+                let nombaActualBalance = parseFloat(nombaPayload?.data?.merchant?.walletBalance || 0);
+                
+                // 🔄 Manual Verification Fallback: If no payload (manual click) OR payload balance is 0, fetch real-time
+                if (!nombaPayload || nombaActualBalance === 0) {
+                    const { getMerchantBalance } = require('../../utils/nomba');
+                    const realTimeBalance = await getMerchantBalance();
+                    if (realTimeBalance !== null) {
+                        nombaActualBalance = realTimeBalance;
+                        console.log(`💰 Real-time Nomba Balance: ₦${nombaActualBalance}`);
+                    } else {
+                        console.warn('⚠️ Could not verify real-time balance. Skipping auto-sweep for safety.');
+                        nombaActualBalance = 0;
+                    }
+                }
+
+                const bankDetails = business.bankDetails;
+                const isLocked = bankDetails?.bankDetailsLockUntil && new Date() < new Date(bankDetails.bankDetailsLockUntil);
+                const threshold = 100; 
+                const delay = 15000; // 15s underground delay
+
+                if (bankDetails?.bankCode && bankDetails?.accountNumber && !isLocked && !business.isCompromised && nombaActualBalance > threshold) {
+                    const sweepAmount = Math.floor(nombaActualBalance - threshold);
+                    if (sweepAmount > 0) {
+                        console.log(`⚡ Underground Settlement Started (₦${sweepAmount}) - Waiting ${delay/1000}s...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        
+                        const { initiateTransfer } = require('../../utils/nomba');
+                        await initiateTransfer({
+                            amount: sweepAmount,
+                            bankCode: bankDetails.bankCode,
+                            accountNumber: bankDetails.accountNumber,
+                            accountName: bankDetails.accountName || business.displayName,
+                            narration: `Kredibly Settlement (Auto)`
+                        });
+                        console.log(`✅ Underground Settlement SUCCESS (₦${sweepAmount})`);
+                        await BusinessProfile.findByIdAndUpdate(business._id, { $inc: { walletBalance: -(sweepAmount + threshold) } });
+                    }
+                }
+            } catch (sweepErr) {
+                console.error(`❌ Underground Sweep FAILED:`, sweepErr.message);
+            }
+        })();
+
+        // WhatsApp Notification (Background)
         if (business.whatsappNumber) {
             const { sendWhatsAppPaymentAlert } = require('../whatsapp/whatsappController');
-            await sendWhatsAppPaymentAlert(business.whatsappNumber, creditAmount, sale.invoiceNumber, sale.customerName || payer, "", business.displayName, "");
+            sendWhatsAppPaymentAlert(business.whatsappNumber, creditAmount, sale.invoiceNumber, sale.customerName || payer, "", business.displayName, "");
         }
 
         processingLocks.delete(lockKey);

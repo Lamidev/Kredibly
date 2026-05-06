@@ -414,7 +414,7 @@ const initiateTransfer = async ({ amount, bankCode, accountNumber, accountName, 
         const response = await axios.post(
             `https://api.nomba.com/v2/transfers/bank`,
             {
-                amount: Math.round(amount * 100), 
+                amount: Number(amount), // Nomba V2 expects Naira, NOT Kobo
                 bankCode: nombaBankCode,
                 accountNumber,
                 accountName,
