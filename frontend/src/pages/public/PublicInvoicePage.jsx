@@ -7,7 +7,7 @@ import {
     Clock, 
     Building2, 
     CheckCircle2, 
-    ShieldCheck, 
+    ShieldCheck as ShieldCheckIcon, 
     AlertCircle, 
     Loader2,
     FileText,
@@ -95,7 +95,7 @@ const PublicInvoicePage = () => {
         
         if (!silent) {
             setVerifyingPayment(true);
-            setIsAutoVerifying(true);
+            setIsAutoVerifying('manual'); // Mark as manual verification
         }
 
         try {
@@ -142,7 +142,7 @@ const PublicInvoicePage = () => {
                         if (finalBalance <= 0) {
                             isProcessingSuccess.current = true;
                             // 🛡️ Show the premium verification overlay immediately
-                            setIsAutoVerifying(true);
+                            setIsAutoVerifying('manual');
                             
                             setLastPaymentAmount(lastPayment?.amount || (latestSale.totalAmount - (latestSale.paidAmount || 0)));
                             setRecentPaymentDate(new Date());
@@ -165,7 +165,7 @@ const PublicInvoicePage = () => {
                             }, 2500);
                         } else {
                             // Partial Payment Success Flow
-                            setIsAutoVerifying(true);
+                            setIsAutoVerifying('manual');
                             setLastPaymentAmount(lastPayment?.amount || 0);
                             
                             // 🛡️ Clear Nomba VA & amount fields even for partial payments
@@ -255,6 +255,9 @@ const PublicInvoicePage = () => {
 
             if (data && data.invoiceId && (data.invoiceId === id || data.invoiceId === sale.invoiceNumber)) {
                 try {
+                    // 🛡️ Trigger the premium verification overlay immediately
+                    setIsAutoVerifying('auto');
+                    
                     const res = await axios.get(`${API_URL}/sales/${id}`);
                     if (res.data.success) {
                         const latestSale = res.data.data;
@@ -810,7 +813,7 @@ const PublicInvoicePage = () => {
                                         animate={{ scale: [1, 1.1, 1] }}
                                         transition={{ duration: 2, repeat: Infinity }}
                                     >
-                                        <ShieldCheck size={48} color="#10B981" />
+                                        <ShieldCheckIcon size={48} color="#10B981" />
                                     </motion.div>
                                 </div>
                             </div>
@@ -820,10 +823,12 @@ const PublicInvoicePage = () => {
                                 animate={{ y: 0, opacity: 1 }}
                                 transition={{ delay: 0.2 }}
                             >
-                                <h3 style={{ fontFamily: 'Outfit', fontSize: '28px', fontWeight: 950, color: 'white', marginBottom: '12px', letterSpacing: '-0.04em' }}>Securing Settlement</h3>
+                                <h3 style={{ fontFamily: 'Outfit', fontSize: '28px', fontWeight: 950, color: 'white', marginBottom: '12px', letterSpacing: '-0.04em' }}>
+                                    {isAutoVerifying === 'auto' ? 'Payment Detected!' : 'Checking Transfer'}
+                                </h3>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'rgba(255, 255, 255, 0.6)', fontWeight: 600, fontSize: '15px' }}>
                                     <Loader2 size={16} className="spin-animation" />
-                                    <span>Verifying nodes...</span>
+                                    <span>{isAutoVerifying === 'auto' ? 'Finalizing secure settlement...' : 'Verifying with banking network...'}</span>
                                 </div>
                             </motion.div>
                         </div>
@@ -989,13 +994,13 @@ const PublicInvoicePage = () => {
                 <nav style={{ maxWidth: '42rem', margin: '0 auto', width: '100%', position: 'relative', zIndex: 10, padding: '24px 16px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         {sale?.businessId?.plan === 'chairman' ? (
-                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '18px', opacity: 0.9 }} />
+                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '24px', opacity: 0.9 }} />
                         ) : (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 {sale?.businessId?.logoUrl ? (
-                                    <img src={sale.businessId.logoUrl} alt={sale.businessId.displayName} style={{ height: '18px', objectFit: 'contain' }} />
+                                    <img src={sale.businessId.logoUrl} alt={sale.businessId.displayName} style={{ height: '28px', objectFit: 'contain' }} />
                                 ) : (
-                                    <span style={{ fontFamily: 'Outfit', fontSize: '18px', fontWeight: 900, color: primaryColor, letterSpacing: '-0.02em' }}>{sale?.businessId?.displayName}</span>
+                                    <span style={{ fontFamily: 'Outfit', fontSize: '22px', fontWeight: 900, color: primaryColor, letterSpacing: '-0.02em' }}>{sale?.businessId?.displayName}</span>
                                 )}
                             </div>
                         )}
@@ -1004,7 +1009,7 @@ const PublicInvoicePage = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         {sale.businessId?.plan === 'chairman' && (
                             <div style={{ padding: '8px 16px', background: 'white', borderRadius: '100px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                                <ShieldCheck size={14} color="#10B981" />
+                                <ShieldCheckIcon size={14} color="#10B981" />
                                 <span style={{ fontSize: '10px', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Verified Business</span>
                             </div>
                         )}
@@ -1058,11 +1063,11 @@ const PublicInvoicePage = () => {
                         <div className="glass-card" style={{ borderRadius: '32px', overflow: 'hidden', background: 'white', border: '1px solid #F1F5F9', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.04)' }}>
                             {/* Merchant Header */}
                             <div style={{ padding: '32px', borderBottom: '1px solid #F8FAFC', display: 'flex', alignItems: 'center', gap: '20px' }}>
-                                <div style={{ width: '64px', height: '64px', background: '#F8FAFC', borderRadius: '20px', overflow: 'hidden', border: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: '80px', height: '80px', background: '#F8FAFC', borderRadius: '24px', overflow: 'hidden', border: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     {sale.businessId?.logoUrl ? (
                                         <img src={sale.businessId.logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     ) : (
-                                        <Building2 size={24} color={primaryColor} />
+                                        <Building2 size={32} color={primaryColor} />
                                     )}
                                 </div>
                                 <div style={{ flex: 1 }}>
@@ -1344,14 +1349,14 @@ const PublicInvoicePage = () => {
                                                         style={{ 
                                                             width: '100%', 
                                                             padding: '18px', 
-                                                            background: '#F8FAFC', 
-                                                            color: primaryColor, 
+                                                            background: verifyingPayment ? '#F1F5F9' : '#F8FAFC', 
+                                                            color: verifyingPayment ? '#94A3B8' : primaryColor, 
                                                             borderRadius: '16px', 
-                                                            border: `2px solid ${primaryColor}20`, 
+                                                            border: `2px solid ${verifyingPayment ? '#E2E8F0' : primaryColor + '20'}`, 
                                                             marginTop: '16px', 
                                                             fontWeight: 900, 
                                                             fontSize: '15px', 
-                                                            cursor: 'pointer', 
+                                                            cursor: verifyingPayment ? 'not-allowed' : 'pointer', 
                                                             display: 'flex', 
                                                             alignItems: 'center', 
                                                             justifyContent: 'center', 
@@ -1360,7 +1365,7 @@ const PublicInvoicePage = () => {
                                                         }}
                                                     >
                                                         {verifyingPayment ? <Loader2 size={18} className="spin-animation" /> : <CheckCircle size={18} />}
-                                                        <span>I have completed it</span>
+                                                        <span>{verifyingPayment ? 'Searching for transfer...' : 'I have completed transfer'}</span>
                                                     </button>
                                                 </motion.div>
                                             ) : (

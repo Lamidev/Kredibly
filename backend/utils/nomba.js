@@ -399,17 +399,19 @@ const getNombaBankCode = (code) => {
  * @param {string} params.narration - Payment description
  * @returns {Object} Transfer response
  */
+/**
+ * 💸 INITIATE BANK TRANSFER (Auto-Sweep)
+ * Moves funds from Kredibly's Nomba wallet to merchant's registered bank.
+ */
 const initiateTransfer = async ({ amount, bankCode, accountNumber, accountName, narration }) => {
     try {
         const token = await getAccessToken();
-
         const nombaBankCode = getNombaBankCode(bankCode);
 
-        // 🚀 NOMBA V2: Transfers use the v2 API with slightly different fields
         const response = await axios.post(
             `https://api.nomba.com/v2/transfers/bank`,
             {
-                amount: Math.round(amount * 100), // Nomba v2 still expects kobo
+                amount: Math.round(amount * 100), 
                 bankCode: nombaBankCode,
                 accountNumber,
                 accountName,
@@ -432,10 +434,37 @@ const initiateTransfer = async ({ amount, bankCode, accountNumber, accountName, 
 
         console.log(`✅ Nomba Transfer initiated: ₦${amount} → ${accountNumber}`);
         return response.data;
-
     } catch (err) {
         console.error('❌ Nomba Transfer Error:', err.response?.data || err.message);
         throw new Error(err.response?.data?.message || err.response?.data?.description || 'Failed to initiate Nomba transfer');
+    }
+};
+
+/**
+ * 💰 GET MERCHANT WALLET BALANCE
+ * Fetches the current balance of the main merchant account.
+ */
+const getMerchantBalance = async () => {
+    try {
+        const token = await getAccessToken();
+        const response = await axios.get(
+            `${NOMBA_BASE_URL}/accounts/${process.env.NOMBA_ACCOUNT_ID}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    accountId: process.env.NOMBA_ACCOUNT_ID
+                },
+                timeout: 15000,
+                proxy: false,
+                httpsAgent: ipv4HttpsAgent,
+                httpAgent: ipv4HttpAgent
+            }
+        );
+
+        return parseFloat(response.data?.data?.walletBalance || 0);
+    } catch (err) {
+        console.error('❌ Nomba getMerchantBalance Error:', err.response?.data || err.message);
+        return null;
     }
 };
 
@@ -447,5 +476,6 @@ module.exports = {
     initiateTransfer,
     checkPaymentStatusByReference,
     getBanks,
-    resolveAccount
+    resolveAccount,
+    getMerchantBalance
 };
