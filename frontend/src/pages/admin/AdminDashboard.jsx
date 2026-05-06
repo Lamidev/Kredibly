@@ -90,18 +90,6 @@ const AdminDashboard = () => {
 
                     <div className="admin-stats-card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                            <div style={{ padding: '12px', background: '#F5F3FF', borderRadius: '16px', color: '#8B5CF6' }}>
-                                <TrendingUp size={24} />
-                            </div>
-                            <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#8B5CF6', background: '#F5F3FF', padding: '4px 10px', borderRadius: '100px' }}>PLATFORM GTV</span>
-                        </div>
-                        <p style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem' }}>Verified Cash Flow</p>
-                        <h3 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', fontWeight: 950, color: 'var(--text)', letterSpacing: '-0.04em', margin: '4px 0' }}>₦{stats?.totalVerifiedVolume?.toLocaleString() || 0}</h3>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Verified Online Transactions</p>
-                    </div>
-
-                    <div className="admin-stats-card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                             <div style={{ p: '12px', background: '#FFF7ED', borderRadius: '16px', color: '#F97316' }}>
                                 <CreditCard size={24} />
                             </div>
@@ -110,6 +98,18 @@ const AdminDashboard = () => {
                         <p style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem' }}>Premium Liquidity</p>
                         <h3 className="premium-gradient" style={{ fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', fontWeight: 950, letterSpacing: '-0.04em', margin: '4px 0' }}>₦{stats?.totalRevenue?.toLocaleString() || 0}</h3>
                         <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Lifetime Subscriptions</p>
+                    </div>
+
+                    <div className="admin-stats-card">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                            <div style={{ padding: '12px', background: '#F5F3FF', borderRadius: '16px', color: '#8B5CF6' }}>
+                                <TrendingUp size={24} />
+                            </div>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#8B5CF6', background: '#F5F3FF', padding: '4px 10px', borderRadius: '100px' }}>PLATFORM GTV</span>
+                        </div>
+                        <p style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem' }}>Verified Cash Flow</p>
+                        <h3 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', fontWeight: 950, color: 'var(--text)', letterSpacing: '-0.04em', margin: '4px 0' }}>₦{stats?.totalVerifiedVolume?.toLocaleString() || 0}</h3>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Verified Online Transactions</p>
                     </div>
 
                     <div className="admin-stats-card">

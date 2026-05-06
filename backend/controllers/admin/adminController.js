@@ -68,7 +68,7 @@ exports.getGlobalStats = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(100);
 
-        const globalActivities = logs.filter(l => !l.businessId?.isBetaTester).slice(0, 50);
+        const globalActivities = logs.filter(l => !l.businessId?.isBetaTester).slice(0, 100);
 
         res.status(200).json({
             success: true,
@@ -275,7 +275,7 @@ exports.deleteInvoicePayment = async (req, res) => {
         const sale = await Sale.findById(saleId);
         if (!sale) return res.status(404).json({ message: "Invoice not found" });
 
-        sale.payments = sale.payments.filter(p => p._id.toString() !== paymentId);
+        sale.payments = sale.payments.filter(p => p._id && p._id.toString() !== paymentId);
         await sale.save();
 
         res.status(200).json({ success: true, message: "Payment removed successfully" });
@@ -346,13 +346,13 @@ exports.getMissionControlFeed = async (req, res) => {
             // Show only Failed or Processing jobs (The ones needing attention)
             BackgroundJob.find({ status: { $in: ['failed', 'processing'] } }).sort({ createdAt: -1 }).limit(20).populate("businessId", "displayName isBetaTester"),
             
-            // Show only high-value logs
+            // Show more high-value logs
             ActivityLog.find({ 
-                action: { $in: ['SIGNUP', 'PROFILE_UPDATED', 'ACCOUNT_VERIFIED'] } 
-            }).sort({ createdAt: -1 }).limit(15).populate("businessId", "displayName isBetaTester"),
+                action: { $in: ['SIGNUP', 'PROFILE_UPDATED', 'ACCOUNT_VERIFIED', 'PAYMENT_RECEIVED', 'SUBSCRIPTION_PAID'] } 
+            }).sort({ createdAt: -1 }).limit(50).populate("businessId", "displayName isBetaTester"),
             
-            Payment.find({ status: 'success' }).sort({ createdAt: -1 }).limit(10).populate("businessId", "displayName isBetaTester"),
-            Sale.find({ "payments.0": { $exists: true } }).sort({ "payments.date": -1 }).limit(20).populate("businessId", "displayName isBetaTester")
+            Payment.find({ status: 'success' }).sort({ createdAt: -1 }).limit(30).populate("businessId", "displayName isBetaTester"),
+            Sale.find({ "payments.0": { $exists: true } }).sort({ "payments.date": -1 }).limit(50).populate("businessId", "displayName isBetaTester")
         ]);
 
         // 3. Format Unified Feed
@@ -447,7 +447,7 @@ exports.getMissionControlFeed = async (req, res) => {
         res.status(200).json({
             success: true,
             stats: statsObj,
-            feed: dedupedFeed.slice(0, 10)
+            feed: dedupedFeed.slice(0, 50)
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -48,6 +48,13 @@ const AdminRevenue = () => {
     const confirmDelete = async () => {
         if (!itemToDelete) return;
         
+        // Optimistic UI Update
+        if (itemToDelete.type === 'subscription') {
+            setPayments(prev => prev.filter(p => p._id !== itemToDelete.id));
+        } else {
+            setInvoicePayments(prev => prev.filter(p => p._id !== itemToDelete.id));
+        }
+
         try {
             let res;
             if (itemToDelete.type === 'subscription') {
@@ -58,10 +65,15 @@ const AdminRevenue = () => {
 
             if (res.data.success) {
                 toast.success("Legacy record removed.");
+                // Re-fetch to ensure sync with server totals
+                fetchData();
+            } else {
+                // Rollback on failure
                 fetchData();
             }
         } catch (err) {
             toast.error("Operation failed.");
+            fetchData();
         } finally {
             setShowDeleteConfirm(false);
             setItemToDelete(null);
@@ -235,7 +247,7 @@ const AdminRevenue = () => {
                                     ))
                                 ) : (
                                     invoicePayments.map((p, idx) => (
-                                        <tr key={idx} className="row-hover">
+                                        <tr key={p._id || idx} className="row-hover">
                                             <td style={{ padding: '16px', borderRadius: '20px 0 0 20px', border: '1px solid #F1F5F9', borderRight: 'none' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                     {p.merchantLogo ? (

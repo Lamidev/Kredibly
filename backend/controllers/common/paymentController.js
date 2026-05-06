@@ -293,7 +293,23 @@ exports.verifyPayment = async (req, res) => {
             );
         }
 
-        logUsage("revenue", { amount: paidAmount }).catch(e => console.error("Log fail:", e));
+        // 🛡️ IDEMPOTENCY & STATS CONSISTENCY
+        // Check if this reference has already been logged to avoid double-counting in PlatformStats
+        const existingPayment = await Payment.findOne({ reference });
+        if (!existingPayment) {
+            await Payment.create({
+                businessId: profile._id,
+                reference: reference,
+                amount: paidAmount,
+                plan: plan,
+                billingCycle: billingCycle,
+                status: 'success',
+                paidAt: now
+            });
+            logUsage("revenue", { amount: paidAmount }).catch(e => console.error("Log fail:", e));
+        } else {
+            console.log(`ℹ️ Reference ${reference} already has a Payment record. Skipping logUsage.`);
+        }
 
         res.status(200).json({ 
             success: true, 
@@ -360,13 +376,28 @@ exports.verifyInvoicePayment = async (req, res) => {
         const sale = await Sale.findById(targetSale._id).populate('businessId');
         if (!sale) return res.status(404).json({ message: "Sale not found after verification." });
 
-        const duplicateRef = sale.payments && sale.payments.find(p => p.reference === reference);
-        if (duplicateRef) {
+        // 🛡️ ATOMIC UPDATE: Only push if the reference doesn't already exist
+        const updatedSale = await Sale.findOneAndUpdate(
+            { 
+                _id: sale._id, 
+                "payments.reference": { $ne: reference } 
+            },
+            { 
+                $push: { 
+                    payments: {
+                        amount: actualCreditAmount,
+                        method: 'Paystack',
+                        reference: reference,
+                        date: new Date()
+                    } 
+                } 
+            },
+            { new: true }
+        );
+
+        if (!updatedSale) {
             return res.status(200).json({ success: true, message: "Already processed" });
         }
-
-        sale.payments.push({ amount: actualCreditAmount, method: 'Paystack', reference, date: new Date() });
-        await sale.save(); // 🔥 Triggers status flip logic in Sale.js
 
 
         // 🛡️ SECURITY ESCROW TRACKER

@@ -281,11 +281,14 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
         }
 
         const isDuplicate = sale.payments?.some(p => 
-            p.reference === transactionReference || 
-            p.reference === accountReference ||
+            p.reference === accountReference || 
+            p.reference === transactionReference ||
             p.reference === accountNumber
         );
         if (isDuplicate) {
+            console.log(`ℹ️ Duplicate check hit early for Ref ${accountReference}`);
+            vaRecord.status = 'used';
+            await vaRecord.save();
             return { success: true, message: "Already processed" };
         }
 
@@ -293,35 +296,55 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
         const netToWallet = FINANCIAL_CONFIG.calculateNetAmount(amount);
         const business = sale.businessId;
 
-        sale.payments.push({
-            amount: creditAmount,
-            method: 'Nomba',
-            reference: transactionReference || accountReference,
-            date: new Date()
-        });
-        
-        await sale.save();
+        // 🛡️ ATOMIC UPDATE: Only push if the reference doesn't already exist
+        // This is the final line of defense against duplicates
+        const updatedSale = await Sale.findOneAndUpdate(
+            { 
+                _id: sale._id, 
+                "payments.reference": { $ne: accountReference } 
+            },
+            { 
+                $push: { 
+                    payments: {
+                        amount: creditAmount,
+                        method: 'Nomba',
+                        reference: accountReference, // 🔑 Always use our internal reference for consistency
+                        externalReference: transactionReference, // Keep the provider's ref too
+                        date: new Date()
+                    } 
+                } 
+            },
+            { new: true }
+        );
+
+        if (!updatedSale) {
+            // This means the reference was already there (duplicate)
+            console.log(`ℹ️ Duplicate payment detected for Sale ${sale.invoiceNumber} with Ref ${accountReference}`);
+            vaRecord.status = 'used';
+            await vaRecord.save();
+            return { success: true, message: "Already processed" };
+        }
+
         vaRecord.status = 'used';
         await vaRecord.save();
 
         await BusinessProfile.findByIdAndUpdate(business._id, { $inc: { walletBalance: netToWallet } });
-        const updatedBusiness = await BusinessProfile.findById(business._id);
-        const currentWalletBalance = updatedBusiness.walletBalance;
+        const currentWalletBalance = (await BusinessProfile.findById(business._id)).walletBalance;
 
         // 🔔 Socket Notification (Instant UI Update)
         try {
             const { getIO } = require('../../utils/socket');
             const io = getIO();
             if (io) {
-                const totalPaid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
-                const newBalance = Math.max(0, sale.totalAmount - totalPaid);
+                const totalPaid = updatedSale.payments.reduce((sum, p) => sum + p.amount, 0);
+                const newBalance = Math.max(0, updatedSale.totalAmount - totalPaid);
                 const payload = { 
-                    saleId: sale._id, 
-                    invoiceNumber: sale.invoiceNumber, 
+                    saleId: updatedSale._id, 
+                    invoiceNumber: updatedSale.invoiceNumber, 
                     amountPaid: creditAmount,
                     totalPaid: totalPaid,
                     newBalance: newBalance,
-                    status: sale.status
+                    status: updatedSale.status
                 };
                 io.to(business._id.toString().toLowerCase()).emit('sale_updated', payload);
                 io.to(`invoice:${sale.invoiceNumber.toLowerCase()}`).emit('sale_updated', payload);
@@ -339,7 +362,17 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 type: "payment",
                 saleId: sale._id
             });
-        } catch (nErr) { console.error("Notification error:", nErr.message); }
+
+            // 📜 Log to Activity Stream
+            const ActivityLog = require('../../models/ActivityLog');
+            await ActivityLog.create({
+                businessId: business._id,
+                action: 'PAYMENT_RECEIVED',
+                entityType: 'PAYMENT',
+                entityId: sale._id,
+                details: `Nomba payment of ₦${creditAmount.toLocaleString()} received for Invoice #${sale.invoiceNumber} (${sale.customerName || 'Customer'})`
+            });
+        } catch (nErr) { console.error("Notification/Activity error:", nErr.message); }
 
         // 🚀 BACKGROUND TASK: Execute Sweep "Underground"
         // We do NOT await this so the user gets an instant response
@@ -478,6 +511,8 @@ async function processSubscriptionWebhook(reference, amount, payer, txRef) {
                 status: 'success',
                 paidAt: new Date()
             });
+            // Log revenue for platform stats
+            logUsage("revenue", { amount }).catch(e => console.error("Log fail:", e));
         } catch (dbErr) {
             if (dbErr.code === 11000) {
                 console.log(`ℹ️ Subscription ${txRef || reference} already logged.`);
