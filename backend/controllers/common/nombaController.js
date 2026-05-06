@@ -318,6 +318,18 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
             }
         } catch (sErr) { console.error("Socket error:", sErr.message); }
 
+        // 🔔 Persistent Notification (Bell Icon)
+        try {
+            const Notification = require('../../models/Notification');
+            await Notification.create({
+                businessId: business._id,
+                title: "Payment Received",
+                message: `₦${creditAmount.toLocaleString()} received for invoice #${sale.invoiceNumber}`,
+                type: "payment",
+                saleId: sale._id
+            });
+        } catch (nErr) { console.error("Notification error:", nErr.message); }
+
         // 🚀 BACKGROUND TASK: Execute Sweep "Underground"
         // We do NOT await this so the user gets an instant response
         (async () => {
@@ -366,6 +378,17 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                                 });
                             }
                         } catch (sErr) { console.error("Settlement socket error:", sErr.message); }
+
+                        // 🔔 Persistent Notification (Bell Icon)
+                        try {
+                            const Notification = require('../../models/Notification');
+                            await Notification.create({
+                                businessId: business._id,
+                                title: "Settlement Successful",
+                                message: `₦${sweepAmount.toLocaleString()} has been settled to your bank account.`,
+                                type: "confirmation"
+                            });
+                        } catch (nErr) { console.error("Settlement notification error:", nErr.message); }
                     }
                 }
             } catch (sweepErr) {
