@@ -223,27 +223,22 @@ const createNombaCheckoutOrder = async ({ amount, orderReference, customerEmail,
 const verifyWebhookSignature = (signature, rawBody) => {
     try {
         const crypto = require('crypto');
-        const secret = process.env.NOMBA_WEBHOOK_SECRET || NOMBA_PRIVATE_KEY;
-        
         const payload = Buffer.isBuffer(rawBody) ? rawBody : String(rawBody);
         
-        // Try SHA512 (Base64 is common for Nomba)
-        const hmac512 = crypto.createHmac('sha512', secret).update(payload);
-        if (signature === hmac512.digest('base64')) return true;
+        // Try multiple secrets: 1. NOMBA_WEBHOOK_SECRET, 2. NOMBA_PRIVATE_KEY
+        const secrets = [process.env.NOMBA_WEBHOOK_SECRET, process.env.NOMBA_PRIVATE_KEY].filter(Boolean);
         
-        // Try SHA512 (Hex as fallback)
-        const hmac512Hex = crypto.createHmac('sha512', secret).update(payload);
-        if (signature === hmac512Hex.digest('hex')) return true;
+        for (const secret of secrets) {
+            const hmac512 = crypto.createHmac('sha512', secret).update(payload);
+            if (signature === hmac512.digest('base64')) return true;
+            if (signature === hmac512.digest('hex')) return true;
 
-        // Try SHA256 (Base64)
-        const hmac256 = crypto.createHmac('sha256', secret).update(payload);
-        if (signature === hmac256.digest('base64')) return true;
+            const hmac256 = crypto.createHmac('sha256', secret).update(payload);
+            if (signature === hmac256.digest('base64')) return true;
+            if (signature === hmac256.digest('hex')) return true;
+        }
 
-        // Try SHA256 (Hex)
-        const hmac256Hex = crypto.createHmac('sha256', secret).update(payload);
-        if (signature === hmac256Hex.digest('hex')) return true;
-
-        console.warn(`🛡️ Nomba Signature Mismatch! (Payload Length: ${payload.length})`);
+        console.warn(`🛡️ Nomba Signature Mismatch! (Payload Length: ${payload.length}, Secrets Tried: ${secrets.length})`);
         return false;
     } catch (err) {
         console.error('❌ Nomba Webhook Verification Error:', err.message);
