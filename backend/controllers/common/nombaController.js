@@ -353,6 +353,19 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                         });
                         console.log(`✅ Underground Settlement SUCCESS (₦${sweepAmount})`);
                         await BusinessProfile.findByIdAndUpdate(business._id, { $inc: { walletBalance: -(sweepAmount + threshold) } });
+
+                        // 🔔 Notify Merchant Dashboard
+                        try {
+                            const { getIO } = require('../../utils/socket');
+                            const io = getIO();
+                            if (io) {
+                                io.to(business._id.toString().toLowerCase()).emit('settlement_success', {
+                                    amount: sweepAmount,
+                                    message: `₦${sweepAmount.toLocaleString()} has been settled to your bank account!`,
+                                    timestamp: new Date()
+                                });
+                            }
+                        } catch (sErr) { console.error("Settlement socket error:", sErr.message); }
                     }
                 }
             } catch (sweepErr) {
