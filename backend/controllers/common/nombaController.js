@@ -202,6 +202,11 @@ exports.handleNombaWebhook = async (req, res) => {
         }
 
         const event = req.body;
+        if (event.event_type !== 'payment_success' && event.event_type !== 'vact_transfer') {
+            console.log(`ℹ️ Ignoring non-payment event: ${event.event_type}`);
+            return;
+        }
+
         const txData = event?.data?.transaction || {};
         const custData = event?.data?.customer || {};
         const legacyData = event?.data || {};
@@ -313,6 +318,18 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
             }
         } catch (sErr) { console.error("Socket error:", sErr.message); }
 
+        // 🔔 Persistent Notification (Bell Icon)
+        try {
+            const Notification = require('../../models/Notification');
+            await Notification.create({
+                businessId: business._id,
+                title: "Payment Received",
+                message: `₦${creditAmount.toLocaleString()} received for invoice #${sale.invoiceNumber}`,
+                type: "payment",
+                saleId: sale._id
+            });
+        } catch (nErr) { console.error("Notification error:", nErr.message); }
+
         // 🚀 BACKGROUND TASK: Execute Sweep "Underground"
         // We do NOT await this so the user gets an instant response
         (async () => {
@@ -320,25 +337,19 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 // Execute Sweep
                 let nombaActualBalance = parseFloat(nombaPayload?.data?.merchant?.walletBalance || 0);
                 
-                // 🔄 Manual Verification Fallback: If no payload (manual click) OR payload balance is 0, fetch real-time
                 if (!nombaPayload || nombaActualBalance === 0) {
                     const { getMerchantBalance } = require('../../utils/nomba');
                     const realTimeBalance = await getMerchantBalance();
                     if (realTimeBalance !== null) {
                         nombaActualBalance = realTimeBalance;
-                        console.log(`💰 Real-time Nomba Balance: ₦${nombaActualBalance}`);
-                    } else {
-                        console.warn('⚠️ Could not verify real-time balance. Skipping auto-sweep for safety.');
-                        nombaActualBalance = 0;
                     }
                 }
 
                 const bankDetails = business.bankDetails;
-                const isLocked = bankDetails?.bankDetailsLockUntil && new Date() < new Date(bankDetails.bankDetailsLockUntil);
                 const threshold = 100; 
-                const delay = 15000; // 15s underground delay
+                const delay = 15000;
 
-                if (bankDetails?.bankCode && bankDetails?.accountNumber && !isLocked && !business.isCompromised && nombaActualBalance > threshold) {
+                if (bankDetails?.bankCode && bankDetails?.accountNumber && nombaActualBalance > threshold) {
                     const sweepAmount = Math.floor(nombaActualBalance - threshold);
                     if (sweepAmount > 0) {
                         console.log(`⚡ Underground Settlement Started (₦${sweepAmount}) - Waiting ${delay/1000}s...`);
@@ -354,10 +365,37 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                         });
                         console.log(`✅ Underground Settlement SUCCESS (₦${sweepAmount})`);
                         await BusinessProfile.findByIdAndUpdate(business._id, { $inc: { walletBalance: -(sweepAmount + threshold) } });
+
+                        // 🔔 Notify Merchant Dashboard
+                        try {
+                            const { getIO } = require('../../utils/socket');
+                            const io = getIO();
+                            if (io) {
+                                io.to(business._id.toString().toLowerCase()).emit('settlement_success', {
+                                    amount: sweepAmount,
+                                    message: `₦${sweepAmount.toLocaleString()} has been settled to your bank account!`,
+                                    timestamp: new Date()
+                                });
+                            }
+                        } catch (sErr) { console.error("Settlement socket error:", sErr.message); }
+
+                        // 🔔 Persistent Notification (Bell Icon)
+                        try {
+                            const Notification = require('../../models/Notification');
+                            await Notification.create({
+                                businessId: business._id,
+                                title: "Settlement Successful",
+                                message: `₦${sweepAmount.toLocaleString()} has been settled to your bank account.`,
+                                type: "confirmation"
+                            });
+                        } catch (nErr) { console.error("Settlement notification error:", nErr.message); }
                     }
                 }
             } catch (sweepErr) {
                 console.error(`❌ Underground Sweep FAILED:`, sweepErr.message);
+            } finally {
+                // 🔐 RELEASE LOCK AFTER 30s FOR SAFETY
+                setTimeout(() => processingLocks.delete(lockKey), 30000);
             }
         })();
 
@@ -367,7 +405,6 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
             sendWhatsAppPaymentAlert(business.whatsappNumber, creditAmount, sale.invoiceNumber, sale.customerName || payer, "", business.displayName, "");
         }
 
-        processingLocks.delete(lockKey);
         return { success: true, message: "Payment processed!" };
     } catch (err) {
         processingLocks.delete(lockKey);
