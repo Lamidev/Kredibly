@@ -142,6 +142,20 @@ const getSubaccount = async (subaccountCode) => {
     return paystackRequest(`/subaccount/${subaccountCode}`);
 };
 
+/**
+ * 9. PAYSTACK BANK CODE MAPPER
+ * Translates CBN/NIBSS codes to Paystack-specific codes for fintechs.
+ */
+const getPaystackBankCode = (code) => {
+    const mapping = {
+        '305': '999992',    // OPay (Paycom)
+        '302': '999991',    // PalmPay
+        '090267': '50211',  // Kuda
+        '090405': '50515',  // Moniepoint
+    };
+    return mapping[code] || code;
+};
+
 module.exports = {
     verifyPaystackReference,
     getBanks,
@@ -151,17 +165,20 @@ module.exports = {
     createTransferRecipient,
     initiateTransfer,
     getSubaccount,
-    matchBVN
+    matchBVN,
+    getPaystackBankCode
 };
 
 /**
  * 8. BVN - Account Match (The "Identity Guard")
  * Verifies if a BVN is linked to a specific bank account.
- * Costs ₦10 per check.
+ * Optional 'dob' (YYYY-MM-DD) improves matching accuracy.
  */
-async function matchBVN(accountNumber, bankCode, bvn) {
+async function matchBVN(accountNumber, bankCode, bvn, dob = null) {
     try {
-        return await paystackRequest(`/bank/match_bvn?account_number=${accountNumber}&bank_code=${bankCode}&bvn=${bvn}`);
+        let url = `/bank/match_bvn?account_number=${accountNumber}&bank_code=${bankCode}&bvn=${bvn}`;
+        if (dob) url += `&dob=${dob}`;
+        return await paystackRequest(url);
     } catch (err) {
         throw err;
     }

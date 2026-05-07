@@ -258,7 +258,8 @@ const getBanks = async () => {
             `${NOMBA_BASE_URL}/transfers/banks`,
             {
                 headers: {
-                    Authorization: `Bearer ${token}`
+                    Authorization: `Bearer ${token}`,
+                    accountId: process.env.NOMBA_ACCOUNT_ID
                 },
                 timeout: 15000,
                 proxy: false,

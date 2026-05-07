@@ -775,17 +775,16 @@ const SettingsPage = () => {
                                             style={{ background: '#F8FAFC' }}
                                         />
                                     </div>
-                                    <div className="input-group" style={{ opacity: 0.5, pointerEvents: 'none' }}>
-                                        <label className="input-label">Date of Birth</label>
+                                    <div className="input-group">
+                                        <label className="input-label">Date of Birth (Optional)</label>
                                         <input 
                                             type="date" 
                                             className="input-field" 
                                             value={dob}
-                                            disabled
                                             onChange={(e) => setDob(e.target.value)}
-                                            style={{ background: '#F1F5F9' }}
+                                            style={{ background: '#F8FAFC' }}
                                         />
-                                        <p style={{ fontSize: '10px', color: '#64748B', margin: '4px 0 0 0' }}>Not required for BVN Match</p>
+                                        <p style={{ fontSize: '10px', color: '#64748B', margin: '4px 0 0 0' }}>Optional, but improves verification accuracy.</p>
                                     </div>
                                 </div>
 

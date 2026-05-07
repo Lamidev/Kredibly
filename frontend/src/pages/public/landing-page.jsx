@@ -272,8 +272,21 @@ const LandingPage = () => {
                             <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', fontSize: '1.2rem', borderRadius: '100px' }}>Try Chairman Free for 14 Days <ArrowRight size={20} /></button>
                             <button onClick={() => scrollToSection('how-it-works')} className="btn-secondary" style={{ padding: '20px 48px', fontSize: '1.2rem', borderRadius: '100px', background: 'white', color: 'var(--primary)', borderColor: 'var(--primary)' }}>Meet Kreddy AI</button>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#16A34A', fontWeight: 800, fontSize: '0.95rem' }}>
-                            <BadgeCheck size={18} /> ZERO TRANSFER FEES — We cover your ₦25 bank charges.
+                        <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            gap: '8px', 
+                            color: '#1E293B', 
+                            fontWeight: 700, 
+                            fontSize: 'clamp(0.7rem, 2.5vw, 0.85rem)',
+                            textAlign: 'center',
+                            padding: '0 20px',
+                            opacity: 0.9,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                        }}>
+                            <BadgeCheck size={16} style={{ flexShrink: 0 }} /> ZERO TRANSFER FEES — We cover your bank charges.
                         </div>
                     </div>
                 </motion.div>

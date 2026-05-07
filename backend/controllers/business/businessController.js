@@ -341,12 +341,16 @@ exports.verifyKYC = async (req, res) => {
             matchMessage = "BVN match successful (Simulated)";
         } else {
             // 🚀 REAL PAYSTACK BVN MATCH
-            const { matchBVN } = require("../../utils/paystack");
+            const { matchBVN, getPaystackBankCode } = require("../../utils/paystack");
             try {
+                // Map the bank code to Paystack-specific version if needed (e.g. OPay 305 -> 999992)
+                const paystackCode = getPaystackBankCode(profile.bankDetails.bankCode);
+                
                 const result = await matchBVN(
                     profile.bankDetails.accountNumber,
-                    profile.bankDetails.bankCode,
-                    idNumber
+                    paystackCode,
+                    idNumber,
+                    dob || null // Optional Date of Birth (YYYY-MM-DD)
                 );
                 // Paystack returns { status: true, message: "...", data: { account_number: true, ... } }
                 isMatch = result === true || (result && result.account_number === true);
