@@ -19,6 +19,8 @@ const cleanPhone = (num) => {
 exports.updateProfile = async (req, res) => {
     try {
         const { displayName, entityType, sellMode, logoUrl, phoneNumber, whatsappNumber, address, assistantSettings, bankDetails, staffNumbers, prefersGatewayFeeAbsorption, kyc } = req.body;
+        const { LAUNCH_DATE } = require('../../config/pricing');
+        const now = new Date();
 
         let profile = await BusinessProfile.findOne({ ownerId: req.user._id });
 
@@ -36,6 +38,8 @@ exports.updateProfile = async (req, res) => {
             profile.whatsappNumber = whatsappNumber ? cleanPhone(whatsappNumber) : profile.whatsappNumber;
             profile.address = address || profile.address;
             if (prefersGatewayFeeAbsorption !== undefined) profile.prefersGatewayFeeAbsorption = prefersGatewayFeeAbsorption;
+            
+            // 🚀 LAUNCH PROMO: Auto-upgrade to Chairman for everyone until June 1st
             if (now < LAUNCH_DATE) {
                 profile.trialExpiresAt = LAUNCH_DATE;
                 profile.plan = 'chairman';
@@ -72,9 +76,6 @@ exports.updateProfile = async (req, res) => {
             
             // 🚀 SUBACCOUNT INIT: Removed Paystack logic, using Nomba Auto-sweep instead.
             let subaccountCode = null;
-
-            const { LAUNCH_DATE } = require('../../config/pricing');
-            const now = new Date();
 
             profile = new BusinessProfile({
                 ownerId: req.user._id,
@@ -422,7 +423,7 @@ exports.verifyKYC = async (req, res) => {
             profile.kyc = {
                 status: 'verified',
                 tier: 2,
-                method: type,
+                method: 'BVN Match',
                 bvn: idNumber.substring(0, 4) + '****' + idNumber.slice(-2),
                 verifiedAt: new Date()
             };
@@ -452,9 +453,15 @@ exports.verifyKYC = async (req, res) => {
 
             // 📢 NOTIFY MERCHANT VIA WHATSAPP (Real-time alert)
             const { sendWhatsAppAlert } = require("../whatsapp/whatsappController");
-            const bossTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
-            const successMsg = `✅ *Account Verified!* Your identity match was successful. We've unlocked your instant settlements and released any held funds to your bank account. High power! 🚀`;
-            sendWhatsAppAlert(profile.whatsappNumber, bossTitle, successMsg).catch(e => console.error("KYC Success WA Fail:", e.message));
+            // 📱 WhatsApp Alert: Smart Messaging based on escrow status
+            const bossTitle = profile.displayName.split(' ')[0];
+            let successMsg = `🛡️ Boss, your identity has been successfully verified via ${type.toUpperCase()}.\n\nYou are now on **Tier 2** with a ₦500,000 daily limit. Keep winning! 🦁💎`;
+            
+            if (profile.heldBalance > 0) {
+                successMsg = `🛡️ Boss, you are VERIFIED!\n\nI've recognized your identity and I'm releasing your ₦${profile.heldBalance.toLocaleString()} held funds to your bank account right now. \n\nYou are now on **Tier 2**. Let's go! 🚀💰`;
+            }
+
+            sendWhatsAppAlert(profile.whatsappNumber, bossTitle, successMsg).catch(e => console.error("KYC WA Alert Fail:", e.message));
 
             return res.status(200).json({ 
                 success: true, 
