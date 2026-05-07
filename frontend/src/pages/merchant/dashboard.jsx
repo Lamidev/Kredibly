@@ -302,13 +302,13 @@ const Dashboard = () => {
                         style={{ 
                             padding: '14px 32px', 
                             borderRadius: '16px', 
-                            background: '#FB923C', 
+                            background: 'linear-gradient(135deg, var(--primary) 0%, #7C3AED 100%)', 
                             color: 'white', 
                             fontWeight: 950, 
                             border: 'none', 
                             cursor: 'pointer',
                             fontSize: '0.9rem',
-                            boxShadow: '0 10px 15px -3px rgba(251, 146, 60, 0.3)'
+                            boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.3)'
                         }}
                         className="hover-scale"
                     >

@@ -18,7 +18,8 @@ import {
     Zap,
     Search,
     Loader2,
-    Camera
+    Camera,
+    Activity
 } from "lucide-react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";

@@ -276,17 +276,21 @@ const LandingPage = () => {
                             display: 'flex', 
                             alignItems: 'center', 
                             justifyContent: 'center',
-                            gap: '8px', 
-                            color: '#1E293B', 
-                            fontWeight: 700, 
-                            fontSize: 'clamp(0.7rem, 2.5vw, 0.85rem)',
-                            textAlign: 'center',
-                            padding: '0 20px',
+                            gap: '5px', 
+                            color: '#475569', 
+                            fontWeight: 800, 
+                            fontSize: 'clamp(0.6rem, 2vw, 0.75rem)',
+                            padding: '8px 16px',
+                            background: 'rgba(76, 29, 149, 0.04)',
+                            borderRadius: '100px',
                             opacity: 0.9,
                             textTransform: 'uppercase',
-                            letterSpacing: '0.05em'
+                            letterSpacing: '0.06em',
+                            width: 'fit-content',
+                            margin: '0 auto'
                         }}>
-                            <BadgeCheck size={16} style={{ flexShrink: 0 }} /> ZERO TRANSFER FEES — We cover your bank charges.
+                            <BadgeCheck size={14} style={{ flexShrink: 0, color: 'var(--primary)' }} /> 
+                            <span>ZERO TRANSFER FEES, We cover your bank charges.</span>
                         </div>
                     </div>
                 </motion.div>

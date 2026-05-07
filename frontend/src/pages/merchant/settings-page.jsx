@@ -763,7 +763,11 @@ const SettingsPage = () => {
                                     </div>
                                 </div>
 
-                                <div className="grid-2-col-responsive">
+                                <div style={{ 
+                                    display: 'grid', 
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', 
+                                    gap: '24px' 
+                                }}>
                                     <div className="input-group">
                                         <label className="input-label">BVN Number</label>
                                         <input 
@@ -772,7 +776,7 @@ const SettingsPage = () => {
                                             value={idNumber}
                                             maxLength={11}
                                             onChange={(e) => setIdNumber(e.target.value.replace(/\D/g, ''))}
-                                            style={{ background: '#F8FAFC' }}
+                                            style={{ background: '#F8FAFC', width: '100%', boxSizing: 'border-box' }}
                                         />
                                     </div>
                                     <div className="input-group">
@@ -782,7 +786,13 @@ const SettingsPage = () => {
                                             className="input-field" 
                                             value={dob}
                                             onChange={(e) => setDob(e.target.value)}
-                                            style={{ background: '#F8FAFC' }}
+                                            style={{ 
+                                                background: '#F8FAFC', 
+                                                width: '100%', 
+                                                boxSizing: 'border-box',
+                                                WebkitAppearance: 'none',
+                                                minHeight: '54px'
+                                            }}
                                         />
                                         <p style={{ fontSize: '10px', color: '#64748B', margin: '4px 0 0 0' }}>Optional, but improves verification accuracy.</p>
                                     </div>
