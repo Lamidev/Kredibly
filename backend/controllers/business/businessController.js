@@ -352,23 +352,57 @@ exports.verifyKYC = async (req, res) => {
             matchMessage = "BVN match successful (Simulated)";
         } else {
             // 🚀 REAL PAYSTACK BVN MATCH
-            const { matchBVN, getPaystackBankCode } = require("../../utils/paystack");
+            const { matchBVN, getPaystackBankCode, resolveAccount } = require("../../utils/paystack");
             try {
                 // Map the bank code to Paystack-specific version if needed (e.g. OPay 305 -> 999992)
                 const paystackCode = getPaystackBankCode(profile.bankDetails.bankCode);
                 console.log(`🚀 Calling Paystack Match BVN with code: ${paystackCode}`);
                 
-                const result = await matchBVN(
-                    profile.bankDetails.accountNumber,
-                    paystackCode,
-                    idNumber,
-                    dob || null // Optional Date of Birth (YYYY-MM-DD)
-                );
-                // Paystack returns { status: true, message: "...", data: { account_number: true, ... } }
-                isMatch = result === true || (result && result.account_number === true);
-                matchMessage = "BVN verification successful";
+                try {
+                    const result = await matchBVN(
+                        profile.bankDetails.accountNumber,
+                        paystackCode,
+                        idNumber,
+                        dob || null // Optional Date of Birth (YYYY-MM-DD)
+                    );
+                    // Paystack returns { status: true, message: "...", data: { account_number: true, ... } }
+                    isMatch = result === true || (result && result.account_number === true);
+                    matchMessage = "BVN verification successful";
+                } catch (bvnErr) {
+                    // 🛡️ SMART FINTECH FALLBACK
+                    // If the bank code is rejected (common for fintechs like OPay/PalmPay), 
+                    // we verify the account name manually via Account Resolution.
+                    if (bvnErr.message.toLowerCase().includes('bank code is invalid')) {
+                        console.log(`🧠 Smart Fallback: Bank ${profile.bankDetails.bankName} doesn't support direct BVN match. Resolving account name instead...`);
+                        
+                        const resolvedData = await resolveAccount(profile.bankDetails.accountNumber, paystackCode);
+                        const accountName = resolvedData.account_name; // e.g. "SAMUEL OLAMIDE"
+                        
+                        // Get the User's registered name for comparison
+                        const User = require("../../models/User");
+                        const user = await User.findById(req.user._id);
+                        const registeredName = user?.name || profile.displayName;
+
+                        // fuzzy match: Check if parts of the registered name appear in the account name
+                        const cleanAccount = accountName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        const nameParts = registeredName.toLowerCase().split(' ').filter(p => p.length > 2);
+                        
+                        const hasMatch = nameParts.some(part => cleanAccount.includes(part));
+
+                        if (hasMatch) {
+                            console.log(`✅ Smart Match Success: "${accountName}" matches registered user "${registeredName}"`);
+                            isMatch = true;
+                            matchMessage = "Identity verified via Smart Account Name Match (Fintech Fallback)";
+                        } else {
+                            console.warn(`❌ Smart Match Fail: "${accountName}" does not match "${registeredName}"`);
+                            throw new Error("Account name mismatch. The bank account name must match your registered business/owner name.");
+                        }
+                    } else {
+                        throw bvnErr;
+                    }
+                }
             } catch (err) {
-                console.error("❌ Paystack BVN Match Error:", err.message);
+                console.error("❌ Paystack KYC Error:", err.message);
                 return res.status(400).json({ success: false, message: `Verification failed: ${err.message}` });
             }
         }
