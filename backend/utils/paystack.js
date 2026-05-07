@@ -70,8 +70,10 @@ const getBanks = async () => {
  */
 const resolveAccount = async (accountNumber, bankCode) => {
     try {
-        return await paystackRequest(`/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`);
+        const path = `/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`;
+        return await paystackRequest(path);
     } catch (err) {
+        console.error(`❌ Paystack Resolve Account Error [${bankCode}/${accountNumber}]:`, err.message);
         throw err;
     }
 };
