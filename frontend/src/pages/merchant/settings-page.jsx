@@ -1052,8 +1052,8 @@ const SettingsPage = () => {
                     onConfirm={handlePayoutSave}
                 />
 
-                {/* 🛡️ Smart Footer: Hide save button if on KYC tab and already verified */}
-                {!(activeTab === 'kyc' && profile?.kyc?.status === 'verified') && (
+                {/* 🛡️ Smart Footer: Hide save button if on KYC tab */}
+                {activeTab !== 'kyc' && (
                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', paddingBottom: '40px' }}>
                         <button
                             className="btn-primary"
