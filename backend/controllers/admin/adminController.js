@@ -20,7 +20,11 @@ exports.getGlobalStats = async (req, res) => {
         const totalSalesCount = salesCount;
 
         // 1. Merchant Platform Volume (Money flowing through merchants)
-        const sales = await Sale.find({}).populate('businessId', 'isBetaTester');
+        const sales = await Sale.find({ "payments.0": { $exists: true } })
+            .populate('businessId', 'displayName isBetaTester')
+            .sort({ "payments.date": -1 })
+            .limit(100);
+
         let totalPlatformVolume = 0;
         let totalVerifiedVolume = 0;
         let totalOutstanding = 0;
@@ -28,11 +32,12 @@ exports.getGlobalStats = async (req, res) => {
         const verifiedMethods = ['Paystack', 'Nomba', 'Squad', 'Kredibly Online'];
         const testPatterns = [/test/i, /^T_/i, /^SANDBOX/i, /^KREDDY_TEST/i];
 
-        sales.forEach(s => {
-            // Skip Beta/Test merchant volume in "Verified Revenue" if wanted, 
-            // but here we filter by reference to catch test money on real accounts too.
+        // We need all sales for volume stats, but the limited 'sales' above is for the feed.
+        // Let's fetch all for stats but keep it efficient.
+        const allSalesForStats = await Sale.find({}).populate('businessId', 'isBetaTester');
+
+        allSalesForStats.forEach(s => {
             const isTestMerchant = s.businessId?.isBetaTester === true;
-            
             const payments = s.payments || [];
             const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
             
@@ -49,26 +54,100 @@ exports.getGlobalStats = async (req, res) => {
             totalOutstanding += Math.max(0, (s.totalAmount || 0) - totalPaid);
         });
 
-        // 2. Kredibly Revenue (Subscription payments) - Exclude test subs
-        const allPayments = await Payment.find({ status: 'success' }).populate('businessId', 'isBetaTester');
-        const totalKrediblyRevenue = allPayments
-            .filter(p => {
-                const isTestRef = p.paystackRef && testPatterns.some(ptrn => ptrn.test(p.paystackRef));
-                const isTestMerchant = p.businessId?.isBetaTester === true;
-                return !isTestRef && !isTestMerchant;
-            })
-            .reduce((sum, p) => sum + p.amount, 0);
+        // 2. Kredibly Revenue (Subscription payments)
+        const allPayments = await Payment.find({ status: 'success' })
+            .populate('businessId', 'displayName isBetaTester')
+            .sort({ createdAt: -1 })
+            .limit(50);
 
-        // Filter Pulse for high-value activities only, excluding beta testers
-        const importantActions = ['SIGNUP', 'WHATSAPP_SALE_CREATED', 'PAYMENT_RECEIVED', 'SUBSCRIPTION_PAID', 'SUPPORT_TICKET_CREATED', 'PROFILE_UPDATED'];
+        // For lifetime revenue stats, we still need the total sum
+        const totalKrediblyRevenueRes = await Payment.aggregate([
+            { $match: { status: 'success' } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+        const totalKrediblyRevenue = totalKrediblyRevenueRes[0]?.total || 0;
+
+        // Pulse: High-value platform events
+        const importantActions = [
+            'SIGNUP', 'WHATSAPP_SALE_CREATED', 'PAYMENT_RECEIVED', 'SUBSCRIPTION_PAID', 
+            'SUPPORT_TICKET_CREATED', 'PROFILE_UPDATED', 'KYC_VERIFIED', 'KYC_HOLD', 
+            'ESCROW_HOLD', 'WHATSAPP_MSG_RECEIVED', 'INVOICE_VIEWED'
+        ];
         const logs = await ActivityLog.find({ 
             action: { $in: importantActions } 
         })
-            .populate('businessId', 'isBetaTester')
+            .populate('businessId', 'displayName isBetaTester')
             .sort({ createdAt: -1 })
             .limit(100);
 
-        const globalActivities = logs.filter(l => !l.businessId?.isBetaTester).slice(0, 50);
+        // 3. GENERATE UNIFIED ACTIVITY STREAM (Fully Aligned with Mission Control)
+        const feed = [];
+
+        // A. Add High-Value Logs
+        logs.filter(l => !l.businessId?.isBetaTester).forEach(l => {
+            feed.push({
+                _id: l._id,
+                type: 'LOG',
+                action: l.action,
+                details: l.details,
+                createdAt: l.createdAt,
+                merchant: l.businessId?.displayName || 'Admin'
+            });
+        });
+
+        // B. Add Verified Sales (The raw ledger)
+        sales.filter(s => !s.businessId?.isBetaTester).forEach(s => {
+            s.payments.filter(p => verifiedMethods.includes(p.method)).forEach(p => {
+                const isTest = p.reference && testPatterns.some(ptrn => ptrn.test(p.reference));
+                if (isTest) return;
+
+                feed.push({
+                    _id: p._id || `${s._id}-${p.reference}`,
+                    type: 'SALE',
+                    action: `PAYMENT_${p.method.toUpperCase()}`,
+                    details: `₦${p.amount.toLocaleString()} received via ${p.method} for #${s.invoiceNumber}`,
+                    createdAt: p.date || s.createdAt,
+                    merchant: s.businessId?.displayName || 'Unknown'
+                });
+            });
+        });
+
+        // C. Add Subscriptions
+        allPayments.filter(p => !p.businessId?.isBetaTester).forEach(p => {
+            const isTest = p.paystackRef && testPatterns.some(ptrn => ptrn.test(p.paystackRef));
+            if (isTest) return;
+
+            feed.push({
+                _id: p._id,
+                type: 'SUB',
+                action: 'SUBSCRIPTION_PAID',
+                details: `Plan: ${p.plan} (₦${p.amount.toLocaleString()})`,
+                createdAt: p.paidAt || p.createdAt,
+                merchant: p.businessId?.displayName || 'Merchant'
+            });
+        });
+
+        // D. DEDUPLICATE (Pulse Logic)
+        const feedSeen = new Set();
+        const globalActivities = feed.filter(item => {
+            let key;
+            if (item.type === 'SALE') {
+                key = `SALE-${item._id}`; // Use the unique payment ID
+            } else {
+                key = `${item.type}-${item._id}`;
+            }
+            if (feedSeen.has(key)) return false;
+            feedSeen.add(key);
+            return true;
+        })
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 100);
+
+        // 4. Platform Escrow (Held funds)
+        const totalEscrowBalanceRes = await BusinessProfile.aggregate([
+            { $group: { _id: null, total: { $sum: "$heldBalance" } } }
+        ]);
+        const totalEscrowBalance = totalEscrowBalanceRes[0]?.total || 0;
 
         res.status(200).json({
             success: true,
@@ -80,7 +159,8 @@ exports.getGlobalStats = async (req, res) => {
                 totalPlatformVolume, // Gross recorded (manual + online)
                 totalVerifiedVolume, // Real money (Online only)
                 totalOutstanding,
-                totalRevenue: totalKrediblyRevenue // Subscription revenue (Paystack verified)
+                totalRevenue: totalKrediblyRevenue, // Subscription revenue (Paystack verified)
+                totalEscrowBalance
             },
             activities: globalActivities
         });
@@ -275,11 +355,74 @@ exports.deleteInvoicePayment = async (req, res) => {
         const sale = await Sale.findById(saleId);
         if (!sale) return res.status(404).json({ message: "Invoice not found" });
 
-        sale.payments = sale.payments.filter(p => p._id.toString() !== paymentId);
+        sale.payments = sale.payments.filter(p => p._id && p._id.toString() !== paymentId);
         await sale.save();
 
         res.status(200).json({ success: true, message: "Payment removed successfully" });
     } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+/**
+ * 🛡️ MANUAL KYC VERIFICATION (Admin Mission Control)
+ * This allows the founder to verify a merchant who sent their NIN via WhatsApp.
+ */
+exports.manualVerifyMerchant = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const business = await BusinessProfile.findById(id);
+        if (!business) return res.status(404).json({ message: "Merchant profile not found" });
+
+        if (business.kyc?.status === 'verified') {
+            return res.status(400).json({ message: "Merchant is already verified" });
+        }
+
+        // 1. Flip Status
+        business.kyc.status = 'verified';
+        business.kyc.tier = 2;
+        business.kyc.verifiedAt = new Date();
+        business.kyc.method = 'none'; // Mark as manual/none (as opposed to automated bvn)
+        
+        // 🔓 Clear any security locks (bank changes) as identity is now proven
+        if (business.bankDetails) {
+            business.bankDetails.bankDetailsLockUntil = null;
+        }
+
+        await business.save();
+
+        // 2. Trigger Escrow Release
+        let releaseCount = 0;
+        let releasedAmount = 0;
+        if (business.heldBalance > 0) {
+            const { releaseMerchantEscrow } = require("../../utils/payouts");
+            const result = await releaseMerchantEscrow(business._id);
+            releaseCount = result.count || 0;
+            releasedAmount = result.amount || 0;
+        }
+
+        // 3. Log Activity
+        await ActivityLog.create({
+            businessId: business._id,
+            action: 'PROFILE_UPDATED',
+            details: `KYC manually verified by Admin. ${releaseCount} escrowed payments released (₦${releasedAmount.toLocaleString()}).`
+        });
+
+        // 4. Notify Merchant
+        await Notification.create({
+            businessId: business._id,
+            title: 'Account Verified! ✅',
+            message: `Your identity has been verified manually. Your held funds (₦${releasedAmount.toLocaleString()}) have been released to your bank account.`,
+            type: 'system'
+        });
+
+        res.status(200).json({ 
+            success: true, 
+            message: `Merchant ${business.displayName} verified successfully. ${releaseCount} payments released.` 
+        });
+
+    } catch (error) {
+        console.error("Manual Verify Error:", error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -346,13 +489,13 @@ exports.getMissionControlFeed = async (req, res) => {
             // Show only Failed or Processing jobs (The ones needing attention)
             BackgroundJob.find({ status: { $in: ['failed', 'processing'] } }).sort({ createdAt: -1 }).limit(20).populate("businessId", "displayName isBetaTester"),
             
-            // Show only high-value logs
+            // Show more high-value logs
             ActivityLog.find({ 
-                action: { $in: ['SIGNUP', 'PROFILE_UPDATED', 'ACCOUNT_VERIFIED'] } 
-            }).sort({ createdAt: -1 }).limit(15).populate("businessId", "displayName isBetaTester"),
+                action: { $in: ['SIGNUP', 'PROFILE_UPDATED', 'ACCOUNT_VERIFIED', 'PAYMENT_RECEIVED', 'SUBSCRIPTION_PAID'] } 
+            }).sort({ createdAt: -1 }).limit(50).populate("businessId", "displayName isBetaTester"),
             
-            Payment.find({ status: 'success' }).sort({ createdAt: -1 }).limit(10).populate("businessId", "displayName isBetaTester"),
-            Sale.find({ "payments.0": { $exists: true } }).sort({ "payments.date": -1 }).limit(20).populate("businessId", "displayName isBetaTester")
+            Payment.find({ status: 'success' }).sort({ createdAt: -1 }).limit(30).populate("businessId", "displayName isBetaTester"),
+            Sale.find({ "payments.0": { $exists: true } }).sort({ "payments.date": -1 }).limit(50).populate("businessId", "displayName isBetaTester")
         ]);
 
         // 3. Format Unified Feed
@@ -447,7 +590,7 @@ exports.getMissionControlFeed = async (req, res) => {
         res.status(200).json({
             success: true,
             stats: statsObj,
-            feed: dedupedFeed.slice(0, 10)
+            feed: dedupedFeed.slice(0, 50)
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

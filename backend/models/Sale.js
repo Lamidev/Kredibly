@@ -37,7 +37,8 @@ const SaleSchema = new mongoose.Schema({
             amount: { type: Number, required: true },
             date: { type: Date, default: Date.now },
             method: { type: String, default: "Cash" },
-            reference: String
+            reference: String,
+            externalReference: String
         }
     ],
     status: {

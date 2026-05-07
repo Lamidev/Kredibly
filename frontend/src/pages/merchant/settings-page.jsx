@@ -475,6 +475,27 @@ const SettingsPage = () => {
                                             <Building2 size={24} />
                                         </div>
                                     </div>
+
+                                    {lockCountdown && (
+                                        <div style={{ marginTop: '8px', padding: 'clamp(12px, 4vw, 20px)', background: '#FFF7ED', borderRadius: '16px', border: '1px solid #FB923C', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <div style={{ background: '#FB923C', color: 'white', padding: '8px', borderRadius: '10px' }}>
+                                                    <Shield size={16} />
+                                                </div>
+                                                <p style={{ fontSize: '0.8rem', color: '#9A3412', fontWeight: 700, margin: 0, maxWidth: '280px' }}>
+                                                    Payouts are locked for safety. **Re-verify BVN** to unlock instantly and skip the 24h wait.
+                                                </p>
+                                            </div>
+                                            <button 
+                                                onClick={() => setActiveTab('kyc')}
+                                                style={{ background: '#FB923C', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 900, cursor: 'pointer' }}
+                                                className="hover-scale"
+                                            >
+                                                Unlock Now
+                                            </button>
+                                        </div>
+                                    )}
+
                                     <button
                                         onClick={() => setIsEditingPayout(true)}
                                         style={{ 
@@ -668,7 +689,10 @@ const SettingsPage = () => {
                                 <div style={{ background: profile?.kyc?.status === 'verified' ? '#F0FDF4' : '#F5F3FF', color: profile?.kyc?.status === 'verified' ? '#22C55E' : 'var(--primary)', padding: '10px', borderRadius: '12px' }}>
                                     <Shield size={24} />
                                 </div>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Identity & Trust</h2>
+                                <div>
+                                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Trust & Verification</h2>
+                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>Protect your payouts and unlock high limits.</p>
+                                </div>
                             </div>
                             <div style={{ 
                                 background: profile?.kyc?.status === 'verified' ? '#F0FDF4' : '#F5F3FF', 
@@ -680,9 +704,32 @@ const SettingsPage = () => {
                                 border: '1px solid',
                                 borderColor: profile?.kyc?.status === 'verified' ? '#DCFCE7' : 'rgba(76, 29, 149, 0.1)'
                             }}>
-                                {profile?.kyc?.status?.toUpperCase() || 'PENDING'}
+                                {profile?.kyc?.status === 'verified' ? `TIER ${profile.kyc.tier || 2} VERIFIED` : 'TIER 1 (PENDING)'}
                             </div>
                         </div>
+
+                        {/* Escrow Banner */}
+                        {profile?.heldBalance > 0 && (
+                            <div style={{ 
+                                background: '#FFF7ED', 
+                                border: '1.5px dashed #FB923C', 
+                                padding: '20px', 
+                                borderRadius: '20px', 
+                                marginBottom: '32px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '16px'
+                            }}>
+                                <div style={{ background: '#FB923C', color: 'white', padding: '12px', borderRadius: '14px' }}>
+                                    <Clock size={24} />
+                                </div>
+                                <div>
+                                    <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 900, color: '#9A3412', textTransform: 'uppercase' }}>Funds on Hold</p>
+                                    <h3 style={{ margin: '2px 0 0 0', fontSize: '1.4rem', fontWeight: 950, color: '#1E293B' }}>₦{profile.heldBalance.toLocaleString()}</h3>
+                                    <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#9A3412', fontWeight: 600 }}>Verify your identity below to release these funds to your bank instantly.</p>
+                                </div>
+                            </div>
+                        )}
 
                         {profile?.kyc?.status === 'verified' ? (
                             <div style={{ textAlign: 'center', padding: '40px 20px', background: 'rgba(34, 197, 94, 0.02)', borderRadius: '24px', border: '1.5px dashed #22C55E' }}>
@@ -691,69 +738,78 @@ const SettingsPage = () => {
                                 </div>
                                 <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#166534', margin: '0 0 8px 0' }}>Fully Verified</h3>
                                 <p style={{ fontSize: '0.9rem', color: '#166534', fontWeight: 700, margin: 0 }}>
-                                    Your identity was verified via {profile.kyc.method.toUpperCase()} on {new Date(profile.kyc.verifiedAt).toLocaleDateString()}.
+                                    Your identity was verified via {profile.kyc.method.toUpperCase()} Match on {new Date(profile.kyc.verifiedAt).toLocaleDateString()}.
                                 </p>
+                                <div style={{ marginTop: '24px', display: 'inline-flex', gap: '20px' }}>
+                                    <div style={{ textAlign: 'left' }}>
+                                        <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 900, color: '#64748B' }}>Daily Settlement</p>
+                                        <p style={{ margin: 0, fontWeight: 800, color: '#1E293B' }}>Instant Payouts</p>
+                                    </div>
+                                    <div style={{ borderLeft: '1px solid #E2E8F0' }} />
+                                    <div style={{ textAlign: 'left' }}>
+                                        <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 900, color: '#64748B' }}>Daily Limit</p>
+                                        <p style={{ margin: 0, fontWeight: 800, color: '#1E293B' }}>₦500,000</p>
+                                    </div>
+                                </div>
                             </div>
                         ) : (
                             <div style={{ display: 'grid', gap: '32px' }}>
                                 <div style={{ background: '#F8FAFC', padding: '24px', borderRadius: '20px', border: '1px solid #E2E8F0' }}>
                                     <p style={{ margin: '0 0 16px 0', fontSize: '0.95rem', fontWeight: 700, color: '#475569', lineHeight: 1.5 }}>
-                                        Verify your identity to unlock instant payouts and increase your transaction limits.
+                                        To protect our platform and your money, we use **BVN Matching**. We confirm that the ID you provide matches your Payout Bank Account details.
                                     </p>
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '12px' }}>
-                                    {['bvn', 'nin'].map(type => (
-                                        <div 
-                                            key={type}
-                                            onClick={() => setKycType(type)}
-                                            style={{ 
-                                                flex: 1, 
-                                                padding: '16px', 
-                                                borderRadius: '16px', 
-                                                border: kycType === type ? '2px solid var(--primary)' : '1.5px solid #E2E8F0',
-                                                background: kycType === type ? 'rgba(76, 29, 149, 0.02)' : 'white',
-                                                cursor: 'pointer',
-                                                textAlign: 'center'
-                                            }}
-                                        >
-                                            <p style={{ margin: 0, fontWeight: 900, color: kycType === type ? 'var(--primary)' : '#64748B', fontSize: '0.9rem', textTransform: 'uppercase' }}>{type}</p>
-                                        </div>
-                                    ))}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem' }}>
+                                        <Shield size={14} /> 100% Secure & CBN Compliant
+                                    </div>
                                 </div>
 
                                 <div className="grid-2-col-responsive">
                                     <div className="input-group">
-                                        <label className="input-label">{kycType.toUpperCase()} Number</label>
+                                        <label className="input-label">BVN Number</label>
                                         <input 
                                             className="input-field" 
-                                            placeholder={`Enter 11-digit ${kycType.toUpperCase()}`}
+                                            placeholder={`Enter 11-digit BVN`}
                                             value={idNumber}
                                             maxLength={11}
                                             onChange={(e) => setIdNumber(e.target.value.replace(/\D/g, ''))}
                                             style={{ background: '#F8FAFC' }}
                                         />
                                     </div>
-                                    <div className="input-group">
+                                    <div className="input-group" style={{ opacity: 0.5, pointerEvents: 'none' }}>
                                         <label className="input-label">Date of Birth</label>
                                         <input 
                                             type="date" 
                                             className="input-field" 
                                             value={dob}
+                                            disabled
                                             onChange={(e) => setDob(e.target.value)}
-                                            style={{ background: '#F8FAFC' }}
+                                            style={{ background: '#F1F5F9' }}
                                         />
+                                        <p style={{ fontSize: '10px', color: '#64748B', margin: '4px 0 0 0' }}>Not required for BVN Match</p>
                                     </div>
                                 </div>
 
                                 <button 
                                     className="btn-primary" 
                                     onClick={handleVerifyKYC} 
-                                    disabled={isVerifying || idNumber.length < 10}
-                                    style={{ height: '60px' }}
+                                    disabled={isVerifying || idNumber.length < 11}
+                                    style={{ 
+                                        height: '60px',
+                                        background: idNumber.length === 11 ? 'var(--primary)' : '#94A3B8',
+                                        boxShadow: idNumber.length === 11 ? '0 10px 15px -3px rgba(76, 29, 149, 0.25)' : 'none'
+                                    }}
                                 >
-                                    {isVerifying ? <Loader2 className="spin" size={24} /> : "Verify Identity"}
+                                    {isVerifying ? (
+                                        <Loader2 className="spin-animation" size={24} />
+                                    ) : (
+                                        profile?.heldBalance > 0 ? "Verify & Release Funds" : "Complete Verification"
+                                    )}
                                 </button>
+
+                                <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700 }}>
+                                    Identity verification is currently **FREE**. 
+                                    By verifying, you agree to allow Kredibly confirm your details with NIBSS.
+                                </p>
                             </div>
                         )}
                     </section>
@@ -890,18 +946,28 @@ const SettingsPage = () => {
                         <div style={{ marginTop: '32px' }}>
                             <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#94A3B8', textAlign: 'center', marginBottom: '20px', textTransform: 'uppercase' }}>Available Upgrades</p>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
-                                {profile?.plan !== 'hustler' && (
-                                    <div className="glass-card" style={{ padding: '24px', border: '1px solid #E2E8F0', background: 'white', textAlign: 'left', opacity: profile?.plan === 'hustler' ? 1 : 0.8 }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                            <span style={{ fontWeight: 900, color: '#64748B' }}>HUSTLER</span>
-                                            <span style={{ fontWeight: 900 }}>Free</span>
+                                <button 
+                                    onClick={() => { setSelectedPlan('hustler'); setShowCheckout(true); }} 
+                                    className="glass-card clickable-card" 
+                                    style={{ 
+                                        padding: '24px', 
+                                        border: profile?.plan === 'hustler' ? '2px solid #64748B' : '1px solid #E2E8F0', 
+                                        background: profile?.plan === 'hustler' ? 'rgba(100, 116, 139, 0.02)' : 'white', 
+                                        textAlign: 'left' 
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                        <span style={{ fontWeight: 900, color: '#64748B' }}>HUSTLER</span>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontSize: '0.65rem', color: '#94A3B8', textDecoration: 'line-through', display: 'block' }}>₦3,000</span>
+                                            <span style={{ fontWeight: 900, color: '#1E293B' }}>₦1,500/mo</span>
                                         </div>
-                                        <p style={{ fontSize: '0.75rem', color: '#64748B', margin: '0 0 16px 0' }}>Basic invoice tracking & receipts.</p>
-                                        {profile?.plan !== 'hustler' && (
-                                            <button onClick={() => toast.info("To downgrade to Hustler, please contact support or wait for your current cycle to end.")} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #E2E8F0', background: 'white', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer' }}>Downgrade</button>
-                                        )}
                                     </div>
-                                )}
+                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: '0 0 16px 0' }}>Basic invoice tracking & receipts.</p>
+                                    <div style={{ width: '100%', padding: '10px', borderRadius: '10px', background: profile?.plan === 'hustler' ? '#64748B' : 'white', border: profile?.plan === 'hustler' ? 'none' : '1px solid #E2E8F0', color: profile?.plan === 'hustler' ? 'white' : '#64748B', fontWeight: 800, fontSize: '0.8rem', textAlign: 'center' }}>
+                                        {profile?.plan === 'hustler' ? 'Current Plan' : (profile?.plan === 'oga' || profile?.plan === 'chairman' ? 'Downgrade' : 'Upgrade')}
+                                    </div>
+                                </button>
                                 
                                 <button 
                                     onClick={() => { setSelectedPlan('oga'); setShowCheckout(true); }} 
@@ -915,7 +981,10 @@ const SettingsPage = () => {
                                 >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                                         <span style={{ fontWeight: 900, color: 'var(--primary)' }}>OGA PLAN</span>
-                                        <span style={{ fontWeight: 900 }}>₦3,000/mo</span>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontSize: '0.65rem', color: '#94A3B8', textDecoration: 'line-through', display: 'block' }}>₦6,000</span>
+                                            <span style={{ fontWeight: 900, color: 'var(--primary)' }}>₦3,000/mo</span>
+                                        </div>
                                     </div>
                                     <p style={{ fontSize: '0.75rem', color: '#64748B', margin: '0 0 16px 0' }}>Voice Notes, Proactive Reminders & 1 Staff.</p>
                                     <div style={{ width: '100%', padding: '10px', borderRadius: '10px', background: profile?.plan === 'oga' ? 'var(--primary)' : 'white', border: profile?.plan === 'oga' ? 'none' : '1px solid var(--primary)', color: profile?.plan === 'oga' ? 'white' : 'var(--primary)', fontWeight: 800, fontSize: '0.8rem', textAlign: 'center' }}>
@@ -935,7 +1004,10 @@ const SettingsPage = () => {
                                 >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                                         <span style={{ fontWeight: 900, color: '#8B5CF6' }}>CHAIRMAN</span>
-                                        <span style={{ fontWeight: 900 }}>₦4,500/mo</span>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontSize: '0.65rem', color: '#94A3B8', textDecoration: 'line-through', display: 'block' }}>₦9,000</span>
+                                            <span style={{ fontWeight: 900, color: '#8B5CF6' }}>₦4,500/mo</span>
+                                        </div>
                                     </div>
                                     <p style={{ fontSize: '0.75rem', color: '#64748B', margin: '0 0 16px 0' }}>Unlimited Staff, AI Insights & White-labeling.</p>
                                     <div style={{ width: '100%', padding: '10px', borderRadius: '10px', background: profile?.plan === 'chairman' ? '#8B5CF6' : 'white', border: profile?.plan === 'chairman' ? 'none' : '1px solid #8B5CF6', color: profile?.plan === 'chairman' ? 'white' : '#8B5CF6', fontWeight: 800, fontSize: '0.8rem', textAlign: 'center' }}>

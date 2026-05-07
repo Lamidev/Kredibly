@@ -140,6 +140,33 @@ Output: [
   { "intent": "create_reminder", "data": { "reminderDate": "2026-03-30T08:00:00.000Z", "reminderType": "debt", "taskDescription": "Follow up with Sarah for balance", "reply": "I'll remind you to call Sarah for the balance next Wednesday! 📞" } }
 ]
 
+Example 3 (Performance): "HOW MUCH DID I MAKE YESTERDAY?"
+Output: { "intent": "check_performance", "data": { "targetDate": "yesterday", "reply": "Let me check the ledger for yesterday's wins! 📊" } }
+
+REQUIRED JSON OUTPUT:
+{
+  "intent": "...",
+  "confidence": 1.0,
+  "data": {
+    "customerName": "Name",
+    "newName": "Corrected Name (if user is fixing a spelling)",
+    "totalAmount": 0,
+    "paidAmount": 0,
+    "item": "Description",
+    "reminderDate": "ISO Timestamp in UTC",
+    "dueDate": "ISO Timestamp in UTC (For sales)",
+    "targetDate": "yesterday" | "today" | "ISO Date String",
+    "reminderType": "debt" | "task" | "meeting" | "personal",
+    "taskDescription": "Extract the specific activity. MUST NOT BE EMPTY for create_reminder.",
+    "preferredName": "Desired name if the user is setting their preference (set_preferred_name intent).",
+    "sourceAccountName": "The specific name of the sender found on a bank receipt/screenshot (Olu, XYZ LTD, etc).",
+    "bankReference": "The transfer memo/remark found on the bank receipt (e.g., 'For Shoe', 'Sarah Payment').",
+    "documentType": "bank_transfer" | "bill_invoice" | "general",
+    "method": "card" | "transfer",
+    "plan": "oga" | "chairman",
+    "reply": "Your contextual, human-like reaction to the task. RELATE TO THE SPECIFIC TASK, AMOUNT, OR PERSON. Use varied vocabulary (No 'Logged' or 'Recorded')."
+  }
+}
 `;
 
 /**
@@ -175,6 +202,7 @@ const processMessageWithAI = async (text, context = {}) => {
             - Tone: ${context.preferredTone || 'FRIENDLY'}
             - Debtors: ${context.debtors || 'None'}
             - Active Reminders: ${context.activeReminders || 'None'}
+            - Business Insight: ${context.businessInsight || 'New Merchant'}
             - Current Time (WAT, UTC+1): ${watISO}
 
             Instruction: ${SYSTEM_INSTRUCTION}
@@ -270,6 +298,7 @@ const processAudioWithAI = async (audioBuffer, mimeType, context = {}) => {
         - Tone: ${context.preferredTone || 'FRIENDLY'}
         - Debtors: ${context.debtors || 'None'}
         - Active Reminders: ${context.activeReminders || 'None'}
+        - Business Insight: ${context.businessInsight || 'New Merchant'}
         - Current Time (WAT, UTC+1): ${watISO}
 
         ${SYSTEM_INSTRUCTION}
@@ -338,6 +367,7 @@ const processImageWithAI = async (imageBuffer, mimeType, context = {}) => {
         - Plan: ${plan.toUpperCase()}
         - Tone: ${context.preferredTone || 'FRIENDLY'}
         - Debtors: ${context.debtors || 'None'}
+        - Business Insight: ${context.businessInsight || 'New Merchant'}
         - Current Time (WAT, UTC+1): ${watISO}
 
         ${SYSTEM_INSTRUCTION}

@@ -118,9 +118,9 @@ exports.handlePaystackWebhook = async (req, res) => {
 
                 // 4. Record Payment
                 // 6. Record Payment
-                await Payment.findOneAndUpdate(
-                    { reference },
-                    {
+                const existingPayment = await Payment.findOne({ reference });
+                if (!existingPayment) {
+                    await Payment.create({
                         businessId: profile._id,
                         reference: reference,
                         amount: paidAmount,
@@ -129,9 +129,10 @@ exports.handlePaystackWebhook = async (req, res) => {
                         couponUsed: couponCode || null,
                         status: 'success',
                         paidAt: new Date()
-                    },
-                    { upsert: true }
-                );
+                    });
+                    const { logUsage } = require('../../utils/usageTracker');
+                    logUsage("revenue", { amount: paidAmount }).catch(e => console.error("Log fail:", e));
+                }
 
                 console.log(`✅ Webhook: Business ${profile.displayName} upgraded to ${plan} via ${reference}`);
             } 
@@ -188,14 +189,29 @@ exports.handlePaystackWebhook = async (req, res) => {
                 const sale = await Sale.findOne(vaQuery).populate('businessId');
 
                 if (sale) {
-                    // Update payments via .save() to trigger Mongoose pre-save hook for status updates!
-                    sale.payments.push({
-                        amount: actualCreditAmount,
-                        method: 'Virtual Account Transfer',
-                        reference: reference,
-                        date: new Date()
-                    });
-                    await sale.save();
+                    // 🛡️ ATOMIC UPDATE: Only push if the reference doesn't already exist
+                    const updatedSale = await Sale.findOneAndUpdate(
+                        { 
+                            _id: sale._id, 
+                            "payments.reference": { $ne: reference } 
+                        },
+                        { 
+                            $push: { 
+                                payments: {
+                                    amount: actualCreditAmount,
+                                    method: 'Paystack Webhook',
+                                    reference: reference,
+                                    date: new Date()
+                                } 
+                            } 
+                        },
+                        { new: true }
+                    );
+
+                    if (!updatedSale) {
+                        console.log(`⏩ Webhook reference ${reference} already processed for Invoice ${invoiceNumber}. Skipping.`);
+                        return res.sendStatus(200);
+                    }
 
                     const business = sale.businessId;
                     

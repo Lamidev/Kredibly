@@ -69,7 +69,7 @@ const releaseMerchantEscrow = async (businessId) => {
         // but now it's physically moved to bank)
         // Actually, internalProcessNombaPayment adds it to wallet balance. 
         // When we sweep, we decrement it to show it's gone from Kredibly wallet to Bank.
-        await BusinessProfile.findByIdAndUpdate(businessId, { $inc: { walletBalance: -sweepAmount } });
+        await BusinessProfile.findByIdAndUpdate(businessId, { $inc: { walletBalance: -sweepAmount, heldBalance: -sweepAmount } });
 
         // Notification
         await Notification.create({

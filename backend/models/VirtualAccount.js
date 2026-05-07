@@ -46,7 +46,7 @@ const VirtualAccountSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["active", "used", "expired"],
+        enum: ["active", "processing", "used", "expired"],
         default: "active"
     },
     expiresAt: {

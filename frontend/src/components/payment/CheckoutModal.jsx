@@ -14,9 +14,9 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
     
     const [status, setStatus] = useState('billing'); // 'billing', 'verifying', 'success'
 
-    // Pioneer Offering: Subsizided Launch Rates (3000 & 4500)
+    // Pioneer Offering: Subsizided Launch Rates (1500, 3000 & 4500)
     // These rates cover the first 2 months for merchants who join during the launch window.
-    let basePrice = (plan === 'oga') ? 3000 : (plan === 'chairman' ? 4500 : 0);
+    let basePrice = (plan === 'hustler') ? 1500 : (plan === 'oga' ? 3000 : (plan === 'chairman' ? 4500 : 0));
     
     // Calculate Final Price
     let finalPrice = basePrice;
@@ -143,19 +143,20 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
             position: 'fixed', inset: 0, zIndex: 10000,
             background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(16px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', 
-            padding: '20px', overflowY: 'auto'
+            padding: 'clamp(12px, 3vw, 20px)', overflowY: 'auto'
         }}>
             <motion.div 
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 style={{
                     background: 'white', width: '100%', maxWidth: '440px',
-                    borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+                    borderRadius: '28px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
                     border: '2px solid var(--primary-glow)',
                     position: 'relative', 
-                    maxHeight: '90vh',
+                    maxHeight: 'min(90vh, 700px)',
                     display: 'flex',
-                    flexDirection: 'column'
+                    flexDirection: 'column',
+                    overflow: 'hidden'
                 }}
             >
                 <AnimatePresence mode="wait">
@@ -168,15 +169,27 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
                             style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}
                         >
                             {/* Header */}
-                            <div style={{ padding: '24px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-                                <h3 style={{ fontSize: '1.25rem', fontWeight: 950, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>Confirm Upgrade</h3>
-                                <button onClick={onClose} style={{ background: '#F1F5F9', border: 'none', cursor: 'pointer', color: '#64748B', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: '0.2s' }} onMouseOver={e=>e.currentTarget.style.background='#E2E8F0'} onMouseOut={e=>e.currentTarget.style.background='#F1F5F9'}>
-                                    <X size={20} />
+                            <div style={{ 
+                                padding: 'clamp(16px, 4vw, 24px)', 
+                                borderBottom: '1px solid #F1F5F9', 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center', 
+                                flexShrink: 0 
+                            }}>
+                                <h3 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.25rem)', fontWeight: 950, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>Confirm Upgrade</h3>
+                                <button onClick={onClose} style={{ background: '#F1F5F9', border: 'none', cursor: 'pointer', color: '#64748B', width: '32px', height: '32px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: '0.2s' }}>
+                                    <X size={18} />
                                 </button>
                             </div>
 
                             {/* Body */}
-                            <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+                            <div style={{ 
+                                padding: 'clamp(16px, 4vw, 24px)', 
+                                overflowY: 'auto', 
+                                flex: 1,
+                                WebkitOverflowScrolling: 'touch' 
+                            }}>
                                 
                                 {/* Plan Card Area */}
                                 <div style={{ background: '#F8FAFC', borderRadius: '20px', padding: '20px', marginBottom: '24px', border: '1px solid #E2E8F0' }}>
@@ -187,14 +200,14 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
                                                 display: 'inline-flex', 
                                                 alignItems: 'center', 
                                                 padding: '8px 18px', 
-                                                background: plan === 'hustler' ? '#FEF2F2' : 'rgba(76, 29, 149, 0.08)', 
-                                                color: plan === 'hustler' ? '#EF4444' : 'var(--primary)', 
+                                                background: plan === 'hustler' ? '#F8FAFC' : 'rgba(76, 29, 149, 0.08)', 
+                                                color: plan === 'hustler' ? '#64748B' : 'var(--primary)', 
                                                 borderRadius: '100px', 
                                                 fontSize: '0.8rem', 
                                                 fontWeight: 900, 
                                                 textTransform: 'uppercase',
                                                 letterSpacing: '0.05em',
-                                                border: `1px solid ${plan === 'hustler' ? '#FEE2E2' : 'rgba(76, 29, 149, 0.15)'}`,
+                                                border: `1px solid ${plan === 'hustler' ? '#E2E8F0' : 'rgba(76, 29, 149, 0.15)'}`,
                                                 whiteSpace: 'nowrap',
                                                 lineHeight: 1.2
                                             }}>

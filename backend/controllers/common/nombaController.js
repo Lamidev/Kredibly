@@ -18,16 +18,17 @@ exports.initializeNombaSubscription = async (req, res) => {
         const business = await BusinessProfile.findOne({ ownerId: req.user._id });
         if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
 
-        if (!['oga', 'chairman'].includes(plan)) {
+        if (!['hustler', 'oga', 'chairman'].includes(plan)) {
             return res.status(400).json({ success: false, message: 'Invalid plan selected' });
         }
 
-        const basePrices = { oga: 6000, chairman: 9000 };
-        let amount = basePrices[plan];
-
-        if (billingCycle === 'launch' && new Date() < new Date('2026-06-01')) {
-            amount = amount * 0.5;
-        }
+        // Pioneer Launch Rates (Slashed)
+        const pioneerPrices = { 
+            hustler: 1500, 
+            oga: 3000, 
+            chairman: 4500 
+        };
+        const amount = pioneerPrices[plan];
 
         const orderReference = `SUB-${plan.toUpperCase()}-${business._id}-${Date.now().toString().slice(-4)}`;
         const checkoutLink = await createNombaCheckoutOrder({
@@ -160,7 +161,7 @@ exports.verifyNombaPaymentStatus = async (req, res) => {
 
         if (status.paid) {
             const result = await internalProcessNombaPayment(
-                va.accountReference || accountRef,
+                va.reference,
                 va.accountNumber,
                 status.amount,
                 status.transactionReference,
@@ -281,47 +282,72 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
         }
 
         const isDuplicate = sale.payments?.some(p => 
-            p.reference === transactionReference || 
-            p.reference === accountReference ||
+            p.reference === accountReference || 
+            p.reference === transactionReference ||
             p.reference === accountNumber
         );
         if (isDuplicate) {
+            console.log(`ℹ️ Duplicate check hit early for Ref ${accountReference}`);
+            vaRecord.status = 'used';
+            await vaRecord.save();
             return { success: true, message: "Already processed" };
         }
 
-        const creditAmount = (vaRecord.amount && Math.abs(amount - vaRecord.amount) < 2) ? (vaRecord.baseAmount || amount) : amount;
+        // If the amount paid matches our (potentially rounded) expected amount, we credit the merchant the exact baseAmount.
+        const creditAmount = (vaRecord.amount && Math.abs(amount - vaRecord.amount) < 15) ? (vaRecord.baseAmount || amount) : amount;
         const netToWallet = FINANCIAL_CONFIG.calculateNetAmount(amount);
         const business = sale.businessId;
 
-        sale.payments.push({
-            amount: creditAmount,
-            method: 'Nomba',
-            reference: transactionReference || accountReference,
-            date: new Date()
-        });
-        
-        await sale.save();
+        // 🛡️ ATOMIC UPDATE: Only push if the reference doesn't already exist
+        // This is the final line of defense against duplicates
+        const updatedSale = await Sale.findOneAndUpdate(
+            { 
+                _id: sale._id, 
+                "payments.reference": { $ne: accountReference },
+                "payments.externalReference": { $ne: transactionReference }
+            },
+            { 
+                $push: { 
+                    payments: {
+                        amount: creditAmount,
+                        method: 'Nomba',
+                        reference: accountReference, // 🔑 Always use our internal reference for consistency
+                        externalReference: transactionReference, // Keep the provider's ref too
+                        date: new Date()
+                    } 
+                } 
+            },
+            { new: true }
+        );
+
+        if (!updatedSale) {
+            // This means the reference was already there (duplicate)
+            console.log(`ℹ️ Duplicate payment detected for Sale ${sale.invoiceNumber} with Ref ${accountReference}`);
+            vaRecord.status = 'used';
+            await vaRecord.save();
+            return { success: true, message: "Already processed" };
+        }
+
         vaRecord.status = 'used';
         await vaRecord.save();
 
         await BusinessProfile.findByIdAndUpdate(business._id, { $inc: { walletBalance: netToWallet } });
-        const updatedBusiness = await BusinessProfile.findById(business._id);
-        const currentWalletBalance = updatedBusiness.walletBalance;
+        const currentWalletBalance = (await BusinessProfile.findById(business._id)).walletBalance;
 
         // 🔔 Socket Notification (Instant UI Update)
         try {
             const { getIO } = require('../../utils/socket');
             const io = getIO();
             if (io) {
-                const totalPaid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
-                const newBalance = Math.max(0, sale.totalAmount - totalPaid);
+                const totalPaid = updatedSale.payments.reduce((sum, p) => sum + p.amount, 0);
+                const newBalance = Math.max(0, updatedSale.totalAmount - totalPaid);
                 const payload = { 
-                    saleId: sale._id, 
-                    invoiceNumber: sale.invoiceNumber, 
+                    saleId: updatedSale._id, 
+                    invoiceNumber: updatedSale.invoiceNumber, 
                     amountPaid: creditAmount,
                     totalPaid: totalPaid,
                     newBalance: newBalance,
-                    status: sale.status
+                    status: updatedSale.status
                 };
                 io.to(business._id.toString().toLowerCase()).emit('sale_updated', payload);
                 io.to(`invoice:${sale.invoiceNumber.toLowerCase()}`).emit('sale_updated', payload);
@@ -339,7 +365,17 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 type: "payment",
                 saleId: sale._id
             });
-        } catch (nErr) { console.error("Notification error:", nErr.message); }
+
+            // 📜 Log to Activity Stream
+            const ActivityLog = require('../../models/ActivityLog');
+            await ActivityLog.create({
+                businessId: business._id,
+                action: 'PAYMENT_RECEIVED',
+                entityType: 'PAYMENT',
+                entityId: sale._id,
+                details: `Nomba payment of ₦${creditAmount.toLocaleString()} verified for Invoice #${sale.invoiceNumber} (${sale.customerName || 'Customer'})`
+            });
+        } catch (nErr) { console.error("Notification/Activity error:", nErr.message); }
 
         // 🚀 BACKGROUND TASK: Execute Sweep "Underground"
         // We do NOT await this so the user gets an instant response
@@ -370,6 +406,19 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                         releaseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Default 30 days if never verified
                     });
 
+                    // 🛡️ Track the held amount in profile for UI
+                    await BusinessProfile.findByIdAndUpdate(business._id, { $inc: { heldBalance: amount } });
+
+                    // 🛡️ Log Activity for Feed
+                    const ActivityLog = require('../../models/ActivityLog');
+                    await ActivityLog.create({
+                        businessId: business._id,
+                        action: 'KYC_HOLD',
+                        entityType: 'PAYMENT',
+                        entityId: sale._id,
+                        details: `₦${amount.toLocaleString()} held in escrow. Merchant is not verified.`
+                    });
+
                     // 🔔 Notify Merchant via WhatsApp about the HOLD
                     if (business.whatsappNumber) {
                         const { sendWhatsAppAlert } = require('../whatsapp/whatsappController');
@@ -381,10 +430,10 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
 
                 const bankDetails = business.bankDetails;
                 const delay = 15000;
-                const threshold = 25; // Covers ₦20 transfer fee + ₦5 safety
+                const threshold = 0; // 🚀 PLATFORM COVERS FEE: Merchant gets full amount. We cover the Nomba transfer charge from our main balance.
 
-                if (bankDetails?.bankCode && bankDetails?.accountNumber && nombaActualBalance > threshold) {
-                    const sweepAmount = Math.floor(nombaActualBalance - threshold);
+                if (bankDetails?.bankCode && bankDetails?.accountNumber && nombaActualBalance > 5) {
+                    const sweepAmount = Math.floor(nombaActualBalance);
                     if (sweepAmount > 0) {
                         console.log(`⚡ Underground Settlement Started (₦${sweepAmount}) - Waiting ${delay/1000}s...`);
                         await new Promise(resolve => setTimeout(resolve, delay));
@@ -398,7 +447,8 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                             narration: `Kredibly Settlement (Auto)`
                         });
                         console.log(`✅ Underground Settlement SUCCESS (₦${sweepAmount})`);
-                        await BusinessProfile.findByIdAndUpdate(business._id, { $inc: { walletBalance: -(sweepAmount + threshold) } });
+                        // Deduct only the swept amount. The fee is covered by Kredibly.
+                        await BusinessProfile.findByIdAndUpdate(business._id, { $inc: { walletBalance: -sweepAmount } });
 
                         // 🔔 Notify Merchant Dashboard
                         try {
@@ -478,6 +528,8 @@ async function processSubscriptionWebhook(reference, amount, payer, txRef) {
                 status: 'success',
                 paidAt: new Date()
             });
+            // Log revenue for platform stats
+            logUsage("revenue", { amount }).catch(e => console.error("Log fail:", e));
         } catch (dbErr) {
             if (dbErr.code === 11000) {
                 console.log(`ℹ️ Subscription ${txRef || reference} already logged.`);

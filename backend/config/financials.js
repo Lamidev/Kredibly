@@ -30,16 +30,19 @@ const FINANCIAL_CONFIG = {
     calculateGrossAmount: (netAmount, absorbFees = false) => {
         if (absorbFees) return netAmount;
         
+        let gross;
         // Nomba charges MAX(10, MIN(1000, 1% of Gross))
-        // 1. Minimum cap (₦10) applies when Gross <= 1010 (Net <= 1000)
-        // 2. Maximum cap (₦1000) applies when Gross >= 101000 (Net >= 100000)
         if (netAmount <= 1000) {
-            return Math.ceil(netAmount + 10);
+            gross = netAmount + 10;
         } else if (netAmount >= 100000) {
-            return Math.ceil(netAmount + 1000);
+            gross = netAmount + 1000;
         } else {
-            return Math.ceil(netAmount / (1 - FINANCIAL_CONFIG.NOMBA.DVA_PERCENTAGE));
+            gross = netAmount / (1 - FINANCIAL_CONFIG.NOMBA.DVA_PERCENTAGE);
         }
+
+        // 🎯 ROUND FIGURE LOGIC: Round to the nearest 10 for a professional look (e.g., 1052 -> 1050)
+        // User prefers 0 at the end. Small differences are covered by our main balance.
+        return Math.round(gross / 10) * 10;
     },
 
     // Helper to calculate how much lands in the merchant's virtual wallet after DVA fees

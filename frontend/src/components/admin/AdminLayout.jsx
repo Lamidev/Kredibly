@@ -43,9 +43,9 @@ const AdminLayout = () => {
       icon: Zap,
     },
     { label: "Merchant Directory", path: "/admin/merchants", icon: Users },
+    { label: "Revenue & Subs", path: "/admin/revenue", icon: CreditCard },
     { label: "Waitlist Pipeline", path: "/admin/waitlist", icon: Globe },
     { label: "Support Tickets", path: "/admin/support", icon: Ticket },
-    { label: "Revenue & Subs", path: "/admin/revenue", icon: CreditCard },
     { label: "Coupons & Promo", path: "/admin/coupons", icon: ShieldCheck },
     { label: "Founder Roadmap", path: "/admin/roadmap", icon: Lightbulb },
   ];

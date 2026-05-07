@@ -135,7 +135,7 @@ const PublicNavbar = () => {
                             color: 'white', fontSize: '0.9rem', fontWeight: 700, textDecoration: 'none',
                             boxShadow: '0 4px 12px rgba(76, 29, 149, 0.2)'
                         }}>
-                            Start for ₦0
+                            Start Free Trial
                         </Link>
                         <button onClick={() => setIsMobileMenuOpen(true)} style={{ background: 'none', border: 'none', color: '#0F172A', padding: '6px' }} className="md:hidden">
                             <Menu size={24} />
@@ -195,7 +195,7 @@ const PublicNavbar = () => {
                                             }}>Login</Link>
                                             <Link to="/auth/register" onClick={() => setIsMobileMenuOpen(false)} style={{ 
                                                 width: '100%', padding: '16px', borderRadius: '16px', background: 'var(--primary)', textAlign: 'center', textDecoration: 'none', color: 'white', fontWeight: 800, fontSize: 'clamp(0.85rem, 3.5vw, 0.95rem)', boxShadow: '0 10px 20px -5px rgba(76, 29, 149, 0.3)' 
-                                            }}>Start for ₦0</Link>
+                                            }}>Start Free Trial</Link>
                                         </div>
                                     </div>
                                 </div>

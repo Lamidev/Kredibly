@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import PublicNavbar from '../../components/public/PublicNavbar';
 import PublicFooter from '../../components/public/PublicFooter';
 import { motion } from 'framer-motion';
-import { Check, X, Zap, HelpCircle, ArrowRight, ShieldCheck, Sparkles, Mic } from 'lucide-react';
+import { Check, X, Zap, HelpCircle, ArrowRight, ShieldCheck, Sparkles, Mic, Wallet, BadgeCheck } from 'lucide-react';
 
 const PricingPage = () => {
     const navigate = useNavigate();
@@ -23,9 +23,10 @@ const PricingPage = () => {
             slug: "hustler",
             tagline: "The Record-Keeper's Choice",
             description: "Stop writing in notebooks. Start building your digital reputation today.",
-            price: "Free",
-            fee: "0% Transaction Fees*",
-            period: "",
+            originalPrice: "₦3,000",
+            price: "₦1,500",
+            period: "/ month",
+            fee: "Zero Transfer Fees*",
             features: [
                 "10 Sale Records limit per Month",
                 "Kreddy AI Text Intelligence (Type normally)",
@@ -33,7 +34,7 @@ const PricingPage = () => {
                 "Verified Ledger Seal",
                 "Digital Receipts (Kredibly Branded)"
             ],
-            cta: profile?.plan === "hustler" ? "Current Plan" : "Start Hustling Free",
+            cta: profile?.plan === "hustler" ? "Current Plan" : "Start Hustling",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
             highlight: false,
             color: "#64748B"
@@ -44,9 +45,9 @@ const PricingPage = () => {
             tagline: "The Business Leader",
             description: "Step up to professional branding and lower fees for your growing business.",
             originalPrice: "₦6,000",
-            price: "₦3,000", // 50% Slash
+            price: "₦3,000", 
             isSlash: true,
-            fee: "0% Transaction Fees*",
+            fee: "Zero Transfer Fees*",
             period: "/ month",
             features: [
                 "Everything in Hustler Plan",
@@ -67,9 +68,9 @@ const PricingPage = () => {
             tagline: "The Empire Command Center",
             description: "Run multiple shops without stress. Lead your empire with zero commissions.",
             originalPrice: "₦9,000",
-            price: "₦4,500", // 50% Slash
+            price: "₦4,500", 
             isSlash: true,
-            fee: "0% Transaction Fees*",
+            fee: "Zero Transfer Fees*",
             period: "/ month",
             features: [
                 "Everything in Oga Plan",
@@ -96,13 +97,13 @@ const PricingPage = () => {
                 
                 <div style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto' }}>
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                        <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem' }}>GRAND LAUNCH WINDOW (MAY 1 - JUNE 1)</div>
+                        <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem' }}>PIONEER LAUNCH (SUBSIZED RATES)</div>
                         <h1 style={{ fontSize: 'clamp(3rem, 7vw, 5rem)', fontWeight: 950, letterSpacing: '-0.05em', lineHeight: 1, marginBottom: '24px' }}>
                             Simple Pricing.<br />
                             <span className="premium-gradient">Zero Hidden Fees.</span>
                         </h1>
                         <p style={{ fontSize: '1.25rem', color: '#64748B', marginBottom: '48px', maxWidth: '700px', margin: '0 auto 48px', fontWeight: 600 }}>
-                            Join during our Grand Launch and lock in <strong>50% off</strong> your first 2 months. Cancel anytime. No hidden charges — ever.
+                            Join during our Grand Launch and lock in <strong>subsidized rates</strong> forever. No hidden bank charges — we cover your ₦25 transfer fees.
                         </p>
                     </motion.div>
                 </div>
@@ -117,7 +118,7 @@ const PricingPage = () => {
                             {/* Badge ABOVE plan name */}
                             {plan.isSlash && (
                                 <div className="pp-pricing-badge">
-                                    🎉 2-Month 50% Grand Opening Special
+                                    🎉 Limited Time Pioneer Offer
                                 </div>
                             )}
                             <h3 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', fontWeight: 900, marginBottom: '8px' }}>{plan.name}</h3>
@@ -125,11 +126,11 @@ const PricingPage = () => {
                             
                             <div style={{ marginBottom: '32px' }}>
                                 <div className="pp-price-row">
-                                    {plan.isSlash && <span className="pp-price-original">{plan.originalPrice}</span>}
+                                    <span className="pp-price-original">{plan.originalPrice}</span>
                                     <span className="pp-price-main">{plan.price}</span>
                                     <span className="pp-price-period">{plan.period}</span>
                                 </div>
-                                <div style={{ fontSize: '0.9rem', fontWeight: 900, color: plan.highlight ? 'white' : 'var(--primary)', marginTop: '4px' }}>+ {plan.fee}</div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 900, color: plan.highlight ? 'white' : 'var(--primary)', marginTop: '4px' }}>{plan.fee}</div>
                             </div>
 
                             <button 
@@ -154,22 +155,22 @@ const PricingPage = () => {
                     ))}
                 </div>
                 
-                <div style={{ marginTop: '60px', textAlign: 'center' }}>
-                    <p style={{ color: '#94A3B8', fontWeight: 700, fontSize: '0.9rem' }}>
-                        *Transaction fees are absorbed by Kredibly during the beta phase for all pioneers.
-                    </p>
+                <div style={{ marginTop: '60px', textAlign: 'center', maxWidth: '800px', margin: '60px auto 0' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#16A34A', fontWeight: 800, fontSize: '1rem', background: 'rgba(22, 163, 74, 0.05)', padding: '12px 24px', borderRadius: '100px' }}>
+                        <BadgeCheck size={20} /> WE COVER YOUR BANK CHARGES — No ₦25 transfer fees on payouts.
+                    </div>
                 </div>
             </section>
 
             {/* AI Call to Action */}
             <section style={{ padding: '80px 24px', background: 'white' }}>
                 <div className="pricing-cta-box" style={{ maxWidth: '1000px', margin: '0 auto', background: '#F5F3FF', padding: '60px', borderRadius: '48px', border: '1px solid rgba(124, 58, 237, 0.1)', textAlign: 'center' }}>
-                    <h2 style={{ fontSize: '2.5rem', fontWeight: 950, letterSpacing: '-0.04em', marginBottom: '24px' }}>Stop bleeding money. <br /><span className="premium-gradient">Get Kreddy today.</span></h2>
+                    <h2 style={{ fontSize: '2.5rem', fontWeight: 950, letterSpacing: '-0.04em', marginBottom: '24px' }}>Build your empire. <br /><span className="premium-gradient">Try Chairman Free.</span></h2>
                     <p style={{ fontSize: '1.15rem', color: '#4C1D95', fontWeight: 700, marginBottom: '40px', maxWidth: '600px', margin: '0 auto 40px' }}>
-                        Join 200+ Nigerian businesses who have abandoned their notebooks for Kreddy's AI secretary.
+                        Get 14 days of unlimited staff, AI voice notes, and executive briefings. Switch to any plan anytime.
                     </p>
                     <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', height: 'auto', borderRadius: '20px' }}>Claim My 50% Pioneer Discount</button>
+                        <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', height: 'auto', borderRadius: '20px' }}>Start My 14-Day Free Trial</button>
                     </div>
                 </div>
             </section>
@@ -243,25 +244,17 @@ const PricingPage = () => {
                     font-size: 0.9rem;
                 }
 
-                /* ── Mobile Responsive Fixes ── */
                 @media (max-width: 900px) {
                     .pp-pricing-grid {
                         grid-template-columns: 1fr;
                         max-width: 480px;
                         margin: 0 auto;
                     }
-                    .pp-pricing-card--featured {
-                        order: -1;
-                    }
                 }
                 @media (max-width: 768px) {
-                    .pricing-comparison-grid {
-                        grid-template-columns: 1fr !important;
-                    }
                     .pricing-cta-box {
                         padding: 36px 20px !important;
                     }
-                    /* Header text scaling */
                     .pricing-header h1 {
                         font-size: clamp(2rem, 8vw, 3.5rem) !important;
                     }

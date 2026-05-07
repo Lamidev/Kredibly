@@ -58,10 +58,16 @@ const Dashboard = () => {
                     fetchActivities();
                 }, 1000);
             });
+
+            listenToEvent("activity_updated", (data) => {
+                console.log("⚡ Activity update received:", data);
+                fetchActivities();
+            });
         }
 
         return () => {
             stopListeningToEvent("sale_updated");
+            stopListeningToEvent("activity_updated");
             disconnectSocket();
         };
     }, [profile?._id]);
@@ -254,14 +260,71 @@ const Dashboard = () => {
                 </motion.div>
             )}
 
-            {/* 🛡️ KYC Compliance Nudge */}
-            {profile?.kyc?.status !== 'verified' && (
+            {/* 🛡️ SECURE ESCROW CARD (Held Funds / Security Lock) */}
+            {(profile?.heldBalance > 0 || (profile?.bankDetails?.bankDetailsLockUntil && new Date(profile.bankDetails.bankDetailsLockUntil) > new Date())) && (
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    style={{ 
+                        background: 'linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)', 
+                        padding: '24px clamp(16px, 5vw, 32px)', 
+                        borderRadius: '32px', 
+                        marginBottom: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '24px',
+                        border: '1px solid #FB923C',
+                        boxShadow: '0 20px 25px -5px rgba(251, 146, 60, 0.1)'
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                        <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: '#FB923C', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'white' }}>
+                            <Shield size={28} />
+                        </div>
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                <span style={{ background: '#FFEDD5', color: '#9A3412', fontSize: '10px', fontWeight: 900, padding: '2px 8px', borderRadius: '100px', textTransform: 'uppercase' }}>Security Escrow</span>
+                                <h4 style={{ fontSize: '1.25rem', fontWeight: 950, color: '#1E293B', margin: 0 }}>
+                                    ₦{(profile?.heldBalance || 0).toLocaleString()} Secured & Locked
+                                </h4>
+                            </div>
+                            <p style={{ fontSize: '0.9rem', color: '#9A3412', fontWeight: 700, margin: 0 }}>
+                                {profile?.heldBalance > 0 && profile?.kyc?.status !== 'verified' 
+                                    ? "Verification required to release funds to your bank account." 
+                                    : "Payouts temporarily locked due to bank account update. Auto-releases soon."}
+                            </p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={() => navigate(profile?.kyc?.status !== 'verified' ? '/settings?tab=kyc' : '/settings?tab=payout')}
+                        style={{ 
+                            padding: '14px 32px', 
+                            borderRadius: '16px', 
+                            background: '#FB923C', 
+                            color: 'white', 
+                            fontWeight: 950, 
+                            border: 'none', 
+                            cursor: 'pointer',
+                            fontSize: '0.9rem',
+                            boxShadow: '0 10px 15px -3px rgba(251, 146, 60, 0.3)'
+                        }}
+                        className="hover-scale"
+                    >
+                        {profile?.heldBalance > 0 && profile?.kyc?.status !== 'verified' ? "Verify & Release Funds" : "Unlock Instantly"}
+                    </button>
+                </motion.div>
+            )}
+
+            {/* 🛡️ KYC Compliance Nudge (Only show if NO funds are held, otherwise the Escrow Card covers it) */}
+            {profile?.kyc?.status !== 'verified' && profile?.heldBalance <= 0 && (
                 <motion.div 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     style={{ 
                         background: 'white', 
-                        padding: '24px 32px', 
+                        padding: '24px clamp(16px, 5vw, 32px)', 
                         borderRadius: '32px', 
                         marginBottom: '40px',
                         display: 'flex',
