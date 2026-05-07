@@ -43,7 +43,7 @@ const App = () => {
   if (loading) return null;
 
   const getHomeRedirect = () => {
-    if (!user) return "/auth/login";
+    if (!user) return "/";
     if (user.role === 'admin') return "/admin";
     return profile ? "/dashboard" : "/onboarding";
   };

@@ -867,7 +867,7 @@ const downloadWhatsAppMedia = async (mediaId) => {
 };
 
 exports.handleIncoming = async (req, res) => {
-    res.sendStatus(200);
+    let from = null; // 🛡️ Initialize for catch block safety
 
     try {
         const entry = req.body.entry?.[0];
@@ -876,19 +876,17 @@ exports.handleIncoming = async (req, res) => {
         const message = value?.messages?.[0];
 
         if (!message) {
-            // Log status updates briefly if needed, or ignore
-            // const status = value?.statuses?.[0];
-            // if (status) console.log(`👉 Status Update: ${status.status} for ${status.recipient_id}`);
-            return;
+            return res.sendStatus(200);
         }
 
+        from = message.from;
         const messageId = message.id;
-        const from = message.from;
         const msgType = message.type;
         const text = message.text?.body?.trim() || "";
         const whatsappProfileName = value?.contacts?.[0]?.profile?.name || "";
         
         console.log(`📩 Message from ${whatsappProfileName} (${from}): "${text}"`);
+        res.sendStatus(200); // ⚡ Acknowledge Meta early to prevent retries
 
         // Send Read Receipt (The "Blue Ticks")
         await sendReadReceipt(messageId);
@@ -2790,7 +2788,9 @@ Upgrade here: ${APP_URL}/pricing`);
     }
     } catch (err) {
         console.error("WhatsApp Assistant Error:", err);
-        await sendReply(from, "Ouch! My brain had a small glitch. 😵‍ Give me a moment to recover and try again! 🛡️");
+        if (from) {
+            await sendReply(from, "Ouch! My brain had a small glitch. 😵‍ Give me a moment to recover and try again! 🛡️");
+        }
     }
 };
 
