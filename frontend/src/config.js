@@ -4,8 +4,12 @@ export const KREDDY_CONFIG = {
     // Kreddy WhatsApp Business Number
     PHONE_NUMBER: "2347071238658", 
     
+    // Admin/Manual Verification Support
+    SUPPORT_NUMBER: "2347056501913",
+
     // The link format for deep linking
-    getLink: (text = "Hi Kreddy") => `https://wa.me/2347071238658?text=${encodeURIComponent(text)}`
+    getLink: (text = "Hi Kreddy") => `https://wa.me/2347071238658?text=${encodeURIComponent(text)}`,
+    getSupportLink: (text = "Hi Kredibly Support") => `https://wa.me/2347056501913?text=${encodeURIComponent(text)}`
 };
 
 export default API_BASE_URL;

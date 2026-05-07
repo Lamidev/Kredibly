@@ -150,5 +150,19 @@ module.exports = {
     initializePayment,
     createTransferRecipient,
     initiateTransfer,
-    getSubaccount
+    getSubaccount,
+    matchBVN
 };
+
+/**
+ * 8. BVN - Account Match (The "Identity Guard")
+ * Verifies if a BVN is linked to a specific bank account.
+ * Costs ₦10 per check.
+ */
+async function matchBVN(accountNumber, bankCode, bvn) {
+    try {
+        return await paystackRequest(`/bank/match_bvn?account_number=${accountNumber}&bank_code=${bankCode}&bvn=${bvn}`);
+    } catch (err) {
+        throw err;
+    }
+}

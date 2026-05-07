@@ -98,6 +98,10 @@ const BusinessProfileSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    heldBalance: {
+        type: Number,
+        default: 0 // Money in escrow pending KYC verification
+    },
     trialExpiresAt: {
         type: Date
     },
@@ -149,6 +153,11 @@ const BusinessProfileSchema = new mongoose.Schema({
             type: String,
             enum: ["pending", "verified", "failed", "skipped"],
             default: "pending"
+        },
+        tier: {
+            type: Number,
+            enum: [1, 2, 3],
+            default: 1 // 1: Unverified, 2: BVN Matched
         },
         method: {
             type: String,

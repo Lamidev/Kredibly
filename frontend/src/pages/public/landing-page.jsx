@@ -16,7 +16,9 @@ import {
     Lock,
     Mic,
     Calendar,
-    Clock
+    Clock,
+    Wallet,
+    BadgeCheck
 } from "lucide-react";
 import { motion } from "framer-motion";
 import PublicNavbar from "../../components/public/PublicNavbar";
@@ -80,9 +82,10 @@ const LandingPage = () => {
             slug: "hustler",
             tagline: "The Record-Keeper's Choice",
             description: "Stop writing in notebooks. Start building your digital reputation today.",
-            price: "Free",
-            fee: "0% Transaction Fees*",
-            period: "",
+            originalPrice: "₦3,000",
+            price: "₦1,500",
+            period: "/ month",
+            fee: "Zero Transfer Fees*",
             features: [
                 "10 Sale Records limit per Month",
                 "Kreddy AI Text Intelligence (Type normally)",
@@ -90,7 +93,7 @@ const LandingPage = () => {
                 "Verified Ledger Seal",
                 "Digital Receipts (Kredibly Branded)"
             ],
-            cta: profile?.plan === "hustler" ? "Current Plan" : "Start Hustling Free",
+            cta: profile?.plan === "hustler" ? "Current Plan" : "Start Hustling",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
             highlight: false,
             color: "#64748B"
@@ -102,9 +105,9 @@ const LandingPage = () => {
             isPopular: true,
             description: "Step up to professional branding and lower fees for your growing business.",
             originalPrice: "₦6,000",
-            price: "₦3,000", // 50% Slash
+            price: "₦3,000", 
             isSlash: true,
-            fee: "0% Transaction Fees*",
+            fee: "Zero Transfer Fees*",
             period: "/ month",
             features: [
                 "Everything in Hustler Plan",
@@ -125,9 +128,9 @@ const LandingPage = () => {
             tagline: "The Empire Command Center",
             description: "Run multiple shops without stress. Lead your empire with zero commissions.",
             originalPrice: "₦9,000",
-            price: "₦4,500", // 50% Slash
+            price: "₦4,500", 
             isSlash: true,
-            fee: "0% Transaction Fees*",
+            fee: "Zero Transfer Fees*",
             period: "/ month",
             features: [
                 "Everything in Oga Plan",
@@ -144,8 +147,6 @@ const LandingPage = () => {
         }
     ];
     const location = useLocation();
-    const [scrolled, setScrolled] = useState(false);
-    const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' or 'yearly'
 
     const scrollToSection = (sectionId) => {
         const element = document.getElementById(sectionId);
@@ -219,7 +220,7 @@ const LandingPage = () => {
                         boxShadow: '0 8px 16px rgba(76, 29, 149, 0.08)'
                     }}>
                         <span style={{ 
-                            fontSize: 'clamp(0.6rem, 2.5vw, 0.85rem)',
+                            fontSize: 'clamp(0.65rem, 2.5vw, 0.85rem)',
                             fontWeight: 800, 
                             color: 'var(--primary)',
                             letterSpacing: '0.08em',
@@ -229,7 +230,7 @@ const LandingPage = () => {
 
                     <h1 style={{ 
                         fontSize: 'clamp(2.1rem, 8vw, 5.5rem)',
-                        fontWeight: 900, 
+                        fontWeight: 950, 
                         lineHeight: 1, 
                         letterSpacing: '-0.04em',
                         marginBottom: '32px'
@@ -263,17 +264,17 @@ const LandingPage = () => {
                         fontWeight: 400,
                     }}>
                         You have a business to run. Let Kreddy handle the records. 
-                        Plan your day, track what you're owed, send professional invoices, and get paid seamlessly, all inside your WhatsApp.
+                        Plan your day, track what you're owed, send professional invoices, and get paid instantly, all inside your WhatsApp.
                     </p>
 
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
                         <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                            <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', fontSize: '1.2rem', borderRadius: '100px' }}>Start for ₦0 <ArrowRight size={20} /></button>
+                            <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', fontSize: '1.2rem', borderRadius: '100px' }}>Try Chairman Free for 14 Days <ArrowRight size={20} /></button>
                             <button onClick={() => scrollToSection('how-it-works')} className="btn-secondary" style={{ padding: '20px 48px', fontSize: '1.2rem', borderRadius: '100px', background: 'white', color: 'var(--primary)', borderColor: 'var(--primary)' }}>Meet Kreddy AI</button>
                         </div>
-                        <p style={{ color: '#475569', fontSize: '0.95rem', fontWeight: 600, margin: 0 }}>
-                            No charge today. Setup in under 2 minutes.
-                        </p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#16A34A', fontWeight: 800, fontSize: '0.95rem' }}>
+                            <BadgeCheck size={18} /> ZERO TRANSFER FEES — We cover your ₦25 bank charges.
+                        </div>
                     </div>
                 </motion.div>
             </header>
@@ -294,34 +295,34 @@ const LandingPage = () => {
 
                     <div className="bento-item bento-2" style={{ background: 'linear-gradient(135deg, #0F172A, #1E1B4B)', color: 'white' }}>
                         <div style={{ position: 'relative', zIndex: 2 }}>
-                            <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '12px' }}>Personal Assistant</h4>
-                            <p style={{ opacity: 0.8, fontSize: '1.1rem', lineHeight: 1.5, fontWeight: 500 }}>Kreddy doesn't just manage sales. She remembers your gym sessions, market runs, and doctor appointments.</p>
+                            <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '12px' }}>AI Drafting Assistant</h4>
+                            <p style={{ opacity: 0.8, fontSize: '1.1rem', lineHeight: 1.5, fontWeight: 500 }}>Too busy to type? Speak to Kreddy. She drafts your professional invoices and follow-ups for you to send personally.</p>
                         </div>
                         <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.15 }}><Sparkles size={200} /></div>
                     </div>
 
                     <div className="bento-item bento-3" style={{ background: 'white', position: 'relative', overflow: 'hidden' }}>
                         <div style={{ position: 'relative', zIndex: 2 }}>
-                            <h4 style={{ fontSize: '1.3rem', fontWeight: 900, marginBottom: '12px' }}>24/7 Reminders</h4>
-                            <p style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 600 }}>Kreddy nudges your debtors automatically so you don't have to feel awkward chasing money.</p>
+                            <h4 style={{ fontSize: '1.3rem', fontWeight: 900, marginBottom: '12px' }}>Identity Guard</h4>
+                            <p style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 600 }}>Secure BVN-matching ensures every merchant is legitimate. Bank-grade security for peace of mind.</p>
                         </div>
-                        <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.05 }}><Zap size={200} color="#7C3AED" /></div>
+                        <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.05 }}><Lock size={200} color="#7C3AED" /></div>
                     </div>
 
                     <div className="bento-item bento-4" style={{ background: 'linear-gradient(135deg, #0F172A, #1E1B4B)', color: 'white', overflow: 'hidden' }}>
                         <div style={{ position: 'relative', zIndex: 2 }}>
-                            <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '12px' }}>Next-Morning Settlement</h4>
-                            <p style={{ opacity: 0.8, fontSize: '1.1rem', lineHeight: 1.5, fontWeight: 500 }}>Secure "Pay Now" links mean money lands in your bank account the moment someone pays.</p>
+                            <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '12px' }}>Instant Settlement</h4>
+                            <p style={{ opacity: 0.8, fontSize: '1.1rem', lineHeight: 1.5, fontWeight: 500 }}>Customer pays via bank transfer, money lands in your bank instantly. No 24-hour delays.</p>
                         </div>
-                        <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.15 }}><CreditCard size={200} /></div>
+                        <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.15 }}><Wallet size={200} /></div>
                     </div>
 
                     <div className="bento-item bento-5" style={{ background: '#F8FAFC', position: 'relative', overflow: 'hidden' }}>
                         <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                            <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '10px' }}>Scale Like a Chairman</h4>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', fontWeight: 500 }}>Track what your sales staff are doing in real-time. Whether you have 1 stall or 10 shops.</p>
+                            <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '10px' }}>Zero Hidden Fees</h4>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', fontWeight: 500 }}>We cover your bank transfer charges. Your ₦5,000 sale is ₦5,000 in your pocket.</p>
                         </div>
-                        <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.05 }}><TrendingUp size={200} color="#4C1D95" /></div>
+                        <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.05 }}><BadgeCheck size={200} color="#4C1D95" /></div>
                     </div>
                 </div>
             </section>
@@ -330,8 +331,8 @@ const LandingPage = () => {
             <section id="how-it-works" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: 'white' }}>
                 <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-                        <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', marginBottom: '24px' }}>Meet Kreddy: Your 24/7 Digital Secretary.</h2>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: 500, maxWidth: '700px', margin: '0 auto' }}>Leverage AI to manage your commerce and your day without ever leaving WhatsApp.</p>
+                        <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', marginBottom: '24px' }}>Meet Kreddy: Your AI Admin.</h2>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: 500, maxWidth: '700px', margin: '0 auto' }}>She listens, learns, and drafts your commerce work so you can focus on selling.</p>
                     </div>
 
                     <div className="landing-mockup-grid">
@@ -348,16 +349,16 @@ const LandingPage = () => {
                                                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#128C7E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Mic size={20} color="white" /></div>
                                                 <div style={{ width: '120px', height: '6px', background: 'rgba(18, 140, 126, 0.3)', borderRadius: '3px' }} />
                                             </div>
-                                            <p style={{ margin: '0', opacity: 0.7, fontSize: '0.75rem', fontStyle: 'italic' }}>"Ah Kreddy, I just gave 10 bags to Mr. Okoro for 50k, remind me to follow up next Tuesday. Also, remind me to go for my gym session by 5 PM today."</p>
+                                            <p style={{ margin: '0', opacity: 0.7, fontSize: '0.75rem', fontStyle: 'italic' }}>"Kreddy, Chima bought 5 shirts for 20k each, he paid 50k deposit. Prepare the invoice and a thank you message."</p>
                                         </div>
                                         <div style={{ alignSelf: 'flex-start', background: 'white', padding: '16px', borderRadius: '0 16px 16px 16px', fontSize: '0.85rem' }}>
                                             <p style={{ color: 'var(--primary)', fontWeight: 900, fontSize: '0.75rem', marginBottom: '6px' }}>Kreddy Assistant</p>
                                             <p style={{ fontWeight: 600, lineHeight: 1.5 }}>
-                                                Done, Chairman! 🫡<br /><br />
-                                                ✅ <b>Recorded Sale:</b> Mr. Okoro (₦50k)<br />
-                                                ⏳ <b>Debt Reminder:</b> Next Tuesday Morning<br />
-                                                🏃‍♂️ <b>Personal Reminder:</b> Gym Session (5:00 PM Today)<br /><br />
-                                                <i>I've got you covered!</i>
+                                                Got it, Boss! 🫡<br /><br />
+                                                🛍️ <b>Drafted Invoice:</b> Chima (₦100k total, ₦50k balance)<br />
+                                                ✍️ <b>Message Draft:</b> "Hi Chima, thanks for shopping! Here is your receipt. Balance due: ₦50,000."<br /><br />
+                                                <b>Click below to share:</b><br />
+                                                [Share Link to WhatsApp]
                                             </p>
                                         </div>
                                     </div>
@@ -369,11 +370,11 @@ const LandingPage = () => {
                         <div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '56px' }}>
                                 {[
-                                    { icon: Mic, title: "Stop typing. Start talking.", desc: "Send Kreddy a 30-second voice note while you're walking. She extracts the debt, sets the reminders, and updates your records instantly." },
-                                    { icon: Calendar, title: "Plan Your Entire Life", desc: "Set gym reminders, market meetings, or child pick-ups via Kreddy. She isn't just for business; she's for your lifestyle." },
-                                    { icon: ShieldCheck, title: "The 'Pay-Now' Advantage", desc: "Stop asking 'Have you sent it?' Send a secure Kredibly link and get notified the second the money leaves their hand." },
-                                    { icon: TrendingUp, title: "Staff Monitoring & Trust", desc: "Record every sale globally so your sales boys can't play games with your money. Professional monitoring for modern bosses." },
-                                    { icon: Clock, title: "Morning Market Briefing", desc: "Start every day with an 8 AM summary on WhatsApp of who owes you, what's in the bank, and what your schedule looks like." }
+                                    { icon: Mic, title: "Speak, don't type.", desc: "Send Kreddy a voice note. She handles the math, records the sale, and drafts the professional responses for you." },
+                                    { icon: Smartphone, title: "You Send, She Drafts.", desc: "Keep the personal touch. Kreddy prepares the perfect messages, and you send them personally to your customers." },
+                                    { icon: Zap, title: "Instant Bank Settlements", desc: "Your money hits your bank account the second a customer pays. No 24-hour waiting games." },
+                                    { icon: BadgeCheck, title: "Zero Bank Charges", desc: "We cover the ₦25 transfer fees on all your payouts. Keep 100% of your earnings." },
+                                    { icon: Clock, title: "8 AM Business Briefing", desc: "Wake up to a morning briefing on WhatsApp. Who owes you, who paid, and what your day looks like." }
                                 ].map((item, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '28px' }}>
                                         <div style={{ minWidth: '64px', height: '64px', borderRadius: '20px', background: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><item.icon color="var(--primary)" size={28} /></div>
@@ -390,15 +391,14 @@ const LandingPage = () => {
             <section id="pricing" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: '#FDFCFE' }}>
                 <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: 'clamp(40px, 8vw, 80px)' }}>
-                        <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: 'clamp(0.7rem, 2vw, 0.85rem)', letterSpacing: '0.05em' }}>100% FREE SETTLEMENTS & NEXT-DAY PAYOUT</div>
-                        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Zero Platform Fees. <br /><span className="premium-gradient">Keep more of your sales.</span></h2>
-                        <p style={{ fontSize: 'clamp(0.9rem, 2.5vw, 1.2rem)', color: 'var(--text-muted)', marginTop: '20px', maxWidth: '600px', margin: '20px auto 48px' }}>We don't charge you a single Naira to record sales or send invoices. Your money is settled directly to your bank account with industry-leading speed.</p>
+                        <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: 'clamp(0.7rem, 2vw, 0.85rem)', letterSpacing: '0.05em' }}>100% INSTANT SETTLEMENTS & ZERO BANK FEES</div>
+                        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Pioneer Pricing. <br /><span className="premium-gradient">Limited Launch Access.</span></h2>
+                        <p style={{ fontSize: 'clamp(0.9rem, 2.5vw, 1.2rem)', color: 'var(--text-muted)', marginTop: '20px', maxWidth: '600px', margin: '20px auto 48px' }}>Join our first 1,000 merchants and lock in these subsidized rates. We cover your transfer charges so you keep more of your money.</p>
                     </div>
 
                     <div className="lp-pricing-grid">
                         {plans.map((plan, i) => (
                              <div key={i} className={`lp-pricing-card ${plan.highlight ? 'lp-pricing-card--featured' : ''}`} style={{ position: 'relative' }}>
-                                {/* Badge ABOVE plan name */}
                                 {plan.isPopular && (
                                     <div style={{ 
                                         position: 'absolute', 
@@ -424,11 +424,11 @@ const LandingPage = () => {
                                 
                                 <div style={{ marginBottom: '32px' }}>
                                     <div className="lp-price-row">
-                                        {plan.isSlash && <span className="lp-price-original">{plan.originalPrice}</span>}
+                                        <span className="lp-price-original">{plan.originalPrice}</span>
                                         <span className="lp-price-main">{plan.price}</span>
                                         <span className="lp-price-period">{plan.period}</span>
                                     </div>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: plan.highlight ? 'white' : 'var(--primary)', marginTop: '4px' }}>+ {plan.fee}</div>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: plan.highlight ? 'white' : 'var(--primary)', marginTop: '4px' }}>{plan.fee}</div>
                                 </div>
 
                                 <button 
@@ -455,55 +455,316 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* Mission Map Section */}
-            <section style={{ padding: '80px 24px', background: '#F8FAFC', borderTop: '1px solid #F1F5F9' }}>
-                <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} style={{ maxWidth: '1000px', margin: '0 auto' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-                        <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem' }}>THE MISSION MAP</div>
-                        <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 900, letterSpacing: '-0.04em', marginBottom: '24px', color: '#0F172A' }}>The Road to Trust.</h2>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem', fontWeight: 500, maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>Building the infrastructure for African commerce isn't an overnight job. Here's our timeline.</p>
-                    </div>
+            {/* 6. Premium Mobile Ecosystem Preview - THE MOBILE OS FOR MERCHANTS */}
+            <section id="mobile-os" style={{ 
+                padding: 'clamp(4rem, 12vw, 8rem) 0',
+                background: '#020617', 
+                color: 'white',
+                position: 'relative',
+                overflow: 'hidden'
+            }}>
+                <motion.div 
+                    initial={{ opacity: 0, y: 40 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.1 }}
+                    transition={{ duration: 1 }}
+                >
+                <div style={{ position: 'absolute', top: '20%', right: '-10%', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(124, 58, 237, 0.1) 0%, transparent 70%)', filter: 'blur(120px)', zIndex: 0 }} />
 
-                    <div style={{ position: 'relative', marginTop: '40px' }}>
-                        <div style={{ position: 'relative', paddingLeft: '40px' }}>
-                            <div style={{ position: 'absolute', left: '7px', top: '0', bottom: '0', width: '2px', background: 'linear-gradient(to bottom, #E2E8F0 0%, var(--primary) 30%, var(--primary) 70%, #E2E8F0 100%)' }} />
-                            {[
-                                { date: "JULY '25", title: "The Genesis", desc: "Concept & Research Phase. Identifying the 'Trust Gap' in African commerce.", status: "completed" },
-                                { date: "SEPT '25", title: "Strategic Architecture", desc: "Core blueprinting of the Kredibly workspace and AI interface flow.", status: "completed" },
-                                { date: "DEC '25", title: "Kreddy AI Core", desc: "Intelligence engine development. Teaching Kreddy to understand merchant slang and complex debts.", status: "completed" },
-                                { date: "JAN '26", title: "Premium Platform UX", desc: "Rollout of smart telemetry, professional document generators, and cross-device syncing.", status: "completed" },
-                                { date: "JAN 23 – MARCH 31 '26", title: "The Waitlist Phase", desc: "Over 66 days, our first wave of merchants signed up, gave feedback, and shaped what Kredibly became. The community made this real.", status: "completed" },
-                                { date: "APRIL 1ST '26", title: "The Grand Pre-Launch", desc: "Exclusive early access for our first 1,000 pioneers. 50% discount for May & June for those who join today.", status: "active" },
-                                { date: "MAY 1ST '26", title: "Global Grand Opening", desc: "Public registration opens to the world. Marketplace expansion and automated credit scoring rollouts.", status: "future" },
-                                { date: "Q3 2026", title: "Kredibly Mobile (Native)", desc: "Your entire business in your pocket. Offline-first, biometric security, and instant push intelligence.", status: "future" }
-                            ].map((m, i) => (
-                                <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false, amount: 0.1 }} style={{ marginBottom: '64px', position: 'relative' }}>
-                                    <div style={{ position: 'absolute', left: '-41px', top: '4px', width: '16px', height: '16px', borderRadius: '50%', background: m.status === 'active' ? 'var(--primary)' : m.status === 'completed' ? '#10B981' : 'white', border: m.status === 'future' ? '2px solid #E2E8F0' : 'none', zIndex: 2 }}>{m.status === 'active' && <div className="pulse-dot-landing" />}</div>
-                                    <div style={{ opacity: m.status === 'completed' ? 0.7 : 1 }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                                            <span style={{ fontSize: '0.8rem', fontWeight: 900, color: m.status === 'active' ? 'var(--primary)' : 'var(--text-muted)', letterSpacing: '0.1em' }}>{m.date}</span>
-                                            {m.status === 'active' && <span style={{ fontSize: '0.7rem', fontWeight: 900, background: 'rgba(76, 29, 149, 0.1)', color: 'var(--primary)', padding: '4px 12px', borderRadius: '100px' }}>LIVE NOW</span>}
-                                        </div>
-                                         <h4 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text)', marginBottom: '10px' }}>{m.title}</h4>
-                                        <p style={{ color: '#334155', fontWeight: 400, lineHeight: 1.6, maxWidth: '650px', margin: 0, fontSize: '1.05rem' }}>{m.desc}</p>
+                <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1, padding: '0 24px' }}>
+                    <div className="mobile-ecosystem-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 'clamp(2rem, 8vw, 5rem)', alignItems: 'center' }}>
+                        
+                        {/* 3D iPhone Mockup */}
+                        <div style={{ perspective: '2000px', display: 'flex', justifyContent: 'center' }}>
+                            <motion.div 
+                                style={{ position: 'relative', width: '100%', maxWidth: '300px' }}
+                                initial={{ rotateY: -15, rotateX: 10, y: 30, opacity: 0 }}
+                                whileInView={{ rotateY: 0, rotateX: 0, y: 0, opacity: 1 }}
+                                viewport={{ once: true, amount: 0.1 }}
+                                transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+                            >
+                                {/* Floating Feature Popups */}
+                                <motion.div 
+                                    animate={{ y: [0, -10, 0] }}
+                                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                                    style={{ 
+                                        position: 'absolute', 
+                                        top: '20%', 
+                                        left: '-40px', 
+                                        zIndex: 50, 
+                                        background: 'rgba(255,255,255,0.05)', 
+                                        backdropFilter: 'blur(20px)', 
+                                        padding: '16px 20px', 
+                                        borderRadius: '24px', 
+                                        border: '1px solid rgba(255,255,255,0.1)', 
+                                        boxShadow: '0 20px 40px rgba(0,0,0,0.4)', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: '12px'
+                                    }}
+                                    className="floating-popup-left"
+                                >
+                                    <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Zap size={16} color="white" /></div>
+                                    <div>
+                                        <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, fontWeight: 600 }}>Payment Received</p>
+                                        <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800 }}>₦150,000</p>
                                     </div>
                                 </motion.div>
-                            ))}
+
+                                <motion.div 
+                                    animate={{ y: [0, 10, 0] }}
+                                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                                    style={{ 
+                                        position: 'absolute', 
+                                        bottom: '15%', 
+                                        right: '-40px', 
+                                        zIndex: 50, 
+                                        background: 'rgba(255,255,255,0.05)', 
+                                        backdropFilter: 'blur(20px)', 
+                                        padding: '16px 20px', 
+                                        borderRadius: '24px', 
+                                        border: '1px solid rgba(255,255,255,0.1)', 
+                                        boxShadow: '0 20px 40px rgba(0,0,0,0.4)', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: '12px'
+                                    }}
+                                    className="floating-popup-right"
+                                >
+                                    <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Users size={16} color="white" /></div>
+                                    <div>
+                                        <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.6, fontWeight: 600 }}>Staff Activity</p>
+                                        <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800 }}>Verified Sale</p>
+                                    </div>
+                                </motion.div>
+
+                                <div style={{ 
+                                    width: '100%', 
+                                    height: '600px', 
+                                    background: '#1E293B', 
+                                    borderRadius: '50px', 
+                                    padding: '12px',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    position: 'relative'
+                                }}>
+                                    <div style={{ 
+                                        width: '100%', 
+                                        height: '100%', 
+                                        background: '#020617', 
+                                        borderRadius: '40px',
+                                        overflow: 'hidden',
+                                        position: 'relative'
+                                    }}>
+                                        <div style={{ position: 'absolute', top: '12px', left: '50%', transform: 'translateX(-50%)', width: '80px', height: '24px', background: '#000', borderRadius: '20px', zIndex: 5 }} />
+                                        
+                                        <div style={{ padding: '40px 20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                            <div style={{ height: '140px', borderRadius: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', padding: '20px' }}>
+                                                <div style={{ width: '30%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', marginBottom: '12px' }} />
+                                                <div style={{ width: '60%', height: '24px', background: 'white', borderRadius: '6px', marginBottom: '24px', opacity: 0.4 }} />
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    {[1,2,3].map(i => <div key={i} style={{ flex: 1, height: '40px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px' }} />)}
+                                                </div>
+                                            </div>
+                                            {[1,2,3].map(i => (
+                                                <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)' }} />
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ width: '60%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', marginBottom: '6px' }} />
+                                                        <div style={{ width: '30%', height: '6px', background: 'rgba(255,255,255,0.02)', borderRadius: '3px' }} />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div style={{ 
+                                            position: 'absolute', 
+                                            inset: 0, 
+                                            background: 'rgba(2, 6, 23, 0.4)', 
+                                            backdropFilter: 'blur(8px)', 
+                                            display: 'flex', 
+                                            flexDirection: 'column', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center',
+                                            zIndex: 10
+                                        }}>
+                                            <div style={{ 
+                                                padding: '10px 24px', 
+                                                background: 'rgba(255,255,255,0.1)', 
+                                                borderRadius: '100px', 
+                                                border: '1px solid rgba(255,255,255,0.2)',
+                                                color: 'white',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 900,
+                                                letterSpacing: '0.1em'
+                                            }}>
+                                                COMING Q3 2026
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
                         </div>
+
+                        {/* Content */}
+                        <div className="mobile-ecosystem-content">
+                            <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(124, 58, 237, 0.1)', borderRadius: '100px', marginBottom: '32px', color: '#A78BFA', fontWeight: 700, fontSize: '0.85rem' }}>
+                                THE MOBILE OS FOR MERCHANTS
+                            </div>
+                            <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: '32px' }}>
+                                Native. Powerful. <br />
+                                <span style={{ color: 'var(--primary)' }}>Zero Compromise.</span>
+                            </h2>
+                            <p style={{ fontSize: '1.25rem', color: '#CBD5E1', fontWeight: 500, lineHeight: 1.6, marginBottom: '40px' }}>
+                                We're building the full Kredibly experience for iOS and Android. Biometric security, offline-first workspace, and instant sales intelligence at your fingertips.
+                            </p>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
+                                {[
+                                    { t: "iOS & Android", d: "Designed for the modern entrepreneur." },
+                                    { t: "Deep Biometrics", d: "FaceID & Fingerprint protection." },
+                                    { t: "Instant Alerts", d: "Push notifications for every payment." },
+                                    { t: "Offline Mode", d: "Record sales even without internet." }
+                                ].map((item, i) => (
+                                    <div key={i}>
+                                        <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: 'white' }}>{item.t}</h4>
+                                        <p style={{ fontSize: '0.9rem', color: '#94A3B8', lineHeight: 1.4, margin: 0 }}>{item.d}</p>
+                                    </div>
+                                ))}
+                            </div>
+
+                             {/* Store Silhouettes - Premium Glow */}
+                             <div className="mobile-ecosystem-buttons" style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginTop: '48px' }}>
+                                 <div style={{ 
+                                     padding: '14px 28px', 
+                                     background: 'rgba(255,255,255,0.05)', 
+                                     borderRadius: '16px', 
+                                     border: '1px solid rgba(255,255,255,0.1)',
+                                     display: 'flex',
+                                     alignItems: 'center',
+                                     gap: '14px',
+                                     cursor: 'not-allowed'
+                                 }}>
+                                     <Smartphone size={20} color="white" style={{ opacity: 0.6 }} />
+                                     <div>
+                                         <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.5, fontWeight: 700, textTransform: 'uppercase' }}>Available soon on</p>
+                                         <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'white' }}>App Store</p>
+                                     </div>
+                                 </div>
+                                 <div style={{ 
+                                     padding: '14px 28px', 
+                                     background: 'rgba(255,255,255,0.05)', 
+                                     borderRadius: '16px', 
+                                     border: '1px solid rgba(255,255,255,0.1)',
+                                     display: 'flex',
+                                     alignItems: 'center',
+                                     gap: '14px',
+                                     cursor: 'not-allowed'
+                                 }}>
+                                     <Zap size={20} color="white" style={{ opacity: 0.6 }} />
+                                     <div>
+                                         <p style={{ margin: 0, fontSize: '0.65rem', opacity: 0.5, fontWeight: 700, textTransform: 'uppercase' }}>Available soon on</p>
+                                         <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'white' }}>Play Store</p>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                    </div>
                     </div>
                 </motion.div>
             </section>
-            
-            {/* 6. Final Conversion Section (Pioneer Edition) - Oga Dark Theme */}
+
+            {/* 7. The Mission Map (Roadmap) - SYNCED WITH WAITLIST */}
+            <section id="mission-map" style={{ padding: 'clamp(4rem, 10vw, 8rem) 24px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0' }}>
+                <div className="container" style={{ maxWidth: '900px', margin: '0 auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+                        <div style={{ display: 'inline-flex', padding: '8px 20px', borderRadius: '100px', background: 'rgba(76, 29, 149, 0.05)', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '24px', letterSpacing: '0.1em' }}>
+                            OUR JOURNEY & VISION
+                        </div>
+                        <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 800, letterSpacing: '-0.04em', color: '#0F172A' }}>The Mission Map.</h2>
+                        <p style={{ fontSize: '1.2rem', color: '#334155', fontWeight: 400, marginTop: '16px' }}>Transparent milestones from a simple idea to a global financial ecosystem.</p>
+                    </div>
+
+                    <div className="mission-timeline-container" style={{ position: 'relative', paddingLeft: '40px' }}>
+                        {/* Vertical Line */}
+                        <div className="timeline-line" style={{ position: 'absolute', left: '7px', top: '0', bottom: '0', width: '2px', background: 'linear-gradient(to bottom, #E2E8F0 0%, #7C3AED 30%, #7C3AED 70%, #E2E8F0 100%)' }} />
+
+                        {[
+                            { date: "JULY '25", title: "The Genesis", desc: "Concept & Research Phase. Identifying the 'Trust Gap' in African commerce.", status: "completed" },
+                            { date: "SEPT '25", title: "Strategic Architecture", desc: "Core blueprinting of the Kredibly workspace and AI interface flow.", status: "completed" },
+                            { date: "DEC '25", title: "Kreddy AI Core", desc: "Intelligence engine development. Teaching Kreddy to understand merchant slang and complex debts.", status: "completed" },
+                            { date: "JAN '26", title: "Premium Platform UX", desc: "Rollout of smart telemetry, professional document generators, and cross-device syncing.", status: "done" },
+                            { date: "FEBRUARY - PRESENT", title: "Founding Member Waitlist", desc: "Onboarding our first 1,000 pioneers. Early access rewards and lifetime status for active participants.", status: "active", isFounding: true },
+                            { date: "JUNE 1ST", title: "Grand Launch", desc: "Opening the ecosystem for public merchant registration and global transactions.", status: "future" },
+                            { date: "Q3 2026", title: "Kredibly Mobile (Native)", desc: "Your entire business in your pocket. Offline-first, biometric security, and instant push intelligence.", status: "future", isMobile: true }
+                        ].map((m, i) => (
+                            <motion.div 
+                                key={i}
+                                initial={{ opacity: 0, x: -20 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true, amount: 0.1 }}
+                                transition={{ delay: i * 0.1 }}
+                                style={{ marginBottom: '64px', position: 'relative' }}
+                            >
+                                {/* Timeline Dot */}
+                                <div 
+                                    className="timeline-dot"
+                                    style={{ 
+                                        position: 'absolute', 
+                                        left: '-41px', 
+                                        top: '4px', 
+                                        width: '16px', 
+                                        height: '16px', 
+                                        borderRadius: '50%', 
+                                        background: m.status === 'active' ? 'var(--primary)' : m.status === 'completed' ? '#10B981' : 'white',
+                                        border: m.status === 'future' ? '2px solid #E2E8F0' : 'none',
+                                        boxShadow: m.status === 'active' ? '0 0 20px rgba(124, 58, 237, 0.5)' : 'none',
+                                        zIndex: 2
+                                    }}>
+                                    {m.status === 'active' && <div className="pulse-dot" />}
+                                </div>
+
+                                <div style={{ 
+                                    background: m.status === 'active' ? 'white' : 'transparent',
+                                    padding: m.status === 'active' ? '32px' : '0',
+                                    borderRadius: '24px',
+                                    border: m.status === 'active' ? '1px solid #E2E8F0' : 'none',
+                                    boxShadow: m.status === 'active' ? '0 20px 40px -10px rgba(0,0,0,0.05)' : 'none',
+                                    opacity: m.status === 'completed' ? 0.7 : 1
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 900, color: m.status === 'active' ? 'var(--primary)' : '#94A3B8', letterSpacing: '0.1em' }}>{m.date}</span>
+                                        {m.isFounding && m.status === 'active' && (
+                                            <span style={{ fontSize: '0.65rem', fontWeight: 900, background: 'rgba(76, 29, 149, 0.1)', color: 'var(--primary)', padding: '4px 12px', borderRadius: '100px' }}>LIVE NOW</span>
+                                        )}
+                                    </div>
+                                    <h4 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1E293B', marginBottom: '12px' }}>{m.title}</h4>
+                                    <p style={{ color: '#334155', fontWeight: 400, lineHeight: 1.6, maxWidth: '600px', margin: 0 }}>{m.desc}</p>
+                                    
+                                    {m.isMobile && (
+                                        <div style={{ marginTop: '24px', padding: '20px', background: 'rgba(0,0,0,0.02)', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                            <Smartphone size={32} color="var(--primary)" />
+                                            <div>
+                                                <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: '#0F172A' }}>Native Mobile Preview</p>
+                                                <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>Coming Q3 2026</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* 7. Final Conversion Section (Pioneer Edition) - Oga Dark Theme */}
             <section style={{ padding: 'clamp(80px, 12vw, 150px) 24px', background: '#0F172A', textAlign: 'center', color: 'white' }}>
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} style={{ maxWidth: '900px', margin: '0 auto' }}>
                     <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '100px', marginBottom: '32px', color: 'var(--primary-light)', fontWeight: 800, fontSize: '0.85rem', letterSpacing: '0.05em' }}>EXCLUSIVE PRE-LAUNCH ACCESS</div>
-                    <h2 style={{ fontSize: 'clamp(2.1rem, 7vw, 4.5rem)', fontWeight: 950, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: '32px', color: 'white' }}>Claim your <span className="premium-gradient">Pre-Launch Status.</span></h2>
-                    <p style={{ color: '#94A3B8', fontSize: 'clamp(1.1rem, 2.5vw, 1.35rem)', fontWeight: 500, maxWidth: '650px', margin: '0 auto 48px', lineHeight: 1.6 }}>Join 1,000+ Nigerian merchants scaling with AI. Get your first 2 months at 50% off by joining the pre-launch today.</p>
+                    <h2 style={{ fontSize: 'clamp(2.1rem, 7vw, 4.5rem)', fontWeight: 950, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: '32px', color: 'white' }}>Build Your <span className="premium-gradient">Business Empire.</span></h2>
+                    <p style={{ color: '#94A3B8', fontSize: 'clamp(1.1rem, 2.5vw, 1.35rem)', fontWeight: 500, maxWidth: '650px', margin: '0 auto 48px', lineHeight: 1.6 }}>Join 1,000+ Nigerian merchants scaling with AI. Try the full power of Chairman for 14 days, absolutely free.</p>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-                        <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '24px 64px', fontSize: '1.25rem', borderRadius: '100px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)' }}>Start for ₦0 <ArrowRight size={24} /></button>
-                        <p style={{ color: '#64748B', fontSize: '0.9rem', fontWeight: 600 }}>No charge today. Setup in under 2 minutes.</p>
+                        <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '24px 64px', fontSize: '1.25rem', borderRadius: '100px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)' }}>Get 14 Days Free <ArrowRight size={24} /></button>
+                        <p style={{ color: '#64748B', fontSize: '0.9rem', fontWeight: 600 }}>No card required. Setup in under 2 minutes.</p>
                     </div>
                 </motion.div>
             </section>
@@ -511,11 +772,9 @@ const LandingPage = () => {
             <PublicFooter />
 
             <style>{`
-                /* ── Mockup Grid ── */
                 .landing-mockup-grid { display: grid; grid-template-columns: 1fr; gap: 4rem; align-items: center; }
                 @media (min-width: 992px) { .landing-mockup-grid { grid-template-columns: 1.15fr 0.85fr; } }
 
-                /* ── Premium Gradient ── */
                 .premium-gradient {
                     background: linear-gradient(135deg, var(--primary) 0%, #F472B6 100%);
                     -webkit-background-clip: text;
@@ -523,7 +782,6 @@ const LandingPage = () => {
                     -webkit-text-fill-color: transparent;
                 }
 
-                /* ── Landing Pricing Grid ── */
                 .lp-pricing-grid {
                     display: grid;
                     grid-template-columns: repeat(3, 1fr);
@@ -545,19 +803,6 @@ const LandingPage = () => {
                     color: white;
                     border: 2px solid var(--primary);
                     box-shadow: 0 20px 50px -10px rgba(15,23,42,0.3);
-                }
-                .lp-pricing-badge {
-                    display: inline-flex;
-                    align-items: center;
-                    background: var(--primary);
-                    color: white;
-                    padding: 5px 12px;
-                    border-radius: 100px;
-                    font-size: 0.7rem;
-                    font-weight: 800;
-                    margin-bottom: 14px;
-                    width: fit-content;
-                    white-space: nowrap;
                 }
                 .lp-price-row {
                     display: flex;
@@ -583,30 +828,39 @@ const LandingPage = () => {
                     font-size: 0.9rem;
                 }
 
-                /* ── Mobile Pricing Responsive ── */
                 @media (max-width: 900px) {
                     .lp-pricing-grid {
                         grid-template-columns: 1fr;
                         max-width: 480px;
                         margin: 0 auto;
                     }
-                    .lp-pricing-card--featured {
-                        /* removed order: -1 to keep Hustler-first sequence */
-                    }
-                    .lp-pricing-badge {
-                        font-size: 0.65rem;
-                        padding: 4px 10px;
-                        white-space: normal;
-                    }
                 }
 
-                /* ── Global Mobile Typography ── */
                 @media (max-width: 768px) {
                     .phone-mockup { transform: scale(0.95); }
                     section h2 { font-size: clamp(1.5rem, 6vw, 2.4rem) !important; }
                     section h3 { font-size: clamp(1rem, 4vw, 1.4rem) !important; }
                     section h4 { font-size: clamp(0.95rem, 3.5vw, 1.2rem) !important; }
                     section p  { font-size: clamp(0.82rem, 3vw, 1rem) !important; }
+                }
+                
+                @keyframes blink {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0; }
+                }
+                
+                .pulse-dot-landing {
+                    position: absolute;
+                    inset: -4px;
+                    border-radius: 50%;
+                    background: var(--primary);
+                    opacity: 0.4;
+                    animation: pulse-ring 2s infinite;
+                }
+                
+                @keyframes pulse-ring {
+                    0% { transform: scale(0.8); opacity: 0.5; }
+                    100% { transform: scale(2.5); opacity: 0; }
                 }
             `}</style>
         </div>

@@ -3,49 +3,49 @@ import { useParams, useNavigate } from 'react-router-dom';
 import PublicNavbar from '../../components/public/PublicNavbar';
 import PublicFooter from '../../components/public/PublicFooter';
 import { motion } from 'framer-motion';
-import { Sparkles, LayoutDashboard, CreditCard, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Sparkles, LayoutDashboard, CreditCard, CheckCircle2, ArrowRight, Mic, Wallet, BadgeCheck } from 'lucide-react';
 
 const products = {
     'kreddy-ai': {
         title: "Kreddy AI Assistant",
-        subtitle: "Your 24/7 Business Partner",
-        description: "Talk to Kreddy just like a human. Record sales, track debts, and manage inventory without ever leaving WhatsApp.",
+        subtitle: "Your AI Business Secretary",
+        description: "Talk to Kreddy on WhatsApp using voice notes. She handles the records, drafts your invoices, and plans your lifestyle while you focus on selling.",
         icon: Sparkles,
         color: "var(--primary)",
         bg: "rgba(76, 29, 149, 0.05)",
         features: [
-            "AI Executive Assistant (Natural Slang)",
-            "Automated Debt Tracking & Reminders",
-            "Daily Task & Deadline Management",
-            "Voice-Activated Snooze & Rescheduling"
+            "Voice-to-Record Intelligence",
+            "Automatic Invoice & Message Drafting",
+            "Lifestyle & Gym Reminders",
+            "8 AM Market Briefing on WhatsApp"
         ]
     },
     'merchant-dashboard': {
         title: "Merchant Dashboard",
-        subtitle: "The Command Center",
-        description: "A powerful desktop and mobile view of your entire business operation. See trends, manage staff, and export reports.",
+        subtitle: "The Business Command Center",
+        description: "A powerful real-time view of your entire empire. Monitor staff, track inventory, and get deep insights into your growth.",
         icon: LayoutDashboard,
         color: "#4F46E5",
         bg: "rgba(79, 70, 229, 0.05)",
         features: [
-            "Proactive Business Reports",
             "Remote Staff Monitoring",
-            "Inventory & Stock Tracking",
-            "One-Click Financial Export"
+            "Instant Cashflow Insights",
+            "Inventory & Stock Management",
+            "Identity Guard (BVN Match Security)"
         ]
     },
     'premium-invoices': {
         title: "Premium Invoices",
-        subtitle: "Look Global, Sell Local",
-        description: "Professional digital portals for your clients that build deep trust. Designed to accelerate your cash flow and get you paid 3x faster.",
+        subtitle: "Instant Bank Settlements",
+        description: "Stop waiting 24 hours for your money. Kredibly's secure links settle payments into your bank account the second a customer pays.",
         icon: CreditCard,
         color: "#F59E0B",
         bg: "rgba(245, 158, 11, 0.05)",
         features: [
-            "Branded Client Portals",
-            "Instant Payment Links",
-            "Automatic Digital Receipts",
-            "Financial Trust Infrastructure"
+            "Instant Bank Settlements",
+            "Zero Transfer Fees (We cover ₦25)",
+            "Automated Digital Receipts",
+            "Verified Ledger Security Seal"
         ]
     }
 };
@@ -57,7 +57,10 @@ const ProductPage = () => {
 
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, [id]);
+        if (product) {
+            document.title = `${product.title} | Kredibly`;
+        }
+    }, [id, product]);
 
     if (!product) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>Product not found</div>;
 
@@ -84,18 +87,19 @@ const ProductPage = () => {
                         <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', marginBottom: '40px', lineHeight: 1.6, maxWidth: '600px' }}>
                             {product.description}
                         </p>
-                        <div style={{ display: 'flex', gap: '16px' }}>
+                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                             <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', fontSize: '1.1rem' }}>
-                                Get Started Free <ArrowRight size={20} />
+                                Try for Free <ArrowRight size={20} />
                             </button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#16A34A', fontWeight: 800, fontSize: '0.9rem' }}>
+                                <BadgeCheck size={18} /> Zero Bank Charges
+                            </div>
                         </div>
                     </motion.div>
-                    
-
                 </div>
             </section>
 
-            <section style={{ padding: '100px 0', background: 'var(--background)' }}>
+            <section style={{ padding: '100px 0', background: '#F8FAFC' }}>
                 <div className="container">
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
                         {product.features.map((feature, i) => (
@@ -104,15 +108,14 @@ const ProductPage = () => {
                                 initial={{ opacity: 0, y: 20 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.1 }}
-                                className="glass-card"
-                                style={{ padding: '32px', display: 'flex', alignItems: 'flex-start', gap: '16px', background: 'white' }}
+                                style={{ padding: '32px', display: 'flex', alignItems: 'flex-start', gap: '16px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}
                             >
                                 <div style={{ padding: '12px', borderRadius: '12px', background: product.bg, color: product.color }}>
                                     <CheckCircle2 size={24} />
                                 </div>
                                 <div>
                                     <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text)', marginBottom: '8px' }}>{feature}</h3>
-                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.5 }}>Built to help you scale faster and manage your business with less stress.</p>
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.5 }}>Optimized for the Nigerian market to ensure you get paid faster and stay secure.</p>
                                 </div>
                             </motion.div>
                         ))}

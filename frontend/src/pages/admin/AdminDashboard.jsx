@@ -6,6 +6,7 @@ import {
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { initiateSocketConnection, disconnectSocket, listenToEvent, stopListeningToEvent } from "../../utils/socket";
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -13,19 +14,31 @@ const AdminDashboard = () => {
     const [activities, setActivities] = useState([]);
     const [waitlist, setWaitlist] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [visibleActivities, setVisibleActivities] = useState(10);
+    const [visibleActivities, setVisibleActivities] = useState(20);
     const [isRefreshing, setIsRefreshing] = useState(false);
     
     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
     useEffect(() => {
         fetchAdminData();
+        
+        // 🔌 Real-time Mission Control Sync
+        initiateSocketConnection("admin_mission_control"); 
+        listenToEvent("admin_activity_updated", (data) => {
+            console.log("🚀 Mission Control Update:", data);
+            fetchAdminData(false, true); // Silent refresh
+        });
+
         const interval = setInterval(() => {
             if (document.visibilityState === 'visible') {
                 fetchAdminData(false, true);
             }
         }, 60000);
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            stopListeningToEvent("admin_activity_updated");
+            disconnectSocket();
+        };
     }, []);
 
     const fetchAdminData = async (manual = false, silent = false) => {
@@ -70,7 +83,7 @@ const AdminDashboard = () => {
         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }}>
             <div className="admin-content-fade">
                 {/* MAIN STATS GRID */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'clamp(16px, 3vw, 24px)', marginBottom: '40px' }}>
                     <div className="admin-stats-card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                             <div style={{ p: '12px', background: '#F0F9FF', borderRadius: '16px', color: '#0EA5E9' }}>
@@ -123,6 +136,18 @@ const AdminDashboard = () => {
                         <h3 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', fontWeight: 950, color: 'var(--text)', letterSpacing: '-0.04em', margin: '4px 0' }}>{waitlist.length}</h3>
                         <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Verified Waitlist Entries</p>
                     </div>
+
+                    <div className="admin-stats-card" style={{ border: '1px solid #FB923C', background: 'linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                            <div style={{ padding: '12px', background: '#FFEDD5', color: '#EA580C', borderRadius: '16px' }}>
+                                <ShieldCheck size={24} />
+                            </div>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#EA580C', background: '#FFEDD5', padding: '4px 10px', borderRadius: '100px' }}>ESCROW</span>
+                        </div>
+                        <p style={{ color: '#9A3412', fontWeight: 800, fontSize: '0.85rem' }}>Platform Escrow</p>
+                        <h3 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', fontWeight: 950, color: '#1E293B', letterSpacing: '-0.04em', margin: '4px 0' }}>₦{stats?.totalEscrowBalance?.toLocaleString() || 0}</h3>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9A3412' }}>Merchant Funds Held</p>
+                    </div>
                 </div>
 
                 {/* ACTIVITIES & STREAM */}
@@ -146,14 +171,24 @@ const AdminDashboard = () => {
                                  paddingRight: '12px',
                                  scrollbarWidth: 'thin'
                              }}>
-                                 {activities.slice(0, visibleActivities).map((log, i) => (
-                                     <div key={log._id} style={{ display: 'flex', gap: '16px', position: 'relative' }}>
-                                         <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
-                                             {log.action.includes('SALE') ? <TrendingUp size={18} /> : log.action.includes('USER') ? <Users size={18} /> : <Zap size={18} />}
+                                 {activities.slice(0, visibleActivities).map((log) => (
+                                     <div key={log._id + log.createdAt} style={{ display: 'flex', gap: '16px', position: 'relative' }}>
+                                         <div style={{ 
+                                             width: '40px', height: '40px', borderRadius: '12px', 
+                                             background: log.type === 'SALE' ? '#ECFDF5' : (log.type === 'SUB' ? '#F0F9FF' : '#F8FAFC'), 
+                                             border: '1px solid #E2E8F0', 
+                                             display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                             color: log.type === 'SALE' ? '#10B981' : (log.type === 'SUB' ? '#0EA5E9' : 'var(--primary)'), 
+                                             flexShrink: 0 
+                                         }}>
+                                             {log.type === 'SALE' ? <TrendingUp size={18} /> : (log.type === 'SUB' ? <CreditCard size={18} /> : <Zap size={18} />)}
                                          </div>
                                          <div style={{ flex: 1 }}>
                                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px', gap: '8px' }}>
-                                                 <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 850 }}>{log.details.replace(/"/g, '')}</p>
+                                                 <div>
+                                                     <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 850 }}>{log.details}</p>
+                                                     <p style={{ margin: '2px 0 0', fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800 }}>{log.merchant}</p>
+                                                 </div>
                                                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}>
                                                      {new Date(log.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} • {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                  </span>

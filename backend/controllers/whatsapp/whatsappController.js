@@ -1394,6 +1394,14 @@ Upgrade here: ${APP_URL}/pricing`);
             // 🧠 INTELLIGENCE SELECTION (Based on Plan)
             let aiResponse = null;
 
+            // Fetch last 5 sales to give Kreddy a "memory" of what they sell
+            const lastSales = await Sale.find({ businessId: profile._id }).sort({ createdAt: -1 }).limit(5).select('customerName items totalAmount');
+            const businessInsight = lastSales.length > 0 
+                ? `Recent Activity: ${lastSales.map(s => `${s.customerName} bought ${s.items.map(item => item.description).join(', ')} (₦${s.totalAmount.toLocaleString()})`).join('; ')}`
+                : "No recent transactions found. They are just starting out.";
+
+            const preferredTone = profile.assistantSettings?.reminderTemplate || "friendly";
+
             if (msgType === "audio" || msgType === "voice") {
                 if (plan !== "chairman" && plan !== "oga") {
                     return await sendReply(from, "Boss! 🛡️ Voice notes are an exclusive feature for the *Oga* and *Chairman* plans. Upgrade now to unlock Voice Sync! 🦁");
@@ -1414,7 +1422,8 @@ Upgrade here: ${APP_URL}/pricing`);
                         plan: plan,
                         entityType: profile.entityType,
                         preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
-                        debtors: debtorContext || "No active debtors yet."
+                        debtors: debtorContext || "No active debtors yet.",
+                        businessInsight: businessInsight
                     });
 
                     if (aiResponse) {
@@ -1446,7 +1455,8 @@ Upgrade here: ${APP_URL}/pricing`);
                         plan: plan,
                         entityType: profile.entityType,
                         preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
-                        debtors: debtorContext || "No active debtors yet."
+                        debtors: debtorContext || "No active debtors yet.",
+                        businessInsight: businessInsight
                     });
 
                     if (aiResponse) {
@@ -1469,7 +1479,8 @@ Upgrade here: ${APP_URL}/pricing`);
                     debtors: debtorContext || "No active debtors yet.",
                     activeReminders: reminderContext,
                     currentSession: session || null,
-                    hasOpenTicket: !!openTicket
+                    hasOpenTicket: !!openTicket,
+                    businessInsight: businessInsight
                 });
                 
                 // FALLBACK: If AI is rate-limited (429) or fails, switch to Regex logic
@@ -1864,12 +1875,34 @@ Upgrade here: ${APP_URL}/pricing`);
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "list_sales") {
                     // 📜 FULL HISTORY: Show all sales, categorized
-                    const sales = await Sale.find({ businessId: profile._id }).sort({ createdAt: -1 }).limit(15);
+                    const target = (aiResponseItem.data?.targetDate || "").toLowerCase();
+                    let filter = { businessId: profile._id };
+                    let dateLabel = "Recent";
+
+                    if (target === "yesterday") {
+                        const start = new Date(); start.setDate(start.getDate() - 1); start.setHours(0,0,0,0);
+                        const end = new Date(); end.setDate(end.getDate() - 1); end.setHours(23,59,59,999);
+                        filter.createdAt = { $gte: start, $lte: end };
+                        dateLabel = "Yesterday's";
+                    } else if (target === "today") {
+                        const start = new Date(); start.setHours(0,0,0,0);
+                        const end = new Date(); end.setHours(23,59,59,999);
+                        filter.createdAt = { $gte: start, $lte: end };
+                        dateLabel = "Today's";
+                    } else if (target && !isNaN(new Date(target).getTime())) {
+                        const start = new Date(target); start.setHours(0,0,0,0);
+                        const end = new Date(target); end.setHours(23,59,59,999);
+                        filter.createdAt = { $gte: start, $lte: end };
+                        dateLabel = new Date(target).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' }) + " Records";
+                    }
+
+                    const sales = await Sale.find(filter).sort({ createdAt: -1 }).limit(15);
                     
                     if (sales.length === 0) {
-                        await sendReply(from, "Boss, the records are empty! Let's record your first sale today. 🚀");
+                        const emptyMsg = target ? `Boss, I couldn't find any sales recorded for *${target}*. 🤷‍♂️` : "Boss, the records are empty! Let's record your first sale today. 🚀";
+                        await sendReply(from, emptyMsg);
                     } else {
-                        const wittyIntro = await generateWittyIntro("list_sales", { bossTitle, extra: `Last 15 records` });
+                        const wittyIntro = await generateWittyIntro("list_sales", { bossTitle, extra: `${dateLabel} records` });
                         let msg = `${wittyIntro}\n\n`;
                         
                         sales.forEach((s, i) => {
@@ -2148,26 +2181,39 @@ Upgrade here: ${APP_URL}/pricing`);
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "check_schedule") {
                     // 📋 NEW: CHECK SCHEDULE - Show user their pending reminders/tasks
-                    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-                    const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
+                    const target = (aiResponseItem.data?.targetDate || "today").toLowerCase();
+                    let startDate = new Date();
+                    let endDate = new Date();
+                    let dateLabel = "Today";
+
+                    if (target === "tomorrow") {
+                        startDate.setDate(startDate.getDate() + 1); startDate.setHours(0,0,0,0);
+                        endDate.setDate(endDate.getDate() + 1); endDate.setHours(23,59,59,999);
+                        dateLabel = "Tomorrow";
+                    } else if (target === "yesterday") {
+                        startDate.setDate(startDate.getDate() - 1); startDate.setHours(0,0,0,0);
+                        endDate.setDate(endDate.getDate() - 1); endDate.setHours(23,59,59,999);
+                        dateLabel = "Yesterday";
+                    } else if (target && !isNaN(new Date(target).getTime())) {
+                        startDate = new Date(target); startDate.setHours(0,0,0,0);
+                        endDate = new Date(target); endDate.setHours(23,59,59,999);
+                        dateLabel = startDate.toLocaleDateString('en-NG', { day: 'numeric', month: 'short' });
+                    } else {
+                        startDate.setHours(0, 0, 0, 0);
+                        endDate.setHours(23, 59, 59, 999);
+                    }
                     
-                    const todayReminders = await Reminder.find({
+                    const targetReminders = await Reminder.find({
                         businessId: profile._id,
                         status: "pending",
-                        triggerDate: { $gte: todayStart, $lte: todayEnd }
+                        triggerDate: { $gte: startDate, $lte: endDate }
                     }).sort({ triggerDate: 1 }).populate('saleId');
 
-                    const upcomingReminders = await Reminder.find({
-                        businessId: profile._id,
-                        status: "pending",
-                        triggerDate: { $gt: todayEnd }
-                    }).sort({ triggerDate: 1 }).limit(5).populate('saleId');
-
-                    let scheduleMsg = `📋 *Your Schedule, ${bossTitle}!*\n\n`;
+                    let scheduleMsg = `📋 *Schedule for ${dateLabel}, ${bossTitle}!*\n\n`;
                     
-                    if (todayReminders.length > 0) {
-                        const tasks = todayReminders.filter(r => r.type !== 'debt');
-                        const debtCalls = todayReminders.filter(r => r.type === 'debt');
+                    if (targetReminders.length > 0) {
+                        const tasks = targetReminders.filter(r => r.type !== 'debt');
+                        const debtCalls = targetReminders.filter(r => r.type === 'debt');
 
                         if (tasks.length > 0) {
                             scheduleMsg += `🗓️ *Meetings & Tasks Today:*\n`;
@@ -2242,42 +2288,70 @@ Upgrade here: ${APP_URL}/pricing`);
                     await sendReply(from, scheduleMsg);
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "check_performance") {
-                    // 💰 NEW: PERFORMANCE CHECK - "How much did I make today?"
-                    const startOfToday = new Date();
-                    startOfToday.setHours(0, 0, 0, 0);
+                    // 💰 PERFORMANCE CHECK: "How much did I make today/yesterday?"
+                    const target = (aiResponseItem.data?.targetDate || "today").toLowerCase();
+                    
+                    let startDate = new Date();
+                    let endDate = new Date();
+                    let dateLabel = "Today's";
 
-                    // 1. Get Today's Sales
-                    const salesToday = await Sale.find({
+                    if (target === "yesterday") {
+                        startDate.setDate(startDate.getDate() - 1);
+                        startDate.setHours(0, 0, 0, 0);
+                        endDate.setDate(endDate.getDate() - 1);
+                        endDate.setHours(23, 59, 59, 999);
+                        dateLabel = "Yesterday's";
+                    } else if (target === "today") {
+                        startDate.setHours(0, 0, 0, 0);
+                        endDate.setHours(23, 59, 59, 999);
+                        dateLabel = "Today's";
+                    } else {
+                        // Attempt to parse ISO or specific date string if AI provided one
+                        const parsed = new Date(target);
+                        if (!isNaN(parsed.getTime())) {
+                            startDate = new Date(parsed);
+                            startDate.setHours(0, 0, 0, 0);
+                            endDate = new Date(parsed);
+                            endDate.setHours(23, 59, 59, 999);
+                            dateLabel = parsed.toLocaleDateString('en-NG', { day: 'numeric', month: 'short' });
+                        } else {
+                            startDate.setHours(0, 0, 0, 0);
+                        }
+                    }
+
+                    // 1. Get Sales in range
+                    const salesInRange = await Sale.find({
                         businessId: profile._id,
-                        createdAt: { $gte: startOfToday }
+                        createdAt: { $gte: startDate, $lte: endDate }
                     });
 
-                    // 2. Get Today's Cash Collected (Verified + Manual)
-                    const salesWithPaymentsToday = await Sale.find({
+                    // 2. Get Cash Collected in range
+                    const salesWithPaymentsInRange = await Sale.find({
                         businessId: profile._id,
-                        "payments.date": { $gte: startOfToday }
+                        "payments.date": { $gte: startDate, $lte: endDate }
                     });
 
                     let totalCashIn = 0;
-                    salesWithPaymentsToday.forEach(s => {
+                    salesWithPaymentsInRange.forEach(s => {
                         s.payments.forEach(p => {
-                            if (new Date(p.date) >= startOfToday) totalCashIn += p.amount;
+                            const pDate = new Date(p.date);
+                            if (pDate >= startDate && pDate <= endDate) totalCashIn += p.amount;
                         });
                     });
 
                     // 3. Resolve boss title
                     const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || (plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss"));
 
-                    let performanceMsg = `📊 *Today's Performance, ${bossTitle}!*\n\n`;
+                    let performanceMsg = `📊 *${dateLabel} Performance, ${bossTitle}!*\n\n`;
                     performanceMsg += `💰 Cash Collected: *₦${totalCashIn.toLocaleString()}*\n`;
-                    performanceMsg += `📑 New Invoices: *${salesToday.length}* (₦${salesToday.reduce((sum, s) => sum + s.totalAmount, 0).toLocaleString()})\n\n`;
+                    performanceMsg += `📑 New Invoices: *${salesInRange.length}* (₦${salesInRange.reduce((sum, s) => sum + s.totalAmount, 0).toLocaleString()})\n\n`;
 
                     if (totalCashIn > 0) {
-                        performanceMsg += `Excellent! Your cash position is looking stronger. 💎`;
-                    } else if (salesToday.length > 0) {
-                        performanceMsg += `Sales are moving! Let's ensure these turn into cash soon. 🛡️`;
+                        performanceMsg += target === 'yesterday' ? `Yesterday was productive! Let's beat that record today. 💎` : `Excellent! Your cash position is looking stronger. 💎`;
+                    } else if (salesInRange.length > 0) {
+                        performanceMsg += `Sales recorded, but no cash in yet. Let's chase those payments! 🛡️`;
                     } else {
-                        performanceMsg += `Zero records so far today. Remember to log every kobo to build your Trust Score! 🚀`;
+                        performanceMsg += `No records found for this period. Remember to tell me everything you sell! 🚀`;
                     }
 
                     await sendReply(from, performanceMsg);
