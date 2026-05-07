@@ -161,7 +161,7 @@ const BusinessProfileSchema = new mongoose.Schema({
         },
         method: {
             type: String,
-            enum: ["bvn", "nin", "none"],
+            enum: ["bvn", "nin", "none", "BVN Match"],
             default: "none"
         },
         bvn: { type: String, default: "" },
