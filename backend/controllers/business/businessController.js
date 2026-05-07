@@ -440,6 +440,8 @@ exports.verifyKYC = async (req, res) => {
                 userId: req.user._id,
                 businessId: profile._id,
                 action: "KYC_VERIFIED",
+                entityType: "BusinessProfile",
+                entityId: profile._id,
                 details: `Identity verified via ${type.toUpperCase()} (Tier 2)`
             });
 
