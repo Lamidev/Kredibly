@@ -336,8 +336,9 @@ exports.saveBankDetails = async (req, res) => {
 exports.verifyKYC = async (req, res) => {
     try {
         const { type, idNumber, dob } = req.body;
-        const profile = await BusinessProfile.findOne({ ownerId: req.user._id });
+        let profile = await BusinessProfile.findOne({ ownerId: req.user._id });
 
+        console.log(`🛡️ KYC Verification Started: ${profile.displayName} (${profile.bankDetails.bankName}) via BVN Match`);
         if (!profile) return res.status(404).json({ success: false, message: "Profile not found" });
         if (profile.kyc?.status === 'verified') return res.status(400).json({ success: false, message: "You are already verified!" });
 
@@ -455,7 +456,7 @@ exports.verifyKYC = async (req, res) => {
             const { sendWhatsAppAlert } = require("../whatsapp/whatsappController");
             // 📱 WhatsApp Alert: Smart Messaging based on escrow status
             const bossTitle = profile.displayName.split(' ')[0];
-            let successMsg = `🛡️ Boss, your identity has been successfully verified via ${type.toUpperCase()}.\n\nYou are now on **Tier 2** with a ₦500,000 daily limit. Keep winning! 🦁💎`;
+            let successMsg = `🛡️ Boss, your identity has been successfully verified via BVN Match.\n\nYou are now on **Tier 2** with a ₦500,000 daily limit. Keep winning! 🦁💎`;
             
             if (profile.heldBalance > 0) {
                 successMsg = `🛡️ Boss, you are VERIFIED!\n\nI've recognized your identity and I'm releasing your ₦${profile.heldBalance.toLocaleString()} held funds to your bank account right now. \n\nYou are now on **Tier 2**. Let's go! 🚀💰`;
