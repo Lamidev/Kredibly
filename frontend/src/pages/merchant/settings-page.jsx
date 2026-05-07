@@ -1052,16 +1052,19 @@ const SettingsPage = () => {
                     onConfirm={handlePayoutSave}
                 />
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', paddingBottom: '40px' }}>
-                    <button
-                        className="btn-primary"
-                        style={{ padding: '16px 40px', display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '16px' }}
-                        disabled={saving}
-                        onClick={handleSave}
-                    >
-                        {saving ? "Saving..." : <><Save size={20} /> Save All Changes</>}
-                    </button>
-                </div>
+                {/* 🛡️ Smart Footer: Hide save button if on KYC tab and already verified */}
+                {!(activeTab === 'kyc' && profile?.kyc?.status === 'verified') && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', paddingBottom: '40px' }}>
+                        <button
+                            className="btn-primary"
+                            style={{ padding: '16px 40px', display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '16px' }}
+                            disabled={saving}
+                            onClick={handleSave}
+                        >
+                            {saving ? "Saving..." : <><Save size={20} /> Save All Changes</>}
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
