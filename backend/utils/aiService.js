@@ -84,6 +84,7 @@ INTENTS:
     - CRITICAL: "Show me all sales" MUST go to this intent. DO NOT use check_debt for history. 
     - check_debt is ONLY for "who owes me".
 23. "check_performance": When the user asks "how much did I make today?", "any payments today?", "daily summary", "what is my today revenue?".
+    - CRITICAL: ALWAYS include "targetDate" (yesterday, today, or ISO date) for this intent. If not specified, assume "today".
 
 NAME CORRECTIONS:
 - If a user says "No, the name is [Name]" or "I meant [Name]", use "update_record" intent.

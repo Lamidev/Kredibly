@@ -155,6 +155,14 @@ const extractInfoRobust = (text, context = {}) => {
         return result;
     }
 
+    // PERFORMANCE: "how much did I make", "revenue", "daily summary", "performance"
+    if (lower.includes("how much") || lower.includes("revenue") || lower.includes("make") || lower.includes("performance") || lower.includes("summary") || lower.includes("collection") || lower.includes("total collected")) {
+        result.intent = "check_performance";
+        if (lower.includes("yesterday")) result.data.targetDate = "yesterday";
+        else if (lower.includes("today")) result.data.targetDate = "today";
+        return result;
+    }
+
     if (lower.includes("who owe") || lower.includes("who is owing") || lower.includes("list my debtor") || lower.includes("total debt") || lower.includes("show me who owe") || lower.includes("debt list") || lower.includes("debtors")) {
         result.intent = "check_debt";
         return result;
