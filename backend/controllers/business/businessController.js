@@ -22,6 +22,11 @@ exports.updateProfile = async (req, res) => {
         let profile = await BusinessProfile.findOne({ ownerId: req.user._id });
 
         if (profile) {
+            // 🛡️ IDENTITY LOCK: Prevent name changes if already verified to stop account hijacking
+            if (profile.kyc?.status === 'verified' && displayName && displayName !== profile.displayName) {
+                return res.status(403).json({ success: false, message: "You cannot change your business name after verification for security reasons. Please contact support." });
+            }
+
             profile.displayName = displayName || profile.displayName;
             profile.entityType = entityType || profile.entityType;
             profile.sellMode = sellMode || profile.sellMode;
@@ -383,19 +388,25 @@ exports.verifyKYC = async (req, res) => {
                         const user = await User.findById(req.user._id);
                         const registeredName = user?.name || profile.displayName;
 
-                        // fuzzy match: Check if parts of the registered name appear in the account name
+                        // fuzzy match: Require at least 2 significant name parts (length > 2) to match
                         const cleanAccount = accountName.toLowerCase().replace(/[^a-z0-9]/g, '');
                         const nameParts = registeredName.toLowerCase().split(' ').filter(p => p.length > 2);
                         
-                        const hasMatch = nameParts.some(part => cleanAccount.includes(part));
+                        // Count how many parts of the registered name appear in the bank account name
+                        const matchedParts = nameParts.filter(part => cleanAccount.includes(part));
 
-                        if (hasMatch) {
-                            console.log(`✅ Smart Match Success: "${accountName}" matches registered user "${registeredName}"`);
+                        // 🛡️ SECURITY: Require at least 2 names to match (e.g. Surname and First Name)
+                        // If they only have one name registered, we match that one.
+                        const requiredMatches = Math.min(nameParts.length, 2);
+                        const isSmartMatch = matchedParts.length >= requiredMatches && matchedParts.length > 0;
+
+                        if (isSmartMatch) {
+                            console.log(`✅ Smart Match Success: ${matchedParts.length}/${nameParts.length} parts matched. "${accountName}" vs "${registeredName}"`);
                             isMatch = true;
-                            matchMessage = "Identity verified via Smart Account Name Match (Fintech Fallback)";
+                            matchMessage = "Identity verified via Smart Multi-Part Name Match (Fintech Fallback)";
                         } else {
-                            console.warn(`❌ Smart Match Fail: "${accountName}" does not match "${registeredName}"`);
-                            throw new Error("Account name mismatch. The bank account name must match your registered business/owner name.");
+                            console.warn(`❌ Smart Match Fail: Only ${matchedParts.length}/${nameParts.length} parts matched. Account: "${accountName}" vs Registered: "${registeredName}"`);
+                            throw new Error("Account name mismatch. The bank account name must closely match your registered owner name.");
                         }
                     } else {
                         throw bvnErr;
