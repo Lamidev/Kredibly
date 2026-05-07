@@ -144,16 +144,32 @@ const getSubaccount = async (subaccountCode) => {
 
 /**
  * 9. PAYSTACK BANK CODE MAPPER
- * Translates CBN/NIBSS codes to Paystack-specific codes for fintechs.
+ * Translates CBN/NIBSS codes to Paystack-specific codes.
+ * 🛡️ NOTE: The Identity API (match_bvn) and Transfer API sometimes use different codes for fintechs.
  */
 const getPaystackBankCode = (code) => {
     const mapping = {
         '305': '999992',    // OPay (Paycom)
+        '100004': '999992',  // OPay Alternate
         '302': '999991',    // PalmPay
         '090267': '50211',  // Kuda
         '090405': '50515',  // Moniepoint
     };
     return mapping[code] || code;
+};
+
+/**
+ * 10. GET FALLBACK BANK CODE
+ * If the primary Paystack code fails, we try the standard NIP code.
+ */
+const getFallbackBankCode = (code) => {
+    const reverseMapping = {
+        '999992': '305',    // OPay
+        '999991': '302',    // PalmPay
+        '50211': '090267',  // Kuda
+        '50515': '090405',  // Moniepoint
+    };
+    return reverseMapping[code] || null;
 };
 
 module.exports = {
@@ -172,13 +188,27 @@ module.exports = {
 /**
  * 8. BVN - Account Match (The "Identity Guard")
  * Verifies if a BVN is linked to a specific bank account.
- * Optional 'dob' (YYYY-MM-DD) improves matching accuracy.
  */
 async function matchBVN(accountNumber, bankCode, bvn, dob = null) {
     try {
         let url = `/bank/match_bvn?account_number=${accountNumber}&bank_code=${bankCode}&bvn=${bvn}`;
         if (dob) url += `&dob=${dob}`;
-        return await paystackRequest(url);
+        
+        try {
+            return await paystackRequest(url);
+        } catch (err) {
+            // 🛡️ FALLBACK STRATEGY: If Paystack code fails with "Bank code is invalid", try the NIP code.
+            if (err.message.toLowerCase().includes('bank code is invalid')) {
+                const fallbackCode = getFallbackBankCode(bankCode);
+                if (fallbackCode) {
+                    console.log(`🔄 Retrying BVN Match with fallback code: ${fallbackCode} (Previous ${bankCode} failed)`);
+                    let fallbackUrl = `/bank/match_bvn?account_number=${accountNumber}&bank_code=${fallbackCode}&bvn=${bvn}`;
+                    if (dob) fallbackUrl += `&dob=${dob}`;
+                    return await paystackRequest(fallbackUrl);
+                }
+            }
+            throw err;
+        }
     } catch (err) {
         throw err;
     }

@@ -275,12 +275,22 @@ exports.saveBankDetails = async (req, res) => {
             bankDetailsLockUntil: lockUntil
         };
         
+        // 5. SECURITY RESET: If identity was already verified, we RESET it.
+        // The merchant MUST re-verify their BVN against the NEW bank account.
+        // This prevents attackers from "waiting out" the 24h lock.
+        if (!isInitialSetup && profile.kyc?.status === 'verified') {
+            console.log(`🛡️ SECURITY RESET: ${profile.displayName} changed bank. KYC reverted to pending.`);
+            profile.kyc.status = 'pending';
+            profile.kyc.tier = 1; // Back to basic
+            profile.kyc.rejectionReason = "Bank details changed. Re-verification required for safety.";
+        }
+
         await profile.save();
 
-        // 5. SEND SECURITY NOTIFICATION (Only for Changes)
+        // 6. SEND SECURITY NOTIFICATION (Only for Changes)
         if (!isInitialSetup) {
             const bossTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
-            const securityMsg = `Your payout bank account was just updated to ${resolvedDetails.account_name} (${bankName}).\n\n🛡️ *Safety Lock:* For your security, instant payouts are paused for 24 hours. They will resume automatically tomorrow.\n\n_If you did not make this change, please contact support immediately!_`;
+            const securityMsg = `Your payout bank account was just updated to ${resolvedDetails.account_name} (${bankName}).\n\n🛡️ *Safety Lock:* For your security, instant payouts are paused for 24 hours. Your identity verification has also been reset—you must re-verify your BVN against this new account to resume instant settlements.\n\n_If you did not make this change, please contact support immediately!_`;
             
             const { sendWhatsAppAlert } = require("../whatsapp/whatsappController");
             await sendWhatsAppAlert(profile.whatsappNumber, bossTitle, securityMsg).catch(e => console.error("Security WA Fail:", e.message));
@@ -329,7 +339,8 @@ exports.verifyKYC = async (req, res) => {
             return res.status(400).json({ success: false, message: "Please set your payout bank account in 'Payout Settings' before verifying your identity." });
         }
 
-        console.log(`🛡️ KYC Verification Started: ${profile.displayName} via ${type.toUpperCase()}`);
+        console.log(`🛡️ KYC Verification Started: ${profile.displayName} (${profile.bankDetails.bankName}) via ${type.toUpperCase()}`);
+        console.log(`💡 Details: Account ${profile.bankDetails.accountNumber}, Nomba Code: ${profile.bankDetails.bankCode}`);
 
         let isMatch = false;
         let matchMessage = "";
@@ -345,6 +356,7 @@ exports.verifyKYC = async (req, res) => {
             try {
                 // Map the bank code to Paystack-specific version if needed (e.g. OPay 305 -> 999992)
                 const paystackCode = getPaystackBankCode(profile.bankDetails.bankCode);
+                console.log(`🚀 Calling Paystack Match BVN with code: ${paystackCode}`);
                 
                 const result = await matchBVN(
                     profile.bankDetails.accountNumber,
@@ -390,6 +402,12 @@ exports.verifyKYC = async (req, res) => {
             const { releaseMerchantEscrow } = require("../../utils/payouts");
             // Run in background to keep UI fast
             releaseMerchantEscrow(profile._id).catch(e => console.error("Escrow Release Post-KYC Fail:", e.message));
+
+            // 📢 NOTIFY MERCHANT VIA WHATSAPP (Real-time alert)
+            const { sendWhatsAppAlert } = require("../whatsapp/whatsappController");
+            const bossTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
+            const successMsg = `✅ *Account Verified!* Your identity match was successful. We've unlocked your instant settlements and released any held funds to your bank account. High power! 🚀`;
+            sendWhatsAppAlert(profile.whatsappNumber, bossTitle, successMsg).catch(e => console.error("KYC Success WA Fail:", e.message));
 
             return res.status(200).json({ 
                 success: true, 

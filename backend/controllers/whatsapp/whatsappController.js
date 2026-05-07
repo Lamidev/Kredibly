@@ -663,13 +663,18 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
             whatsappNumber: { $in: [cleanTo, normalizedTo, to.toString(), altTo, plusTo].filter(Boolean) }
         });
         
+        // 🧠 SMART TITLING: Use preferredName or business name if profile found
+        const plan = profile?.plan || "hustler";
+        const defaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+        const finalTitle = profile?.assistantSettings?.preferredName || profile?.displayName || bossTitle || defaultTitle;
+
         const now = new Date();
         const isWindowOpen = profile?.lastInboundAt && (now - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
 
         if (isWindowOpen) {
             console.log(`💡 WhatsApp Session Open for ${normalizedTo} — Sending free session message`);
             // Format as a bold message with person's title
-            let sessionText = `*${bossTitle}!* 🚀\n\n${textMessage}`;
+            let sessionText = `*${finalTitle}!* 🚀\n\n${textMessage}`;
             
             // If invoiceNumber provided but not in text, append it as a link
             if (invoiceNumber && !textMessage.includes(invoiceNumber)) {
@@ -694,7 +699,7 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
             {
                 type: "body",
                 parameters: [
-                    { type: "text", text: String(bossTitle).substring(0, 60) },
+                    { type: "text", text: String(finalTitle).substring(0, 60) },
                     { type: "text", text: safeMessage }
                 ]
             }
