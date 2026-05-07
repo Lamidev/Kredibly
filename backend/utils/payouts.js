@@ -36,12 +36,14 @@ const releaseMerchantEscrow = async (businessId) => {
         const totalAmount = pendingEscrows.reduce((sum, p) => sum + p.amount, 0);
         const threshold = 25; // ₦20 fee + ₦5 safety
         
-        // Double check Main Wallet Balance first
+        // Double check Main Wallet Balance first (Handle null for 403/Permission errors)
         const mainBalance = await getMerchantBalance();
-        if (mainBalance === null || mainBalance < totalAmount + threshold) {
-            console.warn(`⚠️ Insufficient Nomba Main Balance to release ₦${totalAmount} for ${business.displayName}`);
-            // We don't fail, we'll try as much as possible or wait for worker
-            if (mainBalance < threshold) return { success: false, message: "Main wallet balance low" };
+        
+        // 🛡️ FEARLESS PAYOUT: If we can't check the balance (null), we proceed with the transfer 
+        // anyway as long as there is pending escrow.
+        if (mainBalance !== null && mainBalance < threshold) {
+            console.warn(`⚠️ Nomba Main Balance too low for threshold: ₦${mainBalance}`);
+            return { success: false, message: "Main wallet balance low" };
         }
 
         const sweepAmount = Math.floor(Math.min(totalAmount, (mainBalance || totalAmount + threshold) - threshold));

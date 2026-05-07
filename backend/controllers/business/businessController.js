@@ -4,6 +4,7 @@ const Waitlist = require("../../models/Waitlist");
 const { logActivity } = require("../../utils/activityLogger");
 const { getBanks, resolveAccount } = require("../../utils/nomba");
 const { getIO } = require("../../utils/socket");
+const User = require("../../models/User");
 
 const cleanPhone = (num) => {
     if (!num) return num;
@@ -384,7 +385,6 @@ exports.verifyKYC = async (req, res) => {
                         const accountName = resolvedData.account_name; // e.g. "SAMUEL OLAMIDE"
                         
                         // Get the User's registered name for comparison
-                        const User = require("../../models/User");
                         const user = await User.findById(req.user._id);
                         const registeredName = user?.name || profile.displayName;
 
@@ -440,6 +440,8 @@ exports.verifyKYC = async (req, res) => {
                 userId: req.user._id,
                 businessId: profile._id,
                 action: "KYC_VERIFIED",
+                entityType: "BusinessProfile",
+                entityId: profile._id,
                 details: `Identity verified via ${type.toUpperCase()} (Tier 2)`
             });
 

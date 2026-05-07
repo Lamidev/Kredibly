@@ -19,7 +19,7 @@ const ActivityLogSchema = new mongoose.Schema({
     },
     entityType: {
         type: String, // 'SALE', 'PAYMENT', 'PROFILE', 'WHATSAPP', 'USER'
-        required: true
+        required: false
     },
     entityId: {
         type: mongoose.Schema.Types.ObjectId,
