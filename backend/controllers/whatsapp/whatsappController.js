@@ -995,11 +995,18 @@ exports.handleIncoming = async (req, res) => {
             }
         }
 
+        // Determine a meaningful description for the activity stream
+        const msgDescription = msgType === 'audio' || msgType === 'voice' 
+            ? '🎤 Voice Note' 
+            : msgType === 'image' 
+                ? '📸 Image / Receipt' 
+                : `"${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`;
+
         await logActivity({
             businessId: profile._id,
             action: "WHATSAPP_MSG_RECEIVED",
             entityType: "WHATSAPP",
-            details: `From: ${from} | Msg: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`
+            details: `From: ${from} | Msg: ${msgDescription}`
         });
 
         // HUSTLER LIMIT CHECK (10 Sales limit per month)
@@ -1408,7 +1415,7 @@ Upgrade here: ${APP_URL}/pricing`);
             // Fetch last 5 sales to give Kreddy a "memory" of what they sell
             const lastSales = await Sale.find({ businessId: profile._id }).sort({ createdAt: -1 }).limit(5).select('customerName items totalAmount');
             const businessInsight = lastSales.length > 0 
-                ? `Recent Activity: ${lastSales.map(s => `${s.customerName} bought ${s.items.map(item => item.description).join(', ')} (₦${s.totalAmount.toLocaleString()})`).join('; ')}`
+                ? `Recent Activity: ${lastSales.map(s => `${s.customerName} bought ${(s.items || []).map(item => item.description).join(', ')} (₦${s.totalAmount.toLocaleString()})`).join('; ')}`
                 : "No recent transactions found. They are just starting out.";
 
             const preferredTone = profile.assistantSettings?.reminderTemplate || "friendly";
@@ -2787,9 +2794,14 @@ Upgrade here: ${APP_URL}/pricing`);
         }
     }
     } catch (err) {
-        console.error("WhatsApp Assistant Error:", err);
+        console.error("🔴 WhatsApp Assistant CRASH:", err?.message || err);
+        console.error("🔴 Stack:", err?.stack || "No stack trace");
         if (from) {
-            await sendReply(from, "Ouch! My brain had a small glitch. 😵‍ Give me a moment to recover and try again! 🛡️");
+            try {
+                await sendReply(from, "Ouch! My brain had a small glitch. 😵‍ Give me a moment to recover and try again! 🛡️");
+            } catch (replyErr) {
+                console.error("🔴 Failed to send error reply:", replyErr?.message);
+            }
         }
     }
 };

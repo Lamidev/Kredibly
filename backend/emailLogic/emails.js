@@ -85,7 +85,7 @@ exports.sendWelcomeEmail = async (email, userName) => {
   }
 };
 
-exports.sendOnboardingSuccessEmail = async (email, userName, businessName) => {
+exports.sendOnboardingSuccessEmail = async (email, userName, businessName, planTitle = "Chairman") => {
     try {
         await resendClient.emails.send({
             from: `${sender.name} <${sender.email}>`,
@@ -95,6 +95,7 @@ exports.sendOnboardingSuccessEmail = async (email, userName, businessName) => {
             html: ONBOARDING_SUCCESS_TEMPLATE
                 .replace(/{name}/g, userName)
                 .replace(/{businessName}/g, businessName)
+                .replace(/{planTitle}/g, planTitle)
         });
     } catch (error) {
         console.error("Error sending onboarding success email:", error);

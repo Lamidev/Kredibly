@@ -69,7 +69,7 @@ const SettingsPage = () => {
     
     // KYC State
     const [activeTab, setActiveTab] = useState('profile');
-    const [kycType, setKycType] = useState(profile?.kyc?.method || "bvn");
+    const [kycType, setKycType] = useState(profile?.kyc?.method && profile.kyc.method !== 'none' ? profile.kyc.method : "bvn");
     const [idNumber, setIdNumber] = useState("");
     const [dob, setDob] = useState("");
     const [isVerifying, setIsVerifying] = useState(false);
@@ -82,7 +82,12 @@ const SettingsPage = () => {
         const params = new URLSearchParams(location.search);
         const tab = params.get('tab');
         if (tab) setActiveTab(tab);
-    }, [location]);
+
+        // Sync KYC type if profile loads late
+        if (profile?.kyc?.method && profile.kyc.method !== 'none') {
+            setKycType(profile.kyc.method);
+        }
+    }, [location, profile]);
 
 
     // Fetch Banks on load

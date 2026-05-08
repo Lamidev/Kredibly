@@ -33,13 +33,6 @@ const Onboarding = () => {
     const [entityType, setEntityType] = useState("individual");
     const [sellMode, setSellMode] = useState("both");
     const [whatsappNumber, setWhatsappNumber] = useState("");
-    
-    // Step 3 Data: KYC
-    const [kycType, setKycType] = useState("bvn");
-    const [idNumber, setIdNumber] = useState("");
-    const [dob, setDob] = useState("");
-    const [isVerifying, setIsVerifying] = useState(false);
-    const [kycStatus, setKycStatus] = useState("pending"); // pending, verified, skipped
 
     // Step 4 Data: Settlement
     const [banks, setBanks] = useState([]);
@@ -57,9 +50,26 @@ const Onboarding = () => {
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
 
-    const { updateProfile, user } = useAuth();
+    const { updateProfile, user, profile } = useAuth();
+
+    // Step 3 Data: KYC (Moved after useAuth to access profile)
+    const initialKycType = profile?.kyc?.method && profile.kyc.method !== 'none' ? profile.kyc.method : "bvn";
+    const [kycType, setKycType] = useState(initialKycType);
+    const [idNumber, setIdNumber] = useState("");
+    const [dob, setDob] = useState("");
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [kycStatus, setKycStatus] = useState("pending"); // pending, verified, skipped
+    const [hasKycError, setHasKycError] = useState(false);
+
+    useEffect(() => {
+        if (profile?.kyc?.method && profile.kyc.method !== 'none') {
+            setKycType(profile.kyc.method);
+        }
+    }, [profile]);
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
+
+    const planTitle = profile?.plan === 'oga' ? 'Oga' : (profile?.plan === 'hustler' ? 'Hustler' : 'Chairman');
 
     // Get initials for logo fallback
     const getInitials = (name) => {
@@ -141,21 +151,45 @@ const Onboarding = () => {
         }
     };
 
-    const nextStep = () => {
+    const nextStep = async () => {
+        // Step 2 Completion: Save Basic Info
         if (step === 2) {
             if (!displayName.trim()) return toast.error("Please enter a business name");
             if (!whatsappNumber.trim()) return toast.error("WhatsApp is required for Kreddy AI");
             if (!isValidNigerianPhone(whatsappNumber)) return toast.error("Invalid WhatsApp number format");
         }
+        
+        // Step 3 Completion (Now Bank Setup): Save to DB so KYC can find profile
         if (step === 3) {
-            // KYC Step: Mandatory check unless skipped (skipped is handled by its own button)
-            if (kycStatus !== 'skipped' && kycStatus !== 'verified') {
-                return toast.error("Please verify your identity or skip for now.");
-            }
-        }
-        if (step === 4) {
             if (!selectedBank || !accountNumber || !accountName) {
                 return toast.error("Please verify your bank details to receive payments");
+            }
+            
+            // 🛡️ SAVE PROFILE TO DB: This ensures the KYC step (next) can find the profile
+            try {
+                const payload = {
+                    displayName,
+                    whatsappNumber: formatPhoneForDB(whatsappNumber),
+                    bankDetails: { 
+                        bankName: selectedBank.name, 
+                        bankCode: selectedBank.code,
+                        accountNumber, 
+                        accountName 
+                    },
+                    entityType,
+                    sellMode
+                };
+                await updateProfile(payload);
+                console.log("✅ Profile created/updated for KYC step.");
+            } catch (err) {
+                return toast.error("Could not save your details. Try again.");
+            }
+        }
+
+        if (step === 4) {
+            // KYC Step: Mandatory check unless skipped
+            if (kycStatus !== 'skipped' && kycStatus !== 'verified') {
+                return toast.error("Please verify your identity or skip for now.");
             }
         }
         setStep(prev => prev + 1);
@@ -175,10 +209,11 @@ const Onboarding = () => {
             if (res.data.success) {
                 setKycStatus("verified");
                 toast.success("Identity Verified!");
-                setStep(4);
+                setStep(5);
             }
         } catch (err) {
             toast.error(err.response?.data?.message || "Verification failed. Check your details.");
+            setHasKycError(true);
         } finally {
             setIsVerifying(false);
         }
@@ -207,7 +242,7 @@ const Onboarding = () => {
                 }
             };
             await updateProfile(payload);
-            toast.success("Setup Complete! Welcome to the Oga Life.");
+            toast.success(`Setup Complete! Welcome to the ${planTitle} Life.`);
             navigate("/dashboard");
         } catch (err) {
             toast.error(err.response?.data?.message || "Setup failed. Check details.");
@@ -296,9 +331,9 @@ const Onboarding = () => {
                                         <div style={{ width: '80px', height: '80px', background: 'linear-gradient(135deg, #7C3AED, #4C1D95)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: 'white', boxShadow: '0 15px 30px rgba(76, 29, 149, 0.3)' }}>
                                             <Zap size={40} fill="white" />
                                         </div>
-                                        <h2 style={{ fontSize: 'clamp(1.5rem, 6vw, 2rem)', fontWeight: 950, letterSpacing: '-0.04em', color: '#0F172A', marginBottom: '12px' }}>Welcome, Oga.</h2>
+                                        <h2 style={{ fontSize: 'clamp(1.5rem, 6vw, 2rem)', fontWeight: 950, letterSpacing: '-0.04em', color: '#0F172A', marginBottom: '12px' }}>Welcome, {planTitle}.</h2>
                                         <p style={{ color: '#0F172A', fontWeight: 600, fontSize: '1rem', lineHeight: 1.7 }}>
-                                            As a <span style={{ color: '#000000', fontWeight: 800 }}>Founding Member</span>, you've been granted <strong style={{ color: '#0F172A' }}>30 days</strong> of the <strong style={{ color: '#0F172A' }}>Oga Plan</strong> for free during this beta phase.
+                                            As a <span style={{ color: '#000000', fontWeight: 800 }}>Founding Member</span>, you've been granted <strong style={{ color: '#0F172A' }}>30 days</strong> of the <strong style={{ color: '#0F172A' }}>{planTitle} Plan</strong> for free during this beta phase.
                                         </p>
                                     </div>
                                     <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1.5px solid #E2E8F0', marginBottom: '40px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
@@ -350,14 +385,94 @@ const Onboarding = () => {
                                         <p style={{ fontSize: '0.8rem', color: '#0F172A', marginTop: '8px', fontWeight: 600 }}>We'll use this to send you daily summaries and AI insights.</p>
                                     </div>
                                     <div style={{ display: 'flex', gap: '16px' }}>
-                                        <button onClick={nextStep} className="btn-primary" style={{ flex: 1, height: '64px', fontSize: '1.1rem' }}>Next: Verify My ID <ShieldCheck size={20} /></button>
+                                        <button onClick={nextStep} className="btn-primary" style={{ flex: 1, height: '64px', fontSize: '1.1rem' }}>Next: Payout Details <Landmark size={20} /></button>
                                     </div>
                                 </motion.div>
                             )}
 
-                            {/* Step 3: Identity Verification (KYC) */}
+                            {/* Step 3: Payout Settlement (Moved before KYC) */}
                             {step === 3 && (
+                                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} key="bank">
+                                    <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                                        <div style={{ width: '64px', height: '64px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'var(--primary)' }}>
+                                            <Landmark size={32} />
+                                        </div>
+                                        <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0F172A', marginBottom: '8px' }}>Payout Settlement</h3>
+                                        <p style={{ fontSize: '0.9rem', color: '#64748B', fontWeight: 600 }}>Where should we pay your money?</p>
+                                    </div>
+
+                                    <div className="input-group" style={{ marginBottom: '24px' }}>
+                                        <div style={{ position: 'relative' }}>
+                                            <Search size={18} style={{ position: 'absolute', left: '16px', top: '20px', color: '#94A3B8', zIndex: 2 }} />
+                                            <input 
+                                                type="text" 
+                                                className="input-field" 
+                                                style={{ height: '56px', paddingLeft: '48px', fontSize: '1rem', fontWeight: 700 }}
+                                                placeholder={banksLoading ? "Loading banks..." : "Search Bank (e.g. Kuda, GTB)"}
+                                                value={selectedBank ? selectedBank.name : searchBank}
+                                                onChange={e => { setSearchBank(e.target.value); setSelectedBank(null); }}
+                                                onClick={() => { if (selectedBank) setSelectedBank(null); }}
+                                                disabled={banksLoading}
+                                            />
+                                            {banksLoading && (
+                                                <Loader2 size={16} style={{ position: 'absolute', right: '16px', top: '20px', color: '#94A3B8', animation: 'spin 1s linear infinite' }} />
+                                            )}
+                                            {searchBank && !selectedBank && filteredBanks.length > 0 && (
+                                                <div style={{ position: 'absolute', top: '62px', left: 0, right: 0, background: 'white', border: '1px solid #E2E8F0', borderRadius: '16px', zIndex: 100, boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', maxHeight: '280px', overflowY: 'auto' }}>
+                                                    {filteredBanks.map(b => (
+                                                        <div 
+                                                            key={b.code} 
+                                                            onMouseDown={() => { setSelectedBank(b); setSearchBank(""); setAccountName(""); }} 
+                                                            style={{ padding: '14px 20px', cursor: 'pointer', borderBottom: '1px solid #F1F5F9', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '10px' }}
+                                                            onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'}
+                                                            onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                                                        >
+                                                            <Landmark size={14} color="#94A3B8" />
+                                                            {b.name}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="input-group" style={{ marginBottom: '24px' }}>
+                                        <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>Account Number</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <input 
+                                                type="text" 
+                                                className="input-field" 
+                                                style={{ height: '56px', fontSize: '1.2rem', fontWeight: 800, letterSpacing: '0.2em' }}
+                                                placeholder="0123456789" 
+                                                maxLength={10}
+                                                value={accountNumber} 
+                                                onChange={e => setAccountNumber(e.target.value.replace(/\D/g, ""))}
+                                            />
+                                            {isResolving && <Loader2 className="spin" size={20} style={{ position: 'absolute', right: '16px', top: '18px', color: 'var(--primary)', animation: 'spin 1s linear infinite' }} />}
+                                        </div>
+                                    </div>
+                                    {accountName && (
+                                        <div style={{ background: '#F0FDF4', padding: '16px 20px', borderRadius: '16px', border: '1px solid #BBF7D0', marginBottom: '40px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                            <CheckCircle2 size={20} color="#16A34A" />
+                                            <span style={{ fontWeight: 900, color: '#166534', fontSize: '0.95rem' }}>{accountName}</span>
+                                        </div>
+                                    )}
+                                    <div style={{ display: 'flex', gap: '16px' }}>
+                                        <button onClick={nextStep} className="btn-primary" style={{ flex: 1, height: '64px', fontSize: '1.1rem' }}>Verify & Continue <ArrowRight size={20} /></button>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* Step 4: Identity Verification (KYC) (Moved after Bank) */}
+                            {step === 4 && (
                                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} key="kyc">
+                                    {kycStatus === 'skipped' && (
+                                        <div style={{ background: '#F8FAFC', padding: '14px 20px', borderRadius: '16px', border: '1px solid #E2E8F0', marginBottom: '24px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                                            <ShieldCheck size={18} color="var(--primary)" style={{ marginTop: '2px', flexShrink: 0 }} />
+                                            <p style={{ margin: 0, fontSize: '0.8rem', color: '#1E293B', fontWeight: 700, lineHeight: 1.5 }}>
+                                                Note: Without verification, your first settlement may take up to 24 hours for review.
+                                            </p>
+                                        </div>
+                                    )}
                                     <div style={{ textAlign: 'center', marginBottom: '32px' }}>
                                         <div style={{ width: '64px', height: '64px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'var(--primary)' }}>
                                             <ShieldCheck size={32} />
@@ -367,7 +482,7 @@ const Onboarding = () => {
                                     </div>
 
                                     <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
-                                        {['bvn', 'nin'].map(type => (
+                                        {['bvn'].map(type => (
                                             <div 
                                                 key={type}
                                                 onClick={() => setKycType(type)}
@@ -424,108 +539,21 @@ const Onboarding = () => {
                                         <button 
                                             onClick={() => {
                                                 setKycStatus("skipped");
-                                                setStep(4);
+                                                setStep(5);
                                             }}
                                             className="btn-secondary" 
-                                            style={{ width: '100%', height: '56px', fontSize: '0.95rem', background: 'transparent', border: 'none', color: '#64748B', fontWeight: 800 }}
+                                            style={{ 
+                                                width: '100%', 
+                                                height: '56px', 
+                                                fontSize: '0.95rem', 
+                                                background: hasKycError ? 'rgba(76, 29, 149, 0.05)' : 'transparent', 
+                                                border: hasKycError ? '1.5px solid var(--primary)' : 'none', 
+                                                color: hasKycError ? 'var(--primary)' : '#64748B', 
+                                                fontWeight: 800 
+                                            }}
                                         >
-                                            Skip for now (Limits will apply)
+                                            {hasKycError ? "Continue anyway (I'll verify later)" : "Skip for now (Limits will apply)"}
                                         </button>
-                                    </div>
-                                </motion.div>
-                            )}
-
-                            {/* Step 4: Interactive Settlement */}
-                            {step === 4 && (
-                                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} key="bank">
-                                    {kycStatus === 'skipped' && (
-                                        <div style={{ background: '#FFFBEB', padding: '14px 20px', borderRadius: '16px', border: '1px solid #FEF3C7', marginBottom: '24px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                                            <Activity size={18} color="#D97706" style={{ marginTop: '2px', flexShrink: 0 }} />
-                                            <p style={{ margin: 0, fontSize: '0.8rem', color: '#92400E', fontWeight: 700, lineHeight: 1.5 }}>
-                                                Note: Without verification, your first settlement may take up to 24 hours for review.
-                                            </p>
-                                        </div>
-                                    )}
-                                    <div className="input-group" style={{ marginBottom: '24px' }}>
-                                        <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>Where should we pay your money?</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <Search size={18} style={{ position: 'absolute', left: '16px', top: '20px', color: '#94A3B8', zIndex: 2 }} />
-                                            <input 
-                                                type="text" 
-                                                className="input-field" 
-                                                style={{ height: '56px', paddingLeft: '48px', fontSize: '1rem', fontWeight: 700 }}
-                                                placeholder={banksLoading ? "Loading banks..." : "Search Bank (e.g. Kuda, GTB)"}
-                                                value={selectedBank ? selectedBank.name : searchBank}
-                                                onChange={e => { setSearchBank(e.target.value); setSelectedBank(null); }}
-                                                onClick={() => { if (selectedBank) setSelectedBank(null); }}
-                                                disabled={banksLoading}
-                                            />
-                                            {banksLoading && (
-                                                <Loader2 size={16} style={{ position: 'absolute', right: '16px', top: '20px', color: '#94A3B8', animation: 'spin 1s linear infinite' }} />
-                                            )}
-                                            {searchBank && !selectedBank && filteredBanks.length > 0 && (
-                                                <div style={{ position: 'absolute', top: '62px', left: 0, right: 0, background: 'white', border: '1px solid #E2E8F0', borderRadius: '16px', zIndex: 100, boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', maxHeight: '280px', overflowY: 'auto' }}>
-                                                    {filteredBanks.map(b => (
-                                                        <div 
-                                                            key={b.code} 
-                                                            onMouseDown={() => { setSelectedBank(b); setSearchBank(""); setAccountName(""); }} 
-                                                            style={{ padding: '14px 20px', cursor: 'pointer', borderBottom: '1px solid #F1F5F9', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '10px' }}
-                                                            onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'}
-                                                            onMouseLeave={e => e.currentTarget.style.background = 'white'}
-                                                        >
-                                                            <Landmark size={14} color="#94A3B8" />
-                                                            {b.name}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            {searchBank && !selectedBank && banks.length > 0 && filteredBanks.length === 0 && (
-                                                <div style={{ position: 'absolute', top: '62px', left: 0, right: 0, background: 'white', border: '1px solid #E2E8F0', borderRadius: '16px', zIndex: 100, padding: '16px', textAlign: 'center', color: '#0F172A', fontSize: '0.85rem' }}>
-                                                    No bank found. Try a shorter name.
-                                                </div>
-                                            )}
-                                        </div>
-                                        {/* If banks failed to load, show retry */}
-                                        {!banksLoading && banks.length === 0 && (
-                                            <button 
-                                                onClick={async () => {
-                                                    setBanksLoading(true);
-                                                    try {
-                                                        const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
-                                                        const res = await axios.get(`${API_URL}/business/banks`, { withCredentials: true });
-                                                        if (res.data.success) setBanks(res.data.data.sort((a, b) => a.name.localeCompare(b.name)));
-                                                    } catch { toast.error("Still can't load banks. Check your connection."); }
-                                                    finally { setBanksLoading(false); }
-                                                }}
-                                                style={{ marginTop: '8px', background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', padding: '4px 0' }}
-                                            >
-                                                ↻ Tap to retry loading banks
-                                            </button>
-                                        )}
-                                    </div>
-                                    <div className="input-group" style={{ marginBottom: '24px' }}>
-                                        <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>Account Number</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <input 
-                                                type="text" 
-                                                className="input-field" 
-                                                style={{ height: '56px', fontSize: '1.2rem', fontWeight: 800, letterSpacing: '0.2em' }}
-                                                placeholder="0123456789" 
-                                                maxLength={10}
-                                                value={accountNumber} 
-                                                onChange={e => setAccountNumber(e.target.value.replace(/\D/g, ""))}
-                                            />
-                                            {isResolving && <Loader2 className="spin" size={20} style={{ position: 'absolute', right: '16px', top: '18px', color: 'var(--primary)', animation: 'spin 1s linear infinite' }} />}
-                                        </div>
-                                    </div>
-                                    {accountName && (
-                                        <div style={{ background: '#F0FDF4', padding: '16px 20px', borderRadius: '16px', border: '1px solid #BBF7D0', marginBottom: '40px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                            <CheckCircle2 size={20} color="#16A34A" />
-                                            <span style={{ fontWeight: 900, color: '#166534', fontSize: '0.95rem' }}>{accountName}</span>
-                                        </div>
-                                    )}
-                                    <div style={{ display: 'flex', gap: '16px' }}>
-                                        <button onClick={nextStep} className="btn-primary" style={{ flex: 1, height: '64px', fontSize: '1.1rem' }}>Verify & Continue <ArrowRight size={20} /></button>
                                     </div>
                                 </motion.div>
                             )}
