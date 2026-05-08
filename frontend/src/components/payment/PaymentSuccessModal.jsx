@@ -58,11 +58,13 @@ const PaymentSuccessModal = ({
                         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                         onClick={(e) => e.stopPropagation()}
                         style={{
-                            background: 'rgba(255, 255, 255, 0.95)',
-                            borderRadius: '40px',
+                        background: 'rgba(255, 255, 255, 0.95)',
+                            borderRadius: isMobile ? '32px' : '40px',
                             maxWidth: '480px',
                             width: '100%',
-                            overflow: 'hidden',
+                            maxHeight: isMobile ? '90vh' : 'auto',
+                            overflowY: 'auto',
+                            overflowX: 'hidden',
                             boxShadow: '0 40px 100px -20px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(15, 23, 42, 0.05)',
                             position: 'relative',
                             border: '1px solid rgba(255, 255, 255, 0.5)'
@@ -163,7 +165,7 @@ const PaymentSuccessModal = ({
                                 <button
                                     onClick={onDownloadImage}
                                     style={{
-                                        padding: '22px', background: '#4C1D95', color: 'white', borderRadius: '24px', border: 'none',
+                                        padding: isMobile ? '18px' : '22px', background: '#4C1D95', color: 'white', borderRadius: '24px', border: 'none',
                                         fontWeight: 900, fontSize: '1.05rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
                                         boxShadow: '0 15px 35px -10px rgba(76, 29, 149, 0.4)', transition: 'transform 0.2s ease'
                                     }}
