@@ -90,7 +90,7 @@ exports.initializeNombaAccount = async (req, res) => {
                     bankName: existing.bankName,
                     accountName: existing.accountName,
                     amount: existing.amount,
-                    baseAmount: requestedAmount,
+                    baseAmount: (existing.amount === requestedAmount) ? FINANCIAL_CONFIG.calculateNetAmount(existing.amount) : requestedAmount,
                     gatewayFee: gatewayFee,
                     reference: existing.reference,
                     expiresAt: existing.expiresAt
@@ -115,7 +115,7 @@ exports.initializeNombaAccount = async (req, res) => {
             reference: nombaData.reference,
             accountName: nombaData.accountName,
             amount: amountToCharge,
-            baseAmount: requestedAmount,
+            baseAmount: (amountToCharge === requestedAmount) ? FINANCIAL_CONFIG.calculateNetAmount(amountToCharge) : requestedAmount,
             status: 'active',
             expiresAt: new Date(nombaData.expiresAt)
         });
@@ -433,8 +433,9 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 const delay = 15000;
                 const threshold = 0; // 🚀 PLATFORM COVERS FEE: Merchant gets full amount. We cover the Nomba transfer charge from our main balance.
 
-                if (bankDetails?.bankCode && bankDetails?.accountNumber && nombaActualBalance > 5) {
-                    const sweepAmount = Math.floor(nombaActualBalance);
+                if (bankDetails?.bankCode && bankDetails?.accountNumber && nombaActualBalance >= (creditAmount + 25)) {
+                    // 🛡️ ACCURATE SETTLEMENT: Sweep only the specific amount owed to this merchant for this transaction.
+                    const sweepAmount = Math.floor(creditAmount);
                     if (sweepAmount > 0) {
                         console.log(`⚡ Underground Settlement Started (₦${sweepAmount}) - Waiting ${delay/1000}s...`);
                         await new Promise(resolve => setTimeout(resolve, delay));
@@ -475,6 +476,8 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                             });
                         } catch (nErr) { console.error("Settlement notification error:", nErr.message); }
                     }
+                } else {
+                    console.log(`ℹ️ Auto-Settlement Skipped for ${business.displayName}: ${!bankDetails?.bankCode ? 'Missing bank details' : `Balance too low (₦${nombaActualBalance} < needed ₦${creditAmount + 25})`}`);
                 }
             } catch (sweepErr) {
                 console.error(`❌ Underground Sweep FAILED:`, sweepErr.message);
