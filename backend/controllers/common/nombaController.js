@@ -435,9 +435,10 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
 
                 if (bankDetails?.bankCode && bankDetails?.accountNumber && nombaActualBalance >= (creditAmount + 25)) {
                     // 🛡️ ACCURATE SETTLEMENT: Sweep only the specific amount owed to this merchant for this transaction.
+                    console.log(`🔍 [v3] Debug: creditAmount=${creditAmount}, walletBalance=${nombaActualBalance}`);
                     const sweepAmount = Math.floor(creditAmount);
                     if (sweepAmount > 0) {
-                        console.log(`⚡ Underground Settlement Started (₦${sweepAmount}) - Waiting ${delay/1000}s...`);
+                        console.log(`⚡ Underground Settlement [v3] Started (₦${sweepAmount}) - Waiting ${delay/1000}s...`);
                         await new Promise(resolve => setTimeout(resolve, delay));
                         
                         const { initiateTransfer } = require('../../utils/nomba');
