@@ -21,13 +21,15 @@ const paystackRequest = (path, method = 'GET', body = null) => {
             headers: {
                 Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
                 'Content-Type': 'application/json'
-            }
+            },
+            timeout: 10000 // 🛡️ 10s timeout to prevent hanging (which causes 503s)
         };
 
         const req = https.request(options, res => {
             let data = '';
             res.on('data', chunk => data += chunk);
             res.on('end', () => {
+                console.log(`📡 Paystack Response [${path}] (${res.statusCode}):`, data); // 🛠️ LOG FOR DEBUGGING
                 try {
                     const parsed = JSON.parse(data);
                     if (parsed.status) {
@@ -49,7 +51,10 @@ const paystackRequest = (path, method = 'GET', body = null) => {
             reject(e);
         });
         
-        if (body) req.write(JSON.stringify(body));
+        if (body) {
+            console.log(`📤 Paystack Request Body [${path}]:`, JSON.stringify(body)); // 🛠️ LOG FOR DEBUGGING
+            req.write(JSON.stringify(body));
+        }
         req.end();
     });
 };
@@ -193,20 +198,24 @@ module.exports = {
  */
 async function matchBVN(accountNumber, bankCode, bvn, dob = null) {
     try {
-        let url = `/bank/match_bvn?account_number=${accountNumber}&bank_code=${bankCode}&bvn=${bvn}`;
-        if (dob) url += `&dob=${dob}`;
-        
+        // 🚀 POST BODY: Modern Paystack Identity API expects a POST request
+        const payload = {
+            account_number: accountNumber,
+            bank_code: bankCode,
+            bvn: bvn,
+            ...(dob && { dob })
+        };
+
         try {
-            return await paystackRequest(url);
+            return await paystackRequest('/bank/match_bvn', 'POST', payload);
         } catch (err) {
             // 🛡️ FALLBACK STRATEGY: If Paystack code fails with "Bank code is invalid", try the NIP code.
             if (err.message.toLowerCase().includes('bank code is invalid')) {
                 const fallbackCode = getFallbackBankCode(bankCode);
                 if (fallbackCode) {
                     console.log(`🔄 Retrying BVN Match with fallback code: ${fallbackCode} (Previous ${bankCode} failed)`);
-                    let fallbackUrl = `/bank/match_bvn?account_number=${accountNumber}&bank_code=${fallbackCode}&bvn=${bvn}`;
-                    if (dob) fallbackUrl += `&dob=${dob}`;
-                    return await paystackRequest(fallbackUrl);
+                    const fallbackPayload = { ...payload, bank_code: fallbackCode };
+                    return await paystackRequest('/bank/match_bvn', 'POST', fallbackPayload);
                 }
             }
             throw err;

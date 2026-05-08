@@ -159,30 +159,13 @@ const Onboarding = () => {
             if (!isValidNigerianPhone(whatsappNumber)) return toast.error("Invalid WhatsApp number format");
         }
 
-        // Step 3 Completion: Validate and Save
+        // Step 3 Completion: Move to final touches
         if (step === 3) {
             if (!selectedBank || !accountNumber || !accountName) {
                 return toast.error("Please verify your bank details to receive payments");
             }
-            // Save Progress before final step
-            try {
-                const payload = {
-                    displayName,
-                    whatsappNumber: formatPhoneForDB(whatsappNumber),
-                    bankDetails: { 
-                        bankName: selectedBank.name, 
-                        bankCode: selectedBank.code,
-                        accountNumber, 
-                        accountName 
-                    },
-                    entityType,
-                    sellMode
-                };
-                await updateProfile(payload);
-                console.log("✅ Profile saved. Moving to final touches.");
-            } catch (err) {
-                return toast.error("Could not save your details. Try again.");
-            }
+            // We no longer save profile at Step 3 to ensure profile creation and email only happen at Step 4
+            console.log("✅ Bank details verified. Moving to final touches.");
         }
         
         setStep(prev => prev + 1);
@@ -228,6 +211,7 @@ const Onboarding = () => {
                     accountName 
                 },
                 staffNumbers,
+                onboardingStep: 4, // 🚀 Mark onboarding as complete
                 kyc: {
                     status: kycStatus,
                     method: kycStatus === 'verified' ? kycType : 'none',
@@ -438,7 +422,7 @@ const Onboarding = () => {
                                                 placeholder="0123456789" 
                                                 maxLength={10}
                                                 value={accountNumber} 
-                                                onChange={e => setAccountNumber(e.target.value.replace(/\D/g, ""))}
+                                                onChange={e => setAccountNumber(e.target.value.replace(/\D/g, "").trim())}
                                             />
                                             {isResolving && <Loader2 className="spin" size={20} style={{ position: 'absolute', right: '16px', top: '18px', color: 'var(--primary)', animation: 'spin 1s linear infinite' }} />}
                                         </div>
