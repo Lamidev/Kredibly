@@ -286,7 +286,7 @@ const resolveAccount = async (accountNumber, bankCode) => {
             `${NOMBA_BASE_URL}/transfers/bank/lookup`,
             {
                 accountNumber,
-                bankCode
+                bankCode: getNombaBankCode(bankCode)
             },
             {
                 headers: {

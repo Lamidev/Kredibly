@@ -72,6 +72,7 @@ const register = async (req, res) => {
     await waitlisted.save().catch(err => console.error("Waitlist Update Error:", err));
 
     // Send verification email in background for speed
+    console.log(`📧 Verification Token for ${newUser.email}: ${verificationToken}`); // 🛡️ Log for dev/testing if email fails
     sendVerificationEmail(newUser.email, verificationToken)
       .catch(err => console.error("Background Email Error (Verification):", err.message));
 

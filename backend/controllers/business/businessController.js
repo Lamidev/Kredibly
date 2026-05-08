@@ -30,6 +30,8 @@ exports.updateProfile = async (req, res) => {
                 return res.status(403).json({ success: false, message: "You cannot change your business name after verification for security reasons. Please contact support." });
             }
 
+            const oldOnboardingStep = profile.onboardingStep; // Track for email trigger
+
             profile.displayName = displayName || profile.displayName;
             profile.entityType = entityType || profile.entityType;
             profile.sellMode = sellMode || profile.sellMode;
@@ -69,6 +71,17 @@ exports.updateProfile = async (req, res) => {
                 }
                 profile.staffNumbers = staffNumbers.map(n => cleanPhone(n)).filter(n => n);
             }
+
+            // 📧 ONBOARDING SUCCESS EMAIL: Send if they just finished onboarding (step 4)
+            if (req.body.onboardingStep === 4 && oldOnboardingStep < 4) {
+                const { sendOnboardingSuccessEmail } = require("../../emailLogic/emails");
+                const planTitle = profile.plan === 'chairman' ? 'Chairman' : (profile.plan === 'oga' ? 'Oga' : 'Boss');
+                sendOnboardingSuccessEmail(req.user.email, req.user.name, profile.displayName, planTitle)
+                  .catch(err => console.error("Onboarding Email Fail:", err.message));
+                
+                profile.onboardingStep = 4;
+            }
+
             await profile.save();
         } else {
             // New Profile Creation: Check if user is from Waitlist
@@ -103,10 +116,12 @@ exports.updateProfile = async (req, res) => {
                 hasUsedTrial: true,
                 isLaunchPromo: true, 
                 walletBalance: 0,
-                kyc: kyc || { status: 'pending', method: 'none' }
+                kyc: kyc || { status: 'pending', method: 'none' },
+                onboardingStep: req.body.onboardingStep || 0
             });
 
             await profile.save();
+            console.log(`🚀 PROFILE CREATED: ${profile.displayName} (${req.user.email})`);
 
             // Update Waitlist status
             if (waitlistEntry) {
@@ -114,11 +129,13 @@ exports.updateProfile = async (req, res) => {
                 await waitlistEntry.save();
             }
 
-            // 📧 SEND ONBOARDING SUCCESS EMAIL (fires once, when profile is first created)
-            const { sendOnboardingSuccessEmail } = require("../../emailLogic/emails");
-            const planTitle = profile.plan === 'chairman' ? 'Chairman' : (profile.plan === 'oga' ? 'Oga' : 'Boss');
-            sendOnboardingSuccessEmail(req.user.email, req.user.name, displayName, planTitle)
-              .catch(err => console.error("Onboarding Email Fail:", err.message));
+            // 📧 SEND ONBOARDING SUCCESS EMAIL (only if created at step 4)
+            if (profile.onboardingStep === 4) {
+                const { sendOnboardingSuccessEmail } = require("../../emailLogic/emails");
+                const planTitle = profile.plan === 'chairman' ? 'Chairman' : (profile.plan === 'oga' ? 'Oga' : 'Boss');
+                sendOnboardingSuccessEmail(req.user.email, req.user.name, displayName, planTitle)
+                  .catch(err => console.error("Onboarding Email Fail:", err.message));
+            }
 
             await logActivity({
                 userId: req.user._id,
@@ -368,25 +385,44 @@ exports.verifyKYC = async (req, res) => {
                 const paystackCode = getPaystackBankCode(profile.bankDetails.bankCode);
                 console.log(`🚀 Calling Paystack Match BVN with code: ${paystackCode}`);
                 
-                try {
+            try {
                     const result = await matchBVN(
                         profile.bankDetails.accountNumber,
                         paystackCode,
                         idNumber,
                         dob || null // Optional Date of Birth (YYYY-MM-DD)
                     );
+                    
+                    console.log(`✅ Paystack Match Result for ${profile.displayName}:`, JSON.stringify(result));
+                    
                     // Paystack returns { status: true, message: "...", data: { account_number: true, ... } }
                     isMatch = result === true || (result && result.account_number === true);
                     matchMessage = "BVN verification successful";
                 } catch (bvnErr) {
-                    if (bvnErr.message.toLowerCase().includes('bank code is invalid')) {
-                        // 🛡️ SMART FINTECH FALLBACK: Use original bank code (e.g. 302) for resolution 
-                        // as many fintechs don't resolve via their transfer/bvn-match codes (e.g. 999991)
+                    console.error(`❌ Paystack Match Error for ${profile.displayName}:`, bvnErr.message);
+                    
+                    if (bvnErr.message.toLowerCase().includes('bank code is invalid') || 
+                        bvnErr.message.toLowerCase().includes('does not match')) {
+                        // 🛡️ SMART FALLBACK: Resolve account name via Multiple Providers for redundancy
                         const resolutionCode = profile.bankDetails.bankCode;
-                        console.log(`🧠 Smart Fallback: Bank ${profile.bankDetails.bankName} code rejection. Resolving account name via original code: ${resolutionCode}...`);
-                        
-                        const resolvedData = await resolveAccount(profile.bankDetails.accountNumber, resolutionCode);
-                        const accountName = resolvedData.account_name; // e.g. "SAMUEL OLAMIDE"
+                        const accountNumber = profile.bankDetails.accountNumber;
+                        let accountName = "";
+
+                        try {
+                            // Layer 1: Paystack Resolution (Fast & Reliable for traditional banks)
+                            console.log(`🧠 Smart Fallback Layer 1: Resolving via Paystack [${resolutionCode}]...`);
+                            const paystackResData = await resolveAccount(accountNumber, paystackCode);
+                            accountName = paystackResData.account_name;
+                        } catch (paystackResErr) {
+                            console.warn(`⚠️ Paystack Resolution Failed: ${paystackResErr.message}. Trying Nomba...`);
+                            // Layer 2: Nomba Resolution (Good for Fintechs)
+                            const { resolveAccount: resolveNombaAccount } = require("../../utils/nomba");
+                            const nombaResData = await resolveNombaAccount(accountNumber, resolutionCode);
+                            accountName = nombaResData.account_name;
+                        }
+
+                        if (!accountName) throw new Error("Could not resolve account name from any provider.");
+                        console.log(`✅ Resolved Account Name: "${accountName}"`);
                         
                         // Get the User's registered name for comparison
                         const user = await User.findById(req.user._id);
@@ -417,7 +453,7 @@ exports.verifyKYC = async (req, res) => {
                     }
                 }
             } catch (err) {
-                console.error("❌ Paystack KYC Error:", err.message);
+                console.error("❌ KYC Verification Engine Error:", err.message);
                 return res.status(400).json({ success: false, message: `Verification failed: ${err.message}` });
             }
         }
