@@ -378,82 +378,106 @@ exports.verifyKYC = async (req, res) => {
             isMatch = true;
             matchMessage = "BVN match successful (Simulated)";
         } else {
-            // 🚀 REAL PAYSTACK BVN MATCH
+            // 🚀 REAL IDENTITY VERIFICATION ENGINE (Multi-Provider)
             const { matchBVN, getPaystackBankCode, resolveAccount } = require("../../utils/paystack");
+            const { lookupBVN } = require("../../utils/dojah");
+            
             try {
-                // Map the bank code to Paystack-specific version if needed (e.g. OPay 305 -> 999992)
-                const paystackCode = getPaystackBankCode(profile.bankDetails.bankCode);
-                console.log(`🚀 Calling Paystack Match BVN with code: ${paystackCode}`);
-                
-            try {
-                    const result = await matchBVN(
-                        profile.bankDetails.accountNumber,
-                        paystackCode,
-                        idNumber,
-                        dob || null // Optional Date of Birth (YYYY-MM-DD)
-                    );
-                    
-                    console.log(`✅ Paystack Match Result for ${profile.displayName}:`, JSON.stringify(result));
-                    
-                    // Paystack returns { status: true, message: "...", data: { account_number: true, ... } }
-                    isMatch = result === true || (result && result.account_number === true);
-                    matchMessage = "BVN verification successful";
-                } catch (bvnErr) {
-                    console.error(`❌ Paystack Match Error for ${profile.displayName}:`, bvnErr.message);
-                    
-                    if (bvnErr.message.toLowerCase().includes('bank code is invalid') || 
-                        bvnErr.message.toLowerCase().includes('does not match')) {
-                        // 🛡️ SMART FALLBACK: Resolve account name via Multiple Providers for redundancy
-                        const resolutionCode = profile.bankDetails.bankCode;
-                        const accountNumber = profile.bankDetails.accountNumber;
-                        let accountName = "";
-
-                        try {
-                            // Layer 1: Paystack Resolution (Fast & Reliable for traditional banks)
-                            console.log(`🧠 Smart Fallback Layer 1: Resolving via Paystack [${resolutionCode}]...`);
-                            const paystackResData = await resolveAccount(accountNumber, paystackCode);
-                            accountName = paystackResData.account_name;
-                        } catch (paystackResErr) {
-                            console.warn(`⚠️ Paystack Resolution Failed: ${paystackResErr.message}. Trying Nomba...`);
-                            // Layer 2: Nomba Resolution (Good for Fintechs)
-                            const { resolveAccount: resolveNombaAccount } = require("../../utils/nomba");
-                            const nombaResData = await resolveNombaAccount(accountNumber, resolutionCode);
-                            accountName = nombaResData.account_name;
-                        }
-
-                        if (!accountName) throw new Error("Could not resolve account name from any provider.");
-                        console.log(`✅ Resolved Account Name: "${accountName}"`);
+                // Layer 0: Dojah Primary Lookup (if keys exist)
+                // Dojah is the best because it returns legal names directly for comparison.
+                if (process.env.DOJAH_PRIVATE_KEY && process.env.DOJAH_APP_ID) {
+                    try {
+                        console.log(`🕵️‍♂️ KYC Layer 0: Verifying via Dojah BVN Lookup...`);
+                        const dojahData = await lookupBVN(idNumber);
                         
-                        // Get the User's registered name for comparison
+                        const legalName = `${dojahData.first_name} ${dojahData.last_name} ${dojahData.middle_name || ''}`.trim();
+                        console.log(`✅ Dojah Resolved Name: "${legalName}"`);
+
+                        // Get User's registered name
                         const user = await User.findById(req.user._id);
                         const registeredName = user?.name || profile.displayName;
 
-                        // fuzzy match: Require at least 2 significant name parts (length > 2) to match
-                        const cleanAccount = accountName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        // fuzzy match logic
+                        const cleanLegal = legalName.toLowerCase().replace(/[^a-z0-9]/g, '');
                         const nameParts = registeredName.toLowerCase().split(' ').filter(p => p.length > 2);
-                        
-                        // Count how many parts of the registered name appear in the bank account name
-                        const matchedParts = nameParts.filter(part => cleanAccount.includes(part));
-
-                        // 🛡️ SECURITY: Require at least 2 names to match (e.g. Surname and First Name)
-                        // If they only have one name registered, we match that one.
+                        const matchedParts = nameParts.filter(part => cleanLegal.includes(part));
                         const requiredMatches = Math.min(nameParts.length, 2);
-                        const isSmartMatch = matchedParts.length >= requiredMatches && matchedParts.length > 0;
 
-                        if (isSmartMatch) {
-                            console.log(`✅ Smart Match Success: ${matchedParts.length}/${nameParts.length} parts matched. "${accountName}" vs "${registeredName}"`);
+                        if (matchedParts.length >= requiredMatches && matchedParts.length > 0) {
                             isMatch = true;
-                            matchMessage = "Identity verified via Smart Multi-Part Name Match (Fintech Fallback)";
+                            matchMessage = "Identity verified via Dojah Full BVN Match";
+                            console.log(`✅ Dojah Match Success: ${matchedParts.length}/${nameParts.length} parts matched.`);
                         } else {
-                            console.warn(`❌ Smart Match Fail: Only ${matchedParts.length}/${nameParts.length} parts matched. Account: "${accountName}" vs Registered: "${registeredName}"`);
-                            throw new Error("Account name mismatch. The bank account name must closely match your registered owner name.");
+                            console.warn(`❌ Dojah Name Mismatch: "${legalName}" vs "${registeredName}"`);
+                            throw new Error(`Name mismatch. The BVN belongs to ${legalName}, but your Kredibly account is registered to ${registeredName}.`);
                         }
-                    } else {
-                        throw bvnErr;
+                    } catch (dojahErr) {
+                        console.error("⚠️ Dojah Layer Failed, falling back to Paystack:", dojahErr.message);
+                        // If it's a name mismatch error we already threw, rethrow it so we don't fall back to less secure methods
+                        if (dojahErr.message.includes("Name mismatch")) throw dojahErr;
+                    }
+                }
+
+                // Layer 1: Paystack Strict Match (if Dojah didn't already verify)
+                if (!isMatch) {
+                    const paystackCode = getPaystackBankCode(profile.bankDetails.bankCode);
+                    console.log(`🚀 KYC Layer 1: Calling Paystack Match BVN with code: ${paystackCode}`);
+                    
+                    try {
+                        const result = await matchBVN(
+                            profile.bankDetails.accountNumber,
+                            paystackCode,
+                            idNumber,
+                            dob || null
+                        );
+                        
+                        console.log(`✅ Paystack Match Result:`, JSON.stringify(result));
+                        isMatch = result === true || (result && result.account_number === true);
+                        matchMessage = "BVN verification successful via Paystack";
+                    } catch (bvnErr) {
+                        console.error(`❌ Paystack Match Error:`, bvnErr.message);
+                        
+                        if (bvnErr.message.toLowerCase().includes('bank code is invalid') || 
+                            bvnErr.message.toLowerCase().includes('does not match')) {
+                            
+                            // Layer 2: Smart Resolution Fallback (Paystack + Nomba Resolution)
+                            const resolutionCode = profile.bankDetails.bankCode;
+                            const accountNumber = profile.bankDetails.accountNumber;
+                            let accountName = "";
+
+                            try {
+                                console.log(`🧠 KYC Layer 2: Resolving via Paystack [${resolutionCode}]...`);
+                                const paystackResData = await resolveAccount(accountNumber, paystackCode);
+                                accountName = paystackResData.account_name;
+                            } catch (paystackResErr) {
+                                console.warn(`⚠️ Paystack Resolution Failed: ${paystackResErr.message}. Trying Nomba...`);
+                                const { resolveAccount: resolveNombaAccount } = require("../../utils/nomba");
+                                const nombaResData = await resolveNombaAccount(accountNumber, resolutionCode);
+                                accountName = nombaResData.account_name;
+                            }
+
+                            if (!accountName) throw new Error("Could not resolve account name from any provider.");
+                            
+                            const user = await User.findById(req.user._id);
+                            const registeredName = user?.name || profile.displayName;
+                            const cleanAccount = accountName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                            const nameParts = registeredName.toLowerCase().split(' ').filter(p => p.length > 2);
+                            const matchedParts = nameParts.filter(part => cleanAccount.includes(part));
+                            const requiredMatches = Math.min(nameParts.length, 2);
+
+                            if (matchedParts.length >= requiredMatches && matchedParts.length > 0) {
+                                isMatch = true;
+                                matchMessage = "Identity verified via Multi-Layer Account Name Match";
+                            } else {
+                                throw new Error(`Account name mismatch. The bank account name "${accountName}" must closely match your registered owner name "${registeredName}".`);
+                            }
+                        } else {
+                            throw bvnErr;
+                        }
                     }
                 }
             } catch (err) {
-                console.error("❌ KYC Verification Engine Error:", err.message);
+                console.error("❌ KYC ENGINE FINAL ERROR:", err.message);
                 return res.status(400).json({ success: false, message: `Verification failed: ${err.message}` });
             }
         }

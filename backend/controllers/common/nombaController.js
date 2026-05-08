@@ -392,7 +392,7 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                     }
                 }
 
-                // 🛡️ KYC COMPLIANCE CHECK (The Payout Guard)
+                /* 🛡️ KYC COMPLIANCE CHECK (The Payout Guard) - [TEMPORARY BYPASS FOR PIONEER PHASE]
                 if (business.kyc?.status !== 'verified') {
                     console.log(`🛡️ KYC HOLD: Merchant ${business.displayName} is not verified. Holding ₦${amount} in Escrow.`);
                     
@@ -427,6 +427,7 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                     }
                     return; // ⛔ STOP THE SWEEP
                 }
+                */
 
                 const bankDetails = business.bankDetails;
                 const delay = 15000;

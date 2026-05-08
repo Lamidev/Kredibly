@@ -709,12 +709,12 @@ const SettingsPage = () => {
                                 border: '1px solid',
                                 borderColor: profile?.kyc?.status === 'verified' ? '#DCFCE7' : 'rgba(76, 29, 149, 0.1)'
                             }}>
-                                {profile?.kyc?.status === 'verified' ? `TIER ${profile.kyc.tier || 2} VERIFIED` : 'TIER 1 (PENDING)'}
+                                {profile?.kyc?.status === 'verified' ? `TIER ${profile.kyc.tier || 2} VERIFIED` : 'PIONEER TIER (ACTIVE)'}
                             </div>
                         </div>
 
-                        {/* Escrow Banner */}
-                        {profile?.heldBalance > 0 && (
+                        {/* Escrow Banner - Suppressed for Pioneer Phase */}
+                        {profile?.heldBalance > 0 && false && (
                             <div style={{ 
                                 background: '#FFF7ED', 
                                 border: '1.5px dashed #FB923C', 
@@ -816,7 +816,7 @@ const SettingsPage = () => {
                                     {isVerifying ? (
                                         <Loader2 className="spin-animation" size={24} />
                                     ) : (
-                                        profile?.heldBalance > 0 ? "Verify & Release Funds" : "Complete Verification"
+                                        "Complete Verification"
                                     )}
                                 </button>
 
