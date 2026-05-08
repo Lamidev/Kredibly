@@ -772,14 +772,22 @@ const PublicInvoicePage = () => {
     // 🛡️ SYNC WITH backend/config/financials.js (1% Fee Model)
     const rawInputAmount = paymentMode === 'full' ? balance : (parseFloat(customAmount) || 0);
     let calculatedGatewayFee = 0;
-    if (rawInputAmount <= 1000) {
-        calculatedGatewayFee = 10;
-    } else if (rawInputAmount >= 100000) {
-        calculatedGatewayFee = 1000;
-    } else {
-        calculatedGatewayFee = Math.ceil(rawInputAmount / 0.99) - rawInputAmount;
+    let finalTotalToPay = rawInputAmount;
+
+    if (rawInputAmount > 0) {
+        let gross = rawInputAmount;
+        if (rawInputAmount <= 1000) {
+            gross = rawInputAmount + 10;
+        } else if (rawInputAmount >= 100000) {
+            gross = rawInputAmount + 1000;
+        } else {
+            gross = rawInputAmount / 0.99;
+        }
+        
+        // 🛡️ SYNC WITH BACKEND: Round to nearest 10
+        finalTotalToPay = Math.round(gross / 10) * 10;
+        calculatedGatewayFee = finalTotalToPay - rawInputAmount;
     }
-    const finalTotalToPay = rawInputAmount + calculatedGatewayFee;
 
     return (
         <div style={{ minHeight: '100vh', background: '#FDFCFE', color: '#0F172A', fontFamily: "'Inter', sans-serif", paddingBottom: '40px' }}>
