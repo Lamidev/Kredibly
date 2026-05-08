@@ -930,6 +930,9 @@ exports.handleIncoming = async (req, res) => {
 
         // 🛡️ COST SAVING: Track the 24-hour window
         profile.lastInboundAt = new Date();
+        if (!profile.monthlyUsage) {
+            profile.monthlyUsage = { reminders: 0, voiceNotes: 0, images: 0, messages: 0, lastReset: new Date() };
+        }
         await profile.save();
 
         const isStaff = profile.whatsappNumber !== cleanFrom;
@@ -1540,6 +1543,7 @@ Upgrade here: ${APP_URL}/pricing`);
             // Process each intent in the queue
             for (const currentIntent of intentQueue) {
             const aiResponseItem = currentIntent;
+            if (!aiResponseItem.data) aiResponseItem.data = {}; // Safety initialization
             let isProcessed = false;
 
             // 1. UPDATE RECORD
@@ -2226,6 +2230,13 @@ Upgrade here: ${APP_URL}/pricing`);
                         status: "pending",
                         triggerDate: { $gte: startDate, $lte: endDate }
                     }).sort({ triggerDate: 1 }).populate('saleId');
+
+                    // Fetch upcoming reminders (after today's range)
+                    const upcomingReminders = await Reminder.find({
+                        businessId: profile._id,
+                        status: "pending",
+                        triggerDate: { $gt: endDate }
+                    }).sort({ triggerDate: 1 }).limit(5).populate('saleId');
 
                     let scheduleMsg = `📋 *Schedule for ${dateLabel}, ${bossTitle}!*\n\n`;
                     

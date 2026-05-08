@@ -158,14 +158,13 @@ const Onboarding = () => {
             if (!whatsappNumber.trim()) return toast.error("WhatsApp is required for Kreddy AI");
             if (!isValidNigerianPhone(whatsappNumber)) return toast.error("Invalid WhatsApp number format");
         }
-        
-        // Step 3 Completion (Now Bank Setup): Save to DB so KYC can find profile
+
+        // Step 3 Completion: Validate and Save
         if (step === 3) {
             if (!selectedBank || !accountNumber || !accountName) {
                 return toast.error("Please verify your bank details to receive payments");
             }
-            
-            // 🛡️ SAVE PROFILE TO DB: This ensures the KYC step (next) can find the profile
+            // Save Progress before final step
             try {
                 const payload = {
                     displayName,
@@ -180,18 +179,12 @@ const Onboarding = () => {
                     sellMode
                 };
                 await updateProfile(payload);
-                console.log("✅ Profile created/updated for KYC step.");
+                console.log("✅ Profile saved. Moving to final touches.");
             } catch (err) {
                 return toast.error("Could not save your details. Try again.");
             }
         }
-
-        if (step === 4) {
-            // KYC Step: Mandatory check unless skipped
-            if (kycStatus !== 'skipped' && kycStatus !== 'verified') {
-                return toast.error("Please verify your identity or skip for now.");
-            }
-        }
+        
         setStep(prev => prev + 1);
     };
 
@@ -209,7 +202,7 @@ const Onboarding = () => {
             if (res.data.success) {
                 setKycStatus("verified");
                 toast.success("Identity Verified!");
-                setStep(5);
+                setStep(4);
             }
         } catch (err) {
             toast.error(err.response?.data?.message || "Verification failed. Check your details.");
@@ -268,17 +261,17 @@ const Onboarding = () => {
                         {step === 1 ? 'Elite Access' : 'Quick Setup'}
                     </h3>
                     <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: '#0F172A', fontWeight: 600 }}>
-                        {step === 1 ? 'You are a Founding Member.' : `Step ${step - 1} of 4`}
+                        {step === 1 ? 'You are a Founding Member.' : `Step ${step - 1} of 3`}
                     </p>
                 </div>
                 {step > 1 && (
                     <div style={{ background: 'rgba(76, 29, 149, 0.05)', padding: '8px 16px', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 900, color: 'var(--primary)' }}>
-                        {Math.round(((step-1)/4)*100)}% COMPLETED
+                        {Math.round(((step-1)/3)*100)}% COMPLETED
                     </div>
                 )}
             </div>
             <div style={{ display: 'flex', gap: '8px', height: '6px' }}>
-                {[1, 2, 3, 4, 5].map((s) => (
+                {[1, 2, 3, 4].map((s) => (
                     <div key={s} style={{ 
                         flex: 1, 
                         borderRadius: '4px', 
@@ -459,109 +452,13 @@ const Onboarding = () => {
                                     <div style={{ display: 'flex', gap: '16px' }}>
                                         <button onClick={nextStep} className="btn-primary" style={{ flex: 1, height: '64px', fontSize: '1.1rem' }}>Verify & Continue <ArrowRight size={20} /></button>
                                     </div>
-                                </motion.div>
-                            )}
+                                 </motion.div>
+                             )}
 
-                            {/* Step 4: Identity Verification (KYC) (Moved after Bank) */}
-                            {step === 4 && (
-                                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} key="kyc">
-                                    {kycStatus === 'skipped' && (
-                                        <div style={{ background: '#F8FAFC', padding: '14px 20px', borderRadius: '16px', border: '1px solid #E2E8F0', marginBottom: '24px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                                            <ShieldCheck size={18} color="var(--primary)" style={{ marginTop: '2px', flexShrink: 0 }} />
-                                            <p style={{ margin: 0, fontSize: '0.8rem', color: '#1E293B', fontWeight: 700, lineHeight: 1.5 }}>
-                                                Note: Without verification, your first settlement may take up to 24 hours for review.
-                                            </p>
-                                        </div>
-                                    )}
-                                    <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                                        <div style={{ width: '64px', height: '64px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'var(--primary)' }}>
-                                            <ShieldCheck size={32} />
-                                        </div>
-                                        <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0F172A', marginBottom: '8px' }}>Security & Compliance</h3>
-                                        <p style={{ fontSize: '0.9rem', color: '#64748B', fontWeight: 600 }}>Verify your identity to unlock instant payouts and increased limits.</p>
-                                    </div>
-
-                                    <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
-                                        {['bvn'].map(type => (
-                                            <div 
-                                                key={type}
-                                                onClick={() => setKycType(type)}
-                                                style={{ 
-                                                    flex: 1, 
-                                                    padding: '16px', 
-                                                    borderRadius: '16px', 
-                                                    border: kycType === type ? '2px solid var(--primary)' : '1.5px solid #E2E8F0',
-                                                    background: kycType === type ? 'rgba(76, 29, 149, 0.02)' : 'white',
-                                                    cursor: 'pointer',
-                                                    textAlign: 'center',
-                                                    transition: 'all 0.2s ease'
-                                                }}
-                                            >
-                                                <p style={{ margin: 0, fontWeight: 900, color: kycType === type ? 'var(--primary)' : '#64748B', fontSize: '0.9rem', textTransform: 'uppercase' }}>{type}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <div className="input-group" style={{ marginBottom: '24px' }}>
-                                        <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>{kycType.toUpperCase()} Number</label>
-                                        <input 
-                                            type="text" 
-                                            className="input-field" 
-                                            style={{ height: '56px', fontSize: '1.1rem', fontWeight: 700, letterSpacing: '0.1em' }}
-                                            placeholder={`Enter 11-digit ${kycType.toUpperCase()}`}
-                                            maxLength={11}
-                                            value={idNumber} 
-                                            onChange={e => setIdNumber(e.target.value.replace(/\D/g, ""))} 
-                                        />
-                                    </div>
-
-                                    <div className="input-group" style={{ marginBottom: '40px' }}>
-                                        <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>Date of Birth</label>
-                                        <input 
-                                            type="date" 
-                                            className="input-field" 
-                                            style={{ height: '56px', fontSize: '1rem', fontWeight: 700 }}
-                                            value={dob} 
-                                            onChange={e => setDob(e.target.value)} 
-                                        />
-                                    </div>
-
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                        <button 
-                                            onClick={handleVerifyKYC} 
-                                            disabled={isVerifying}
-                                            className="btn-primary" 
-                                            style={{ width: '100%', height: '64px', fontSize: '1.1rem' }}
-                                        >
-                                            {isVerifying ? <Loader2 className="spin" size={24} style={{ animation: 'spin 1s linear infinite' }} /> : "Verify Identity"}
-                                        </button>
-                                        
-                                        <button 
-                                            onClick={() => {
-                                                setKycStatus("skipped");
-                                                setStep(5);
-                                            }}
-                                            className="btn-secondary" 
-                                            style={{ 
-                                                width: '100%', 
-                                                height: '56px', 
-                                                fontSize: '0.95rem', 
-                                                background: hasKycError ? 'rgba(76, 29, 149, 0.05)' : 'transparent', 
-                                                border: hasKycError ? '1.5px solid var(--primary)' : 'none', 
-                                                color: hasKycError ? 'var(--primary)' : '#64748B', 
-                                                fontWeight: 800 
-                                            }}
-                                        >
-                                            {hasKycError ? "Continue anyway (I'll verify later)" : "Skip for now (Limits will apply)"}
-                                        </button>
-                                    </div>
-                                </motion.div>
-                            )}
-
-                             {/* Step 5: Finishing Touches — Logo + Staff (Optional) */}
-                            {step === 5 && (
-                                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} key="staff">
-                                    {/* Logo Upload */}
+                             {/* Step 4: Finishing Touches — Logo + Staff (Optional) */}
+                             {step === 4 && (
+                                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} key="staff">
+                                     {/* Logo Upload */}
                                     <div style={{ textAlign: 'center', marginBottom: '32px' }}>
                                         <div
                                             onClick={() => fileInputRef.current.click()}

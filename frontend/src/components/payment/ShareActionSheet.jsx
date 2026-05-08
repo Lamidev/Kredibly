@@ -13,6 +13,14 @@ const ShareActionSheet = ({
     title = "Share Official Document",
     subtitle = "Choose how you'd like to share or save this record",
 }) => {
+    const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
+
+    React.useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     return createPortal(
         <AnimatePresence mode="wait">
             {isOpen && (
@@ -47,16 +55,18 @@ const ShareActionSheet = ({
                     >
                         <motion.div
                             key="sharesheet-modal"
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
+                            initial={{ scale: 0.9, opacity: 0, y: isMobile ? 40 : 0 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: isMobile ? 40 : 0 }}
                             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                             style={{
                                 background: 'white',
-                                borderRadius: '32px',
-                                padding: '40px',
+                                borderRadius: isMobile ? '24px' : '32px',
+                                padding: isMobile ? '32px 20px' : '40px',
                                 width: '100%',
                                 maxWidth: '440px',
+                                maxHeight: isMobile ? '85vh' : 'auto',
+                                overflowY: 'auto',
                                 boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
                                 position: 'relative',
                             }}

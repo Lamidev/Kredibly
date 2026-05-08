@@ -354,19 +354,32 @@ const PublicInvoicePage = () => {
 
     // 🏆 INITIAL MOUNT SUCCESS CHECK: If it's already paid on load
     useEffect(() => {
-        if (!sale || loading || showSuccessModal || modalDismissed) return;
+        if (!sale || loading) return;
         
         const bal = calcCurrentBalance(sale);
-        if (bal <= 0 && sale.payments?.length > 0) {
+        if (sale.payments?.length > 0) {
             const lastPayment = sale.payments[sale.payments.length - 1];
-            // Show modal if the last payment was within the last 10 minutes (to avoid popping up on very old invoices)
-            const isRecent = (new Date() - new Date(lastPayment.date)) < (10 * 60 * 1000);
             
-            if (isRecent) {
-                isProcessingSuccess.current = true;
-                setLastPaymentAmount(lastPayment.amount);
-                setRecentPaymentDate(new Date(lastPayment.date));
-                setShowSuccessModal(true);
+            // 🛡️ Ensure Transaction Slip is always ready for the last payment
+            if (!currentTransaction) {
+                setCurrentTransaction({
+                    amount: lastPayment.amount,
+                    reference: lastPayment.reference || 'SYSTEM',
+                    date: new Date(lastPayment.date),
+                    balance: bal,
+                    isFullyPaid: bal <= 0
+                });
+            }
+
+            if (!showSuccessModal && !modalDismissed) {
+                // Show modal automatically only if the last payment was within the last 10 minutes
+                const isRecent = (new Date() - new Date(lastPayment.date)) < (10 * 60 * 1000);
+                if (isRecent) {
+                    isProcessingSuccess.current = true;
+                    setLastPaymentAmount(lastPayment.amount);
+                    setRecentPaymentDate(new Date(lastPayment.date));
+                    setShowSuccessModal(true);
+                }
             }
         }
     }, [sale?._id, loading]);
@@ -456,11 +469,11 @@ const PublicInvoicePage = () => {
         
         try {
             const canvas = await html2canvas(element, {
-                scale: 3, 
+                scale: 2, // 🛡️ Reduced from 3 to 2 for better compatibility
                 useCORS: true,
                 logging: false,
                 backgroundColor: '#FFFFFF',
-                scrollY: 0,
+                scrollY: -window.scrollY, // 🛡️ Offset scroll for better capture
                 onclone: (clonedDoc) => {
                     const el = clonedDoc.getElementById(targetId);
                     if (el) el.style.position = 'static';
@@ -499,11 +512,11 @@ const PublicInvoicePage = () => {
 
         try {
             const canvas = await html2canvas(element, {
-                scale: 3,
+                scale: 2,
                 useCORS: true,
                 logging: false,
                 backgroundColor: '#FFFFFF',
-                scrollY: 0,
+                scrollY: -window.scrollY,
                 onclone: (clonedDoc) => {
                     const el = clonedDoc.getElementById(targetId);
                     if (el) el.style.position = 'static';
