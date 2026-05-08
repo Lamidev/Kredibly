@@ -261,7 +261,8 @@ const Dashboard = () => {
             )}
 
             {/* 🛡️ SECURE ESCROW CARD (Held Funds / Security Lock) */}
-            {(profile?.heldBalance > 0 || (profile?.bankDetails?.bankDetailsLockUntil && new Date(profile.bankDetails.bankDetailsLockUntil) > new Date())) && (
+            {/* 🛡️ Held Balance / Escrow Warning - Suppressed while direct settlement is active */}
+            {profile?.heldBalance > 0 && false && (
                 <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -318,7 +319,7 @@ const Dashboard = () => {
             )}
 
             {/* 🛡️ KYC Compliance Nudge (Only show if NO funds are held, otherwise the Escrow Card covers it) */}
-            {profile?.kyc?.status !== 'verified' && profile?.heldBalance <= 0 && (
+            {false && profile?.kyc?.status !== 'verified' && profile?.heldBalance <= 0 && (
                 <motion.div 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
