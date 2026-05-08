@@ -259,10 +259,10 @@ const ONBOARDING_SUCCESS_TEMPLATE = `
   <div style="margin-bottom: 32px;">
     <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
   </div>
-  <p style="font-size: 18px; font-weight: 800; color: #111827; margin-top: 0;">Setup Complete. You are officially an Oga! 🛡️</p>
+  <p style="font-size: 18px; font-weight: 800; color: #111827; margin-top: 0;">Setup Complete. You are officially a {planTitle}! 🛡️</p>
   <p>Hi {name},</p>
   <p>Congratulations! Your business, <strong>{businessName}</strong>, is now fully set up on Kredibly. Our system has verified your bank details, and you are officially ready to start building your professional legacy.</p>
-  <p>From today, you can generate professional invoices in 30 seconds, record sales via WhatsApp (voice, text, or photo), and stay in control while your staff handles the daily hustle. Since you joined during our Grand Opening, your <strong>Oga Plan</strong> trial is active. Go ahead and commit your first transaction—let’s grow your business together.</p>
+  <p>From today, you can generate professional invoices in 30 seconds, record sales via WhatsApp (voice, text, or photo), and stay in control while your staff handles the daily hustle. Since you joined during our Grand Opening, your <strong>{planTitle} Plan</strong> trial is active. Go ahead and commit your first transaction—let’s grow your business together.</p>
   <div style="margin: 32px 0;">
     <a href="https://usekredibly.com/dashboard" style="background-color: #111827; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; display: inline-block;">Enter My Dashboard</a>
   </div>

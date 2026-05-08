@@ -116,7 +116,8 @@ exports.updateProfile = async (req, res) => {
 
             // 📧 SEND ONBOARDING SUCCESS EMAIL (fires once, when profile is first created)
             const { sendOnboardingSuccessEmail } = require("../../emailLogic/emails");
-            sendOnboardingSuccessEmail(req.user.email, req.user.name, displayName)
+            const planTitle = profile.plan === 'chairman' ? 'Chairman' : (profile.plan === 'oga' ? 'Oga' : 'Boss');
+            sendOnboardingSuccessEmail(req.user.email, req.user.name, displayName, planTitle)
               .catch(err => console.error("Onboarding Email Fail:", err.message));
 
             await logActivity({
@@ -347,7 +348,8 @@ exports.verifyKYC = async (req, res) => {
             return res.status(400).json({ success: false, message: "Please set your payout bank account in 'Payout Settings' before verifying your identity." });
         }
 
-        console.log(`🛡️ KYC Verification Started: ${profile.displayName} (${profile.bankDetails.bankName}) via ${type.toUpperCase()}`);
+        const kycMethod = type?.toUpperCase() === 'NONE' || !type ? 'BVN Match' : type.toUpperCase();
+        console.log(`🛡️ KYC Verification Started: ${profile.displayName} (${profile.bankDetails.bankName}) via ${kycMethod}`);
         console.log(`💡 Details: Account ${profile.bankDetails.accountNumber}, Nomba Code: ${profile.bankDetails.bankCode}`);
 
         let isMatch = false;
@@ -377,13 +379,13 @@ exports.verifyKYC = async (req, res) => {
                     isMatch = result === true || (result && result.account_number === true);
                     matchMessage = "BVN verification successful";
                 } catch (bvnErr) {
-                    // 🛡️ SMART FINTECH FALLBACK
-                    // If the bank code is rejected (common for fintechs like OPay/PalmPay), 
-                    // we verify the account name manually via Account Resolution.
                     if (bvnErr.message.toLowerCase().includes('bank code is invalid')) {
-                        console.log(`🧠 Smart Fallback: Bank ${profile.bankDetails.bankName} doesn't support direct BVN match. Resolving account name instead...`);
+                        // 🛡️ SMART FINTECH FALLBACK: Use original bank code (e.g. 302) for resolution 
+                        // as many fintechs don't resolve via their transfer/bvn-match codes (e.g. 999991)
+                        const resolutionCode = profile.bankDetails.bankCode;
+                        console.log(`🧠 Smart Fallback: Bank ${profile.bankDetails.bankName} code rejection. Resolving account name via original code: ${resolutionCode}...`);
                         
-                        const resolvedData = await resolveAccount(profile.bankDetails.accountNumber, paystackCode);
+                        const resolvedData = await resolveAccount(profile.bankDetails.accountNumber, resolutionCode);
                         const accountName = resolvedData.account_name; // e.g. "SAMUEL OLAMIDE"
                         
                         // Get the User's registered name for comparison
@@ -424,7 +426,7 @@ exports.verifyKYC = async (req, res) => {
             profile.kyc = {
                 status: 'verified',
                 tier: 2,
-                method: 'BVN Match',
+                method: kycMethod,
                 bvn: idNumber.substring(0, 4) + '****' + idNumber.slice(-2),
                 verifiedAt: new Date()
             };
@@ -444,7 +446,7 @@ exports.verifyKYC = async (req, res) => {
                 action: "KYC_VERIFIED",
                 entityType: "BusinessProfile",
                 entityId: profile._id,
-                details: `Identity verified via ${type.toUpperCase()} (Tier 2)`
+                details: `Identity verified via ${kycMethod} (Tier 2)`
             });
 
             // 💸 TRIGGER ESCROW RELEASE (Moves held funds to bank account instantly)
@@ -455,8 +457,8 @@ exports.verifyKYC = async (req, res) => {
             // 📢 NOTIFY MERCHANT VIA WHATSAPP (Real-time alert)
             const { sendWhatsAppAlert } = require("../whatsapp/whatsappController");
             // 📱 WhatsApp Alert: Smart Messaging based on escrow status
-            const bossTitle = profile.displayName.split(' ')[0];
-            let successMsg = `🛡️ Boss, your identity has been successfully verified via BVN Match.\n\nYou are now on **Tier 2** with a ₦500,000 daily limit. Keep winning! 🦁💎`;
+            const bossTitle = profile.assistantSettings?.preferredName || profile.displayName.split(' ')[0];
+            let successMsg = `🛡️ Boss, your identity has been successfully verified via ${kycMethod}.\n\nYou are now on **Tier 2** with a ₦500,000 daily limit. Keep winning! 🦁💎`;
             
             if (profile.heldBalance > 0) {
                 successMsg = `🛡️ Boss, you are VERIFIED!\n\nI've recognized your identity and I'm releasing your ₦${profile.heldBalance.toLocaleString()} held funds to your bank account right now. \n\nYou are now on **Tier 2**. Let's go! 🚀💰`;
