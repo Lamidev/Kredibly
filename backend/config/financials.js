@@ -40,8 +40,8 @@ const FINANCIAL_CONFIG = {
             gross = netAmount / (1 - FINANCIAL_CONFIG.NOMBA.DVA_PERCENTAGE);
         }
 
-        // 🎯 ROUND FIGURE LOGIC: Round to the nearest 10 for a professional look (e.g., 1052 -> 1050)
-        // User prefers 0 at the end. Small differences are covered by our main balance.
+        // 🎯 PROFESSIONAL ROUNDING: Always end with '0' for a clean invoice look (e.g., 5052 -> 5050)
+        // Any tiny deficit caused by rounding down is covered by Akinbyte's main balance.
         return Math.round(gross / 10) * 10;
     },
 
