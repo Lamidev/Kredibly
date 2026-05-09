@@ -157,7 +157,7 @@ const LandingPage = () => {
     };
 
     useEffect(() => {
-        document.title = "Kredibly | Verified Ledger & AI Business Secretary on WhatsApp";
+        document.title = "Kredibly — The AI Business OS for Nigerian Merchants";
         if (!window.location.hash) {
             window.scrollTo(0, 0);
         }
@@ -709,7 +709,7 @@ const LandingPage = () => {
                             { date: "SEPT '25", title: "Strategic Architecture", desc: "Core blueprinting of the Kredibly workspace and AI interface flow.", status: "completed" },
                             { date: "DEC '25", title: "Kreddy AI Core", desc: "Intelligence engine development. Teaching Kreddy to understand merchant slang and complex debts.", status: "completed" },
                             { date: "JAN '26", title: "Premium Platform UX", desc: "Rollout of smart telemetry, professional document generators, and cross-device syncing.", status: "done" },
-                            { date: "FEBRUARY - PRESENT", title: "Founding Member Waitlist", desc: "Onboarding our first 1,000 pioneers. Early access rewards and lifetime status for active participants.", status: "active", isFounding: true },
+                            { date: "FEBRUARY - PRESENT", title: "Early Access Pioneer Program", desc: "Onboarding our first 1,000 pioneers. Lifetime status and exclusive rewards for active merchants.", status: "active", isFounding: true },
                             { date: "JUNE 1ST", title: "Grand Launch", desc: "Opening the ecosystem for public merchant registration and global transactions.", status: "future" },
                             { date: "Q3 2026", title: "Kredibly Mobile (Native)", desc: "Your entire business in your pocket. Offline-first, biometric security, and instant push intelligence.", status: "future", isMobile: true }
                         ].map((m, i) => (

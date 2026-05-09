@@ -1174,7 +1174,7 @@ const PublicInvoicePage = () => {
                                                         </div>
                                                         <div>
                                                             <p style={{ margin: 0, fontSize: isMobile ? '15px' : '12px', fontWeight: 800, color: '#1E293B' }}>₦{p.amount.toLocaleString()}</p>
-                                                            <p style={{ margin: '2px 0 0', fontSize: isMobile ? '12px' : '10px', fontWeight: 600, color: '#64748B', wordBreak: 'break-all' }}>{new Date(p.date).toLocaleDateString()} • {p.reference || (p.method === 'Initial' ? 'Opening Balance' : 'Verified Settlement')}</p>
+                                                            <p style={{ margin: '2px 0 0', fontSize: isMobile ? '12px' : '10px', fontWeight: 600, color: '#64748B', wordBreak: 'break-all' }}>{new Date(p.date).toLocaleDateString()} • {new Date(p.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {p.reference || (p.method === 'Initial' ? 'Opening Balance' : 'Verified Settlement')}</p>
                                                         </div>
                                                     </div>
                                                     <span style={{ fontSize: '10px', fontWeight: 900, color: '#10B981', textTransform: 'uppercase', background: '#ECFDF5', padding: '4px 10px', borderRadius: '100px' }}>Verified Settlement</span>
