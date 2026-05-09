@@ -59,7 +59,6 @@ exports.initializeNombaAccount = async (req, res) => {
         let amountToCharge = requestedAmount;
         let gatewayFee = 0;
 
-        // Determine if customer covers fee based on profile preference
         const absorbFee = business?.prefersGatewayFeeAbsorption !== false;
         if (!absorbFee) {
             amountToCharge = FINANCIAL_CONFIG.calculateGrossAmount(requestedAmount);
@@ -83,7 +82,7 @@ exports.initializeNombaAccount = async (req, res) => {
             reference: nombaData.reference,
             accountName: nombaData.accountName,
             amount: amountToCharge,
-            baseAmount: absorbFee ? FINANCIAL_CONFIG.calculateNetAmount(requestedAmount) : requestedAmount, // 🛡️ Correct payout logic
+            baseAmount: absorbFee ? FINANCIAL_CONFIG.calculateNetAmount(requestedAmount) : requestedAmount,
             status: 'active',
             expiresAt: new Date(nombaData.expiresAt)
         });
@@ -115,10 +114,20 @@ exports.verifyNombaPaymentStatus = async (req, res) => {
         const va = await VirtualAccount.findOne({ reference: accountRef });
         if (!va) return res.status(404).json({ success: false, message: 'Virtual account not found' });
 
+        if (va.status === 'used') {
+            return res.status(200).json({ 
+                success: true, 
+                message: 'Payment already confirmed and processed!', 
+                data: { paid: true } 
+            });
+        }
+
         const status = await checkPaymentStatusByReference(va.reference, va.accountNumber);
         if (status.paid) {
             const result = await internalProcessNombaPayment(va.reference, va.accountNumber, status.amount, status.transactionReference, status.payer, null);
-            if (result.success) return res.status(200).json({ success: true, message: result.message, data: status });
+            if (result.success || result.message.includes("Duplicate")) {
+                return res.status(200).json({ success: true, message: 'Payment verified!', data: status });
+            }
         }
         return res.status(200).json({ success: false, message: 'Payment not found or still pending.' });
     } catch (error) {
@@ -191,6 +200,16 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
         vaRecord.status = 'used';
         await vaRecord.save();
 
+        const { getIO } = require('../../utils/socket');
+        const io = getIO();
+        if (io) {
+            io.to(sale._id.toString()).emit('payment_detected', {
+                saleId: sale._id,
+                amount: creditAmount,
+                status: 'paid'
+            });
+        }
+
         // 🚀 PERFECT AUTO-SWEEP LOGIC
         (async () => {
             try {
@@ -213,14 +232,22 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
 
                 console.log(`✅ Auto-Sweep SUCCESS for ${business.displayName}: ₦${sweepAmount} settled.`);
 
-                const { getIO } = require('../../utils/socket');
-                const io = getIO();
                 if (io) {
                     io.to(business._id.toString().toLowerCase()).emit('settlement_success', {
                         amount: sweepAmount,
                         invoiceNumber: sale.invoiceNumber,
                         timestamp: new Date()
                     });
+                }
+
+                // 🔔 WHATSAPP SETTLEMENT ALERT (To Merchant)
+                if (business.whatsappNumber) {
+                    const cleanPhone = business.whatsappNumber.replace(/\D/g, '');
+                    const { sendWhatsAppAlert } = require('../whatsapp/whatsappController');
+                    
+                    const settlementMsg = `💰 *Settlement Successful!* \n\nI have just swept *₦${sweepAmount.toLocaleString()}* to your registered bank account (${bankDetails.bankName} - ${bankDetails.accountNumber}). \n\nThis payment was for Invoice #${sale.invoiceNumber}. Your funds should land any moment! 🚀`;
+                    
+                    await sendWhatsAppAlert(cleanPhone, "", settlementMsg, sale.invoiceNumber);
                 }
             } catch (sweepErr) {
                 console.error(`❌ Auto-Sweep FAILED for #${sale.invoiceNumber}:`, sweepErr.message);

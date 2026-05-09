@@ -22,14 +22,14 @@ jobs:
             echo "🚀 Starting Deployment..."
             cd ~/Kredibly/backend
             
-            # Fetch latest code
-            git pull origin main
+            # Force clean pull (prevents package-lock and other file conflicts)
+            git fetch origin main
+            git reset --hard origin/main
             
-            # Install dependencies (only if package.json changed)
+            # Install dependencies
             npm install
             
             # Restart the service with updated env
             pm2 restart 0 --update-env
             
             echo "✅ Deployment Complete!"
-# test trigger
