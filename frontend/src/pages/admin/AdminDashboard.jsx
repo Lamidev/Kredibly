@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
-    Users, TrendingUp, CreditCard, RefreshCw, Terminal, ArrowUpRight, Activity, ShieldCheck, Globe, Zap
+    Users, TrendingUp, CreditCard, RefreshCw, Terminal, ArrowUpRight, Activity, ShieldCheck, Zap
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -12,7 +12,6 @@ const AdminDashboard = () => {
     const navigate = useNavigate();
     const [stats, setStats] = useState(null);
     const [activities, setActivities] = useState([]);
-    const [waitlist, setWaitlist] = useState([]);
     const [loading, setLoading] = useState(true);
     const [visibleActivities, setVisibleActivities] = useState(20);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -46,16 +45,12 @@ const AdminDashboard = () => {
         if (manual) setIsRefreshing(true);
 
         try {
-            const [statsRes, waitlistRes] = await Promise.all([
-                axios.get(`${API_URL}/admin/stats`, { withCredentials: true }),
-                axios.get(`${API_URL}/admin/waitlist`, { withCredentials: true })
-            ]);
+            const statsRes = await axios.get(`${API_URL}/admin/stats`, { withCredentials: true });
 
             if (statsRes.data.success) {
                 setStats(statsRes.data.stats);
                 setActivities(statsRes.data.activities);
             }
-            if (waitlistRes.data.success) setWaitlist(waitlistRes.data.data);
 
         } catch (err) {
             console.error("Admin Fetch Error:", err);
@@ -123,18 +118,6 @@ const AdminDashboard = () => {
                         <p style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem' }}>Verified Cash Flow</p>
                         <h3 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', fontWeight: 950, color: 'var(--text)', letterSpacing: '-0.04em', margin: '4px 0' }}>₦{stats?.totalVerifiedVolume?.toLocaleString() || 0}</h3>
                         <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Verified Online Transactions</p>
-                    </div>
-
-                    <div className="admin-stats-card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                            <div style={{ p: '12px', background: '#FEF2F2', borderRadius: '16px', color: '#EF4444' }}>
-                                <Globe size={24} />
-                            </div>
-                            <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#EF4444', background: '#FEF2F2', padding: '4px 10px', borderRadius: '100px' }}>WAITING</span>
-                        </div>
-                        <p style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem' }}>Growth Pipeline</p>
-                        <h3 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', fontWeight: 950, color: 'var(--text)', letterSpacing: '-0.04em', margin: '4px 0' }}>{waitlist.length}</h3>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Verified Waitlist Entries</p>
                     </div>
 
                     <div className="admin-stats-card" style={{ border: '1px solid #FB923C', background: 'linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)' }}>

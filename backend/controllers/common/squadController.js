@@ -179,13 +179,6 @@ exports.handleSquadWebhook = async (req, res) => {
         }
 
         // 5. LOG ACTIVITY & NOTIFY BOSS
-        await ActivityLog.create({
-            businessId: business._id,
-            action: 'PAYMENT_RECEIVED',
-            entityType: 'SALE',
-            entityId: sale._id,
-            details: `Invoice #${sale.invoiceNumber} paid via Squad. Amount: ₦${paidAmount}. Payout: ${payoutStatus}`
-        });
 
         if (business.whatsappNumber) {
             let statusText = "";

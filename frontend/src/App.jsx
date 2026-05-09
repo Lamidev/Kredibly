@@ -3,7 +3,6 @@ import { useAuth } from "./context/AuthContext";
 import ScrollToTop from "./components/ui/ScrollToTop";
 
 import LandingPage from "./pages/public/landing-page";
-import Waitlist from "./pages/public/Waitlist";
 import AboutUs from "./pages/public/about-us";
 import SupportHub from "./pages/public/support-hub";
 import PrivacyPolicy from "./pages/public/privacy-policy";
@@ -27,7 +26,6 @@ import SettingsPage from "./pages/merchant/settings-page";
 import ReportsPage from "./pages/merchant/reports";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminMerchants from "./pages/admin/AdminMerchants";
-import AdminWaitlist from "./pages/admin/AdminWaitlist";
 import AdminSupport from "./pages/admin/AdminSupport";
 import AdminRevenue from "./pages/admin/AdminRevenue";
 import AdminCoupons from "./pages/admin/AdminCoupons";
@@ -54,7 +52,6 @@ const App = () => {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={!user ? <LandingPage /> : <Navigate to={getHomeRedirect()} />} />
-        <Route path="/waitlist" element={<Waitlist />} />
         
         {/* Landing page accessible at /home for development/reference */}
         <Route path="/home" element={<LandingPage />} />
@@ -104,7 +101,6 @@ const App = () => {
         >
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/merchants" element={<AdminMerchants />} />
-          <Route path="/admin/waitlist" element={<AdminWaitlist />} />
           <Route path="/admin/support" element={<AdminSupport />} />
           <Route path="/admin/revenue" element={<AdminRevenue />} />
           <Route path="/admin/coupons" element={<AdminCoupons />} />

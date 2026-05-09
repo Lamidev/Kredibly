@@ -1,6 +1,5 @@
 const BusinessProfile = require("../../models/BusinessProfile");
 const ActivityLog = require("../../models/ActivityLog");
-const Waitlist = require("../../models/Waitlist");
 const { logActivity } = require("../../utils/activityLogger");
 const { getBanks, resolveAccount } = require("../../utils/nomba");
 const { getIO } = require("../../utils/socket");
@@ -84,8 +83,6 @@ exports.updateProfile = async (req, res) => {
 
             await profile.save();
         } else {
-            // New Profile Creation: Check if user is from Waitlist
-            const waitlistEntry = await Waitlist.findOne({ email: req.user.email });
             
             // 🚀 SUBACCOUNT INIT: Removed Paystack logic, using Nomba Auto-sweep instead.
             let subaccountCode = null;
@@ -123,11 +120,6 @@ exports.updateProfile = async (req, res) => {
             await profile.save();
             console.log(`🚀 PROFILE CREATED: ${profile.displayName} (${req.user.email})`);
 
-            // Update Waitlist status
-            if (waitlistEntry) {
-                waitlistEntry.status = 'active';
-                await waitlistEntry.save();
-            }
 
             // 📧 SEND ONBOARDING SUCCESS EMAIL (only if created at step 4)
             if (profile.onboardingStep === 4) {
@@ -195,16 +187,49 @@ exports.getProfile = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
 exports.getActivityLogs = async (req, res) => {
     try {
+        const Sale = require("../../models/Sale");
         const profile = await BusinessProfile.findOne({ ownerId: req.user._id });
         if (!profile) return res.status(404).json({ message: "Profile not found" });
 
-        const logs = await ActivityLog.find({ businessId: profile._id })
-            .sort({ createdAt: -1 })
-            .limit(10);
+        const [logs, sales] = await Promise.all([
+            ActivityLog.find({ businessId: profile._id }).sort({ createdAt: -1 }).limit(20),
+            Sale.find({ 
+                businessId: profile._id, 
+                "payments.0": { $exists: true } 
+            }).sort({ "payments.date": -1 }).limit(20)
+        ]);
 
-        res.status(200).json({ success: true, data: logs });
+        const unified = [];
+        
+        // 1. Add generic logs
+        logs.forEach(l => unified.push({
+            _id: l._id,
+            action: l.action,
+            details: l.details,
+            createdAt: l.createdAt,
+            type: 'LOG'
+        }));
+
+        // 2. Add payment events from Sales
+        sales.forEach(s => {
+            s.payments.forEach(p => {
+                unified.push({
+                    _id: s._id + (p.reference || p.date),
+                    action: 'PAYMENT_RECEIVED',
+                    details: `Payment of ₦${p.amount.toLocaleString()} received for Invoice #${s.invoiceNumber} (${s.customerName || 'Customer'})`,
+                    createdAt: p.date,
+                    type: 'SALE'
+                });
+            });
+        });
+
+        // 3. Sort by date (Newest First)
+        unified.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        res.status(200).json({ success: true, data: unified.slice(0, 15) });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -544,12 +569,3 @@ exports.verifyKYC = async (req, res) => {
     }
 };
 
-module.exports = {
-  updateProfile: exports.updateProfile,
-  getProfile: exports.getProfile,
-  getActivityLogs: exports.getActivityLogs,
-  getBankList: exports.getBankList,
-  resolveAccountDetails: exports.resolveAccountDetails,
-  saveBankDetails: exports.saveBankDetails,
-  verifyKYC: exports.verifyKYC
-};

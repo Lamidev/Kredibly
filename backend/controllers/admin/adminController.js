@@ -2,7 +2,6 @@ const User = require("../../models/User");
 const BusinessProfile = require("../../models/BusinessProfile");
 const Sale = require("../../models/Sale");
 const ActivityLog = require("../../models/ActivityLog");
-const Waitlist = require("../../models/Waitlist");
 const Notification = require("../../models/Notification");
 const SupportTicket = require("../../models/SupportTicket");
 const Payment = require("../../models/Payment");
@@ -11,8 +10,16 @@ exports.getGlobalStats = async (req, res) => {
     try {
         // Only count production businesses
         const productionBusinessFilter = { isBetaTester: { $ne: true } };
-        const totalUsers = await User.countDocuments({ role: 'user' });
-        const totalBusinesses = await BusinessProfile.countDocuments(productionBusinessFilter);
+        const totalUsersCount = await User.countDocuments({ role: 'user' });
+        
+        // Accurate Merchant Count: Only count businesses that have a valid owner who is a 'user'
+        const businesses = await BusinessProfile.find(productionBusinessFilter).populate('ownerId', 'role');
+        const validMerchants = businesses.filter(b => b.ownerId && b.ownerId.role === 'user');
+        const totalBusinesses = validMerchants.length;
+
+        // Accurate Incomplete Count: Users with role 'user' who do NOT have a BusinessProfile
+        const usersWithBusinessIds = validMerchants.map(m => m.ownerId._id.toString());
+        const totalIncomplete = Math.max(0, totalUsersCount - usersWithBusinessIds.length);
 
         // Filter sales to exclude those from beta testers for more accurate counts
         const productionSales = await Sale.find({}).populate('businessId', 'isBetaTester');
@@ -69,9 +76,10 @@ exports.getGlobalStats = async (req, res) => {
 
         // Pulse: High-value platform events
         const importantActions = [
-            'SIGNUP', 'WHATSAPP_SALE_CREATED', 'PAYMENT_RECEIVED', 'SUBSCRIPTION_PAID', 
-            'SUPPORT_TICKET_CREATED', 'PROFILE_UPDATED', 'KYC_VERIFIED', 'KYC_HOLD', 
+            'SIGNUP', 'WHATSAPP_SALE_CREATED', 'SUPPORT_TICKET_CREATED', 
+            'PROFILE_UPDATED', 'KYC_VERIFIED', 'KYC_HOLD', 
             'ESCROW_HOLD', 'WHATSAPP_MSG_RECEIVED', 'INVOICE_VIEWED'
+            // Excluded: 'PAYMENT_RECEIVED', 'SUBSCRIPTION_PAID' as they are handled by SALE/SUB feeds
         ];
         const logs = await ActivityLog.find({ 
             action: { $in: importantActions } 
@@ -80,11 +88,14 @@ exports.getGlobalStats = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(100);
 
+        // Hard Filter: Ensure PAYMENT_RECEIVED is strictly excluded even if found
+        const filteredLogs = logs.filter(l => !['PAYMENT_RECEIVED', 'SUBSCRIPTION_PAID'].includes(l.action));
+
         // 3. GENERATE UNIFIED ACTIVITY STREAM (Fully Aligned with Mission Control)
         const feed = [];
 
         // A. Add High-Value Logs
-        logs.filter(l => !l.businessId?.isBetaTester).forEach(l => {
+        filteredLogs.filter(l => !l.businessId?.isBetaTester).forEach(l => {
             feed.push({
                 _id: l._id,
                 type: 'LOG',
@@ -152,9 +163,9 @@ exports.getGlobalStats = async (req, res) => {
         res.status(200).json({
             success: true,
             stats: {
-                totalUsers,
+                totalUsers: totalUsersCount,
                 totalBusinesses,
-                totalIncomplete: Math.max(0, totalUsers - totalBusinesses),
+                totalIncomplete,
                 totalSalesCount,
                 totalPlatformVolume, // Gross recorded (manual + online)
                 totalVerifiedVolume, // Real money (Online only)
@@ -189,24 +200,6 @@ exports.getAllUsers = async (req, res) => {
     }
 };
 
-exports.getWaitlistEntries = async (req, res) => {
-    try {
-        const entries = await Waitlist.find({}).sort({ createdAt: -1 });
-        res.status(200).json({ success: true, data: entries });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
-exports.deleteWaitlistEntry = async (req, res) => {
-    try {
-        const { id } = req.params;
-        await Waitlist.findByIdAndDelete(id);
-        res.status(200).json({ success: true, message: "Entry removed from waitlist" });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
 
 exports.deleteUser = async (req, res) => {
     try {
@@ -485,18 +478,21 @@ exports.getMissionControlFeed = async (req, res) => {
         const testPatterns = [/test/i, /^T_/i, /^SANDBOX/i, /^KREDDY_TEST/i];
 
         // 2. Fetch Aggregated Feed (Filtered for Significance)
-        const [jobs, logs, subs, sales] = await Promise.all([
+        const [jobs, rawLogs, subs, sales] = await Promise.all([
             // Show only Failed or Processing jobs (The ones needing attention)
             BackgroundJob.find({ status: { $in: ['failed', 'processing'] } }).sort({ createdAt: -1 }).limit(20).populate("businessId", "displayName isBetaTester"),
             
-            // Show more high-value logs
+            // Show more high-value logs (Excluded: PAYMENT_RECEIVED, SUBSCRIPTION_PAID as they have dedicated feeds)
             ActivityLog.find({ 
-                action: { $in: ['SIGNUP', 'PROFILE_UPDATED', 'ACCOUNT_VERIFIED', 'PAYMENT_RECEIVED', 'SUBSCRIPTION_PAID'] } 
+                action: { $in: ['SIGNUP', 'PROFILE_UPDATED', 'ACCOUNT_VERIFIED'] } 
             }).sort({ createdAt: -1 }).limit(50).populate("businessId", "displayName isBetaTester"),
             
             Payment.find({ status: 'success' }).sort({ createdAt: -1 }).limit(30).populate("businessId", "displayName isBetaTester"),
             Sale.find({ "payments.0": { $exists: true } }).sort({ "payments.date": -1 }).limit(50).populate("businessId", "displayName isBetaTester")
         ]);
+
+        // Strict Log Filter
+        const logs = rawLogs.filter(l => !['PAYMENT_RECEIVED', 'SUBSCRIPTION_PAID'].includes(l.action));
 
         // 3. Format Unified Feed
         const feed = [];

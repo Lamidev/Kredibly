@@ -366,15 +366,6 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 saleId: sale._id
             });
 
-            // 📜 Log to Activity Stream
-            const ActivityLog = require('../../models/ActivityLog');
-            await ActivityLog.create({
-                businessId: business._id,
-                action: 'PAYMENT_RECEIVED',
-                entityType: 'PAYMENT',
-                entityId: sale._id,
-                details: `Nomba payment of ₦${creditAmount.toLocaleString()} verified for Invoice #${sale.invoiceNumber} (${sale.customerName || 'Customer'})`
-            });
         } catch (nErr) { console.error("Notification/Activity error:", nErr.message); }
 
         // 🚀 BACKGROUND TASK: Execute Sweep "Underground"

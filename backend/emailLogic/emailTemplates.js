@@ -117,52 +117,6 @@ const NEW_TICKET_ALERT_TEMPLATE = `
 </html>
 `;
 
-const WAITLIST_NOTIFICATION_TEMPLATE = `
-<!DOCTYPE html>
-<html lang="en">
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 24px;">
-  <div style="margin-bottom: 32px;">
-    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
-  </div>
-  <h2 style="font-size: 18px; font-weight: 800; color: #111827;">New Founder Alert!</h2>
-  <p>A new merchant has just joined the waitlist. High-priority lead captured:</p>
-  <div style="background: #F9FAFB; border-radius: 12px; padding: 20px; margin: 20px 0;">
-      <p style="margin: 8px 0;"><strong>Name:</strong> {name}</p>
-      <p style="margin: 8px 0;"><strong>Email:</strong> {email}</p>
-      <p style="margin: 8px 0;"><strong>WhatsApp:</strong> {whatsappNumber}</p>
-      <p style="margin: 8px 0;"><strong>Industry:</strong> {industry}</p>
-  </div>
-  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
-    <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
-  </div>
-</body>
-</html>
-`;
-
-const WAITLIST_CONFIRMATION_TEMPLATE = `
-<!DOCTYPE html>
-<html lang="en">
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.8; color: #374151; max-width: 600px; margin: 0 auto; padding: 24px;">
-  <div style="margin-bottom: 32px;">
-    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
-  </div>
-  <p style="font-size: 18px; font-weight: 800; color: #111827; margin-top: 0;">You're in, {name}.</p>
-  <p>We've officially reserved your spot in our "Founding Members" group. We are currently polishing the AI to make sure that the moment you link your WhatsApp, your bookkeeping and invoicing becomes effortless.</p>
-  <p>We don't like boring waitlists, so if you refer 3 fellow business owners, we'll move you to the very top of the queue immediately. Use your unique invite link below to get started:</p>
-  <div style="margin: 32px 0;">
-      <a href="{referralLink}" style="background-color: #111827; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; display: inline-block;">Copy My Invite Link</a>
-  </div>
-  <p>We’ll be reaching out via WhatsApp and email soon with your onboarding details. Welcome to the movement.</p>
-  <div style="margin-top: 48px;">
-    <p style="font-weight: 800; color: #111827; margin: 0; font-size: 16px;">The Kredibly Team</p>
-    <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">hello@usekredibly.com</p>
-  </div>
-  <div style="margin-top: 40px; border-top: 1px solid #F1F5F9; padding-top: 20px; font-size: 11px; color: #9CA3AF;">
-    <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
-  </div>
-</body>
-</html>
-`;
 
 const SUPPORT_REPLY_TEMPLATE = `
 <!DOCTYPE html>
@@ -361,8 +315,6 @@ module.exports = {
   WELCOME_EMAIL_TEMPLATE,
   ONBOARDING_SUCCESS_TEMPLATE,
   NEW_TICKET_ALERT_TEMPLATE,
-  WAITLIST_NOTIFICATION_TEMPLATE,
-  WAITLIST_CONFIRMATION_TEMPLATE,
   SUPPORT_REPLY_TEMPLATE,
   SUBSCRIPTION_CONFIRM_TEMPLATE,
   BANK_CHANGE_ALERT_TEMPLATE,

@@ -24,7 +24,6 @@ const notificationRoutes = require("./routes/business/notificationRoutes");
 const adminRoutes = require("./routes/admin/adminRoutes");
 const supportRoutes = require("./routes/admin/supportRoutes");
 const paymentRoutes = require("./routes/common/paymentRoutes");
-const waitlistRoutes = require("./routes/common/waitlistRoutes");
 const { startProactiveAssistant } = require("./utils/proactiveAssistant");
 const { startTicketCleanup } = require("./utils/ticketScheduler");
 const { startBackupScheduler } = require("./utils/backupService");
@@ -158,7 +157,6 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/admin/stats", require("./routes/admin/statsRoutes"));
 app.use("/api/support", supportRoutes);
 app.use("/api/payments", paymentRoutes);
-app.use("/api/waitlist", waitlistRoutes);
 app.use("/api/admin/feedback", require("./routes/admin/feedbackRoutes"));
 app.use("/api/coupons", require("./routes/common/couponRoutes"));
 

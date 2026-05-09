@@ -23,7 +23,7 @@ import { initiateSocketConnection, disconnectSocket, listenToEvent, stopListenin
 
 const Dashboard = () => {
     const { stats, sales, analytics, fetchSales, fetchStats, fetchAnalytics, loading, deleteSale } = useSales();
-    const { profile, updateProfile } = useAuth();
+    const { user, profile, updateProfile } = useAuth();
     const navigate = useNavigate();
     const [whatsappInput, setWhatsappInput] = useState("");
     const [updatingWhatsapp, setUpdatingWhatsapp] = useState(false);
@@ -146,8 +146,8 @@ const Dashboard = () => {
             {/* Executive Header */}
             <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                    <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.04em', lineHeight: 1 }}>
-                        {greeting()}, <span className="premium-gradient">{profile?.displayName?.split(' ')[0] || 'Founder'}</span>.
+                    <h1 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.5rem)', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.04em', lineHeight: 1.1 }}>
+                        {greeting()}, <span className="premium-gradient">{(user?.name || profile?.displayName || 'Founder').split(' ')[0]}</span>.
                     </h1>
                     <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.95rem' }}>
                         Here's your business overview.
@@ -260,114 +260,6 @@ const Dashboard = () => {
                 </motion.div>
             )}
 
-            {/* 🛡️ SECURE ESCROW CARD (Held Funds / Security Lock) */}
-            {/* 🛡️ Held Balance / Escrow Warning - Suppressed while direct settlement is active */}
-            {profile?.heldBalance > 0 && false && (
-                <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    style={{ 
-                        background: 'linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)', 
-                        padding: '24px clamp(16px, 5vw, 32px)', 
-                        borderRadius: '32px', 
-                        marginBottom: '40px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                        gap: '24px',
-                        border: '1px solid #FB923C',
-                        boxShadow: '0 20px 25px -5px rgba(251, 146, 60, 0.1)'
-                    }}
-                >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                        <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: '#FB923C', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'white' }}>
-                            <Shield size={28} />
-                        </div>
-                        <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                <span style={{ background: '#FFEDD5', color: '#9A3412', fontSize: '10px', fontWeight: 900, padding: '2px 8px', borderRadius: '100px', textTransform: 'uppercase' }}>Security Escrow</span>
-                                <h4 style={{ fontSize: '1.25rem', fontWeight: 950, color: '#1E293B', margin: 0 }}>
-                                    ₦{(profile?.heldBalance || 0).toLocaleString()} Secured & Locked
-                                </h4>
-                            </div>
-                            <p style={{ fontSize: '0.9rem', color: '#9A3412', fontWeight: 700, margin: 0 }}>
-                                {profile?.heldBalance > 0 && profile?.kyc?.status !== 'verified' 
-                                    ? "Verification required to release funds to your bank account." 
-                                    : "Payouts temporarily locked due to bank account update. Auto-releases soon."}
-                            </p>
-                        </div>
-                    </div>
-                    <button 
-                        onClick={() => navigate(profile?.kyc?.status !== 'verified' ? '/settings?tab=kyc' : '/settings?tab=payout')}
-                        style={{ 
-                            padding: '14px 32px', 
-                            borderRadius: '16px', 
-                            background: 'linear-gradient(135deg, var(--primary) 0%, #7C3AED 100%)', 
-                            color: 'white', 
-                            fontWeight: 950, 
-                            border: 'none', 
-                            cursor: 'pointer',
-                            fontSize: '0.9rem',
-                            boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.3)'
-                        }}
-                        className="hover-scale"
-                    >
-                        {profile?.heldBalance > 0 && profile?.kyc?.status !== 'verified' ? "Verify & Release Funds" : "Unlock Instantly"}
-                    </button>
-                </motion.div>
-            )}
-
-            {/* 🛡️ KYC Compliance Nudge (Only show if NO funds are held, otherwise the Escrow Card covers it) */}
-            {false && profile?.kyc?.status !== 'verified' && profile?.heldBalance <= 0 && (
-                <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    style={{ 
-                        background: 'white', 
-                        padding: '24px clamp(16px, 5vw, 32px)', 
-                        borderRadius: '32px', 
-                        marginBottom: '40px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                        gap: '24px',
-                        border: '1px solid #E2E8F0',
-                        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.02)'
-                    }}
-                >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                        <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <Shield size={28} color="var(--primary)" />
-                        </div>
-                        <div>
-                            <h4 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#1E293B', margin: '0 0 4px 0' }}>Trust & Verification Required</h4>
-                            <p style={{ fontSize: '0.9rem', color: '#64748B', fontWeight: 600, margin: 0 }}>
-                                Complete your identity verification to unlock <span style={{ color: 'var(--primary)', fontWeight: 800 }}>Instant Payouts</span> and higher limits.
-                            </p>
-                        </div>
-                    </div>
-                    <button 
-                        onClick={() => navigate('/settings?tab=kyc')}
-                        style={{ 
-                            padding: '14px 32px', 
-                            borderRadius: '16px', 
-                            background: 'var(--primary)', 
-                            color: 'white', 
-                            fontWeight: 900, 
-                            border: 'none', 
-                            cursor: 'pointer',
-                            fontSize: '0.9rem',
-                            boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.2)'
-                        }}
-                        className="hover-scale"
-                    >
-                        Complete Verification
-                    </button>
-                </motion.div>
-            )}
-
             {/* Premium Stats Bento Grid */}
             <div style={{
                 display: 'grid',
@@ -464,31 +356,6 @@ const Dashboard = () => {
                         </div>
                     )}
                 </div>
-
-                {/* Kreddy Insight Box */}
-                {analytics?.summary && (
-                    <div style={{ 
-                        background: 'linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)', 
-                        padding: '16px 20px', 
-                        borderRadius: '18px', 
-                        marginBottom: '32px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        border: '1px solid #E2E8F0'
-                    }}>
-                        <div style={{ background: 'var(--primary)', color: 'white', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <Sparkles size={18} fill="white" />
-                        </div>
-                        <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#475569', margin: 0 }}>
-                            {analytics.summary.collectionRate >= 70 
-                                ? "Kreddy Says: Chief, your cash flow is strong! You've successfully recovered most of your receivables."
-                                : analytics.summary.collectionRate >= 40
-                                ? "Kreddy Says: Good progress! Send a few recovery links to bring more money in today."
-                                : "Kreddy Says: A lot of cash is still outside. Let's start the automated recovery process."}
-                        </p>
-                    </div>
-                )}
 
                 <div style={{ width: '100%', height: 260 }}>
                     {!analytics?.daily || analytics.daily.length === 0 ? (
@@ -745,25 +612,23 @@ const Dashboard = () => {
                                 <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>No live activity detected.</p>
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                                    {activities.slice(0, 5).map((log, i) => (
-                                        <div key={log._id} style={{ display: 'flex', gap: '16px', position: 'relative' }}>
-                                            <div className="timeline-dot" style={{ borderColor: i === 0 ? 'var(--primary)' : '#E2E8F0' }}></div>
-                                            <div style={{ flex: 1 }}>
+                                    {activities.slice(0, 5).map((log, index) => (
+                                        <div key={log._id + log.createdAt} style={{ display: 'flex', gap: '16px', position: 'relative' }}>
+                                            <div className="timeline-dot" style={{ borderColor: index === 0 ? 'var(--primary)' : '#E2E8F0', flexShrink: 0 }}></div>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
                                                 <p style={{ 
-                                                    fontSize: '0.9rem', 
+                                                    fontSize: '0.85rem', 
                                                     fontWeight: 700, 
                                                     color: 'var(--text)', 
                                                     marginBottom: '4px', 
                                                     lineHeight: 1.4,
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap',
-                                                    maxWidth: '220px'
+                                                    overflowWrap: 'anywhere',
+                                                    wordBreak: 'break-word'
                                                 }}>
                                                     {log.details.replace(/"/g, '')}
                                                 </p>
-                                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                                                    {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • <span style={{ textTransform: 'uppercase', color: 'var(--primary)', letterSpacing: '0.05em' }}>{log.action.replace(/_/g, ' ')}</span>
+                                                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                    {new Date(log.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} • {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {log.action.replace(/_/g, ' ')}
                                                 </p>
                                             </div>
                                         </div>
@@ -800,75 +665,93 @@ const Dashboard = () => {
                 document.body
             )}
 
-            <PlanLimitModal 
-                isOpen={showLimitModal}
-                onClose={() => setShowLimitModal(false)}
-                onUpgrade={() => navigate('/settings')}
-            />
+            {showLimitModal && (
+                <PlanLimitModal 
+                    isOpen={showLimitModal} 
+                    onClose={() => setShowLimitModal(false)} 
+                    plan={profile?.plan}
+                    feature="sales"
+                />
+            )}
 
             <style>{`
+                .skeleton {
+                    background: linear-gradient(90deg, #F1F5F9 25%, #F8FAFC 50%, #F1F5F9 75%);
+                    background-size: 200% 100%;
+                    animation: skeleton-loading 1.5s infinite;
+                }
+                @keyframes skeleton-loading {
+                    0% { background-position: 200% 0; }
+                    100% { background-position: -200% 0; }
+                }
+                .dashboard-glass {
+                    transition: transform 0.2s, box-shadow 0.2s;
+                }
+                .dashboard-glass:hover {
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                }
+                .priority-item:hover {
+                    background: #F8FAFC !important;
+                }
                 .premium-gradient {
-                    background: linear-gradient(135deg, var(--primary) 0%, #F472B6 100%);
+                    background: linear-gradient(135deg, var(--primary) 0%, #7C3AED 100%);
                     -webkit-background-clip: text;
-                    background-clip: text;
                     -webkit-text-fill-color: transparent;
+                }
+                .timeline-track {
+                    position: relative;
+                    padding-left: 8px;
+                }
+                .timeline-track::before {
+                    content: '';
+                    position: absolute;
+                    left: 11px;
+                    top: 10px;
+                    bottom: 10px;
+                    width: 1px;
+                    background: #E2E8F0;
+                }
+                .timeline-dot {
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                    background: white;
+                    border: 2px solid #E2E8F0;
+                    position: relative;
+                    z-index: 2;
+                    margin-top: 6px;
+                }
+                .animate-fade-in {
+                    animation: fadeIn 0.5s ease-out;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
                 @media (max-width: 1024px) {
                     .dashboard-main-grid {
                         grid-template-columns: 1fr !important;
-                        gap: 12px !important;
-                    }
-                    .dashboard-glass {
-                        padding: 24px !important;
-                        border-radius: 24px !important;
-                    }
-                    .stat-card-premium {
-                        padding: 24px !important;
-                        border-radius: 24px !important;
                     }
                 }
-                
-                @media (max-width: 640px) {
-                    .weekly-battle-header {
-                        flex-direction: column !important;
-                        align-items: flex-start !important;
-                    }
-                    .weekly-summary-cards {
-                        width: 100% !important;
-                        flex-direction: column !important;
-                    }
-                    .weekly-summary-cards > div {
-                        width: 100% !important;
-                    }
-                    .dashboard-glass {
-                        padding: 16px !important;
-                    }
-                    .priority-item {
-                        flex-direction: column !important;
-                        align-items: flex-start !important;
-                        gap: 16px !important;
-                    }
-                    .priority-info {
-                        width: 100% !important;
-                    }
-                    .priority-amount {
-                        width: 100% !important;
-                        justify-content: space-between !important;
-                        padding-top: 12px !important;
-                        border-top: 1px dashed #E2E8F0 !important;
-                    }
-                    .recharts-cartesian-axis-tick text {
-                        font-size: 10px !important;
-                    }
+                .btn-primary {
+                    background: var(--primary);
+                    color: white;
+                    border: none;
+                    font-weight: 800;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s;
                 }
-
-                .dashboard-glass {
-                    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-                    width: 100%;
+                .btn-secondary {
+                    background: var(--background);
+                    color: var(--text);
+                    border: 1px solid var(--border);
+                    cursor: pointer;
                 }
-                .dashboard-glass:hover {
-                    border-color: var(--primary) !important;
-                    box-shadow: var(--shadow-premium) !important;
+                .hover-scale:hover {
+                    transform: scale(1.02);
                 }
             `}</style>
         </div>
