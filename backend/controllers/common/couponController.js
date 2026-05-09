@@ -1,5 +1,4 @@
 const Coupon = require('../../models/Coupon');
-const Waitlist = require('../../models/Waitlist');
 
 exports.validateCoupon = async (req, res) => {
     try {
@@ -28,16 +27,6 @@ exports.validateCoupon = async (req, res) => {
             return res.status(400).json({ success: false, message: "This coupon has reached its usage limit" });
         }
 
-        // Check Waitlist Requirement (The "Email Lock")
-        if (coupon.requiresWaitlist) {
-            const isWaitlisted = await Waitlist.findOne({ email: userEmail });
-            if (!isWaitlisted) {
-                return res.status(403).json({ 
-                    success: false, 
-                    message: "Exclusive Code: This coupon is reserved for Founding Members on the waitlist." 
-                });
-            }
-        }
 
         // Success! Return discount details
         res.status(200).json({

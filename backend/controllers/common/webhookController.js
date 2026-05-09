@@ -215,13 +215,6 @@ exports.handlePaystackWebhook = async (req, res) => {
 
                     const business = sale.businessId;
                     
-                    await ActivityLog.create({
-                        businessId: business._id,
-                        action: 'PAYMENT_RECEIVED',
-                        entityType: 'PAYMENT',
-                        entityId: sale._id,
-                        details: `Online payment of ₦${paidAmount.toLocaleString()} received for Invoice #${invoiceNumber}`
-                    });
 
                     await Notification.create({
                         businessId: business._id,

@@ -5,8 +5,6 @@ const {
   WELCOME_EMAIL_TEMPLATE,
   ONBOARDING_SUCCESS_TEMPLATE,
   NEW_TICKET_ALERT_TEMPLATE,
-  WAITLIST_NOTIFICATION_TEMPLATE,
-  WAITLIST_CONFIRMATION_TEMPLATE,
   SUPPORT_REPLY_TEMPLATE,
   SUBSCRIPTION_CONFIRM_TEMPLATE,
   BANK_CHANGE_ALERT_TEMPLATE
@@ -17,39 +15,6 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
 
 // ... (existing functions)
 
-exports.sendWaitlistEmail = async (adminEmail, userData) => {
-  try {
-    await resendClient.emails.send({
-      from: `${sender.name} <${sender.email}>`,
-      to: adminEmail,
-      reply_to: userData.email,
-      subject: `Waitlist Signup: ${userData.name}`,
-      html: WAITLIST_NOTIFICATION_TEMPLATE
-        .replace("{name}", userData.name)
-        .replace("{email}", userData.email)
-        .replace("{whatsappNumber}", userData.whatsappNumber)
-        .replace("{industry}", userData.industry || "Not specified"),
-    });
-  } catch (error) {
-    console.error("Error sending waitlist notification email:", error);
-  }
-};
-
-exports.sendWaitlistConfirmationEmail = async (userEmail, userData) => {
-  try {
-    const referralLink = `${FRONTEND_URL}/waitlist?ref=${userData.referralCode}`;
-    await resendClient.emails.send({
-      from: `${sender.name} <${sender.email}>`,
-      to: userEmail,
-      subject: "You're in! Welcome to Kredibly",
-      html: WAITLIST_CONFIRMATION_TEMPLATE
-        .replace("{name}", userData.name.split(' ')[0])
-        .replace(/{referralLink}/g, referralLink),
-    });
-  } catch (error) {
-    console.error("Error sending waitlist confirmation email:", error);
-  }
-};
 
 // Common function for handling email sending errors
 const handleEmailError = (error, message) => {

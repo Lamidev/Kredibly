@@ -3,7 +3,6 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const User = require("../../models/User");
 const BusinessProfile = require("../../models/BusinessProfile");
-const Waitlist = require("../../models/Waitlist");
 const {
   generateTokenAndSetCookie,
 } = require("../../utils/generateTokenAndSetCookies");
@@ -39,21 +38,6 @@ const register = async (req, res) => {
       return res.status(400).json({ success: false, message: "User with this email already exists" });
     }
 
-    // Waitlist Lead Capture (Non-Blocking)
-    let waitlisted = await Waitlist.findOne({ email: email.toLowerCase() });
-    if (!waitlisted) {
-        // Silently add them to the waitlist database for future marketing & founder tagging
-        waitlisted = new Waitlist({ 
-            email: email.toLowerCase(), 
-            name: name,
-            status: 'active',
-            source: 'beta_registration'
-        });
-        await waitlisted.save().catch(err => console.error("Waitlist Silent Add Fail:", err));
-    } else {
-        waitlisted.status = 'active';
-        await waitlisted.save().catch(err => console.error("Waitlist Update Fail:", err));
-    }
 
     const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -67,9 +51,6 @@ const register = async (req, res) => {
 
     await newUser.save();
 
-    // Mark waitlist as active
-    waitlisted.status = 'active';
-    await waitlisted.save().catch(err => console.error("Waitlist Update Error:", err));
 
     // Send verification email in background for speed
     console.log(`📧 Verification Token for ${newUser.email}: ${verificationToken}`); // 🛡️ Log for dev/testing if email fails
