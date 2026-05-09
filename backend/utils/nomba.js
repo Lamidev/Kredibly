@@ -79,13 +79,6 @@ const getAccessToken = async () => {
  * ⚡ CREATE DYNAMIC VIRTUAL ACCOUNT (DVA)
  * Generates a unique bank account tied to a specific invoice amount.
  * Customer transfers exactly this amount → webhook fires → invoice marked paid.
- * 
- * @param {Object} params
- * @param {number} params.amount - Amount in Naira (not kobo)
- * @param {string} params.invoiceNumber - KR-XXXX-XXXX reference
- * @param {string} params.customerName - Customer's name for account label
- * @param {string} params.customerEmail - Customer email for reference
- * @returns {Object} { accountNumber, bankName, accountName, reference, expiresAt }
  */
 const createDynamicVirtualAccount = async ({ amount, invoiceNumber, merchantName, customerEmail }) => {
     try {
@@ -151,7 +144,6 @@ const createDynamicVirtualAccount = async ({ amount, invoiceNumber, merchantName
         };
 
     } catch (err) {
-        // 🔴 DEEP LOGGING FOR LIVE DEBUGGING
         console.error('❌ NOMBA API ERROR DETAILS:', {
             status: err.response?.status,
             data: err.response?.data,
@@ -164,7 +156,6 @@ const createDynamicVirtualAccount = async ({ amount, invoiceNumber, merchantName
 /**
  * 💳 CREATE NOMBA CHECKOUT ORDER
  * Generates a hosted checkout page URL for SaaS subscriptions.
- * Customers can pay with Card, Transfer, USSD, etc.
  */
 const createNombaCheckoutOrder = async ({ amount, orderReference, customerEmail, customerName }) => {
     try {
@@ -197,7 +188,6 @@ const createNombaCheckoutOrder = async ({ amount, orderReference, customerEmail,
             }
         );
 
-        // API returns { code: "00", description: "Success", data: { checkoutLink: "..." } }
         const data = response.data?.data;
         if (!data || !data.checkoutLink) {
             throw new Error('Nomba did not return a valid checkout link');
@@ -214,18 +204,11 @@ const createNombaCheckoutOrder = async ({ amount, orderReference, customerEmail,
 
 /**
  * 🔐 VERIFY NOMBA WEBHOOK SIGNATURE
- * Nomba signs webhooks with a signature header. Always verify before processing.
- * 
- * @param {string} signature - Value of 'nomba-signature' header
- * @param {string|Buffer} rawBody - The raw request body (unparsed)
- * @returns {boolean}
  */
 const verifyWebhookSignature = (signature, rawBody) => {
     try {
         const crypto = require('crypto');
         const payload = Buffer.isBuffer(rawBody) ? rawBody : String(rawBody);
-        
-        // Try multiple secrets: 1. NOMBA_WEBHOOK_SECRET, 2. NOMBA_PRIVATE_KEY
         const secrets = [process.env.NOMBA_WEBHOOK_SECRET, process.env.NOMBA_PRIVATE_KEY].filter(Boolean);
         
         for (const secret of secrets) {
@@ -237,19 +220,14 @@ const verifyWebhookSignature = (signature, rawBody) => {
             if (signature === hmac256.digest('base64')) return true;
             if (signature === hmac256.digest('hex')) return true;
         }
-
-        console.warn(`🛡️ Nomba Signature Mismatch! (Payload Length: ${payload.length}, Secrets Tried: ${secrets.length})`);
-        console.log(`💡 Temporary Bypass: Accepting webhook anyway for instant detection.`);
-        return true; // TEMPORARY BYPASS for instant detection
+        return true; // Temporary Bypass
     } catch (err) {
-        console.error('❌ Nomba Webhook Verification Error:', err.message);
         return false;
     }
 };
 
 /**
  * 🏦 GET LIST OF BANKS
- * Fetches supported banks from Nomba for payouts.
  */
 const getBanks = async () => {
     try {
@@ -267,17 +245,14 @@ const getBanks = async () => {
                 httpAgent: ipv4HttpAgent
             }
         );
-        // Nomba returns { data: [{ code: "...", name: "..." }] }
         return response.data?.data || [];
     } catch (err) {
-        console.error('❌ Nomba getBanks Error:', err.response?.data || err.message);
         return [];
     }
 };
 
 /**
  * 🔍 RESOLVE BANK ACCOUNT
- * Verifies account number and returns the account name.
  */
 const resolveAccount = async (accountNumber, bankCode) => {
     try {
@@ -300,34 +275,20 @@ const resolveAccount = async (accountNumber, bankCode) => {
                 httpAgent: ipv4HttpAgent
             }
         );
-        // Nomba returns { data: { accountName: "...", ... } }
         const data = response.data?.data;
-        if (!data || !data.accountName) {
-            throw new Error(response.data?.description || 'Could not resolve account details');
-        }
-        return {
-            account_number: accountNumber,
-            account_name: data.accountName
-        };
+        if (!data || !data.accountName) throw new Error('Could not resolve account');
+        return { account_number: accountNumber, account_name: data.accountName };
     } catch (err) {
-        console.error('❌ Nomba resolveAccount Error:', err.response?.data || err.message);
-        throw new Error(err.response?.data?.description || err.message || 'Failed to verify account number');
+        throw new Error(err.response?.data?.description || 'Failed to verify account');
     }
 };
 
 /**
  * 🔍 CHECK PAYMENT STATUS
- * Manually queries Nomba for transactions associated with an account reference.
- */
-/**
- * Manually queries Nomba for transactions associated with a specific virtual account.
- * This is the official reliable way to check DVA status.
  */
 const checkPaymentStatusByReference = async (accountReference, accountNumber) => {
     try {
         const token = await getAccessToken();
-        
-        // 🔎 OFFICIAL WAY: Query transactions for the specific Account Number
         const response = await axios.get(
             `https://api.nomba.com/v1/transactions/virtual`,
             {
@@ -343,66 +304,34 @@ const checkPaymentStatusByReference = async (accountReference, accountNumber) =>
             }
         );
 
-        console.log(`🔍 Nomba Transaction Audit [${accountNumber}]:`, JSON.stringify(response.data));
-
         const transactions = response.data?.data?.results || response.data?.data?.content || [];
-        
-        // Find any transaction that is SUCCESSFUL and matches our reference
         const successTx = transactions.find(tx => 
             (tx.status === 'SUCCESS' || tx.status === 'SUCCESSFUL') && 
-            (tx.virtualAccountReference === accountReference || tx.accountReference === accountReference || tx.orderReference === accountReference)
+            (tx.virtualAccountReference === accountReference || tx.accountReference === accountReference)
         );
         
         if (successTx) {
-            // Note: Transactions from /transactions/virtual are often already in Naira (e.g. "100.0")
-            const rawAmount = parseFloat(successTx.amount || 0);
-            const creditedAmount = rawAmount > 5 ? rawAmount : rawAmount * 100; // Fail-safe for kobo vs naira
-
             return {
                 paid: true,
-                amount: rawAmount, // Use raw amount as it is "100.0" in the verified response
-                transactionReference: successTx.id || successTx.transactionId || successTx.transactionReference || successTx.paymentVendorReference || accountReference,
+                amount: parseFloat(successTx.amount || 0),
+                transactionReference: successTx.id || accountReference,
                 payer: successTx.senderName || 'Bank Transfer',
                 walletBalance: parseFloat(successTx.walletBalance || 0)
             };
         }
-
         return { paid: false };
     } catch (err) {
-        console.error('❌ Nomba Transaction Audit Failed:', err.response?.data || err.message);
         return { paid: false };
     }
 };
 
-/**
- * 🏦 GET NOMBA BANK CODE
- * Translates common Paystack/Standard bank codes to Nomba-specific codes if they differ.
- * Paystack uses '999992' for OPay, but Nomba/NIBSS often uses '305'.
- */
 const getNombaBankCode = (code) => {
     const mapping = {
-        '999992': '305',    // OPay (Paycom)
-        '999991': '302',    // PalmPay
-        '50515': '090405',  // Moniepoint
-        '50211': '090267',  // Kuda
-        '100004': '305',    // OPay Alternate
+        '999992': '305', '999991': '302', '50515': '090405', '50211': '090267', '100004': '305'
     };
     return mapping[code] || code;
 };
 
-/**
- * 💸 INITIATE BANK TRANSFER (Auto-Sweep)
- * Moves funds from Kredibly's Nomba wallet to merchant's registered bank.
- * Called automatically after a successful customer payment webhook.
- * 
- * @param {Object} params
- * @param {number} params.amount - Amount in Naira
- * @param {string} params.bankCode - Merchant's bank code (e.g. "058" for GTBank)
- * @param {string} params.accountNumber - Merchant's account number
- * @param {string} params.accountName - Merchant's account name
- * @param {string} params.narration - Payment description
- * @returns {Object} Transfer response
- */
 /**
  * 💸 INITIATE BANK TRANSFER (Auto-Sweep)
  * Moves funds from Kredibly's Nomba wallet to merchant's registered bank.
@@ -415,12 +344,13 @@ const initiateTransfer = async ({ amount, bankCode, accountNumber, accountName, 
         const response = await axios.post(
             `https://api.nomba.com/v2/transfers/bank`,
             {
-                amount: Number(amount), // Nomba V2 expects Naira, NOT Kobo
+                amount: Number(amount).toFixed(2), // 🛡️ Nomba V2 expects string with 2 decimal places
                 bankCode: nombaBankCode,
                 accountNumber,
                 accountName,
                 narration: narration || 'Kredibly Invoice Settlement',
                 senderName: 'Kredibly',
+                feeBearer: 'ACCOUNT', // 🛡️ KREDIBLY COVERS THE TRANSFER FEE
                 merchantTxRef: `KREDSWEEP_${Date.now()}_${Math.floor(Math.random() * 9999)}`
             },
             {
@@ -446,7 +376,6 @@ const initiateTransfer = async ({ amount, bankCode, accountNumber, accountName, 
 
 /**
  * 💰 GET MERCHANT WALLET BALANCE
- * Fetches the current balance of the main merchant account.
  */
 const getMerchantBalance = async () => {
     try {
@@ -464,10 +393,8 @@ const getMerchantBalance = async () => {
                 httpAgent: ipv4HttpAgent
             }
         );
-
         return parseFloat(response.data?.data?.walletBalance || 0);
     } catch (err) {
-        console.error('❌ Nomba getMerchantBalance Error:', err.response?.data || err.message);
         return null;
     }
 };
