@@ -141,8 +141,8 @@ const DashboardLayout = () => {
             )}
 
             {/* Sidebar */}
-            <aside className={`sidebar sidebar-premium ${isSidebarOpen ? 'mobile-open' : ''}`} style={{ background: 'white', borderRight: '1px solid var(--border)' }}>
-                <div className="sidebar-header" style={{ padding: '32px 24px', marginBottom: '20px' }}>
+            <aside className={`sidebar sidebar-premium ${isSidebarOpen ? 'mobile-open' : ''}`}>
+                <div className="sidebar-header">
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <img 
                             src="/krediblyrevamped.png" 
@@ -152,37 +152,26 @@ const DashboardLayout = () => {
                     </div>
                 </div>
 
-                <div style={{ padding: '0 16px 32px' }}>
-                    <button
-                        className="btn-primary"
-                        style={{ 
-                            width: '100%', 
-                            padding: '16px', 
-                            borderRadius: '16px', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
-                            gap: '10px',
-                            fontWeight: 700,
-                            letterSpacing: '-0.01em',
-                            fontSize: 'clamp(0.95rem, 4vw, 1.05rem)',
-                            boxShadow: '0 10px 20px -5px var(--primary-glow)'
-                        }}
+                <div style={{ padding: '0 24px 20px' }}>
+                    <button 
                         onClick={() => {
-                            if (profile?.plan === 'hustler' && (stats?.totalSales || 0) >= 5) {
+                            if (profile?.plan === 'hustler' && (stats?.monthlySalesCount || 0) >= 10) {
                                 setShowLimitModal(true);
                             } else {
                                 navigate('/sales/new');
+                                setIsSidebarOpen(false);
                             }
-                            setIsSidebarOpen(false);
                         }}
+                        className="btn-primary"
+                        style={{ width: '100%', padding: '14px', borderRadius: '14px', fontSize: '0.9rem' }}
                     >
                         <Plus size={20} strokeWidth={3} /> Create Sale
                     </button>
                 </div>
 
-                <nav className="sidebar-nav" style={{ flex: 1 }}>
-                    {navItems.map((item) =>                         <NavLink
+                <nav className="sidebar-nav">
+                    {navItems.map((item) => (
+                        <NavLink
                             key={item.path}
                             to={item.path}
                             end={item.end}
@@ -197,7 +186,7 @@ const DashboardLayout = () => {
                                 if (item.onClick) item.onClick(e);
                                 if (!e.defaultPrevented) setIsSidebarOpen(false);
                             }}
-                            style={{ margin: '4px 16px' }}
+                            style={{ textDecoration: 'none' }}
                         >
                             {({ isActive }) => {
                                 const isMatched = item.activeIfMatch 
@@ -213,31 +202,20 @@ const DashboardLayout = () => {
                                 );
                             }}
                         </NavLink>
-)}
+                    ))}
                 </nav>
 
-                <div className="sidebar-footer" style={{ borderTop: '1px solid #F1F5F9', padding: '16px 0 32px' }}>
+                <div className="sidebar-footer">
                     <NavLink
                         to="/settings"
                         className={({ isActive }) => `nav-item-premium ${isActive ? 'active' : ''}`}
                         onClick={() => setIsSidebarOpen(false)}
-                        style={{ margin: '4px 16px' }}
                     >
                         <Settings size={20} /> <span style={{ fontWeight: 600, fontSize: 'clamp(0.9rem, 3.5vw, 1rem)' }}>Settings</span>
                     </NavLink>
                     <button
                         onClick={() => setShowLogoutConfirm(true)}
-                        className="nav-item-premium"
-                        style={{ 
-                            width: 'calc(100% - 32px)', 
-                            background: 'rgba(239, 68, 68, 0.05)', 
-                            border: '1px solid rgba(239, 68, 68, 0.1)', 
-                            cursor: 'pointer', 
-                            margin: '8px 16px', 
-                            color: '#EF4444',
-                            borderRadius: '12px',
-                            justifyContent: 'flex-start'
-                        }}
+                        className="nav-item-premium nav-item-logout"
                     >
                         <LogOut size={20} /> <span style={{ fontWeight: 600, fontSize: 'clamp(0.9rem, 3.5vw, 1rem)' }}>Logout</span>
                     </button>

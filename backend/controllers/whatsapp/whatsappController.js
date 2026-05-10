@@ -1295,7 +1295,12 @@ Upgrade here: ${APP_URL}/pricing`);
 
                         const sale = await Sale.findById(saleId);
                         if (sale) {
-                            sale.payments.push({ amount: paidAmount, method: "WhatsApp Screenshot (Confirmed Alias)" });
+                            sale.payments.push({ 
+                                amount: paidAmount, 
+                                method: "WhatsApp Screenshot (Confirmed Alias)",
+                                date: new Date(),
+                                reference: `AI_MATCH_${Date.now()}`
+                            });
                             await sale.save();
 
                             // 🧠 LEARN: Save this alias for the future
@@ -1306,6 +1311,46 @@ Upgrade here: ${APP_URL}/pricing`);
                                     { upsert: true, new: true }
                                 );
                             }
+
+                            // 🔔 SYNC WITH DASHBOARD (Alerts & Activity)
+                            await Notification.create({
+                                businessId: profile._id,
+                                title: 'Payment Confirmed! ✅',
+                                message: `₦${paidAmount.toLocaleString()} screenshot confirmed for ${customerName}.`,
+                                type: 'sale',
+                                saleId: sale._id
+                            });
+
+                            await logActivity({
+                                businessId: profile._id,
+                                action: "PAYMENT_MATCHED",
+                                entityType: "SALE",
+                                entityId: sale._id,
+                                details: `Confirmed ₦${paidAmount} for ${customerName} from "${sourceName}"`
+                            });
+
+                            // ⚡ REAL-TIME UPDATE (Sockets)
+                            const { getIO } = require('../../utils/socket');
+                            const io = getIO();
+                            if (io) {
+                                io.to(profile._id.toString().toLowerCase()).emit('sale_updated', {
+                                    saleId: sale._id,
+                                    invoiceNumber: sale.invoiceNumber,
+                                    amount: paidAmount,
+                                    status: sale.status,
+                                    balance: sale.totalAmount - (sale.payments.reduce((s, p) => s + p.amount, 0))
+                                });
+                            }
+
+                            // 🔔 WHATSAPP ALERT (To Merchant)
+                            await sendWhatsAppPaymentAlert(
+                                profile.whatsappNumber,
+                                paidAmount,
+                                sale.invoiceNumber,
+                                customerName,
+                                "Screenshot Confirmed ✅",
+                                profile.displayName || "Chief"
+                            );
 
                             await sendReply(from, `✅ *Logged & Learned!* \n\nRecorded for *${customerName}*. I've also memorized that *"${sourceName}"* is one of their account names! 🛡️💎`);
                         }
@@ -1332,7 +1377,12 @@ Upgrade here: ${APP_URL}/pricing`);
                         const { sourceName, paidAmount } = session.data;
                         await WhatsAppSession.deleteOne({ _id: session._id });
 
-                        selectedSale.payments.push({ amount: paidAmount, method: "WhatsApp Screenshot (Manual Tag)" });
+                        selectedSale.payments.push({ 
+                            amount: paidAmount, 
+                            method: "WhatsApp Screenshot (Manual Tag)",
+                            date: new Date(),
+                            reference: `AI_MANUAL_${Date.now()}`
+                        });
                         await selectedSale.save();
 
                         if (sourceName) {
@@ -1342,6 +1392,46 @@ Upgrade here: ${APP_URL}/pricing`);
                                 { upsert: true, new: true }
                             );
                         }
+
+                        // 🔔 SYNC WITH DASHBOARD
+                        await Notification.create({
+                            businessId: profile._id,
+                            title: 'Payment Tagged! 🏷️',
+                            message: `₦${paidAmount.toLocaleString()} tagged to ${selectedSale.customerName}.`,
+                            type: 'sale',
+                            saleId: selectedSale._id
+                        });
+
+                        await logActivity({
+                            businessId: profile._id,
+                            action: "PAYMENT_TAGGED",
+                            entityType: "SALE",
+                            entityId: selectedSale._id,
+                            details: `Manually linked ₦${paidAmount} to ${selectedSale.customerName}`
+                        });
+
+                        // ⚡ SOCKET UPDATE
+                        const { getIO } = require('../../utils/socket');
+                        const io = getIO();
+                        if (io) {
+                            io.to(profile._id.toString().toLowerCase()).emit('sale_updated', {
+                                saleId: selectedSale._id,
+                                invoiceNumber: selectedSale.invoiceNumber,
+                                amount: paidAmount,
+                                status: selectedSale.status,
+                                balance: selectedSale.totalAmount - (selectedSale.payments.reduce((s, p) => s + p.amount, 0))
+                            });
+                        }
+
+                        // 🔔 WHATSAPP ALERT (To Merchant)
+                        await sendWhatsAppPaymentAlert(
+                            profile.whatsappNumber,
+                            paidAmount,
+                            selectedSale.invoiceNumber,
+                            selectedSale.customerName,
+                            "Manual Tag Success 🛡️",
+                            profile.displayName || "Chief"
+                        );
 
                         await sendReply(from, `✅ *Perfectly Handled!* \n\nI've credited *${selectedSale.customerName}* with the ₦${paidAmount.toLocaleString()} payment. \n\nMemory Bank Updated: I've linked *"${sourceName}"* to them! 🧠💎`);
                     } else {
@@ -1677,7 +1767,7 @@ Upgrade here: ${APP_URL}/pricing`);
                 const potentialSales = await Sale.find({
                     businessId: profile._id,
                     status: { $ne: "paid" }
-                }).sort({ updatedAt: -1 }).limit(10);
+                }).sort({ updatedAt: -1 }).limit(20); // Increased search range
 
                 if (potentialSales.length > 0) {
                     const scoredSales = potentialSales.map(sale => {

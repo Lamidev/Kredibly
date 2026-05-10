@@ -77,29 +77,15 @@ INTENTS:
 18. "general_chat": Greetings, math, business advice, casual talk, or when requesting clarification from the user.
 19. "set_preferred_name": When the user asks to be called a specific name (e.g., "From now call me Papa").
 20. "feedback": New feature ideas, roadmap suggestions, or constructive UX feedback. 
-    - CRITICAL: DO NOT use this for deleting records, tasks, or setting reminders.
-    - If the user says "remind me", "delete", "remove", "task", or "record", NEVER choose this intent.
 21. "delete_feedback": When the user says "cancel my idea", "delete my suggestion", or "I changed my mind about that feedback".
 22. "list_sales": When the user asks for "all sales", "show me everything", "history", "what I sold today", or "everything recorded". 
-    - CRITICAL: "Show me all sales" MUST go to this intent. DO NOT use check_debt for history. 
-    - check_debt is ONLY for "who owes me".
 23. "check_performance": When the user asks "how much did I make today?", "any payments today?", "daily summary", "what is my today revenue?".
-    - CRITICAL: ALWAYS include "targetDate" (yesterday, today, or ISO date) for this intent. If not specified, assume "today".
-
 24. "match_bank_slip": When the user uploads a bank transfer receipt/screenshot. Extract the exact sender name, amount, and reference to suggest a match.
 
-NAME CORRECTIONS:
-- If a user says "No, the name is [Name]" or "I meant [Name]", use "update_record" intent.
-- Capture the old name in "customerName" and the correct one in "newName".
-- If it was a voice note, look for phonetically similar names in the 'Debtors' list.
-
-MULTI-INTENT RULE (CRITICAL):
-- If the user's message contains MULTIPLE distinct tasks, return a JSON array of intent objects.
-- Each object should be a complete valid intent.
-- DELETION PROTECTION: If a user says "Delete the reminder for [Time/Task]", ALWAYS use "delete_reminder". NEVER use "create_reminder" to save a task about deleting.
-- If the user wants to delete a sale (e.g. "Delete the invoice for Victoria"), use "delete_sale" intent and capture "customerName" or "invoiceNumber".
-- If the user wants to delete a reminder (e.g. "Cancel my call with David"), use "delete_reminder" intent.
-- IMPORTANT: If a user records a sale AND asks for a reminder for it (e.g. "Remind me to call them next week"), return BOTH "create_sale" and "create_reminder". Ensure both the Sale and the Reminder have the SAME dueDate/reminderDate.
+CONFIRMATION & SESSION HANDLING (CRITICAL):
+- If there is an "Active Session" in the context (e.g., Kreddy just asked a Yes/No question or suggested a match), prioritize responding to that session.
+- If the user says "Yes", "Correct", or "Go ahead" and there is a pending confirmation (like alias_confirmation), use the "general_chat" intent with a reply confirming the action.
+- If the user provides a Name or Invoice Number and the session is "manual_alias_tagging", interpret this as identifying the record for that payment.
 
 REQUIRED JSON OUTPUT:
 {
@@ -210,6 +196,7 @@ const processMessageWithAI = async (text, context = {}) => {
             - Tone: ${context.preferredTone || 'FRIENDLY'}
             - Debtors: ${context.debtors || 'None'}
             - Active Reminders: ${context.activeReminders || 'None'}
+            - Active Session: ${context.currentSession ? JSON.stringify(context.currentSession) : 'None'}
             - Business Insight: ${context.businessInsight || 'New Merchant'}
             - Current Time (WAT, UTC+1): ${watISO}
 
