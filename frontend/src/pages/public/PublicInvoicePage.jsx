@@ -738,17 +738,17 @@ const PublicInvoicePage = () => {
 
     if (loading) return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#FDFCFE' }}>
-            <div style={{ position: 'relative', width: '96px', height: '96px', marginBottom: '24px' }}>
+            <div style={{ position: 'relative', width: '120px', height: '120px', marginBottom: '24px' }}>
                 <motion.div 
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
                     style={{ position: 'absolute', inset: 0, border: '4px solid #F3E8FF', borderRadius: '50%', borderTopColor: '#4C1D95' }}
                 />
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <img src="/krediblyrevamped.png" alt="" style={{ height: '24px', opacity: 0.3 }} />
+                <div style={{ position: 'absolute', inset: '10px', background: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+                    <img src="/krediblyrevamped.png" alt="" style={{ maxWidth: '70%', height: 'auto', opacity: 0.6 }} />
                 </div>
             </div>
-            <p style={{ fontSize: '12px', fontWeight: 800, color: 'rgba(76, 29, 149, 0.4)', textTransform: 'uppercase', letterSpacing: '0.2em' }}>Secure Connection</p>
+            <p style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(76, 29, 149, 0.4)', textTransform: 'uppercase', letterSpacing: '0.3em' }}>Establishing Secure Link</p>
         </div>
     );
 

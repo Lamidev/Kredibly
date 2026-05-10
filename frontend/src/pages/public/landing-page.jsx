@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import {
     Zap,
     ArrowRight,
@@ -228,12 +228,46 @@ const LandingPage = () => {
                         }}>The Intelligent Assistant for Every Merchant</span>
                     </div>
 
+                    <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8 }}
+                    style={{ textAlign: 'center', maxWidth: '1000px', margin: '0 auto', position: 'relative', zIndex: 10 }}
+                >
+                    {/* Velocity Ticker / Social Proof Badge */}
+                    <motion.div
+                        className="glass-premium animate-float"
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '8px 16px',
+                            borderRadius: '100px',
+                            marginBottom: '24px',
+                            fontSize: '0.85rem',
+                            fontWeight: 800,
+                            color: 'var(--primary)'
+                        }}
+                    >
+                        <span style={{ display: 'flex', gap: '4px' }}>
+                            {[1, 2, 3].map(i => (
+                                <motion.div 
+                                    key={i}
+                                    animate={{ opacity: [0.3, 1, 0.3] }}
+                                    transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.2 }}
+                                    style={{ width: '6px', height: '6px', background: 'var(--success)', borderRadius: '50%' }} 
+                                />
+                            ))}
+                        </span>
+                        <span>₦1.2M+ Settled Instantly Today</span>
+                    </motion.div>
+
                     <h1 style={{ 
-                        fontSize: 'clamp(2.1rem, 8vw, 5.5rem)',
+                        fontSize: 'clamp(2.5rem, 8vw, 5.5rem)', 
                         fontWeight: 950, 
                         lineHeight: 1, 
-                        letterSpacing: '-0.04em',
-                        marginBottom: '32px'
+                        marginBottom: '32px',
+                        letterSpacing: '-0.05em' 
                     }}>
                         <span style={{ display: 'block', marginBottom: '16px' }}>Send invoices. Get paid.</span>
                         <div style={{ 
@@ -249,8 +283,8 @@ const LandingPage = () => {
                             whiteSpace: 'nowrap'
                         }}>
                              <Typewriter phrases={[
-                                "In 20 seconds.",
-                                "Automatically.",
+                                "Instantly.",
+                                "Seamlessly.",
                                 "With Kreddy AI.",
                                 "On autopilot."
                             ]} />
@@ -258,46 +292,27 @@ const LandingPage = () => {
                     </h1>
 
                     <p style={{  
-                        fontSize: 'clamp(1.1rem, 2.5vw, 1.35rem)', 
-                        color: 'var(--text-muted)', 
-                        maxWidth: '850px', 
-                        margin: '0 auto 48px',
-                        lineHeight: 1.6,
-                        fontWeight: 400,
+                        fontSize: 'clamp(1.1rem, 3vw, 1.4rem)', 
+                        color: '#4B5563', 
+                        marginBottom: '48px', 
+                        lineHeight: 1.6, 
+                        maxWidth: '700px', 
+                        marginInline: 'auto',
+                        fontWeight: 500
                     }}>
-                        Send professional invoices, get paid instantly to your bank account, and let Kreddy AI recover your debts automatically. 
-                        The smartest way to run your business from WhatsApp.
+                        Your money shouldn't wait. Kredibly sweeps every payment directly to your bank account—no holds, no thresholds, no delays.
                     </p>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
-                        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                            <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', fontSize: '1.2rem', borderRadius: '100px' }}>Start billing professionally <ArrowRight size={20} /></button>
-                            <button onClick={() => scrollToSection('how-it-works')} className="btn-secondary" style={{ padding: '20px 48px', fontSize: '1.2rem', borderRadius: '100px', background: 'white', color: 'var(--primary)', borderColor: 'var(--primary)' }}>Meet Kreddy AI</button>
-                        </div>
-                        <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            gap: '5px', 
-                            color: '#475569', 
-                            fontWeight: 800, 
-                            fontSize: 'clamp(0.6rem, 2vw, 0.75rem)',
-                            padding: '8px 16px',
-                            background: 'rgba(76, 29, 149, 0.04)',
-                            borderRadius: '100px',
-                            opacity: 0.9,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.06em',
-                            width: 'fit-content',
-                            margin: '0 auto'
-                        }}>
-                            <BadgeCheck size={14} style={{ flexShrink: 0, color: 'var(--primary)' }} /> 
-                            <span>ZERO TRANSFER FEES, We cover your bank charges.</span>
+                    <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <Link to="/auth/register" className="btn-primary btn-magnetic" style={{ padding: '20px 40px', fontSize: '1.1rem', borderRadius: '18px' }}>
+                            Start Your Free Trial <ArrowRight size={20} />
+                        </Link>
+                        <div className="glass-premium" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 24px', borderRadius: '18px', color: '#64748B', fontSize: '0.9rem', fontWeight: 700 }}>
+                            <ShieldCheck size={20} color="var(--success)" /> Direct-to-Bank Verified
                         </div>
                     </div>
                 </motion.div>
+            </motion.div>
             </header>
-            
             </section>
 
             {/* 2. Bento Grid Section - Repositioned for Personal Assistant + Ledger */}
@@ -324,7 +339,7 @@ const LandingPage = () => {
                     <div className="bento-item bento-3" style={{ background: 'white', position: 'relative', overflow: 'hidden' }}>
                         <div style={{ position: 'relative', zIndex: 2 }}>
                             <h4 style={{ fontSize: '1.3rem', fontWeight: 900, marginBottom: '12px' }}>Smart AI Reconciliation</h4>
-                            <p style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 600 }}>Forward your bank slips to Kreddy. She matches them to invoices and updates your ledger automatically.</p>
+                            <p style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 600 }}>Forward bank slips to Kreddy. She matches them to invoices and updates your ledger instantly.</p>
                         </div>
                         <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.05 }}><Lock size={200} color="#7C3AED" /></div>
                     </div>
@@ -332,7 +347,7 @@ const LandingPage = () => {
                     <div className="bento-item bento-4" style={{ background: 'linear-gradient(135deg, #0F172A, #1E1B4B)', color: 'white', overflow: 'hidden' }}>
                         <div style={{ position: 'relative', zIndex: 2 }}>
                             <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '12px' }}>Instant Settlement</h4>
-                            <p style={{ opacity: 0.8, fontSize: '1.1rem', lineHeight: 1.5, fontWeight: 500 }}>Customer pays via bank transfer, money lands in your bank instantly. No 24-hour delays.</p>
+                            <p style={{ opacity: 0.8, fontSize: '1.1rem', lineHeight: 1.5, fontWeight: 500 }}>Customer pays via bank transfer, money lands in your bank instantly. Zero holding periods.</p>
                         </div>
                         <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.15 }}><Wallet size={200} /></div>
                     </div>
@@ -461,7 +476,7 @@ const LandingPage = () => {
                                 <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }} />
                                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                                     <div style={{ color: '#10B981' }}><Check size={20} /></div>
-                                    <p style={{ margin: 0, fontWeight: 700, color: 'white', flex: 1 }}>Instant Payouts (Money lands in 20s)</p>
+                                    <p style={{ margin: 0, fontWeight: 700, color: 'white', flex: 1 }}>Instant Payouts (Money lands instantly)</p>
                                 </div>
                                 <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }} />
                                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
@@ -759,9 +774,9 @@ const LandingPage = () => {
                                      </div>
                                  </div>
                              </div>
-                         </div>
-                    </div>
-                    </div>
+                          </div>
+                     </div>
+                </div>
                 </motion.div>
             </section>
 
@@ -785,8 +800,8 @@ const LandingPage = () => {
                             { date: "SEPT '25", title: "Strategic Architecture", desc: "Core blueprinting of the Kredibly workspace and AI interface flow.", status: "completed" },
                             { date: "DEC '25", title: "Kreddy AI Core", desc: "Intelligence engine development. Teaching Kreddy to understand merchant slang and complex debts.", status: "completed" },
                             { date: "JAN '26", title: "Premium Platform UX", desc: "Rollout of smart telemetry, professional document generators, and cross-device syncing.", status: "done" },
-                            { date: "FEBRUARY - PRESENT", title: "Early Access Pioneer Program", desc: "Onboarding our first 1,000 pioneers. Lifetime status and exclusive rewards for active merchants.", status: "active", isFounding: true },
-                            { date: "JUNE 1ST", title: "Grand Launch", desc: "Opening the ecosystem for public merchant registration and global transactions.", status: "future" },
+                            { date: "JAN '26 - MAY '26", title: "Pioneer Program", desc: "Onboarding our first 1,000 pioneers. Lifetime status and exclusive rewards for our founding merchants.", status: "completed", isFounding: true },
+                            { date: "JUNE 1ST", title: "Public Launch", desc: "Opening the ecosystem for public merchant registration and global transactions. Kredibly goes live for everyone.", status: "active" },
                             { date: "Q3 2026", title: "Kredibly Mobile (Native)", desc: "Your entire business in your pocket. Offline-first, biometric security, and instant push intelligence.", status: "future", isMobile: true }
                         ].map((m, i) => (
                             <motion.div 

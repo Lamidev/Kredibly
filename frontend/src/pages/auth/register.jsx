@@ -13,17 +13,11 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  // Registration disabled until April 1st, 2026
-  const isRegistrationOpen = new Date() >= new Date('2026-04-01T00:00:00Z');
   const { registerUser } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!isRegistrationOpen) {
-      return toast.error("Registration opens April 1st. Please join the waitlist!");
-    }
 
     setLoading(true);
 
@@ -118,20 +112,20 @@ const Register = () => {
         <button
           type="submit"
           className="btn-primary"
-          disabled={loading || !isRegistrationOpen}
+          disabled={loading}
           style={{ 
               width: '100%', 
               height: '60px', 
               borderRadius: '16px', 
               fontSize: '1.1rem', 
               fontWeight: 700, 
-              background: isRegistrationOpen ? 'var(--primary)' : '#94A3B8',
+              background: 'var(--primary)',
               marginTop: '8px',
-              cursor: isRegistrationOpen ? 'pointer' : 'not-allowed',
-              boxShadow: isRegistrationOpen ? '0 10px 20px -5px var(--primary-glow)' : 'none' 
+              cursor: 'pointer',
+              boxShadow: '0 10px 20px -5px var(--primary-glow)' 
           }}
         >
-          {loading ? "Creating account..." : (isRegistrationOpen ? "Start Free Trial" : "Opens April 1st")}
+          {loading ? "Creating account..." : "Start Free Trial"}
         </button>
       </form>
 

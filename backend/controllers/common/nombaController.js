@@ -219,7 +219,10 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 const bankDetails = business.bankDetails;
                 if (!bankDetails?.bankCode || !bankDetails?.accountNumber) return;
 
-                const sweepAmount = Math.floor(creditAmount);
+                // 🛡️ SMART SWEEP: Calculate actual net of the amount paid
+                // We use calculateNetAmount to ensure we don't sweep more than what Nomba actually settled into our wallet.
+                const actualNet = FINANCIAL_CONFIG.calculateNetAmount(amount);
+                const sweepAmount = Math.floor(Math.min(creditAmount, actualNet));
 
                 const { initiateTransfer } = require('../../utils/nomba');
                 await initiateTransfer({
