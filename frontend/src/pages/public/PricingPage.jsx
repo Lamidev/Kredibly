@@ -103,7 +103,7 @@ const PricingPage = () => {
                             <span className="premium-gradient">Zero Hidden Fees.</span>
                         </h1>
                         <p style={{ fontSize: '1.25rem', color: '#64748B', marginBottom: '48px', maxWidth: '700px', margin: '0 auto 48px', fontWeight: 600 }}>
-                            Join during our Grand Launch and lock in <strong>subsidized rates</strong> forever. No hidden bank charges — we cover your ₦25 transfer fees.
+                            Join during our Grand Launch and lock in <strong>subsidized rates</strong> forever. No hidden bank charges — ZERO transfer fees on payouts.
                         </p>
                     </motion.div>
                 </div>
@@ -157,7 +157,7 @@ const PricingPage = () => {
                 
                 <div style={{ marginTop: '60px', textAlign: 'center', maxWidth: '800px', margin: '60px auto 0' }}>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#16A34A', fontWeight: 800, fontSize: '1rem', background: 'rgba(22, 163, 74, 0.05)', padding: '12px 24px', borderRadius: '100px' }}>
-                        <BadgeCheck size={20} /> WE COVER YOUR BANK CHARGES — No ₦25 transfer fees on payouts.
+                        <BadgeCheck size={20} /> WE COVER YOUR BANK CHARGES — Zero transfer fees on payouts.
                     </div>
                 </div>
             </section>

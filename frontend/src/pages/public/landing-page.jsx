@@ -235,7 +235,7 @@ const LandingPage = () => {
                         letterSpacing: '-0.04em',
                         marginBottom: '32px'
                     }}>
-                        <span style={{ display: 'block', marginBottom: '16px' }}>Stop chasing money.</span>
+                        <span style={{ display: 'block', marginBottom: '16px' }}>Send invoices. Get paid.</span>
                         <div style={{ 
                             color: 'var(--primary)', 
                             position: 'relative', 
@@ -244,13 +244,15 @@ const LandingPage = () => {
                             alignItems: 'center', 
                             justifyContent: 'center',
                             width: '100%',
-                            fontSize: 'clamp(2.1rem, 8vw, 5.5rem)',
-                            overflow: 'hidden'
+                            fontSize: 'clamp(1.5rem, 6vw, 5.5rem)',
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap'
                         }}>
                              <Typewriter phrases={[
-                                "Ditch the notebooks.",
-                                "Get paid 3x faster.",
-                                "Do business better."
+                                "In 20 seconds.",
+                                "Automatically.",
+                                "With Kreddy AI.",
+                                "On autopilot."
                             ]} />
                         </div>
                     </h1>
@@ -263,13 +265,13 @@ const LandingPage = () => {
                         lineHeight: 1.6,
                         fontWeight: 400,
                     }}>
-                        You have a business to run. Let Kreddy handle the records. 
-                        Plan your day, track what you're owed, send professional invoices, and get paid instantly, all inside your WhatsApp.
+                        Send professional invoices, get paid instantly to your bank account, and let Kreddy AI recover your debts automatically. 
+                        The smartest way to run your business from WhatsApp.
                     </p>
 
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
                         <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                            <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', fontSize: '1.2rem', borderRadius: '100px' }}>Try Chairman Free for 14 Days <ArrowRight size={20} /></button>
+                            <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', fontSize: '1.2rem', borderRadius: '100px' }}>Start billing professionally <ArrowRight size={20} /></button>
                             <button onClick={() => scrollToSection('how-it-works')} className="btn-secondary" style={{ padding: '20px 48px', fontSize: '1.2rem', borderRadius: '100px', background: 'white', color: 'var(--primary)', borderColor: 'var(--primary)' }}>Meet Kreddy AI</button>
                         </div>
                         <div style={{ 
@@ -295,6 +297,7 @@ const LandingPage = () => {
                     </div>
                 </motion.div>
             </header>
+            
             </section>
 
             {/* 2. Bento Grid Section - Repositioned for Personal Assistant + Ledger */}
@@ -302,12 +305,12 @@ const LandingPage = () => {
                 <div className="bento-grid" style={{ maxWidth: '1400px', margin: '0 auto' }}>
                     <div className="bento-item bento-1" style={{ background: '#F8FAFC', position: 'relative', overflow: 'hidden' }}>
                         <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                            <h3 style={{ fontSize: '2.2rem', fontWeight: 900, marginBottom: '16px', letterSpacing: '-0.03em' }}>The Verified Hub</h3>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '1.15rem', lineHeight: 1.6, fontWeight: 500 }}>
-                                Stop the arguments. Your business is verified when you use Kredibly. Every receipt carries a professional seal that tells customers your records are secure and untamperable.
+                            <h4 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '12px' }}>The Verified Hub</h4>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', fontWeight: 500 }}>
+                                Your business is verified. Every Kredibly receipt carries a professional seal proving your records are secure and untamperable.
                             </p>
                         </div>
-                        <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.05 }}><ShieldCheck size={260} color="var(--primary)" /></div>
+                        <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.05 }}><ShieldCheck size={200} color="var(--primary)" /></div>
                     </div>
 
                     <div className="bento-item bento-2" style={{ background: 'linear-gradient(135deg, #0F172A, #1E1B4B)', color: 'white' }}>
@@ -320,8 +323,8 @@ const LandingPage = () => {
 
                     <div className="bento-item bento-3" style={{ background: 'white', position: 'relative', overflow: 'hidden' }}>
                         <div style={{ position: 'relative', zIndex: 2 }}>
-                            <h4 style={{ fontSize: '1.3rem', fontWeight: 900, marginBottom: '12px' }}>Identity Guard</h4>
-                            <p style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 600 }}>Secure BVN-matching ensures every merchant is legitimate. Bank-grade security for peace of mind.</p>
+                            <h4 style={{ fontSize: '1.3rem', fontWeight: 900, marginBottom: '12px' }}>Smart AI Reconciliation</h4>
+                            <p style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 600 }}>Forward your bank slips to Kreddy. She matches them to invoices and updates your ledger automatically.</p>
                         </div>
                         <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.05 }}><Lock size={200} color="#7C3AED" /></div>
                     </div>
@@ -360,22 +363,30 @@ const LandingPage = () => {
                                         <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'white' }}>K</div>
                                         <div><p style={{ fontSize: '0.95rem', fontWeight: 900 }}>KreddyAI</p><p style={{ fontSize: '0.65rem', opacity: 0.8 }}>Business Assistant</p></div>
                                     </div>
-                                    <div style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    <div style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
+                                        {/* Step 1: Voice Note */}
                                         <div style={{ alignSelf: 'flex-end', background: '#DCF8C6', padding: '16px', borderRadius: '16px 0 16px 16px', fontSize: '0.85rem', color: '#111', fontWeight: 500, maxWidth: '85%' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                                                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#128C7E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Mic size={20} color="white" /></div>
                                                 <div style={{ width: '120px', height: '6px', background: 'rgba(18, 140, 126, 0.3)', borderRadius: '3px' }} />
                                             </div>
-                                            <p style={{ margin: '0', opacity: 0.7, fontSize: '0.75rem', fontStyle: 'italic' }}>"Kreddy, Chima bought 5 shirts for 20k each, he paid 50k deposit. Prepare the invoice and a thank you message."</p>
+                                            <p style={{ margin: '0', opacity: 0.7, fontSize: '0.75rem', fontStyle: 'italic' }}>"Kreddy, I just sold a laptop to Emeka for ₦300k. Send him the invoice link."</p>
                                         </div>
-                                        <div style={{ alignSelf: 'flex-start', background: 'white', padding: '16px', borderRadius: '0 16px 16px 16px', fontSize: '0.85rem' }}>
+                                        {/* Step 2: Invoice Created */}
+                                        <div style={{ alignSelf: 'flex-start', background: 'white', padding: '16px', borderRadius: '0 16px 16px 16px', fontSize: '0.85rem', maxWidth: '85%' }}>
                                             <p style={{ color: 'var(--primary)', fontWeight: 900, fontSize: '0.75rem', marginBottom: '6px' }}>Kreddy Assistant</p>
-                                            <p style={{ fontWeight: 600, lineHeight: 1.5 }}>
-                                                Got it, Boss! 🫡<br /><br />
-                                                🛍️ <b>Drafted Invoice:</b> Chima (₦100k total, ₦50k balance)<br />
-                                                ✍️ <b>Message Draft:</b> "Hi Chima, thanks for shopping! Here is your receipt. Balance due: ₦50,000."<br /><br />
-                                                <b>Click below to share:</b><br />
-                                                [Share Link to WhatsApp]
+                                            <p style={{ fontWeight: 600, lineHeight: 1.5, margin: 0 }}>
+                                                Done! Invoice created. 📄<br /><br />
+                                                🔗 <b>Payment Link:</b> pay.kredibly.com/emeka
+                                            </p>
+                                        </div>
+                                        {/* Step 3: Payment Alert */}
+                                        <div style={{ alignSelf: 'flex-start', background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '16px', borderRadius: '0 16px 16px 16px', fontSize: '0.85rem', maxWidth: '85%', marginTop: '8px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#10B981', fontWeight: 800 }}>
+                                                <Zap size={16} /> Instant Payout Alert
+                                            </div>
+                                            <p style={{ fontWeight: 600, lineHeight: 1.5, margin: 0 }}>
+                                                Emeka just paid! ₦300,000 has been sent to your GTBank account. 💸
                                             </p>
                                         </div>
                                     </div>
@@ -390,7 +401,7 @@ const LandingPage = () => {
                                     { icon: Mic, title: "Speak, don't type.", desc: "Send Kreddy a voice note. She handles the math, records the sale, and drafts the professional responses for you." },
                                     { icon: Smartphone, title: "You Send, She Drafts.", desc: "Keep the personal touch. Kreddy prepares the perfect messages, and you send them personally to your customers." },
                                     { icon: Zap, title: "Instant Bank Settlements", desc: "Your money hits your bank account the second a customer pays. No 24-hour waiting games." },
-                                    { icon: BadgeCheck, title: "Zero Bank Charges", desc: "We cover the ₦25 transfer fees on all your payouts. Keep 100% of your earnings." },
+                                    { icon: BadgeCheck, title: "Zero Bank Charges", desc: "ZERO TRANSFER FEES. We cover your bank charges on all your payouts. Keep 100% of your earnings." },
                                     { icon: Clock, title: "8 AM Business Briefing", desc: "Wake up to a morning briefing on WhatsApp. Who owes you, who paid, and what your day looks like." }
                                 ].map((item, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '28px' }}>
@@ -402,6 +413,71 @@ const LandingPage = () => {
                         </div>
                     </div>
                 </div>
+            </section>
+
+            {/* 3.5. ROI SECTION - The Cost of Doing Nothing */}
+            <section id="roi" style={{ padding: 'clamp(4rem, 10vw, 8rem) 24px', background: '#020617', color: 'white', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 2 }}>
+                    <div style={{ display: 'inline-block', padding: '8px 20px', borderRadius: '100px', background: 'rgba(124, 58, 237, 0.1)', color: '#A78BFA', fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.1em', marginBottom: '24px' }}>THE COST OF DOING NOTHING</div>
+                    <h2 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900, letterSpacing: '-0.04em', marginBottom: '24px' }}>How much are you losing?</h2>
+                    <p style={{ color: '#94A3B8', fontSize: '1.2rem', fontWeight: 500, maxWidth: '700px', margin: '0 auto 60px' }}>Traditional payment gateways charge you 1.5% and hold your money for 24 hours. Small debts go forgotten. Here is the Kredibly difference.</p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0', textAlign: 'left', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        {/* Traditional */}
+                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRight: '1px solid rgba(255,255,255,0.1)' }}>
+                            <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#64748B', marginBottom: '32px', textAlign: 'center' }}>Without Kredibly</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                    <div style={{ color: '#EF4444' }}>✕</div>
+                                    <p style={{ margin: 0, fontWeight: 600, color: '#CBD5E1', flex: 1 }}>High Fees (1.5% + ₦100 per transfer)</p>
+                                </div>
+                                <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }} />
+                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                    <div style={{ color: '#EF4444' }}>✕</div>
+                                    <p style={{ margin: 0, fontWeight: 600, color: '#CBD5E1', flex: 1 }}>24-Hour Settlement Delays (T+1)</p>
+                                </div>
+                                <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }} />
+                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                    <div style={{ color: '#EF4444' }}>✕</div>
+                                    <p style={{ margin: 0, fontWeight: 600, color: '#CBD5E1', flex: 1 }}>Manual Bank Alert Checking</p>
+                                </div>
+                                <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }} />
+                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                    <div style={{ color: '#EF4444' }}>✕</div>
+                                    <p style={{ margin: 0, fontWeight: 600, color: '#CBD5E1', flex: 1 }}>Forgotten Debts & Unpaid Invoices</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Kredibly */}
+                        <div style={{ background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(124, 58, 237, 0.05))', padding: '40px', position: 'relative' }}>
+                            <div style={{ position: 'absolute', top: '15px', right: '15px', background: 'var(--primary)', color: 'white', padding: '4px 12px', borderRadius: '100px', fontSize: '0.65rem', fontWeight: 900 }}>ROI MULTIPLIER</div>
+                            <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'white', marginBottom: '32px', textAlign: 'center' }}>With Kredibly</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                    <div style={{ color: '#10B981' }}><Check size={20} /></div>
+                                    <p style={{ margin: 0, fontWeight: 700, color: 'white', flex: 1 }}>Subsidized Gateway (Zero Transfer Fees)</p>
+                                </div>
+                                <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }} />
+                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                    <div style={{ color: '#10B981' }}><Check size={20} /></div>
+                                    <p style={{ margin: 0, fontWeight: 700, color: 'white', flex: 1 }}>Instant Payouts (Money lands in 20s)</p>
+                                </div>
+                                <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }} />
+                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                    <div style={{ color: '#10B981' }}><Check size={20} /></div>
+                                    <p style={{ margin: 0, fontWeight: 700, color: 'white', flex: 1 }}>AI Slip Matching (Ledger auto-updates)</p>
+                                </div>
+                                <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }} />
+                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                    <div style={{ color: '#10B981' }}><Check size={20} /></div>
+                                    <p style={{ margin: 0, fontWeight: 700, color: 'white', flex: 1 }}>Automated Debt Recovery AI</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style={{ position: 'absolute', bottom: '-20%', left: '-10%', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(124, 58, 237, 0.15) 0%, transparent 70%)', filter: 'blur(120px)', zIndex: 0 }} />
             </section>
 
             {/* 4. PRICING SECTION - Updated for Success-Fee Model */}

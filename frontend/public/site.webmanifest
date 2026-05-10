@@ -1,7 +1,7 @@
 {
-  "name": "Kredibly - Smart Business Partner",
+  "name": "Kredibly | Instant Settlement & Debt Recovery",
   "short_name": "Kredibly",
-  "description": "Never forget who owes you money. Track sales and send invoices, and recieve payment on WhatsApp.",
+  "description": "Send professional invoices, get paid instantly to your bank, and recover debts automatically on WhatsApp.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#4C1D95",

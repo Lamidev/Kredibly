@@ -21,10 +21,10 @@
     <meta name="mobile-web-app-capable" content="yes" />
 
     <!-- Primary Meta Tags -->
-    <title>Kredibly — The AI Business OS for Nigerian Merchants</title>
-    <meta name="title" content="Kredibly — The AI Business OS for Nigerian Merchants" />
-    <meta name="description" content="Your AI Chief of Staff on WhatsApp. Kredibly & Kreddy AI track your sales, send debt reminders, generate invoices, and manage your daily schedule — all through voice notes, photos, or chat. Built for Nigerian merchants." />
-    <meta name="keywords" content="whatsapp invoicing nigeria, sales tracker nigeria, debt collection app, kreddy ai assistant, digital business ledger, collect debts whatsapp, small business productivity, voice note sales recording, kredibly" />
+    <title>Kredibly | AI Invoicing, Instant Payouts & Automated Debt Recovery</title>
+    <meta name="title" content="Kredibly | AI Invoicing, Instant Payouts & Automated Debt Recovery" />
+    <meta name="description" content="Stop waiting 24 hours for your money. Send professional invoices, get paid instantly to your bank, and let Kreddy AI handle your debt recovery on WhatsApp. Join 1,000+ merchants scaling with the smartest business assistant in Africa." />
+    <meta name="keywords" content="instant settlement nigeria, whatsapp invoicing, automated debt recovery, kreddy ai assistant, bank slip matching, zero fee payouts, nigerian sme fintech, business assistant whatsapp" />
     <meta name="author" content="Kredibly" />
     <meta name="theme-color" content="#4C1D95" />
     <meta name="robots" content="index, follow" />
@@ -34,22 +34,22 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://usekredibly.com/" />
-    <meta property="og:title" content="Kredibly | Track Sales, Collect Debts & Invoice on WhatsApp" />
-    <meta property="og:description" content="Your AI Chief of Staff on WhatsApp. Track sales, collect debts, generate invoices & manage your daily schedule — all via voice, photo or chat. Built for Nigerian merchants." />
+    <meta property="og:title" content="Kredibly | Get Paid Instantly & Recover Debts on WhatsApp" />
+    <meta property="og:description" content="Stop waiting 24 hours for your money. Send professional invoices, get paid instantly to your bank, and let Kreddy AI handle your debt recovery on WhatsApp." />
     <meta property="og:image" content="https://usekredibly.com/krediblyoriginal.jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Kredibly - AI Business Assistant for Nigerian Merchants on WhatsApp" />
+    <meta property="og:image:alt" content="Kredibly - AI Invoicing & Instant Settlement for Nigerian Merchants" />
     <meta property="og:site_name" content="Kredibly" />
     <meta property="og:locale" content="en_NG" />
 
     <!-- Twitter Card -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content="https://usekredibly.com/" />
-    <meta property="twitter:title" content="Kredibly | Track Sales, Collect Debts & Invoice on WhatsApp" />
-    <meta property="twitter:description" content="Your AI Chief of Staff on WhatsApp. Track sales, send debt reminders, generate invoices & manage your schedule via voice or chat. Built for Nigerian merchants." />
+    <meta property="twitter:title" content="Kredibly | Get Paid Instantly & Recover Debts on WhatsApp" />
+    <meta property="twitter:description" content="Stop waiting 24 hours for your money. Professional invoices + Instant Bank Settlement + Automated Debt Recovery on WhatsApp." />
     <meta property="twitter:image" content="https://usekredibly.com/krediblyoriginal.jpeg" />
-    <meta property="twitter:image:alt" content="Kredibly - AI Business Assistant for Nigerian Merchants on WhatsApp" />
+    <meta property="twitter:image:alt" content="Kredibly - AI Invoicing & Instant Settlement for Nigerian Merchants" />
 
     <!-- Verification -->
     <meta name="facebook-domain-verification" content="2s0jt80h2mu4iv9nt4dbvkriibdva2" />
@@ -287,10 +287,10 @@
     </noscript>
 
     <!-- Premium Splash Screen (Visible before React hydrates) -->
-    <div id="loading-screen" style="position: fixed; inset: 0; background: #4C1D95; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.5s ease-out;">
+    <div id="loading-screen" style="position: fixed; inset: 0; background: linear-gradient(135deg, #4C1D95, #2E1065); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.5s ease-out;">
       <style>
         @keyframes pulse-logo {
-          0%, 100% { transform: scale(1); opacity: 0.8; }
+          0%, 100% { transform: scale(1); opacity: 0.9; }
           50% { transform: scale(1.05); opacity: 1; }
         }
         @keyframes shimmer {
@@ -298,31 +298,17 @@
           100% { background-position: 200% 0; }
         }
         .splash-logo {
-          width: 80px;
+          width: 140px;
           height: auto;
-          margin-bottom: 24px;
-          animation: pulse-logo 2s infinite ease-in-out;
-        }
-        .splash-text {
-          color: white;
-          font-family: 'Outfit', sans-serif;
-          font-weight: 800;
-          font-size: 24px;
-          letter-spacing: -0.02em;
-          margin-bottom: 8px;
-        }
-        .splash-sub {
-          color: rgba(255, 255, 255, 0.6);
-          font-family: 'Inter', sans-serif;
-          font-size: 14px;
-          font-weight: 500;
+          margin-bottom: 32px;
+          animation: pulse-logo 2.5s infinite ease-in-out;
+          filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));
         }
         .loader-bar {
           width: 140px;
-          height: 3px;
+          height: 4px;
           background: rgba(255, 255, 255, 0.1);
           border-radius: 100px;
-          margin-top: 24px;
           overflow: hidden;
           position: relative;
         }
@@ -332,14 +318,12 @@
           left: 0;
           width: 100%;
           height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
           background-size: 200% 100%;
           animation: shimmer 1.5s infinite linear;
         }
       </style>
       <img src="/krediblyrevamped.png" alt="Kredibly" class="splash-logo" onerror="this.src='/favicon-32x32.png'">
-      <div class="splash-text">Kredibly</div>
-      <div class="splash-sub">Opening your business command center...</div>
       <div class="loader-bar">
         <div class="loader-progress"></div>
       </div>
