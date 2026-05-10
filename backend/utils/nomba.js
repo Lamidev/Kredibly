@@ -348,8 +348,8 @@ const initiateTransfer = async ({ amount, bankCode, accountNumber, accountName, 
                 bankCode: nombaBankCode,
                 accountNumber,
                 accountName,
-                narration: narration || 'Kredibly Invoice Settlement',
-                senderName: 'Kredibly',
+                narration: String(narration || 'Kredibly Settlement').substring(0, 25).toUpperCase(),
+                senderName: 'AKINBYTE',
                 feeBearer: 'ACCOUNT', // 🛡️ KREDIBLY COVERS THE TRANSFER FEE
                 merchantTxRef: `KREDSWEEP_${Date.now()}_${Math.floor(Math.random() * 9999)}`
             },

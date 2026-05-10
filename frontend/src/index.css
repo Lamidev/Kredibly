@@ -364,7 +364,7 @@ body.lock-scroll {
   box-shadow: var(--shadow-premium);
 }
 
-.bento-1 { grid-column: span 2; grid-row: span 2; }
+.bento-1 { grid-column: span 2; grid-row: span 1; }
 .bento-2 { grid-column: span 2; grid-row: span 1; }
 .bento-3 { grid-column: span 1; grid-row: span 1; }
 .bento-4 { grid-column: span 1; grid-row: span 1; }
@@ -803,6 +803,21 @@ body.lock-scroll {
 @media (min-width: 1024px) {
   .lg\:hidden {
     display: none !important;
+  }
+}
+
+/* Dashboard Main Grid — 2-col desktop, 1-col mobile */
+.dashboard-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-main-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

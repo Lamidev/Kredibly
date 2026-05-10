@@ -227,7 +227,7 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                     bankCode: bankDetails.bankCode,
                     accountNumber: bankDetails.accountNumber,
                     accountName: bankDetails.accountName || business.displayName,
-                    narration: `Kredibly Settlement #${sale.invoiceNumber}`
+                    narration: `KREDIBLY/${sale.invoiceNumber.replace('KR-', '')}`
                 });
 
                 console.log(`✅ Auto-Sweep SUCCESS for ${business.displayName}: ₦${sweepAmount} settled.`);

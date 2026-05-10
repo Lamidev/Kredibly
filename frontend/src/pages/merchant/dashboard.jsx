@@ -300,7 +300,7 @@ const Dashboard = () => {
                         <ArrowUpRight size={18} color="var(--warning)" />
                     </div>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Cash Outside</p>
-                    <h2 style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--warning)', letterSpacing: '-0.03em' }}>
+                    <h2 style={{ fontSize: '2rem', fontWeight: 900, color: '#DC2626', letterSpacing: '-0.03em' }}>
                         ₦{stats?.outstanding?.toLocaleString() || 0}
                     </h2>
                 </motion.div>
@@ -400,14 +400,14 @@ const Dashboard = () => {
             </motion.div>
 
             <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', 
-                gap: '20px', 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                gap: '24px', 
                 width: '100%',
                 boxSizing: 'border-box'
-            }} className="dashboard-main-grid">
+            }}>
                 {/* Left Column: Priority Collection */}
-                <div>
+                <div style={{ flex: '1 1 500px', minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px', paddingRight: '4px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text)', margin: 0 }}>Recovery Queue</h3>
@@ -522,7 +522,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Right Column: Sidebar Widgets */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div style={{ flex: '1 1 300px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     {/* Kreddy AI Status Card */}
                     {!profile?.whatsappNumber ? (
                         <div className="dashboard-glass" style={{ padding: '24px', borderRadius: '28px', background: 'white', border: '1px solid var(--primary)' }}>

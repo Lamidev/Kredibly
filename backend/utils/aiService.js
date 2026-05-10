@@ -86,6 +86,8 @@ INTENTS:
 23. "check_performance": When the user asks "how much did I make today?", "any payments today?", "daily summary", "what is my today revenue?".
     - CRITICAL: ALWAYS include "targetDate" (yesterday, today, or ISO date) for this intent. If not specified, assume "today".
 
+24. "match_bank_slip": When the user uploads a bank transfer receipt/screenshot. Extract the exact sender name, amount, and reference to suggest a match.
+
 NAME CORRECTIONS:
 - If a user says "No, the name is [Name]" or "I meant [Name]", use "update_record" intent.
 - Capture the old name in "customerName" and the correct one in "newName".
@@ -123,11 +125,16 @@ REQUIRED JSON OUTPUT:
   }
 }
 
-VISION RULES:
-- If the image is a Bank Transfer Confirmation (Bank Logo, "Transfer Successful", "Sender"): set documentType to "bank_transfer" and Intent to "update_record".
-- If the image is a Store Receipt/Invoice (List of items, handwritten total, "Bag of Rice"): set documentType to "bill_invoice" and Intent to "create_sale".
-- DO NOT create a new sale from a Bank Transfer receipt.
-- DO NOT update a record (payment) from a Store Receipt/Invoice unless it explicitly says "PAID" with a customer name.
+VISION RULES (CRITICAL FOR IMAGE PROCESSING):
+- Bank Slip (Bank Logo, "Successful", "Sender", "Recipient"):
+  * Intent MUST BE "match_bank_slip". (Do not use update_record, we must suggest the match first).
+  * Extract "sourceAccountName" EXACTLY as it appears.
+  * Extract "paidAmount" as a number.
+  * DO NOT create a new sale. Set documentType to "bank_transfer".
+- Store Receipt/Invoice (List of items, total, paper):
+  * Intent MUST BE "create_sale".
+  * Extract "customerName", "totalAmount", and "item".
+  * Set documentType to "bill_invoice".
 
 Example 1: "Activate my chairman trial via transfer"
 Output: { "intent": "pay_subscription", "data": { "plan": "chairman", "method": "transfer", "reply": "Excellent! I'll generate the ₦500 transfer link for your trial now! 🛡️" } }

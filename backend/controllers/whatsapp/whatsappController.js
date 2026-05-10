@@ -1660,104 +1660,112 @@ Upgrade here: ${APP_URL}/pricing`);
                      aiResponseItem.intent = "create_sale";
                  }
 
-                  if (!isProcessed && aiResponseItem.intent === "update_record" && aiResponseItem.sourceAccountName && plan === 'chairman') {
-                    console.log(`🧠 Chairman Smart Triage Active for: ${aiResponseItem.sourceAccountName}`);
-                    
-                    const potentialSales = await Sale.find({
-                        businessId: profile._id,
-                        status: { $ne: "paid" }
-                    }).sort({ updatedAt: -1 }).limit(10);
+            }
 
-                    if (potentialSales.length > 0) {
-                        const scoredSales = potentialSales.map(sale => {
-                            let score = 0;
-                            const balance = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-                            
-                            // 1. Amount Match (+40)
-                            if (balance === aiResponseItem.data.paidAmount) score += 40;
-                            
-                            // 2. Exact Name Alias (+100 - Instant Winner)
-                            // (We'll check for aliases in a moment, but if direct customer name matches sourceAccountName)
-                            if (sale.customerName.toLowerCase() === aiResponseItem.sourceAccountName.toLowerCase()) score += 100;
+            // 1.5. MATCH BANK SLIP (Suggestion, Not Assumption)
+            if (!isProcessed && aiResponseItem && aiResponseItem.intent === "match_bank_slip" && aiResponseItem.sourceAccountName) {
+                console.log(`🧠 Bank Slip Triage Active for: ${aiResponseItem.sourceAccountName}`);
+                
+                let targetCustomerName = null;
+                
+                // Check if we have an alias learned for this exact source name
+                const alias = await CustomerAlias.findOne({ businessId: profile._id, sourceName: aiResponseItem.sourceAccountName.trim() });
+                if (alias) {
+                    targetCustomerName = alias.targetName;
+                }
+                
+                const potentialSales = await Sale.find({
+                    businessId: profile._id,
+                    status: { $ne: "paid" }
+                }).sort({ updatedAt: -1 }).limit(10);
 
-                            // 3. Session Context (+30)
-                            if (session?.data?.customerName === sale.customerName) score += 30;
+                if (potentialSales.length > 0) {
+                    const scoredSales = potentialSales.map(sale => {
+                        let score = 0;
+                        const balance = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
+                        
+                        // 1. Alias Match (+100 - Instant Winner)
+                        if (targetCustomerName && sale.customerName === targetCustomerName) score += 100;
+                        
+                        // 2. Amount Match (+40)
+                        if (balance === aiResponseItem.data.paidAmount) score += 40;
+                        
+                        // 3. Exact Name Match (Fallback)
+                        if (sale.customerName.toLowerCase() === aiResponseItem.sourceAccountName.toLowerCase()) score += 100;
 
-                            // 4. View Recency (+25)
-                            if (sale.lastOpenedAt) {
-                                const hoursSinceView = (new Date() - new Date(sale.lastOpenedAt)) / (1000 * 60 * 60);
-                                if (hoursSinceView < 2) score += 25;
-                                else if (hoursSinceView < 24) score += 10;
-                            }
+                        // 4. Session Context (+30)
+                        if (session?.data?.customerName === sale.customerName) score += 30;
 
-                            // 5. Remark/Memo Match (+50)
-                            if (aiResponseItem.bankReference) {
-                                const ref = aiResponseItem.bankReference.toLowerCase();
-                                if (ref.includes(sale.customerName.toLowerCase())) score += 50;
-                                if (sale.description && ref.includes(sale.description.toLowerCase())) score += 40;
-                            }
-
-                            return { sale, score };
-                        });
-
-                        // Sort by highest score
-                        scoredSales.sort((a, b) => b.score - a.score);
-                        const bestMatch = scoredSales[0];
-
-                        console.log(`🎯 Best Match: ${bestMatch.sale.customerName} (Score: ${bestMatch.score})`);
-
-                        if (bestMatch.score >= 40) {
-                            // ALWAYS ASK FOR CONFIDENCE (Chairman Safety Lock)
-                            const sale = bestMatch.sale;
-                            await WhatsAppSession.findOneAndUpdate(
-                                { whatsappNumber: cleanFrom },
-                                {
-                                    type: 'alias_confirmation',
-                                    data: {
-                                        saleId: sale._id,
-                                        customerName: sale.customerName,
-                                        sourceName: aiResponseItem.sourceAccountName,
-                                        paidAmount: aiResponseItem.data.paidAmount
-                                    },
-                                    expiresAt: new Date(Date.now() + 5 * 60 * 1000)
-                                },
-                                { upsert: true }
-                            );
-                            
-                            let tip = "";
-                            if (bestMatch.score >= 100) tip = "The name matches perfectly.";
-                            else if (aiResponseItem.bankReference) tip = `The memo says *"${aiResponseItem.bankReference}"*.`;
-                            else tip = `They recently viewed their invoice.`;
-
-                            await sendReply(from, `🧐 *Match Found, ${bossTitle}!* \n\nI catch a ₦${aiResponseItem.data.paidAmount.toLocaleString()} transfer from *"${aiResponseItem.sourceAccountName}"*. \n\n${tip} Is this for *${sale.customerName}*? 🛡️`);
-                            isProcessed = true;
-                        } else {
-                            // MULTI-CHOICE TRIAGE
-                            let msg = `🧐 *Mystery Payment Detected, ${bossTitle}!* \n\nI catch the ₦${aiResponseItem.data.paidAmount.toLocaleString()} transfer from *"${aiResponseItem.sourceAccountName}"*, but I don't recognize the name. \n\nWho should I credit this to?\n\n`;
-                            potentialSales.slice(0, 5).forEach((s, i) => {
-                                const bal = s.totalAmount - s.payments.reduce((sum,p)=>sum+p.amount, 0);
-                                msg += `${i+1}. *${s.customerName}* (Owes ₦${bal.toLocaleString()})\n`;
-                            });
-                            msg += `\n_Reply with the Number (1-5) or Name!_ 🫡`;
-
-                            await WhatsAppSession.findOneAndUpdate(
-                                { whatsappNumber: cleanFrom },
-                                {
-                                    type: 'manual_alias_tagging',
-                                    data: {
-                                        sourceName: aiResponseItem.sourceAccountName,
-                                        paidAmount: aiResponseItem.data.paidAmount,
-                                        options: potentialSales.slice(0, 5).map(s => ({ id: s._id, name: s.customerName }))
-                                    },
-                                    expiresAt: new Date(Date.now() + 5 * 60 * 1000)
-                                },
-                                { upsert: true }
-                            );
-                            await sendReply(from, msg);
-                            isProcessed = true;
+                        // 5. Remark/Memo Match (+50)
+                        if (aiResponseItem.bankReference) {
+                            const ref = aiResponseItem.bankReference.toLowerCase();
+                            if (ref.includes(sale.customerName.toLowerCase())) score += 50;
+                            if (sale.description && ref.includes(sale.description.toLowerCase())) score += 40;
                         }
+
+                        return { sale, score };
+                    });
+
+                    // Sort by highest score
+                    scoredSales.sort((a, b) => b.score - a.score);
+                    const bestMatch = scoredSales[0];
+
+                    console.log(`🎯 Best Match: ${bestMatch.sale.customerName} (Score: ${bestMatch.score})`);
+
+                    if (bestMatch.score >= 40) {
+                        // ALWAYS ASK FOR CONFIDENCE (Suggestion, Not Assumption Policy)
+                        const sale = bestMatch.sale;
+                        await WhatsAppSession.findOneAndUpdate(
+                            { whatsappNumber: cleanFrom },
+                            {
+                                type: 'alias_confirmation',
+                                data: {
+                                    saleId: sale._id,
+                                    customerName: sale.customerName,
+                                    sourceName: aiResponseItem.sourceAccountName,
+                                    paidAmount: aiResponseItem.data.paidAmount
+                                },
+                                expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+                            },
+                            { upsert: true }
+                        );
+                        
+                        let tip = "";
+                        if (bestMatch.score >= 100) tip = targetCustomerName ? "I remember you linked this name before!" : "The name matches perfectly.";
+                        else if (aiResponseItem.bankReference) tip = `The memo says *"${aiResponseItem.bankReference}"*.`;
+                        else tip = `They have an unpaid balance matching this amount.`;
+
+                        await sendReply(from, `🧐 *Match Found, ${bossTitle}!* \n\nI catch a ₦${aiResponseItem.data.paidAmount.toLocaleString()} transfer from *"${aiResponseItem.sourceAccountName}"*. \n\n${tip} Is this for *${sale.customerName}*? 🛡️`);
+                        isProcessed = true;
+                    } else {
+                        // MULTI-CHOICE TRIAGE
+                        let msg = `🧐 *Mystery Payment Detected, ${bossTitle}!* \n\nI catch the ₦${aiResponseItem.data.paidAmount.toLocaleString()} transfer from *"${aiResponseItem.sourceAccountName}"*, but I don't recognize the name. \n\nWho should I credit this to?\n\n`;
+                        potentialSales.slice(0, 5).forEach((s, i) => {
+                            const bal = s.totalAmount - s.payments.reduce((sum,p)=>sum+p.amount, 0);
+                            msg += `${i+1}. *${s.customerName}* (Owes ₦${bal.toLocaleString()})\n`;
+                        });
+                        msg += `\n_Reply with the Number (1-5) or Name!_ 🫡`;
+
+                        await WhatsAppSession.findOneAndUpdate(
+                            { whatsappNumber: cleanFrom },
+                            {
+                                type: 'manual_alias_tagging',
+                                data: {
+                                    sourceName: aiResponseItem.sourceAccountName,
+                                    paidAmount: aiResponseItem.data.paidAmount,
+                                    options: potentialSales.slice(0, 5).map(s => ({ id: s._id, name: s.customerName }))
+                                },
+                                expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+                            },
+                            { upsert: true }
+                        );
+                        await sendReply(from, msg);
+                        isProcessed = true;
                     }
-                 }
+                } else {
+                    await sendReply(from, `🧐 I catch a ₦${aiResponseItem.data.paidAmount.toLocaleString()} transfer from *"${aiResponseItem.sourceAccountName}"*, but you have no active unpaid invoices to match it with!`);
+                    isProcessed = true;
+                }
             }
 
             // 2. CREATE SALE
