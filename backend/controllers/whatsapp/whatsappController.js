@@ -884,7 +884,7 @@ const handleIncoming = async (req, res) => {
         from = message.from;
         const messageId = message.id;
         const msgType = message.type;
-        const text = message.text?.body?.trim() || "";
+        const text = message.text?.body?.trim() || message.image?.caption?.trim() || message.document?.caption?.trim() || "";
         const whatsappProfileName = value?.contacts?.[0]?.profile?.name || "";
         
         console.log(`📩 Message from ${whatsappProfileName} (${from}): "${text}"`);
@@ -1604,7 +1604,8 @@ Upgrade here: ${APP_URL}/pricing`);
                         entityType: profile.entityType,
                         preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
                         debtors: debtorContext || "No active debtors yet.",
-                        businessInsight: businessInsight
+                        businessInsight: businessInsight,
+                        caption: text
                     });
 
                     if (aiResponse) {

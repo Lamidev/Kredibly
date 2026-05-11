@@ -368,11 +368,12 @@ const processImageWithAI = async (imageBuffer, mimeType, context = {}) => {
         - Tone: ${context.preferredTone || 'FRIENDLY'}
         - Debtors: ${context.debtors || 'None'}
         - Business Insight: ${context.businessInsight || 'New Merchant'}
+        - Caption/Note attached to image: ${context.caption || 'None'}
         - Current Time (WAT, UTC+1): ${watISO}
 
         ${SYSTEM_INSTRUCTION}
         
-        Task: Analyze this image (receipt, invoice, screenshot, etc.) and extract ALL relevant transaction details. If it's a receipt, extract amounts, items, and customer info. If it contains text with tasks or reminders, extract those too.
+        Task: Analyze this image (receipt, invoice, screenshot, etc.) and extract ALL relevant transaction details. If it's a receipt, extract amounts, items, and customer info. If the user provided a caption/note, USE IT to guide your extraction (e.g. if they say "record this for Shade", attribute the payment to Shade regardless of the name on the receipt).
         `;
 
         const result = await model.generateContent([
