@@ -39,8 +39,8 @@ const FINANCIAL_CONFIG = {
         }
 
         // 🎯 PROFESSIONAL ROUNDING: Always end with '0' for a clean invoice look (e.g., 5052 -> 5050)
-        // Any tiny deficit caused by rounding down is covered by Akinbyte's main balance.
-        return Math.round(gross / 10) * 10;
+        // We use ceil to ensure we cover all potential kobo fees.
+        return Math.ceil(gross / 10) * 10;
     },
 
     // Helper to calculate how much lands in the merchant's virtual wallet after DVA fees
@@ -51,7 +51,9 @@ const FINANCIAL_CONFIG = {
         
         // This is what lands in the Kredibly wallet and is swept instantly.
         const net = grossAmount - actualDvaFee;
-        return Math.floor(net);
+        
+        // Use round instead of floor to prevent ₦999.9 becoming ₦999
+        return Math.round(net);
     }
 };
 

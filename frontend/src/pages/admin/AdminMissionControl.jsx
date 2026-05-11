@@ -145,7 +145,7 @@ const AdminMissionControl = () => {
                 justifyContent: 'space-between', 
                 alignItems: 'center',
                 flexWrap: 'wrap',
-                gap: '20px'
+                gap: 'clamp(12px, 3vw, 20px)'
             }}>
                 <div style={{ flex: '1 1 300px' }}>
                     <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', fontWeight: 950, color: '#0F172A', letterSpacing: '-0.04em', margin: 0 }}>Mission Control</h1>
@@ -169,22 +169,22 @@ const AdminMissionControl = () => {
             </div>
 
             {/* STATUS HERO */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '32px' }}>
-                <div className="dashboard-glass" style={{ padding: '24px', borderRadius: '28px', background: 'white', border: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'clamp(12px, 3vw, 20px)', marginBottom: '32px' }}>
+                <div className="dashboard-glass" style={{ padding: 'clamp(16px, 4vw, 24px)', borderRadius: '28px', background: 'white', border: '1px solid #E2E8F0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <div style={{ padding: '10px', background: '#F0F9FF', borderRadius: '14px', color: '#0EA5E9' }}><Activity size={20} /></div>
                         <span style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A' }}>{stats.pending + stats.processing}</span>
                     </div>
                     <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Active Tasks</p>
                 </div>
-                <div className="dashboard-glass" style={{ padding: '24px', borderRadius: '28px', background: 'white', border: '1px solid #E2E8F0' }}>
+                <div className="dashboard-glass" style={{ padding: 'clamp(16px, 4vw, 24px)', borderRadius: '28px', background: 'white', border: '1px solid #E2E8F0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <div style={{ padding: '10px', background: '#ECFDF5', borderRadius: '14px', color: '#10B981' }}><CheckCircle2 size={20} /></div>
                         <span style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A' }}>{(stats.wa_sent || 0) + (stats.email_sent || 0)}</span>
                     </div>
                     <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Daily Success</p>
                 </div>
-                <div className="dashboard-glass" style={{ padding: '24px', borderRadius: '28px', background: 'white', border: '1px solid #E2E8F0' }}>
+                <div className="dashboard-glass" style={{ padding: 'clamp(16px, 4vw, 24px)', borderRadius: '28px', background: 'white', border: '1px solid #E2E8F0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <div style={{ padding: '10px', background: '#FEF2F2', borderRadius: '14px', color: '#EF4444' }}><AlertCircle size={20} /></div>
                         <span style={{ fontSize: '1.5rem', fontWeight: 900, color: '#EF4444' }}>{stats.failed}</span>
@@ -194,7 +194,7 @@ const AdminMissionControl = () => {
             </div>
 
             {/* KREDDY GROWTH ENGINE: Review & Approval Workflow */}
-            <div className="dashboard-glass" style={{ background: '#0F172A', borderRadius: '32px', border: '1px solid #1E293B', padding: '32px', marginBottom: '32px', position: 'relative', overflow: 'hidden' }}>
+            <div className="dashboard-glass" style={{ background: '#0F172A', borderRadius: '32px', border: '1px solid #1E293B', padding: 'clamp(16px, 5vw, 32px)', marginBottom: '32px', position: 'relative', overflow: 'hidden' }}>
                 {/* Visual Flair */}
                 <div style={{ position: 'absolute', top: '-100px', right: '-100px', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%)', filter: 'blur(40px)' }} />
                 
@@ -326,7 +326,7 @@ const AdminMissionControl = () => {
         </div>
 
             {/* UNIFIED FEED */}
-            <div className="dashboard-glass" style={{ background: 'white', borderRadius: '32px', border: '1px solid #E2E8F0', padding: '32px', minHeight: '600px' }}>
+            <div className="dashboard-glass" style={{ background: 'white', borderRadius: '32px', border: '1px solid #E2E8F0', padding: 'clamp(16px, 5vw, 32px)', minHeight: '600px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                     <h3 style={{ margin: 0, fontWeight: 950, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <Terminal size={22} color="var(--primary)" /> Platform Pulse Feed

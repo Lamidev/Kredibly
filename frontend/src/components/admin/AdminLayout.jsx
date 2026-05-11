@@ -90,29 +90,31 @@ const AdminLayout = () => {
               src="/krediblyrevamped.png"
               alt="Kredibly"
               style={{
-                height: "34px",
+                height: "26px",
                 width: "auto",
                 filter: "brightness(0) invert(1)",
                 flexShrink: 0,
               }}
             />
-            <span
-              style={{
-                background: "rgba(255, 255, 255, 0.1)",
-                color: "rgba(255, 255, 255, 0.6)",
-                fontSize: "8px",
-                fontWeight: 900,
-                padding: "2px 6px",
-                borderRadius: "4px",
-                textTransform: "uppercase",
-                letterSpacing: "0.1em",
-                border: "1px solid rgba(255,255,255,0.05)",
-                flexShrink: 0,
-              }}
-            >
-              Control
-            </span>
           </div>
+          {/* Mobile Close Button */}
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            style={{
+              position: "absolute",
+              top: "24px",
+              right: "16px",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: "12px",
+              color: "white",
+              padding: "8px",
+              cursor: "pointer",
+            }}
+            className="lg:hidden"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         <nav className="sidebar-nav" style={{ flex: 1 }}>
@@ -249,56 +251,44 @@ const AdminLayout = () => {
               <img
                 src="/krediblyrevamped.png"
                 alt="logo"
-                style={{ height: "34px" }}
-                className="lg:hidden"
+                style={{ height: "26px", flexShrink: 0 }}
               />
-              <h2
-                className="hidden sm:block"
-                style={{
-                  fontSize: "clamp(0.9rem, 4vw, 1.1rem)",
-                  fontWeight: 900,
-                  color: "#0F172A",
-                  margin: 0,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Command Center
-              </h2>
             </div>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <div
-              className="hidden sm:flex"
+              className="flex"
               style={{
                 alignItems: "center",
-                gap: "10px",
+                gap: "6px",
                 background: "#F1F5F9",
-                padding: "6px 12px",
-                borderRadius: "12px",
+                padding: "4px 10px",
+                borderRadius: "10px",
+                flexShrink: 0,
               }}
             >
               <div
                 className="pulse-dot"
                 style={{
-                  width: "8px",
-                  height: "8px",
+                  width: "6px",
+                  height: "6px",
                   background: "var(--success)",
                   borderRadius: "50%",
                   boxShadow: "0 0 10px var(--success)",
+                  flexShrink: 0,
                 }}
               ></div>
               <span
-                style={{ fontSize: "11px", fontWeight: 800, color: "#475569" }}
+                style={{ fontSize: "9px", fontWeight: 800, color: "#475569", whiteSpace: "nowrap" }}
               >
                 SYSTEM LIVE
               </span>
             </div>
-
             <div
               style={{
-                width: "40px",
-                height: "40px",
+                width: "38px",
+                height: "38px",
                 borderRadius: "12px",
                 background: "#0F172A",
                 color: "white",
@@ -306,9 +296,10 @@ const AdminLayout = () => {
                 alignItems: "center",
                 justifyContent: "center",
                 fontWeight: 900,
-                fontSize: "0.9rem",
+                fontSize: "0.85rem",
                 border: "2px solid white",
                 boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+                flexShrink: 0,
               }}
             >
               AD
@@ -443,7 +434,9 @@ const AdminLayout = () => {
                     box-shadow: 20px 0 50px rgba(0,0,0,0.2);
                 }
                 @media (max-width: 1024px) {
-                    .main-content-layout { margin-left: 0 !important; }
+                    .main-content-layout { margin-left: 0 !important; padding-left: 0 !important; }
+                    .top-header { height: 70px; padding: 0 16px; }
+                    .content-body { padding: 20px 16px; }
                 }
             `}</style>
     </div>

@@ -210,50 +210,89 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
             });
         }
 
-        // 🚀 PERFECT AUTO-SWEEP LOGIC
+        // 🚀 PERSISTENT AUTO-SWEEP LOGIC
+        // Instead of volatile setTimeout, we log it in the DB first for reliability.
         (async () => {
             try {
-                console.log(`⚡ Auto-Sweep [Invoice #${sale.invoiceNumber}] - Waiting 20s for Nomba sync...`);
-                await new Promise(resolve => setTimeout(resolve, 20000));
-
+                const Settlement = require('../../models/Settlement');
                 const bankDetails = business.bankDetails;
-                if (!bankDetails?.bankCode || !bankDetails?.accountNumber) return;
 
-                // 🛡️ SMART SWEEP: Calculate actual net of the amount paid
-                // We use calculateNetAmount to ensure we don't sweep more than what Nomba actually settled into our wallet.
+                if (!bankDetails?.bankCode || !bankDetails?.accountNumber) {
+                    console.warn(`⚠️ Auto-Sweep Skipped: No bank details for ${business.displayName}`);
+                    return;
+                }
+
                 const actualNet = FINANCIAL_CONFIG.calculateNetAmount(amount);
-                const sweepAmount = Math.floor(Math.min(creditAmount, actualNet));
+                const sweepAmount = Math.min(creditAmount, actualNet);
 
-                const { initiateTransfer } = require('../../utils/nomba');
-                await initiateTransfer({
+                // 1. Create Persistent Record
+                const settlement = await Settlement.create({
+                    businessId: business._id,
+                    saleId: sale._id,
                     amount: sweepAmount,
-                    bankCode: bankDetails.bankCode,
-                    accountNumber: bankDetails.accountNumber,
-                    accountName: bankDetails.accountName || business.displayName,
-                    narration: `KREDIBLY/${sale.invoiceNumber.replace('KR-', '')}`
+                    bankDetails: {
+                        accountNumber: bankDetails.accountNumber,
+                        bankCode: bankDetails.bankCode,
+                        accountName: bankDetails.accountName || business.displayName
+                    },
+                    status: 'pending',
+                    scheduledFor: new Date(Date.now() + 20000) // 20s buffer for Nomba sync
                 });
 
-                console.log(`✅ Auto-Sweep SUCCESS for ${business.displayName}: ₦${sweepAmount} settled.`);
+                console.log(`📡 Settlement Record Created: ${settlement._id} for ₦${sweepAmount}. Waiting 20s...`);
 
-                if (io) {
-                    io.to(business._id.toString().toLowerCase()).emit('settlement_success', {
-                        amount: sweepAmount,
-                        invoiceNumber: sale.invoiceNumber,
-                        timestamp: new Date()
-                    });
-                }
+                // 2. Process after delay (Harden with error tracking)
+                setTimeout(async () => {
+                    try {
+                        settlement.status = 'processing';
+                        await settlement.save();
 
-                // 🔔 WHATSAPP SETTLEMENT ALERT (To Merchant)
-                if (business.whatsappNumber) {
-                    const cleanPhone = business.whatsappNumber.replace(/\D/g, '');
-                    const { sendWhatsAppAlert } = require('../whatsapp/whatsappController');
-                    
-                    const settlementMsg = `💰 *Settlement Successful!* \n\nI have just swept *₦${sweepAmount.toLocaleString()}* to your registered bank account (${bankDetails.bankName} - ${bankDetails.accountNumber}). \n\nThis payment was for Invoice #${sale.invoiceNumber}. Your funds should land any moment! 🚀`;
-                    
-                    await sendWhatsAppAlert(cleanPhone, "", settlementMsg, sale.invoiceNumber);
-                }
-            } catch (sweepErr) {
-                console.error(`❌ Auto-Sweep FAILED for #${sale.invoiceNumber}:`, sweepErr.message);
+                        const { initiateTransfer } = require('../../utils/nomba');
+                        const result = await initiateTransfer({
+                            amount: sweepAmount,
+                            bankCode: settlement.bankDetails.bankCode,
+                            accountNumber: settlement.bankDetails.accountNumber,
+                            accountName: settlement.bankDetails.accountName,
+                            narration: `KREDIBLY/${sale.invoiceNumber.replace('KR-', '')}`
+                        });
+
+                        settlement.status = 'completed';
+                        settlement.nombaReference = result?.data?.transactionReference || result?.transactionReference;
+                        settlement.attempts += 1;
+                        await settlement.save();
+
+                        console.log(`✅ Auto-Sweep SUCCESS for ${business.displayName}: ₦${sweepAmount} settled.`);
+
+                        if (io) {
+                            io.to(business._id.toString().toLowerCase()).emit('settlement_success', {
+                                amount: sweepAmount,
+                                invoiceNumber: sale.invoiceNumber,
+                                timestamp: new Date()
+                            });
+                        }
+
+                        // 🔔 WHATSAPP SETTLEMENT ALERT
+                        if (business.whatsappNumber) {
+                            const { sendReply } = require('../whatsapp/whatsappController');
+                            await sendReply(business.whatsappNumber, `💰 *Settlement Alert, ${business.displayName}!* \n\nI've successfully swept *₦${sweepAmount.toLocaleString()}* from the *${sale.customerName}* payment to your *${settlement.bankDetails.accountName}* account. \n\n🛡️ _Your money is safe!_`);
+                        }
+                    } catch (sweepErr) {
+                        console.error(`❌ Auto-Sweep FAILED for Settlement ${settlement._id}:`, sweepErr.message);
+                        settlement.status = 'failed';
+                        settlement.lastError = sweepErr.message;
+                        settlement.attempts += 1;
+                        await settlement.save();
+
+                        // Notify Oga of failure (Mission Critical)
+                        if (business.whatsappNumber) {
+                            const { sendReply } = require('../whatsapp/whatsappController');
+                            await sendReply(business.whatsappNumber, `⚠️ *Settlement Issue, ${business.displayName}!* \n\nI tried to sweep *₦${sweepAmount.toLocaleString()}* to your bank, but it failed. \n\n*Reason:* ${sweepErr.message}\n\nDon't worry, the funds are safe in your Kredibly wallet. I'll try again shortly or you can check your dashboard! 🛡️`);
+                        }
+                    }
+                }, 20000);
+
+            } catch (err) {
+                console.error('❌ Auto-Sweep Initialization Error:', err);
             }
         })();
 

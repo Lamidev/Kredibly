@@ -278,7 +278,7 @@ const LandingPage = () => {
                             alignItems: 'center', 
                             justifyContent: 'center',
                             width: '100%',
-                            fontSize: 'clamp(1.5rem, 6vw, 5.5rem)',
+                            fontSize: 'clamp(2.5rem, 8vw, 5.5rem)',
                             overflow: 'hidden',
                             whiteSpace: 'nowrap'
                         }}>
