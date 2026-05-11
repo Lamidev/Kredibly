@@ -142,7 +142,7 @@ const DashboardLayout = () => {
 
             {/* Sidebar */}
             <aside className={`sidebar sidebar-premium ${isSidebarOpen ? 'mobile-open' : ''}`}>
-                <div className="sidebar-header">
+                <div className="sidebar-header" style={{ position: 'relative' }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <img 
                             src="/krediblyrevamped.png" 
@@ -150,6 +150,28 @@ const DashboardLayout = () => {
                             style={{ height: '35px', width: 'auto', filter: 'contrast(1.15) brightness(1.02)' }} 
                         />
                     </div>
+                    {/* Mobile Close Button */}
+                    <button
+                        onClick={() => setIsSidebarOpen(false)}
+                        style={{
+                            position: 'absolute',
+                            top: '50%',
+                            right: '20px',
+                            transform: 'translateY(-50%)',
+                            background: '#F1F5F9',
+                            border: '1px solid #E2E8F0',
+                            borderRadius: '12px',
+                            color: '#64748B',
+                            padding: '8px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                        className="lg:hidden"
+                    >
+                        <X size={18} strokeWidth={3} />
+                    </button>
                 </div>
 
                 <div style={{ padding: '0 24px 20px' }}>

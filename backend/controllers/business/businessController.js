@@ -13,6 +13,34 @@ const cleanPhone = (num) => {
     return clean;
 };
 
+const triggerWelcomeMessage = async (profile) => {
+    try {
+        const { sendWhatsAppAlert } = require("../whatsapp/whatsappController");
+        
+        const planName = profile.plan.charAt(0).toUpperCase() + profile.plan.slice(1);
+        const features = {
+            chairman: "Unlimited Invoice Recordings, AI Voice Note Sales, 0% Transaction Fees on Kreddy Settlements, and Global Currency Support.",
+            oga: "Priority AI Processing, Advanced Debt Recovery Reminders, and Daily Business Insights.",
+            hustler: "Digital Sales Ledger, Professional Payment Links, and Basic Debt Tracking."
+        };
+
+        const welcomeText = `Welcome to the *${planName}* Life! 🚀\n\nI'm *Kreddy*, your AI business assistant. I've successfully launched your workspace for *${profile.displayName}*.\n\n*Here is how I make your life easier:*\n\n1️⃣ *Talk to Me:* You don't need to type. Just send me a voice note like: _"I just sold 2 bags of rice to Samuel for 50,000 naira"_ and I'll record it for you.\n\n2️⃣ *Collect Money Faster:* I can generate professional payment links you can send to customers. When they pay, I'll notify you immediately! 💰\n\n3️⃣ *Plan Benefits:* Since you're a ${planName}, you enjoy: ${features[profile.plan] || features.hustler}\n\n*Try it now:* Send me a message or voice note about your last sale! 🛡️`;
+
+        // Send to Merchant
+        await sendWhatsAppAlert(profile.whatsappNumber, planName, welcomeText);
+
+        // Send to Staff
+        if (profile.staffNumbers && profile.staffNumbers.length > 0) {
+            for (const staffNum of profile.staffNumbers) {
+                const staffText = `Hello! I'm *Kreddy*, the AI business assistant for *${profile.displayName}*. 🚀\n\nYour manager has added you as a staff member. My job is to help you record sales and track payments without any paperwork.\n\n*How to use me:*\nWhen a customer buys something, just send me a message here like: _"Sold one phone charger for 5,000 naira."_\n\nI'll record it in the company ledger and notify your manager automatically. No more manual recording! 🛡️`;
+                await sendWhatsAppAlert(staffNum, "Staff", staffText);
+            }
+        }
+    } catch (err) {
+        console.error("Welcome Message Error:", err.message);
+    }
+};
+
 exports.updateProfile = async (req, res) => {
     try {
         const { displayName, entityType, sellMode, logoUrl, phoneNumber, whatsappNumber, address, assistantSettings, bankDetails, staffNumbers, prefersGatewayFeeAbsorption } = req.body;
@@ -36,6 +64,10 @@ exports.updateProfile = async (req, res) => {
             if (now < LAUNCH_DATE) { profile.plan = 'chairman'; profile.planStatus = 'trialing'; }
             if (assistantSettings) profile.assistantSettings = { ...profile.assistantSettings, ...assistantSettings };
             if (staffNumbers) profile.staffNumbers = staffNumbers.map(n => cleanPhone(n)).filter(n => n);
+            
+            const wasIncomplete = (profile.onboardingStep || 0) < 4;
+            if (req.body.onboardingStep === 4) profile.onboardingStep = 4;
+            
             await profile.save();
         } else {
             profile = new BusinessProfile({
@@ -136,4 +168,26 @@ exports.verifyKYC = async (req, res) => {
 
         res.status(200).json({ success: true, message: "Verified!", data: profile.kyc });
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+};
+
+exports.triggerWelcome = async (req, res) => {
+    try {
+        const profile = await BusinessProfile.findOne({ ownerId: req.user._id });
+        if (!profile) return res.status(404).json({ success: false, message: "Profile not found" });
+
+        if (profile.welcomeSent) {
+            return res.status(200).json({ success: true, message: "Welcome already sent" });
+        }
+
+        // Send the message
+        await triggerWelcomeMessage(profile);
+
+        // Update flag
+        profile.welcomeSent = true;
+        await profile.save();
+
+        res.status(200).json({ success: true, message: "Welcome triggered" });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 };

@@ -28,6 +28,10 @@ const ActivityLogSchema = new mongoose.Schema({
     details: {
         type: String,
         required: true
+    },
+    originalText: {
+        type: String,
+        required: false
     }
 }, {
     timestamps: true

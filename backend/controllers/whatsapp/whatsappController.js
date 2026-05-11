@@ -634,8 +634,7 @@ const sendTypingIndicator = async (to) => {
     }
 };
 
-exports.sendWhatsAppMessage = sendReply;
-exports.sendWhatsAppTemplate = sendTemplateMessage;
+
 
 const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = null) => {
     try {
@@ -866,7 +865,10 @@ const downloadWhatsAppMedia = async (mediaId) => {
     }
 };
 
-exports.handleIncoming = async (req, res) => {
+
+
+
+const handleIncoming = async (req, res) => {
     let from = null; // 🛡️ Initialize for catch block safety
 
     try {
@@ -1009,7 +1011,8 @@ exports.handleIncoming = async (req, res) => {
             businessId: profile._id,
             action: "WHATSAPP_MSG_RECEIVED",
             entityType: "WHATSAPP",
-            details: `From: ${from} | Msg: ${msgDescription}`
+            details: `From: ${from} | Msg: ${msgDescription}`,
+            originalText: text
         });
 
         // HUSTLER LIMIT CHECK (10 Sales limit per month)
@@ -1133,12 +1136,32 @@ Upgrade here: ${APP_URL}/pricing`);
                         saleId: newSale._id
                     });
 
+                    // Log Activity for Dashboard (with Transcription)
+                    await logActivity({
+                        businessId: profile._id,
+                        action: "SALE_CREATED_WHATSAPP",
+                        entityType: "SALE",
+                        entityId: newSale._id,
+                        details: `Created sale of ₦${totalAmount.toLocaleString()} for ${customerName} via Kreddy`,
+                        originalText: logText
+                    });
+
                     // Notify Oga (Oga Monitor)
                     if (isStaff && profile.whatsappNumber) {
                         const todayRev = await getTodayRevenue(profile._id);
                         const ogaMessage = `📢 *Staff Activity Report* \n\nA new sale was just recorded by your staff (*${cleanFrom}*):\n\n👤 Customer: ${newSale.customerName}\n💰 Amount: ₦${totalAmount.toLocaleString()}\n📑 Invoice: #${newSale.invoiceNumber}\n\n📊 *Total Cash In Today:* ₦${todayRev.toLocaleString()}\n\n_Kredibly keeping your business secure!_ 🛡️`;
                         await sendReply(profile.whatsappNumber, ogaMessage);
                     }
+
+                    // Log Activity for Dashboard (with Transcription)
+                    await logActivity({
+                        businessId: profile._id,
+                        action: "PAYMENT_RECORDED_WHATSAPP",
+                        entityType: "PAYMENT",
+                        entityId: sale._id,
+                        details: `Recorded payment of ₦${paidAmount.toLocaleString()} for ${sale.customerName} via Kreddy`,
+                        originalText: logText
+                    });
 
                     const bal = totalAmount - (paidAmount || 0);
                     const successMsg = getRandom(HUMANIZE.success, {}, plan);
@@ -1573,8 +1596,10 @@ Upgrade here: ${APP_URL}/pricing`);
             }
 
             // Process each intent in the queue
+            let isProcessed = false;
             for (const currentIntent of intentQueue) {
-            const aiResponseItem = currentIntent;
+                const aiResponseItem = currentIntent;
+                const logText = aiResponseItem.data?.transcription || text;
             // 0. SESSION RESPONSES (confirm_session / reject_session)
             if (!isProcessed && aiResponseItem && (aiResponseItem.intent === "confirm_session" || aiResponseItem.intent === "reject_session")) {
                  if (!session) {
@@ -2905,3 +2930,9 @@ Upgrade here: ${APP_URL}/pricing`);
     }
 };
 
+exports.sendWhatsAppMessage = sendReply;
+exports.sendReply = sendReply;
+exports.sendWhatsAppTemplate = sendTemplateMessage;
+exports.sendWhatsAppAlert = sendWhatsAppAlert;
+exports.sendWhatsAppPaymentAlert = sendWhatsAppPaymentAlert;
+exports.handleIncoming = handleIncoming;

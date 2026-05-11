@@ -31,20 +31,20 @@ const PublicNavbar = () => {
             name: "Product", 
             type: "dropdown", 
             items: [
-                { name: "Kreddy AI Assistant", desc: "Smart chat for sales & support.", path: "#features", icon: Sparkles },
-                { name: "Merchant Dashboard", desc: "Analytics, Inventory & Team Mode.", path: "#features", icon: LayoutDashboard },
-                { name: "Premium Invoices", desc: "First-grade startup invoice designs.", path: "#features", icon: CreditCard }
+                { name: "Kreddy AI Assistant", desc: "Smart chat for sales & support.", path: "/product/kreddy-ai", icon: Sparkles },
+                { name: "Merchant Dashboard", desc: "Analytics, Inventory & Team Mode.", path: "/product/merchant-dashboard", icon: LayoutDashboard },
+                { name: "Premium Invoices", desc: "First-grade startup invoice designs.", path: "/product/premium-invoices", icon: CreditCard }
             ]
         },
         { 
             name: "Solutions", 
             type: "dropdown", 
             items: [
-                { name: "For Solopreneurs", desc: "Quick receipts and client tracking.", path: "#features", icon: User },
-                { name: "Retail & E-commerce", desc: "Manage stock and offline sales.", path: "#features", icon: Building2 }
+                { name: "For Solopreneurs", desc: "Quick receipts and client tracking.", path: "/solution/solopreneurs", icon: User },
+                { name: "Retail & E-commerce", desc: "Manage stock and offline sales.", path: "/solution/retail", icon: Building2 }
             ]
         },
-        { name: "Pricing", path: "#pricing" },
+        { name: "Pricing", path: "/pricing" },
         { name: "About Us", path: "/about" }
     ];
 

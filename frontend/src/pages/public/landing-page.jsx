@@ -158,7 +158,20 @@ const LandingPage = () => {
 
     useEffect(() => {
         document.title = "Kredibly — The AI Business OS for Nigerian Merchants";
-        if (!window.location.hash) {
+        
+        // Handle scrolling from other pages
+        if (location.state?.scrollTo) {
+            const sectionId = location.state.scrollTo;
+            // Small delay to ensure the page has rendered
+            setTimeout(() => {
+                const element = document.getElementById(sectionId);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                    // Clear the state so it doesn't scroll again on refresh
+                    window.history.replaceState({}, document.title);
+                }
+            }, 100);
+        } else if (!window.location.hash) {
             window.scrollTo(0, 0);
         }
     }, [location]);
@@ -296,11 +309,11 @@ const LandingPage = () => {
                         color: '#4B5563', 
                         marginBottom: '48px', 
                         lineHeight: 1.6, 
-                        maxWidth: '700px', 
+                        maxWidth: '800px', 
                         marginInline: 'auto',
                         fontWeight: 500
                     }}>
-                        Your money shouldn't wait. Kredibly sweeps every payment directly to your bank account—no holds, no thresholds, no delays.
+                        The most powerful workspace for the modern Nigerian merchant. Use <b>Kreddy AI</b> to record sales by simply speaking, let our <b>AI Recovery Engine</b> chase down debts on autopilot, and enjoy <b>Instant Bank Sweeps</b> with zero transfer fees. Your money lands exactly where it belongs: in your bank account, immediately.
                     </p>
                     <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
                         <Link to="/auth/register" className="btn-primary btn-magnetic" style={{ padding: '20px 40px', fontSize: '1.1rem', borderRadius: '18px' }}>

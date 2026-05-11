@@ -15,9 +15,22 @@ const generateDailyAdvice = async (tone = "English") => {
             ? "Use authentic Street-Smart Nigerian Pidgin only. Be warm, energetic, and encouraging."
             : "Use professional and clear Standard English only. DO NOT use Pidgin or slang. Focus on clarity and authority.";
 
+        const dayOfWeek = new Date().getDay(); // 0 (Sun) to 6 (Sat)
+        const themes = [
+            "Customer Relationship Management & Follow-ups (Sunday Reflection)", // 0
+            "Operational Efficiency & Inventory Velocity (Monday Motivation)", // 1
+            "Strategic Sales & Referral Engines (Tuesday Growth)", // 2
+            "Marketing & Brand Trust in the Nigerian Market (Wednesday Wisdom)", // 3
+            "Cashflow, Liquidity, and Debt Collection Mastery (Thursday Finance)", // 4
+            "Customer Loyalty & Retention Strategies (Friday Focus)", // 5
+            "Planning, Auditing, and Stock Management (Saturday Setup)" // 6
+        ];
+        const selectedTheme = themes[dayOfWeek];
+
         const prompt = `
         Kreddy, act as a High-Level Nigerian Business Growth Coach.
         Today's Date: ${new Date().toDateString()}
+        Today's Theme Focus: ${selectedTheme}
         
         Task: Write a short, powerful "masterclass" message for a Nigerian merchant to start their day.
         Tone: ${toneInstruction}
@@ -26,11 +39,12 @@ const generateDailyAdvice = async (tone = "English") => {
         1. Write exactly like a human business coach sending a quick morning voice-note or direct WhatsApp text. 
         2. NO BLOCKY AI HEADERS. Do NOT use "*💡 THE BIG INSIGHT:*" or "*✅ ACTION STEP:*". Just write naturally in paragraphs.
         3. NO BULLET POINTS or hashtags. 
-        4. Focus on ONE specific growth concept (e.g. inventory velocity, compounding trust, or cashflow) and give ONE clear thing they should do today.
-        5. Keep it conversational, empathetic, and street-smart. Relate it to the Nigerian market.
-        6. Length: 2 small paragraphs maximum (around 80-120 words). Short, punchy, and highly readable.
-        7. Use mild bolding (*like this*) only for 1 or 2 key words of emphasis.
-        8. DO NOT start with generic greetings like "Here is your tip" or "Absolutely!". Dive straight into the coaching.
+        4. Focus on ${selectedTheme}. Give ONE clear, street-smart thing they should do today to grow.
+        5. Keep it conversational, empathetic, and street-smart. Relate it to the Nigerian market (e.g. mention things like "gain", "market", "customers", "record").
+        6. Avoid repeating common advice like "Cashflow is King" every day. Be specific about ${selectedTheme}.
+        7. Length: 2 small paragraphs maximum (around 80-120 words). Short, punchy, and highly readable.
+        8. Use mild bolding (*like this*) only for 1 or 2 key words of emphasis.
+        9. DO NOT start with generic greetings like "Here is your tip" or "Absolutely!". Dive straight into the coaching.
         `;
         
         let advice;

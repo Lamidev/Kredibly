@@ -17,7 +17,14 @@ export const AuthProvider = ({ children }) => {
 
     const checkAuth = async () => {
         try {
-            const res = await axios.get(`${API_URL}/auth/check-auth`, { withCredentials: true });
+            const res = await axios.get(`${API_URL}/auth/check-auth`, { 
+                withCredentials: true,
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                }
+            });
             if (res.data.success) {
                 setUser(res.data.user);
                 setProfile(res.data.profile);

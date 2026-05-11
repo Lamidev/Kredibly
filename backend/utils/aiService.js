@@ -162,6 +162,7 @@ REQUIRED JSON OUTPUT:
     "documentType": "bank_transfer" | "bill_invoice" | "general",
     "method": "card" | "transfer",
     "plan": "oga" | "chairman",
+    "transcription": "The raw text understood from the user's voice/message/image. MUST be included for voice and image processing.",
     "reply": "Your contextual, human-like reaction to the task. RELATE TO THE SPECIFIC TASK, AMOUNT, OR PERSON. Use varied vocabulary (No 'Logged' or 'Recorded')."
   }
 }

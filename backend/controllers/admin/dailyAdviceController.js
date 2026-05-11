@@ -84,3 +84,31 @@ exports.approveAndQueueSummaries = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+/**
+ * PATCH: Update only the preferred tone for autonomous generation
+ */
+exports.updateTonePreference = async (req, res) => {
+    try {
+        const { tone } = req.body;
+        if (!tone) return res.status(400).json({ error: "Tone is required" });
+
+        const current = await SystemConfig.findOne({ key: "daily_advice" });
+        const newValue = current?.value && typeof current.value === 'object' 
+            ? { ...current.value, tone } 
+            : { tone };
+
+        const config = await SystemConfig.findOneAndUpdate(
+            { key: "daily_advice" },
+            { 
+                value: newValue,
+                lastUpdated: new Date()
+            },
+            { new: true, upsert: true }
+        );
+
+        res.status(200).json({ success: true, tone: config.value.tone });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};

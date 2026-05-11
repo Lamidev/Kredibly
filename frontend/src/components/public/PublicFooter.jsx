@@ -7,8 +7,9 @@ const PublicFooter = () => {
     const location = useLocation();
 
     const scrollToSection = (sectionId) => {
-        if (location.pathname !== '/home') {
-            navigate('/home', { state: { scrollTo: sectionId } });
+        const isHomePage = location.pathname === '/' || location.pathname === '/home';
+        if (!isHomePage) {
+            navigate('/', { state: { scrollTo: sectionId } });
         } else {
             const element = document.getElementById(sectionId);
             if (element) {
@@ -34,20 +35,20 @@ const PublicFooter = () => {
     ];
 
     return (
-        <footer style={{ background: 'white', color: 'var(--text)', padding: '80px 20px 40px', borderTop: '1px solid #F1F5F9' }}>
+        <footer style={{ background: '#0F172A', color: 'white', padding: '100px 24px 40px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                 <div style={{ 
                     display: 'grid', 
                     gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', 
-                    gap: '40px',
-                    marginBottom: '60px'
+                    gap: '60px',
+                    marginBottom: '80px'
                 }}>
                     <div style={{ maxWidth: '380px' }}>
-                        <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '26px', objectFit: 'contain', marginBottom: '24px' }} />
-                        <p style={{ fontSize: 'clamp(0.9rem, 2vw, 1rem)', lineHeight: 1.6, color: '#334155', fontWeight: 500, marginBottom: '24px' }}>
-                            Receivables Infrastructure & Operating System for African Commerce. We help millions of vendors automate sales, track debts, and build financial credibility.
+                        <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '32px', filter: 'brightness(0) invert(1)', objectFit: 'contain', marginBottom: '24px' }} />
+                        <p style={{ fontSize: '1rem', lineHeight: 1.6, color: '#94A3B8', fontWeight: 500, marginBottom: '32px' }}>
+                            Receivables Infrastructure for the Future of African Commerce. We empower Nigerian vendors to automate sales, track debts, and build financial credibility.
                         </p>
-                        <div style={{ display: 'flex', gap: '16px' }}>
+                        <div style={{ display: 'flex', gap: '12px' }}>
                             {socialLinks.map((social) => {
                                 const Icon = social.icon;
                                 return (
@@ -57,21 +58,21 @@ const PublicFooter = () => {
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         style={{ 
-                                            width: '40px', 
-                                            height: '40px', 
-                                            borderRadius: '12px', 
-                                            background: '#F1F5F9', 
+                                            width: '44px', 
+                                            height: '44px', 
+                                            borderRadius: '14px', 
+                                            background: 'rgba(255,255,255,0.03)', 
                                             display: 'flex', 
                                             alignItems: 'center', 
                                             justifyContent: 'center',
-                                            color: '#334155',
-                                            transition: 'all 0.3s ease',
+                                            color: '#94A3B8',
+                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                             textDecoration: 'none',
-                                            border: '1px solid #E2E8F0'
+                                            border: '1px solid rgba(255,255,255,0.1)'
                                         }}
                                         className="footer-social-link"
                                     >
-                                        <Icon size={18} />
+                                        <Icon size={20} />
                                     </a>
                                 );
                             })}
@@ -79,13 +80,13 @@ const PublicFooter = () => {
                     </div>
 
                     <div className="footer-links-container">
-                        <h4 style={{ fontSize: 'clamp(0.8rem, 2vw, 0.9rem)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px', color: '#0F172A' }}>Product</h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <h4 style={{ fontSize: '0.85rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '32px', color: 'white' }}>Product</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                             {['Features', 'How it Works', 'Pricing', 'Mission Map'].map(item => (
                                 <button 
                                     key={item}
                                     onClick={() => item === 'Pricing' ? navigate('/pricing') : scrollToSection(item.toLowerCase().replace(/ /g, '-'))}
-                                    style={{ background: 'none', border: 'none', textAlign: 'left', color: '#475569', fontWeight: 600, cursor: 'pointer', padding: 0, fontSize: 'clamp(0.85rem, 2vw, 0.95rem)', transition: 'color 0.3s' }}
+                                    style={{ background: 'none', border: 'none', textAlign: 'left', color: '#94A3B8', fontWeight: 600, cursor: 'pointer', padding: 0, fontSize: '0.95rem', transition: 'all 0.2s' }}
                                     className="footer-link-hover"
                                 >
                                     {item}
@@ -95,58 +96,65 @@ const PublicFooter = () => {
                     </div>
 
                     <div>
-                        <h4 style={{ fontSize: 'clamp(0.8rem, 2vw, 0.9rem)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px', color: '#0F172A' }}>Company</h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <Link to="/about" style={{ textDecoration: 'none', color: '#475569', fontWeight: 600, fontSize: 'clamp(0.85rem, 2vw, 0.95rem)', transition: 'color 0.3s' }} className="footer-link-hover">About Us</Link>
-                            <Link to="/contact" style={{ textDecoration: 'none', color: '#475569', fontWeight: 600, fontSize: 'clamp(0.85rem, 2vw, 0.95rem)', transition: 'color 0.3s' }} className="footer-link-hover">Contact Support</Link>
-                            <Link to="/privacy" style={{ textDecoration: 'none', color: '#475569', fontWeight: 600, fontSize: 'clamp(0.85rem, 2vw, 0.95rem)', transition: 'color 0.3s' }} className="footer-link-hover">Privacy & Terms</Link>
+                        <h4 style={{ fontSize: '0.85rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '32px', color: 'white' }}>Company</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                            <Link to="/about" style={{ textDecoration: 'none', color: '#94A3B8', fontWeight: 600, fontSize: '0.95rem', transition: 'all 0.2s' }} className="footer-link-hover">About Us</Link>
+                            <Link to="/contact" style={{ textDecoration: 'none', color: '#94A3B8', fontWeight: 600, fontSize: '0.95rem', transition: 'all 0.2s' }} className="footer-link-hover">Contact Support</Link>
+                            <Link to="/privacy" style={{ textDecoration: 'none', color: '#94A3B8', fontWeight: 600, fontSize: '0.95rem', transition: 'all 0.2s' }} className="footer-link-hover">Privacy & Terms</Link>
                         </div>
                     </div>
 
                     <div>
-                        <h4 style={{ fontSize: 'clamp(0.8rem, 2vw, 0.9rem)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '24px', color: '#0F172A' }}>Contact</h4>
+                        <h4 style={{ fontSize: '0.85rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '32px', color: 'white' }}>Trust & Safety</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                            <div style={{ display: 'flex', gap: '12px', color: '#475569' }}>
-                                <MapPin size={20} color="var(--primary)" />
-                                <span style={{ fontSize: 'clamp(0.85rem, 2vw, 0.95rem)', fontWeight: 600 }}>Lagos, Nigeria & globally remote.</span>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                <MapPin size={18} color="var(--primary)" />
+                                <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'white' }}>Lagos, Nigeria 🇳🇬</span>
                             </div>
-                            <div style={{ display: 'flex', gap: '12px', color: '#475569' }}>
-                                <Mail size={20} color="var(--primary)" />
-                                <span style={{ fontSize: 'clamp(0.85rem, 2vw, 0.95rem)', fontWeight: 600 }}>hello@usekredibly.com</span>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(16, 185, 129, 0.05)', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
+                                <Mail size={18} color="#10B981" />
+                                <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#10B981' }}>hello@usekredibly.com</span>
                             </div>
                         </div>
                     </div>
-                </div> {/* Close Grid Container */}
- 
+                </div>
+
                 <div style={{ 
-                    paddingTop: '24px', 
-                    marginTop: '32px',
-                    borderTop: '1px solid #F1F5F9', 
+                    paddingTop: '40px', 
+                    borderTop: '1px solid rgba(255,255,255,0.05)', 
                     display: 'flex', 
                     justifyContent: 'space-between', 
                     alignItems: 'center',
                     flexWrap: 'wrap',
-                    gap: '20px'
+                    gap: '24px'
                 }}>
-                    <p style={{ fontWeight: 600, fontSize: 'clamp(0.75rem, 1.5vw, 0.85rem)', color: '#64748B', margin: 0 }}>
-                        © {new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd (RC-9466327). All rights reserved.
-                    </p>
-                    <div style={{ display: 'flex', gap: '32px' }}>
-                        <span style={{ color: '#64748B', fontSize: 'clamp(0.75rem, 1.5vw, 0.85rem)', fontWeight: 700 }}>Built for Global Commerce</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <p style={{ fontWeight: 600, fontSize: '0.85rem', color: '#64748B', margin: 0 }}>
+                            © {new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd (RC-9466327).
+                        </p>
+                        <p style={{ fontSize: '0.75rem', color: '#475569', fontWeight: 500 }}>All rights reserved. Professional Receivables Infrastructure.</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+                        <span style={{ color: '#94A3B8', fontSize: '0.85rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981' }}></div>
+                            Systems Operational
+                        </span>
+                        <span style={{ color: 'white', fontSize: '0.85rem', fontWeight: 800 }}>Built for African Commerce 🇳🇬</span>
                     </div>
                 </div>
-               
             </div>
 
             <style>{`
                 .footer-social-link:hover {
-                    background: var(--primary) !important;
-                    color: white !important;
-                    border-color: var(--primary) !important;
-                    transform: translateY(-4px);
+                    background: white !important;
+                    color: #0F172A !important;
+                    border-color: white !important;
+                    transform: translateY(-5px);
+                    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
                 }
                 .footer-link-hover:hover {
-                    color: var(--primary) !important;
+                    color: white !important;
+                    transform: translateX(4px);
                 }
                 @media (min-width: 1024px) {
                     .footer-links-container {
@@ -155,11 +163,11 @@ const PublicFooter = () => {
                 }
                 @media (max-width: 640px) {
                     footer {
-                        padding: 40px 24px 20px !important;
+                        padding: 60px 24px 40px !important;
                     }
                     .footer-social-link {
-                        width: 44px !important;
-                        height: 44px !important;
+                        width: 48px !important;
+                        height: 48px !important;
                     }
                 }
             `}</style>

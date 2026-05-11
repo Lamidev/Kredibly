@@ -177,6 +177,10 @@ const BusinessProfileSchema = new mongoose.Schema({
         type: Date,
         default: null
     },
+    welcomeSent: {
+        type: Boolean,
+        default: false
+    },
     createdAt: {
         type: Date,
         default: Date.now
