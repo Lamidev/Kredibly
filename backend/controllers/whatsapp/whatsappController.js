@@ -1926,7 +1926,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         else if (aiResponseItem.bankReference) tip = `The memo says *"${aiResponseItem.bankReference}"*.`;
                         else tip = `They have an unpaid balance matching this amount.`;
 
-                        await sendReply(from, `🧐 *Match Found, ${bossTitle}!* \n\nI catch a ₦${aiResponseItem.data.paidAmount.toLocaleString()} transfer from *"${aiResponseItem.sourceAccountName}"*. \n\n${tip} Is this for *${sale.customerName}*? 🛡️`);
+                        await sendReply(from, `🧐 *Match Found, ${bossTitle}!* \n\nI catch a ₦${aiResponseItem.data.paidAmount.toLocaleString()} transfer from *"${aiResponseItem.sourceAccountName}"*. \n\n${tip} Is this payment for *${sale.customerName}*? \n\n✅ Reply *YES* to record it\n❌ Reply *NO* to cancel`);
                         isProcessed = true;
                     } else {
                         // MULTI-CHOICE TRIAGE
@@ -1935,7 +1935,7 @@ Upgrade here: ${APP_URL}/pricing`);
                             const bal = s.totalAmount - s.payments.reduce((sum,p)=>sum+p.amount, 0);
                             msg += `${i+1}. *${s.customerName}* (Owes ₦${bal.toLocaleString()})\n`;
                         });
-                        msg += `\n_Reply with the Number (1-5) or Name!_ 🫡`;
+                        msg += `\n_Reply with the *Number* (1-5) to credit the payment, or type *CANCEL* to ignore it._ 🫡`;
 
                         await WhatsAppSession.findOneAndUpdate(
                             { whatsappNumber: cleanFrom },
