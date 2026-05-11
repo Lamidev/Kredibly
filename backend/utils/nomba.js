@@ -29,7 +29,7 @@ let tokenExpiresAt = null;
  * 🔐 GET ACCESS TOKEN
  * Nomba uses OAuth2 client credentials — token is short-lived (~1hr), so we cache it.
  */
-const getAccessToken = async () => {
+const getAccessToken = async (retryCount = 0) => {
     const now = Date.now();
 
     // Return cached token if still valid (with 60s buffer)
@@ -48,20 +48,21 @@ const getAccessToken = async () => {
             {
                 headers: {
                     'Content-Type': 'application/json',
-                    accountId: NOMBA_ACCOUNT_ID // ← Required by Nomba even for token issuance
+                    accountId: NOMBA_ACCOUNT_ID
                 },
                 timeout: 15000,
-                proxy: false
+                proxy: false,
+                httpsAgent: ipv4HttpsAgent,
+                httpAgent: ipv4HttpAgent
             }
         );
 
-        // Nomba wraps token in response.data.data; success indicated by code === '00'
         const tokenData = response.data?.data;
         const access_token = tokenData?.access_token;
-        const expiresAt = tokenData?.expiresAt; // ISO date string e.g. "2026-04-18T05:44:06.290Z"
+        const expiresAt = tokenData?.expiresAt;
 
         if (!access_token) {
-            throw new Error('Nomba auth returned no access_token. Response: ' + JSON.stringify(response.data));
+            throw new Error('Nomba auth returned no access_token');
         }
 
         cachedToken = access_token;
@@ -70,8 +71,14 @@ const getAccessToken = async () => {
         console.log('🟢 Nomba: Access token refreshed successfully');
         return cachedToken;
     } catch (err) {
-        console.error('❌ Nomba Token Error:', err.response?.data || err.message);
-        throw new Error('Failed to authenticate with Nomba. Check NOMBA_CLIENT_ID and NOMBA_PRIVATE_KEY.');
+        console.error(`❌ Nomba Token Error (Attempt ${retryCount + 1}):`, err.response?.data || err.message);
+        
+        if (retryCount < 1) {
+            console.log('🔄 Retrying Nomba authentication...');
+            return await getAccessToken(retryCount + 1);
+        }
+        
+        throw new Error('Failed to authenticate with Nomba after retries. Check credentials and account status.');
     }
 };
 
@@ -369,8 +376,17 @@ const initiateTransfer = async ({ amount, bankCode, accountNumber, accountName, 
         console.log(`✅ Nomba Transfer initiated: ₦${amount} → ${accountNumber}`);
         return response.data;
     } catch (err) {
-        console.error('❌ Nomba Transfer Error:', err.response?.data || err.message);
-        throw new Error(err.response?.data?.message || err.response?.data?.description || 'Failed to initiate Nomba transfer');
+        const errorData = err.response?.data;
+        const errorMessage = errorData?.message || errorData?.description || err.message;
+        const errorCode = errorData?.code || 'UNKNOWN';
+        
+        console.error(`❌ Nomba Transfer Error [${errorCode}]:`, errorMessage);
+        
+        // Throw structured error to allow Controller to handle specific bank issues
+        const customError = new Error(errorMessage);
+        customError.code = errorCode;
+        customError.data = errorData;
+        throw customError;
     }
 };
 

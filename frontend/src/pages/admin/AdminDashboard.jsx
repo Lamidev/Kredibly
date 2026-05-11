@@ -78,7 +78,7 @@ const AdminDashboard = () => {
         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }}>
             <div className="admin-content-fade">
                 {/* MAIN STATS GRID */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'clamp(16px, 3vw, 24px)', marginBottom: '40px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'clamp(16px, 3vw, 24px)', marginBottom: 'clamp(20px, 5vw, 40px)' }}>
                     <div className="admin-stats-card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                             <div style={{ p: '12px', background: '#F0F9FF', borderRadius: '16px', color: '#0EA5E9' }}>
@@ -136,9 +136,9 @@ const AdminDashboard = () => {
                 {/* ACTIVITIES & STREAM */}
                 <div className="admin-grid-layout">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                        <div className="dashboard-glass admin-card-padding" style={{ borderRadius: '32px', border: '1px solid var(--border)', background: 'white' }}>
+                        <div className="dashboard-glass admin-card-padding" style={{ borderRadius: '32px', border: '1px solid var(--border)', background: 'white', padding: 'clamp(16px, 5vw, 32px)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                                <h3 style={{ fontWeight: 900, fontSize: 'clamp(1rem, 4vw, 1.3rem)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <h3 style={{ fontWeight: 900, fontSize: 'clamp(1rem, 4vw, 1.3rem)', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: 'clamp(16px, 4vw, 32px)' }}>
                                     <Terminal size={20} color="var(--primary)" /> Global Activity Stream
                                 </h3>
                                 <button onClick={() => fetchAdminData(true)} disabled={isRefreshing} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -187,22 +187,7 @@ const AdminDashboard = () => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        <div className="admin-card-padding" style={{ background: '#0F172A', borderRadius: '32px', color: 'white', position: 'relative', overflow: 'hidden' }}>
-                            <h4 style={{ fontWeight: 900, fontSize: '1.2rem', marginBottom: '16px', position: 'relative', zIndex: 2 }}>System Health</h4>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative', zIndex: 2 }}>
-                                <div style={{ padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                    <p style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Database</p>
-                                    <p style={{ margin: '4px 0 0', fontWeight: 900, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}><ShieldCheck size={14} color="#10B981" /> OPERATIONAL</p>
-                                </div>
-                                <div style={{ padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                    <p style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Resources</p>
-                                    <p style={{ margin: '4px 0 0', fontWeight: 900, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}><Activity size={14} color="#0EA5E9" /> STABLE</p>
-                                </div>
-                            </div>
-                            <ArrowUpRight size={80} style={{ position: 'absolute', bottom: '-10px', right: '-10px', opacity: 0.05 }} />
-                        </div>
-                    </div>
+
                 </div>
             </div>
         </motion.div>

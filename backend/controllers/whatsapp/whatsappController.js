@@ -1032,17 +1032,17 @@ Upgrade here: ${APP_URL}/pricing`);
             }
         }
 
-        if (msgType !== "text" && msgType !== "audio" && msgType !== "voice" && msgType !== "image") {
-            return await sendReply(from, "I catch the message, but I only understand text, voice notes, and images (for Chairmen) right now! 🛡️");
-        }
-
-        const lowerText = text ? text.toLowerCase() : "";
+        const lowerText = text ? text.toLowerCase().trim() : "";
 
         // Check for OPEN Support Ticket (Context Awareness)
         const openTicket = await SupportTicket.findOne({
             businessId: profile._id,
             status: { $in: ['open', 'replied'] }
         }).sort({ updatedAt: -1 });
+
+        if (msgType !== "text" && msgType !== "audio" && msgType !== "voice" && msgType !== "image") {
+            return await sendReply(from, "I catch the message, but I only understand text, voice notes, and images (for Chairmen) right now! 🛡️");
+        }
 
         // PERSISTENT SESSION HANDLING
         const session = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
@@ -1203,11 +1203,12 @@ Upgrade here: ${APP_URL}/pricing`);
                             }
                         );
                         await sendReply(from, `Nice! 💎 Was it the full *₦${session.data.balance.toLocaleString()}* payment, or just a partial amount? \n\n_(Reply *"Full"* or just type the amount they paid)_`);
-                    } else {
+                        return;
+                    } else if (lowerText.includes('no') || lowerText.includes('stop')) {
                         await WhatsAppSession.deleteOne({ _id: session._id });
                         await sendReply(from, `No problem! 🛡️ Shall I resend the link to *${session.data.customerName}* for you, or should we give them another day? \n\n_(Tip: Just say "Send link to ${session.data.customerName}")_`);
+                        return;
                     }
-                    return;
                 } else if (session.type === 'recovery_payment_amount') {
                     let amountPaid = session.data.balance;
                     const numMatch = lowerText.match(/\d+/);
@@ -1258,13 +1259,12 @@ Upgrade here: ${APP_URL}/pricing`);
                         });
                         await WhatsAppSession.deleteOne({ _id: session._id });
                         await sendReply(from, `✅ *Feedback Logged!* \n\nGot it, ${bossTitle}. I've sent that suggestion directly to the Dev Team. Thanks for helping us build Kredibly! 🛡️🚀`);
+                        return;
                     } else if (isTask) {
                         await WhatsAppSession.deleteOne({ _id: session._id });
                         await sendReply(from, `🛡️ *Understood, Boss!* \n\nI catch that it's a core task. Please just say it again or send a new voice note so I can process it with 100% focus! 🫡`);
-                    } else {
-                        await sendReply(from, `🤔 I catch you, but I'm still not sure. \n\nReply *"Feedback"* to send it to the Admin, or *"Task"* if I should treat it as a reminder/record. 🛡️`);
+                        return;
                     }
-                    return;
                 } else if (session.type === 'alarm_confirmation') {
                     // Handle 'Yes' for Alarms
                     if (['yes', 'y', 'confirm', 'correct', 'true', 'sure'].includes(lowerText)) {
@@ -1288,57 +1288,72 @@ Upgrade here: ${APP_URL}/pricing`);
                             return await sendReply(from, `🤔 I couldn't locate that record anymore. It might have been deleted.`);
                         }
                     }
-                } else if (session.type === 'alias_confirmation') {
-                    if (['yes', 'y', 'correct', 'confirm'].includes(lowerText)) {
-                        const { saleId, sourceName, customerName, paidAmount } = session.data;
-                        await WhatsAppSession.deleteOne({ _id: session._id });
-
-                        const sale = await Sale.findById(saleId);
-                        if (sale) {
-                            sale.payments.push({ 
-                                amount: paidAmount, 
-                                method: "WhatsApp Screenshot (Confirmed Alias)",
-                                date: new Date(),
-                                reference: `AI_MATCH_${Date.now()}`
+                    // Fast-path for simple confirmations
+                    if (['yes', 'y', 'correct', 'confirm', 'sure', 'true'].includes(lowerText)) {
+                        // Logic will be handled by confirm_session intent
+                    }
+                } else if (session.type === 'manual_alias_tagging') {
+                    console.log(`🏷️ Handling manual_alias_tagging for ${cleanFrom} with input: "${text}"`);
+                    const choice = parseInt(text);
+                    let selectedSale = null;
+                    
+                    try {
+                        if (!isNaN(choice) && session.data.options && choice > 0 && choice <= session.data.options.length) {
+                            selectedSale = await Sale.findById(session.data.options[choice - 1].id);
+                        } else if (text.length > 2) {
+                            selectedSale = await Sale.findOne({ 
+                                businessId: profile._id, 
+                                customerName: { $regex: new RegExp(text.trim(), "i") },
+                                status: { $ne: "paid" }
                             });
-                            await sale.save();
+                        }
 
-                            // 🧠 LEARN: Save this alias for the future
+                        if (selectedSale) {
+                            const { sourceName, paidAmount } = session.data;
+                            
+                            selectedSale.payments.push({ 
+                                amount: paidAmount, 
+                                method: "WhatsApp Screenshot (Manual Tag)",
+                                date: new Date(),
+                                reference: `AI_MANUAL_${Date.now()}`
+                            });
+                            await selectedSale.save();
+
                             if (sourceName) {
                                 await CustomerAlias.findOneAndUpdate(
                                     { businessId: profile._id, sourceName },
-                                    { targetName: customerName, lastUsedAt: new Date() },
+                                    { targetName: selectedSale.customerName, lastUsedAt: new Date() },
                                     { upsert: true, new: true }
                                 );
                             }
 
-                            // 🔔 SYNC WITH DASHBOARD (Alerts & Activity)
+                            // 🔔 SYNC WITH DASHBOARD
                             await Notification.create({
                                 businessId: profile._id,
-                                title: 'Payment Confirmed! ✅',
-                                message: `₦${paidAmount.toLocaleString()} screenshot confirmed for ${customerName}.`,
+                                title: 'Payment Tagged! 🏷️',
+                                message: `₦${paidAmount.toLocaleString()} tagged to ${selectedSale.customerName}.`,
                                 type: 'sale',
-                                saleId: sale._id
+                                saleId: selectedSale._id
                             });
 
                             await logActivity({
                                 businessId: profile._id,
-                                action: "PAYMENT_MATCHED",
+                                action: "PAYMENT_TAGGED",
                                 entityType: "SALE",
-                                entityId: sale._id,
-                                details: `Confirmed ₦${paidAmount} for ${customerName} from "${sourceName}"`
+                                entityId: selectedSale._id,
+                                details: `Manually linked ₦${paidAmount} to ${selectedSale.customerName}`
                             });
 
-                            // ⚡ REAL-TIME UPDATE (Sockets)
+                            // ⚡ SOCKET UPDATE
                             const { getIO } = require('../../utils/socket');
                             const io = getIO();
                             if (io) {
                                 io.to(profile._id.toString().toLowerCase()).emit('sale_updated', {
-                                    saleId: sale._id,
-                                    invoiceNumber: sale.invoiceNumber,
+                                    saleId: selectedSale._id,
+                                    invoiceNumber: selectedSale.invoiceNumber,
                                     amount: paidAmount,
-                                    status: sale.status,
-                                    balance: sale.totalAmount - (sale.payments.reduce((s, p) => s + p.amount, 0))
+                                    status: selectedSale.status,
+                                    balance: selectedSale.totalAmount - (selectedSale.payments.reduce((s, p) => s + p.amount, 0))
                                 });
                             }
 
@@ -1346,96 +1361,23 @@ Upgrade here: ${APP_URL}/pricing`);
                             await sendWhatsAppPaymentAlert(
                                 profile.whatsappNumber,
                                 paidAmount,
-                                sale.invoiceNumber,
-                                customerName,
-                                "Screenshot Confirmed ✅",
+                                selectedSale.invoiceNumber,
+                                selectedSale.customerName,
+                                "Manual Tag Success 🛡️",
                                 profile.displayName || "Chief"
                             );
 
-                            await sendReply(from, `✅ *Logged & Learned!* \n\nRecorded for *${customerName}*. I've also memorized that *"${sourceName}"* is one of their account names! 🛡️💎`);
+                            await sendReply(from, `✅ *Perfectly Handled!* \n\nI've credited *${selectedSale.customerName}* with the ₦${paidAmount.toLocaleString()} payment. \n\nMemory Bank Updated: I've linked *"${sourceName}"* to them! 🧠💎`);
+                            
+                            // Cleanup session AFTER success
+                            await WhatsAppSession.deleteOne({ _id: session._id });
+                        } else {
+                            await sendReply(from, `🤔 I didn't catch that. Please type the **Number** or the **Customer Name** to credit this payment.`);
+                            // We don't delete the session here to allow them to try again
                         }
-                    } else {
-                        await WhatsAppSession.deleteOne({ _id: session._id });
-                        await sendReply(from, `No problem! I'll keep the payment as pending. Tell me who it belongs to whenever you're ready! 🫡`);
-                    }
-                    return;
-                } else if (session.type === 'manual_alias_tagging') {
-                    const choice = parseInt(text);
-                    let selectedSale = null;
-                    
-                    if (!isNaN(choice) && session.data.options && choice > 0 && choice <= session.data.options.length) {
-                        selectedSale = await Sale.findById(session.data.options[choice - 1].id);
-                    } else if (text.length > 2) {
-                        selectedSale = await Sale.findOne({ 
-                            businessId: profile._id, 
-                            customerName: { $regex: new RegExp(text.trim(), "i") },
-                            status: { $ne: "paid" }
-                        });
-                    }
-
-                    if (selectedSale) {
-                        const { sourceName, paidAmount } = session.data;
-                        await WhatsAppSession.deleteOne({ _id: session._id });
-
-                        selectedSale.payments.push({ 
-                            amount: paidAmount, 
-                            method: "WhatsApp Screenshot (Manual Tag)",
-                            date: new Date(),
-                            reference: `AI_MANUAL_${Date.now()}`
-                        });
-                        await selectedSale.save();
-
-                        if (sourceName) {
-                            await CustomerAlias.findOneAndUpdate(
-                                { businessId: profile._id, sourceName },
-                                { targetName: selectedSale.customerName, lastUsedAt: new Date() },
-                                { upsert: true, new: true }
-                            );
-                        }
-
-                        // 🔔 SYNC WITH DASHBOARD
-                        await Notification.create({
-                            businessId: profile._id,
-                            title: 'Payment Tagged! 🏷️',
-                            message: `₦${paidAmount.toLocaleString()} tagged to ${selectedSale.customerName}.`,
-                            type: 'sale',
-                            saleId: selectedSale._id
-                        });
-
-                        await logActivity({
-                            businessId: profile._id,
-                            action: "PAYMENT_TAGGED",
-                            entityType: "SALE",
-                            entityId: selectedSale._id,
-                            details: `Manually linked ₦${paidAmount} to ${selectedSale.customerName}`
-                        });
-
-                        // ⚡ SOCKET UPDATE
-                        const { getIO } = require('../../utils/socket');
-                        const io = getIO();
-                        if (io) {
-                            io.to(profile._id.toString().toLowerCase()).emit('sale_updated', {
-                                saleId: selectedSale._id,
-                                invoiceNumber: selectedSale.invoiceNumber,
-                                amount: paidAmount,
-                                status: selectedSale.status,
-                                balance: selectedSale.totalAmount - (selectedSale.payments.reduce((s, p) => s + p.amount, 0))
-                            });
-                        }
-
-                        // 🔔 WHATSAPP ALERT (To Merchant)
-                        await sendWhatsAppPaymentAlert(
-                            profile.whatsappNumber,
-                            paidAmount,
-                            selectedSale.invoiceNumber,
-                            selectedSale.customerName,
-                            "Manual Tag Success 🛡️",
-                            profile.displayName || "Chief"
-                        );
-
-                        await sendReply(from, `✅ *Perfectly Handled!* \n\nI've credited *${selectedSale.customerName}* with the ₦${paidAmount.toLocaleString()} payment. \n\nMemory Bank Updated: I've linked *"${sourceName}"* to them! 🧠💎`);
-                    } else {
-                        await sendReply(from, `🤔 I didn't catch that. Please type the **Number** or the **Customer Name** to credit this payment.`);
+                    } catch (err) {
+                        console.error(`❌ manual_alias_tagging Error:`, err);
+                        await sendReply(from, "😵‍ Boss, I hit a small snag tagging that. Please try again or check your dashboard!");
                     }
                     return;
                 }
@@ -1633,8 +1575,56 @@ Upgrade here: ${APP_URL}/pricing`);
             // Process each intent in the queue
             for (const currentIntent of intentQueue) {
             const aiResponseItem = currentIntent;
-            if (!aiResponseItem.data) aiResponseItem.data = {}; // Safety initialization
-            let isProcessed = false;
+            // 0. SESSION RESPONSES (confirm_session / reject_session)
+            if (!isProcessed && aiResponseItem && (aiResponseItem.intent === "confirm_session" || aiResponseItem.intent === "reject_session")) {
+                 if (!session) {
+                     await sendReply(from, aiResponseItem.data?.reply || `I'm not sure what you're confirming, ${bossTitle}. We don't have an active task right now! 🛡️`);
+                     isProcessed = true;
+                 } else {
+                     if (aiResponseItem.intent === "reject_session") {
+                         await WhatsAppSession.deleteOne({ _id: session._id });
+                         await sendReply(from, aiResponseItem.data?.reply || `No problem! I've cancelled that for you. 🫡`);
+                         isProcessed = true;
+                     } else {
+                         // ✅ POSITIVE CONFIRMATION LOGIC
+                         console.log(`🧠 AI confirmed session: ${session.type}`);
+                         
+                         if (session.type === 'alias_confirmation') {
+                            const { saleId, sourceName, customerName, paidAmount } = session.data;
+                            const sale = await Sale.findById(saleId);
+                            if (sale) {
+                                sale.payments.push({ amount: paidAmount, method: "WhatsApp Screenshot (AI Confirmed)", date: new Date(), reference: `AI_MATCH_${Date.now()}` });
+                                await sale.save();
+                                if (sourceName) {
+                                    await CustomerAlias.findOneAndUpdate({ businessId: profile._id, sourceName }, { targetName: customerName, lastUsedAt: new Date() }, { upsert: true });
+                                }
+                                await Notification.create({ businessId: profile._id, title: 'Payment Confirmed! ✅', message: `₦${paidAmount.toLocaleString()} screenshot confirmed for ${customerName}.`, type: 'sale', saleId: sale._id });
+                                await logActivity({ businessId: profile._id, action: "PAYMENT_MATCHED", entityType: "SALE", entityId: sale._id, details: `AI-Confirmed ₦${paidAmount} for ${customerName}` });
+                                
+                                // Socket Update
+                                const { getIO } = require('../../utils/socket');
+                                const io = getIO();
+                                if (io) io.to(profile._id.toString().toLowerCase()).emit('sale_updated', { saleId: sale._id, invoiceNumber: sale.invoiceNumber, amount: paidAmount, status: sale.status });
+
+                                await sendReply(from, aiResponseItem.data?.reply || `✅ *Done!* Recorded for *${customerName}*. I've also learned that *"${sourceName}"* belongs to them! 🛡️💎`);
+                                await WhatsAppSession.deleteOne({ _id: session._id });
+                                isProcessed = true;
+                            }
+                         } else if (session.type === 'alarm_confirmation') {
+                            const { saleId, customerName } = session.data;
+                            const sale = await Sale.findById(saleId);
+                            if (sale && sale.status !== 'paid') {
+                                const paymentLink = `${FRONTEND_URL}/i/${sale.publicSlug || sale.invoiceNumber}`;
+                                const nudgeDraft = `Hi ${customerName}, this is a friendly nudge from ${profile.displayName} regarding your balance of ₦${(sale.totalAmount - sale.paidAmount).toLocaleString()}. You can pay here: ${paymentLink}`;
+                                await sendReply(from, aiResponseItem.data?.reply || `📝 *Draft Reminder ready!* \n\n_"${nudgeDraft}"_`);
+                                await WhatsAppSession.deleteOne({ _id: session._id });
+                                isProcessed = true;
+                            }
+                         }
+                         // Add more session types as needed...
+                     }
+                 }
+            }
 
             // 1. UPDATE RECORD
             if (!isProcessed && aiResponseItem && aiResponseItem.intent === "update_record") {

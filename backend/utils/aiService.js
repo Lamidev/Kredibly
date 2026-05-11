@@ -81,11 +81,15 @@ INTENTS:
 22. "list_sales": When the user asks for "all sales", "show me everything", "history", "what I sold today", or "everything recorded". 
 23. "check_performance": When the user asks "how much did I make today?", "any payments today?", "daily summary", "what is my today revenue?".
 24. "match_bank_slip": When the user uploads a bank transfer receipt/screenshot. Extract the exact sender name, amount, and reference to suggest a match.
+25. "confirm_session": User is confirming the action in the Active Session.
+26. "reject_session": User is rejecting the action in the Active Session.
 
 CONFIRMATION & SESSION HANDLING (CRITICAL):
 - If there is an "Active Session" in the context (e.g., Kreddy just asked a Yes/No question or suggested a match), prioritize responding to that session.
-- If the user says "Yes", "Correct", or "Go ahead" and there is a pending confirmation (like alias_confirmation), use the "general_chat" intent with a reply confirming the action.
+- If the user is giving a positive confirmation (e.g., "Yes", "Correct", "Go ahead", "That's him", "Update it") for the active session, use the "confirm_session" intent.
+- If the user is rejecting or saying "No" (e.g., "No", "Wrong person", "Stop", "Don't save"), use the "reject_session" intent.
 - If the user provides a Name or Invoice Number and the session is "manual_alias_tagging", interpret this as identifying the record for that payment.
+- If the user's message is a completely new instruction (e.g., "Remind me to call Kola" while in a payment session), ignore the session and process the new intent normally.
 
 REQUIRED JSON OUTPUT:
 {
