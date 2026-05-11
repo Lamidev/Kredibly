@@ -1000,20 +1000,17 @@ const handleIncoming = async (req, res) => {
             }
         }
 
-        // Determine a meaningful description for the activity stream
-        const msgDescription = msgType === 'audio' || msgType === 'voice' 
-            ? '🎤 Voice Note' 
-            : msgType === 'image' 
-                ? '📸 Image / Receipt' 
-                : `"${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`;
-
-        await logActivity({
-            businessId: profile._id,
-            action: "WHATSAPP_MSG_RECEIVED",
-            entityType: "WHATSAPP",
-            details: `From: ${from} | Msg: ${msgDescription}`,
-            originalText: text
-        });
+        // Determine a meaningful description for the activity stream (Text only for now)
+        if (msgType === "text") {
+            const msgDescription = `"${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`;
+            await logActivity({
+                businessId: profile._id,
+                action: "WHATSAPP_MSG_RECEIVED",
+                entityType: "WHATSAPP",
+                details: `From: ${from} | Msg: ${msgDescription}`,
+                originalText: text
+            });
+        }
 
         // HUSTLER LIMIT CHECK (10 Sales limit per month)
         if (isHustler && (text.toLowerCase().includes("sold") || text.toLowerCase().includes("selling") || text.toLowerCase().includes("sale") || text.toLowerCase().includes("record"))) {
@@ -1109,10 +1106,65 @@ Upgrade here: ${APP_URL}/pricing`);
                 }
             }
 
-            // Handle "Yes" for Smart Logic Drafts
-            if (['yes', 'y', 'confirm', 'correct', 'true', 'sure'].includes(lowerText) && session.type === 'collect_sale_info') {
-                const { customerName, totalAmount, paidAmount, item, intent, dueDate, invoiceType } = session.data;
+            // Handle "Yes" for Smart Logic (Fail-safe for faster UX)
+            const isConfirmation = ['yes', 'y', 'confirm', 'correct', 'true', 'sure', 'do it', 'go ahead', 'sharp'].includes(lowerText);
+            const isRejection = ['no', 'n', 'wrong', 'stop', 'cancel', 'reject'].includes(lowerText);
+
+            if (isConfirmation && (session.type === 'collect_sale_info' || session.type === 'alias_confirmation' || session.type === 'alarm_confirmation')) {
+                // Common deletion
                 await WhatsAppSession.deleteOne({ _id: session._id });
+
+                if (session.type === 'alias_confirmation') {
+                    const { saleId, sourceName, customerName, paidAmount } = session.data;
+                    const sale = await Sale.findById(saleId);
+                    if (sale) {
+                        sale.payments.push({ 
+                            amount: paidAmount, 
+                            method: "WhatsApp Screenshot (Confirmed)", 
+                            date: new Date(), 
+                            reference: `CONFIRMED_${Date.now()}` 
+                        });
+                        await sale.save();
+                        
+                        if (sourceName) {
+                            const CustomerAlias = require('../../models/CustomerAlias');
+                            await CustomerAlias.findOneAndUpdate(
+                                { businessId: profile._id, sourceName }, 
+                                { targetName: customerName, lastUsedAt: new Date() }, 
+                                { upsert: true }
+                            );
+                        }
+
+                        // Socket Update
+                        try {
+                            const { getIO } = require('../../utils/socket');
+                            const io = getIO();
+                            if (io) io.to(profile._id.toString().toLowerCase()).emit('sale_updated', { 
+                                saleId: sale._id, 
+                                invoiceNumber: sale.invoiceNumber, 
+                                amount: paidAmount, 
+                                status: sale.status 
+                            });
+                        } catch (err) {}
+
+                        // Notification & Activity Log
+                        await Notification.create({ businessId: profile._id, title: 'Payment Confirmed! ✅', message: `₦${paidAmount.toLocaleString()} screenshot confirmed for ${customerName}.`, type: 'sale', saleId: sale._id });
+                        await logActivity({ businessId: profile._id, action: "PAYMENT_MATCHED", entityType: "SALE", entityId: sale._id, details: `Confirmed ₦${paidAmount} for ${customerName} via WhatsApp` });
+
+                        return await sendReply(from, `✅ *Done!* I've recorded that ₦${paidAmount.toLocaleString()} for *${customerName}*. \n\nI'll remember that *"${sourceName}"* belongs to them! 🛡️💎`);
+                    }
+                } else if (session.type === 'alarm_confirmation') {
+                    const { saleId, customerName } = session.data;
+                    const sale = await Sale.findById(saleId);
+                    if (sale && sale.status !== 'paid') {
+                        const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
+                        const paymentLink = `${FRONTEND_URL}/i/${sale.publicSlug || sale.invoiceNumber}`;
+                        const nudgeDraft = `Hi ${customerName}, this is a friendly nudge from ${profile.displayName} regarding your balance of ₦${bal.toLocaleString()}. You can pay here: ${paymentLink}`;
+                        return await sendReply(from, `📝 *Draft Reminder ready!* \n\n_"${nudgeDraft}"_`);
+                    }
+                } else if (session.type === 'collect_sale_info') {
+                    const { customerName, totalAmount, paidAmount, item, intent, dueDate, invoiceType } = session.data;
+                    await WhatsAppSession.deleteOne({ _id: session._id });
 
                 if (intent === 'create_sale') {
                     const newSale = new Sale({
@@ -1215,7 +1267,11 @@ Upgrade here: ${APP_URL}/pricing`);
                         return await sendReply(from, finalMsg);
                     }
                     return await sendReply(from, `🤔 I couldn't find an active debt for *${cleanName}* to update.`);
-                } else if (session.type === 'recovery_followup') {
+                }
+            } else if (isRejection && (session.type === 'collect_sale_info' || session.type === 'alias_confirmation' || session.type === 'alarm_confirmation' || session.type === 'manual_alias_tagging')) {
+                await WhatsAppSession.deleteOne({ _id: session._id });
+                return await sendReply(from, `No problem! I've cancelled that for you. 🫡 What else can I help you with?`);
+            } else if (session.type === 'recovery_followup') {
                     if (lowerText.includes('yes') || lowerText.includes('y')) {
                         // Ask if full or partial
                         await WhatsAppSession.findOneAndUpdate(
@@ -1505,6 +1561,16 @@ Upgrade here: ${APP_URL}/pricing`);
                     if (aiResponse) {
                         profile.monthlyUsage.voiceNotes = (profile.monthlyUsage.voiceNotes || 0) + 1;
                         await profile.save();
+
+                        // Log Activity with Transcription Proof
+                        const transcription = (Array.isArray(aiResponse) ? aiResponse[0]?.data?.transcription : aiResponse.data?.transcription) || "Voice Note";
+                        await logActivity({
+                            businessId: profile._id,
+                            action: "WHATSAPP_MSG_RECEIVED",
+                            entityType: "WHATSAPP",
+                            details: `From: ${from} | Msg: 🎤 Voice Note: "${transcription}"`,
+                            originalText: transcription
+                        });
                     }
                 }
 
@@ -1539,6 +1605,16 @@ Upgrade here: ${APP_URL}/pricing`);
                         profile.monthlyUsage.images = (profile.monthlyUsage.images || 0) + 1;
                         profile.monthlyUsage.messages = (profile.monthlyUsage.messages || 0) + 1;
                         await profile.save();
+
+                        // Log Activity with Transcription Proof
+                        const transcription = (Array.isArray(aiResponse) ? aiResponse[0]?.data?.transcription : aiResponse.data?.transcription) || "Image/Receipt";
+                        await logActivity({
+                            businessId: profile._id,
+                            action: "WHATSAPP_MSG_RECEIVED",
+                            entityType: "WHATSAPP",
+                            details: `From: ${from} | Msg: 📸 Image: "${transcription}"`,
+                            originalText: transcription
+                        });
                     }
                 }
 
