@@ -1152,6 +1152,8 @@ Upgrade here: ${APP_URL}/pricing`);
                         await logActivity({ businessId: profile._id, action: "PAYMENT_MATCHED", entityType: "SALE", entityId: sale._id, details: `Confirmed ₦${paidAmount} for ${customerName} via WhatsApp` });
 
                         return await sendReply(from, `✅ *Done!* I've recorded that ₦${paidAmount.toLocaleString()} for *${customerName}*. \n\nI'll remember that *"${sourceName}"* belongs to them! 🛡️💎`);
+                    } else {
+                        return await sendReply(from, `🤔 I couldn't find that invoice anymore — it may have been deleted. Check your dashboard! 🛡️`);
                     }
                 } else if (session.type === 'alarm_confirmation') {
                     const { saleId, customerName } = session.data;
@@ -1562,8 +1564,12 @@ Upgrade here: ${APP_URL}/pricing`);
                         profile.monthlyUsage.voiceNotes = (profile.monthlyUsage.voiceNotes || 0) + 1;
                         await profile.save();
 
-                        // Log Activity with Transcription Proof
-                        const transcription = (Array.isArray(aiResponse) ? aiResponse[0]?.data?.transcription : aiResponse.data?.transcription) || "Voice Note";
+                        // Log Activity with Transcription Proof (fallback chain: transcription → reply → intent)
+                        const firstResponse = Array.isArray(aiResponse) ? aiResponse[0] : aiResponse;
+                        const transcription = firstResponse?.data?.transcription
+                            || firstResponse?.data?.reply
+                            || (firstResponse?.intent ? `Intent: ${firstResponse.intent}` : null)
+                            || "Voice Note";
                         await logActivity({
                             businessId: profile._id,
                             action: "WHATSAPP_MSG_RECEIVED",
@@ -1606,8 +1612,12 @@ Upgrade here: ${APP_URL}/pricing`);
                         profile.monthlyUsage.messages = (profile.monthlyUsage.messages || 0) + 1;
                         await profile.save();
 
-                        // Log Activity with Transcription Proof
-                        const transcription = (Array.isArray(aiResponse) ? aiResponse[0]?.data?.transcription : aiResponse.data?.transcription) || "Image/Receipt";
+                        // Log Activity with Transcription Proof (fallback chain: transcription → reply → intent)
+                        const firstResponse = Array.isArray(aiResponse) ? aiResponse[0] : aiResponse;
+                        const transcription = firstResponse?.data?.transcription
+                            || firstResponse?.data?.reply
+                            || (firstResponse?.intent ? `Intent: ${firstResponse.intent}` : null)
+                            || "Image/Receipt";
                         await logActivity({
                             businessId: profile._id,
                             action: "WHATSAPP_MSG_RECEIVED",
