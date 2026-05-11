@@ -159,12 +159,20 @@ const verifyEmail = async (req, res) => {
 
 // Logout
 const logout = (req, res) => {
-  res.cookie("token", "", {
+  const isProduction = process.env.NODE_ENV === "production";
+  const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     expires: new Date(0),
-  }).json({ success: true, message: "Logged out" });
+    path: "/",
+  };
+
+  if (isProduction && process.env.COOKIE_DOMAIN) {
+    cookieOptions.domain = process.env.COOKIE_DOMAIN;
+  }
+
+  res.cookie("token", "", cookieOptions).json({ success: true, message: "Logged out" });
 };
 
 // Check Auth
@@ -174,6 +182,12 @@ const checkAuth = async (req, res) => {
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
     const profile = await BusinessProfile.findOne({ ownerId: user._id });
+
+    // Prevent caching of this sensitive auth check
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.set('Surrogate-Control', 'no-store');
 
     res.status(200).json({ success: true, user, profile });
   } catch (error) {

@@ -32,5 +32,6 @@ const dailyAdviceController = require("../../controllers/admin/dailyAdviceContro
 router.get("/daily-advice", dailyAdviceController.getDailyAdvice);
 router.post("/daily-advice/regenerate", dailyAdviceController.regenerateAdvice);
 router.post("/daily-advice/approve", dailyAdviceController.approveAndQueueSummaries);
+router.patch("/daily-advice/tone", dailyAdviceController.updateTonePreference);
 
 module.exports = router;

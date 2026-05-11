@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '../../config';
 
 const AdminMissionControl = () => {
     const [feed, setFeed] = useState([]);
@@ -20,10 +21,17 @@ const AdminMissionControl = () => {
     const [isRegenerating, setIsRegenerating] = useState(false);
     const [isApproving, setIsApproving] = useState(false);
     const [tone, setTone] = useState("English");
+    const [savedTone, setSavedTone] = useState("English");
+    const [isSavingTone, setIsSavingTone] = useState(false);
+ 
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
     
-    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+    const API_URL = API_BASE_URL;
 
     useEffect(() => {
+        console.log(`🛰️ Mission Control pointing to: ${API_URL}`);
         fetchMissionControlData();
         fetchDailyAdvice();
         const interval = setInterval(() => {
@@ -43,8 +51,10 @@ const AdminMissionControl = () => {
             setAdviceStatus(res.data?.status || "pending");
             if (value?.tone) {
                 setTone(value.tone);
+                setSavedTone(value.tone);
             } else if (res.data?.metadata?.tone) {
                 setTone(res.data.metadata.tone);
+                setSavedTone(res.data.metadata.tone);
             }
         } catch (err) {
             console.error("Daily Advice Sync Error:", err);
@@ -81,6 +91,21 @@ const AdminMissionControl = () => {
             toast.error("Failed to approve batch.");
         } finally {
             setIsApproving(false);
+        }
+    };
+
+    const handleSaveTonePreference = async () => {
+        setIsSavingTone(true);
+        try {
+            const res = await axios.patch(`${API_URL}/admin/daily-advice/tone`, { tone }, { withCredentials: true });
+            if (res.data.success) {
+                setSavedTone(tone);
+                toast.success(`System preference updated! Tomorrow's report will use ${tone}.`);
+            }
+        } catch (err) {
+            toast.error("Failed to sync preference. Ensure backend is running.");
+        } finally {
+            setIsSavingTone(false);
         }
     };
 
@@ -169,27 +194,32 @@ const AdminMissionControl = () => {
             </div>
 
             {/* STATUS HERO */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'clamp(12px, 3vw, 20px)', marginBottom: '32px' }}>
-                <div className="dashboard-glass" style={{ padding: 'clamp(16px, 4vw, 24px)', borderRadius: '28px', background: 'white', border: '1px solid #E2E8F0' }}>
+            <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
+                gap: 'clamp(12px, 3vw, 20px)', 
+                marginBottom: '32px' 
+            }}>
+                <div className="dashboard-glass" style={{ padding: 'clamp(16px, 4vw, 20px)', borderRadius: '24px', background: 'white', border: '1px solid #E2E8F0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <div style={{ padding: '10px', background: '#F0F9FF', borderRadius: '14px', color: '#0EA5E9' }}><Activity size={20} /></div>
-                        <span style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A' }}>{stats.pending + stats.processing}</span>
+                        <div style={{ padding: '8px', background: '#F0F9FF', borderRadius: '12px', color: '#0EA5E9' }}><Activity size={18} /></div>
+                        <span style={{ fontSize: 'clamp(1.2rem, 4vw, 1.5rem)', fontWeight: 900, color: '#0F172A' }}>{stats.pending + stats.processing}</span>
                     </div>
-                    <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Active Tasks</p>
+                    <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Active Tasks</p>
                 </div>
-                <div className="dashboard-glass" style={{ padding: 'clamp(16px, 4vw, 24px)', borderRadius: '28px', background: 'white', border: '1px solid #E2E8F0' }}>
+                <div className="dashboard-glass" style={{ padding: 'clamp(16px, 4vw, 20px)', borderRadius: '24px', background: 'white', border: '1px solid #E2E8F0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <div style={{ padding: '10px', background: '#ECFDF5', borderRadius: '14px', color: '#10B981' }}><CheckCircle2 size={20} /></div>
-                        <span style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A' }}>{(stats.wa_sent || 0) + (stats.email_sent || 0)}</span>
+                        <div style={{ padding: '8px', background: '#ECFDF5', borderRadius: '12px', color: '#10B981' }}><CheckCircle2 size={18} /></div>
+                        <span style={{ fontSize: 'clamp(1.2rem, 4vw, 1.5rem)', fontWeight: 900, color: '#0F172A' }}>{(stats.wa_sent || 0) + (stats.email_sent || 0)}</span>
                     </div>
-                    <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Daily Success</p>
+                    <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Daily Success</p>
                 </div>
-                <div className="dashboard-glass" style={{ padding: 'clamp(16px, 4vw, 24px)', borderRadius: '28px', background: 'white', border: '1px solid #E2E8F0' }}>
+                <div className="dashboard-glass" style={{ padding: 'clamp(16px, 4vw, 20px)', borderRadius: '24px', background: 'white', border: '1px solid #E2E8F0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <div style={{ padding: '10px', background: '#FEF2F2', borderRadius: '14px', color: '#EF4444' }}><AlertCircle size={20} /></div>
-                        <span style={{ fontSize: '1.5rem', fontWeight: 900, color: '#EF4444' }}>{stats.failed}</span>
+                        <div style={{ padding: '8px', background: '#FEF2F2', borderRadius: '12px', color: '#EF4444' }}><AlertCircle size={18} /></div>
+                        <span style={{ fontSize: 'clamp(1.2rem, 4vw, 1.5rem)', fontWeight: 900, color: '#EF4444' }}>{stats.failed}</span>
                     </div>
-                    <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Attention Required</p>
+                    <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Attention Required</p>
                 </div>
             </div>
 
@@ -215,20 +245,37 @@ const AdminMissionControl = () => {
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                             {/* Tone Toggle */}
-                            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                {['English', 'Pidgin'].map(t => (
-                                    <button
-                                        key={t}
-                                        onClick={() => setTone(t)}
-                                        style={{
-                                            padding: '6px 12px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800,
-                                            background: tone === t ? 'var(--primary)' : 'transparent',
-                                            color: 'white', border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                    {['English', 'Pidgin'].map(t => (
+                                        <button
+                                            key={t}
+                                            onClick={() => setTone(t)}
+                                            style={{
+                                                padding: '6px 12px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800,
+                                                background: tone === t ? 'var(--primary)' : 'transparent',
+                                                color: 'white', border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            {t}
+                                        </button>
+                                    ))}
+                                </div>
+                                {tone !== savedTone && (
+                                    <motion.button 
+                                        initial={{ opacity: 0, y: -5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        onClick={handleSaveTonePreference}
+                                        disabled={isSavingTone}
+                                        style={{ 
+                                            background: '#10B981', color: 'white', border: 'none', borderRadius: '8px', 
+                                            padding: '6px 12px', fontSize: '0.65rem', fontWeight: 900, cursor: 'pointer',
+                                            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
                                         }}
                                     >
-                                        {t}
-                                    </button>
-                                ))}
+                                        {isSavingTone ? 'Saving...' : 'Save Configuration'}
+                                    </motion.button>
+                                )}
                             </div>
                             <span style={{ 
                                 padding: '6px 14px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 900, 
@@ -340,13 +387,11 @@ const AdminMissionControl = () => {
                     display: 'flex', 
                     flexDirection: 'column', 
                     gap: '16px', 
-                    maxHeight: '700px', 
-                    overflowY: 'auto', 
-                    paddingRight: '12px',
-                    scrollbarWidth: 'thin'
+                    minHeight: '400px',
+                    paddingRight: '4px'
                 }}>
                     <AnimatePresence mode="popLayout">
-                         {feed.map((item) => (
+                         {feed.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((item) => (
                             <motion.div 
                                 layout
                                 key={item._id + item.timestamp}
@@ -354,59 +399,58 @@ const AdminMissionControl = () => {
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 style={{ 
-                                    padding: 'clamp(16px, 4vw, 20px)', 
+                                    padding: 'clamp(12px, 3vw, 20px)', 
                                     borderRadius: '20px', 
                                     background: '#F8FAFC', 
                                     border: `1px solid ${item.status === 'failed' ? '#FEE2E2' : '#E2E8F0'}`,
                                     display: 'flex',
-                                    gap: 'clamp(12px, 3vw, 20px)',
-                                    alignItems: 'center',
-                                    flexWrap: 'wrap'
+                                    gap: 'clamp(10px, 3vw, 16px)',
+                                    alignItems: 'center'
                                 }}
                             >
                                 {/* EVENT ICON */}
                                 <div style={{ 
-                                    width: '48px', height: '48px', borderRadius: '16px', 
+                                    width: 'clamp(40px, 10vw, 48px)', height: 'clamp(40px, 10vw, 48px)', borderRadius: '14px', 
                                     background: item.color === 'purple' ? '#F5F3FF' : (item.color === 'green' ? '#ECFDF5' : (item.color === 'blue' ? '#F0F9FF' : '#F1F5F9')),
                                     color: item.color === 'purple' ? '#8B5CF6' : (item.color === 'green' ? '#10B981' : (item.color === 'blue' ? '#0EA5E9' : '#64748B')),
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                                 }}>
-                                    {item.type === 'JOB' ? <Zap size={22} /> : (item.type === 'SALE' ? <TrendingUp size={22} /> : (item.type === 'SUB' ? <CreditCard size={22} /> : <Activity size={22} />))}
+                                    {item.type === 'JOB' ? <Zap size={20} /> : (item.type === 'SALE' ? <TrendingUp size={20} /> : (item.type === 'SUB' ? <CreditCard size={20} /> : <Activity size={20} />))}
                                 </div>
  
                                 {/* CONTENT */}
-                                <div style={{ flex: '1 1 200px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '4px' }}>
-                                        <h4 style={{ margin: 0, fontWeight: 900, fontSize: '0.95rem', color: '#1E293B' }}>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '2px' }}>
+                                        <h4 style={{ margin: 0, fontWeight: 900, fontSize: '0.9rem', color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {item.merchant} 
-                                            <span style={{ fontSize: '0.7rem', fontWeight: 700, marginLeft: '8px', padding: '2px 8px', borderRadius: '6px', background: 'rgba(0,0,0,0.03)', color: '#64748B' }}>
-                                                {item.event.replace(/_/g, ' ')}
-                                            </span>
                                         </h4>
-                                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94A3B8' }}>
+                                        <span style={{ fontSize: '0.6rem', fontWeight: 700, color: '#94A3B8', whiteSpace: 'nowrap' }}>
                                             {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                                        <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 650, color: item.status === 'failed' ? '#EF4444' : '#475569' }}>
+                                    <p style={{ margin: '0 0 4px', fontSize: '0.65rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        {item.event.replace(/_/g, ' ')}
+                                    </p>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                                        <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 650, color: item.status === 'failed' ? '#EF4444' : '#475569', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                                             {item.details}
                                         </p>
                                         
                                         {/* ACTION BUTTONS FOR JOBS */}
                                         {item.type === 'JOB' && (
-                                            <div style={{ display: 'flex', gap: '6px' }}>
+                                            <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
                                                 {item.status === 'failed' && (
                                                     <button onClick={() => handleJobAction(item._id, 'retry')} style={actionBtnStyle('#10B981')} title="Retry Operation">
-                                                        <Play size={12} fill="currentColor" />
+                                                        <Play size={10} fill="currentColor" />
                                                     </button>
                                                 )}
                                                 {item.status === 'pending' && (
                                                     <button onClick={() => handleJobAction(item._id, 'cancel')} style={actionBtnStyle('#F97316')} title="Cancel Task">
-                                                        <XCircle size={12} />
+                                                        <XCircle size={10} />
                                                     </button>
                                                 )}
                                                 <button onClick={() => handleJobAction(item._id, 'delete')} style={actionBtnStyle('#EF4444')} title="Purge Record">
-                                                    <Trash2 size={12} />
+                                                    <Trash2 size={10} />
                                                 </button>
                                             </div>
                                         )}
@@ -415,6 +459,25 @@ const AdminMissionControl = () => {
                             </motion.div>
                         ))}
                     </AnimatePresence>
+                </div>
+
+                {/* Pagination Controls */}
+                <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'center', gap: '16px', alignItems: 'center' }}>
+                    <button 
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(p => p - 1)}
+                        style={{ padding: '10px 20px', borderRadius: '12px', background: '#F8FAFC', border: '1px solid #E2E8F0', fontWeight: 800, color: '#64748B', cursor: 'pointer', fontSize: '0.8rem', opacity: currentPage === 1 ? 0.5 : 1 }}
+                    >
+                        Prev
+                    </button>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 900, color: 'var(--primary)' }}>Page {currentPage}</span>
+                    <button 
+                        disabled={currentPage * itemsPerPage >= feed.length}
+                        onClick={() => setCurrentPage(p => p + 1)}
+                        style={{ padding: '10px 20px', borderRadius: '12px', background: '#F8FAFC', border: '1px solid #E2E8F0', fontWeight: 800, color: '#64748B', cursor: 'pointer', fontSize: '0.8rem', opacity: currentPage * itemsPerPage >= feed.length ? 0.5 : 1 }}
+                    >
+                        Next
+                    </button>
                 </div>
             </div>
 

@@ -12,6 +12,19 @@ const AdminMerchants = () => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
     
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+    
+    // Responsive State
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    
     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
     useEffect(() => {
@@ -56,7 +69,9 @@ const AdminMerchants = () => {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <div className="dashboard-glass admin-card-padding" style={{ background: 'white', border: '1px solid var(--border)', borderRadius: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
-                    <h3 className="premium-gradient" style={{ fontWeight: 950, fontSize: '1.4rem', margin: 0 }}>Merchant Directory</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <h3 className="premium-gradient" style={{ fontWeight: 950, fontSize: '1.4rem', margin: 0, padding: '4px 8px', display: 'inline-block', marginLeft: '4px' }}>Merchant Directory</h3>
+                    </div>
                     <div style={{ position: 'relative', flex: 1, minWidth: '260px' }}>
                         <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
                         <input 
@@ -69,59 +84,121 @@ const AdminMerchants = () => {
                     </div>
                 </div>
                 
-                <div style={{ overflowX: 'auto', margin: '0 -10px' }}>
-                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px', minWidth: '600px' }}>
-                        <thead>
-                            <tr>
-                                <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '0.75rem', color: '#64748B', fontWeight: 800 }}>MERCHANT</th>
-                                <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '0.75rem', color: '#64748B', fontWeight: 800 }}>PLAN</th>
-                                <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '0.75rem', color: '#64748B', fontWeight: 800 }}>JOINED</th>
-                                <th style={{ textAlign: 'right', padding: '12px 16px', fontSize: '0.75rem', color: '#64748B', fontWeight: 800 }}>ACTIONS</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredUsers.map((u) => (
-                                <tr key={u._id} className="row-hover">
-                                    <td style={{ padding: '16px', borderRadius: '20px 0 0 20px', border: '1px solid #F1F5F9', borderRight: 'none' }}>
-                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                            <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.9rem' }}>
-                                                {u.name?.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                    <p style={{ margin: 0, fontWeight: 850, fontSize: '0.95rem' }}>{u.name}</p>
-                                                    {u.business?.isKreddyConnected && (
-                                                        <span title="WhatsApp Connected" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#DCFCE7', color: '#166534', padding: '2px 6px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 900 }}>
-                                                            WA ACTIVE
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748B' }}>{u.email}</p>
-                                            </div>
+                {isMobile ? (
+                    /* Mobile Card View */
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        {filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((u) => (
+                            <div key={u._id} style={{ background: '#F8FAFC', borderRadius: '24px', padding: '20px', border: '1px solid #F1F5F9' }}>
+                                <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', marginBottom: '16px' }}>
+                                    <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.1rem', flexShrink: 0 }}>
+                                        {u.name?.charAt(0)}
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                                            <p style={{ margin: 0, fontWeight: 900, fontSize: '1rem' }}>{u.name}</p>
+                                            {u.business?.isKreddyConnected && (
+                                                <span style={{ background: '#DCFCE7', color: '#166534', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6rem', fontWeight: 900 }}>WA ACTIVE</span>
+                                            )}
                                         </div>
-                                    </td>
-                                    <td style={{ padding: '16px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
+                                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748B', wordBreak: 'break-all' }}>{u.email}</p>
+                                    </div>
+                                    <button onClick={() => { setItemToDelete(u._id); setShowDeleteConfirm(true); }} style={{ padding: '10px', borderRadius: '12px', background: '#FEF2F2', color: '#EF4444', border: 'none' }}><Trash2 size={18} /></button>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid #E2E8F0' }}>
+                                    <div>
                                         <span style={{ 
-                                            padding: '4px 12px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 900,
-                                            background: u.business?.plan === 'hustler' ? '#F1F5F9' : u.business?.plan === 'oga' ? '#ECFDF5' : u.business?.plan === 'chairman' ? '#EEF2FF' : '#FFF7ED',
+                                            padding: '4px 10px', borderRadius: '100px', fontSize: '0.65rem', fontWeight: 900,
+                                            background: u.business?.plan === 'hustler' ? '#E2E8F0' : u.business?.plan === 'oga' ? '#ECFDF5' : u.business?.plan === 'chairman' ? '#EEF2FF' : '#FFF7ED',
                                             color: u.business?.plan === 'hustler' ? '#64748B' : u.business?.plan === 'oga' ? '#10B981' : u.business?.plan === 'chairman' ? '#6366F1' : '#EA580C',
-                                            textTransform: 'uppercase', letterSpacing: '0.05em'
+                                            textTransform: 'uppercase'
                                         }}>
                                             {u.business?.plan || 'INCOMPLETE'}
                                         </span>
-                                    </td>
-                                    <td style={{ padding: '16px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9', fontSize: '0.85rem', fontWeight: 700, color: '#64748B' }}>
-                                        {new Date(u.createdAt).toLocaleDateString()}
-                                    </td>
-                                    <td style={{ padding: '16px', borderRadius: '0 20px 20px 0', border: '1px solid #F1F5F9', borderLeft: 'none', textAlign: 'right' }}>
-                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                            <button onClick={() => { setItemToDelete(u._id); setShowDeleteConfirm(true); }} style={{ padding: '10px', borderRadius: '12px', background: '#FEF2F2', color: '#EF4444', border: 'none', cursor: 'pointer' }}><Trash2 size={18} /></button>
-                                        </div>
-                                    </td>
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8' }}>
+                                        Joined {new Date(u.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' })}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    /* Desktop Table View */
+                    <div style={{ overflowX: 'auto', margin: '0 -10px' }}>
+                        <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px', minWidth: '600px' }}>
+                            <thead>
+                                <tr>
+                                    <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '0.75rem', color: '#64748B', fontWeight: 800 }}>MERCHANT</th>
+                                    <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '0.75rem', color: '#64748B', fontWeight: 800 }}>PLAN</th>
+                                    <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '0.75rem', color: '#64748B', fontWeight: 800 }}>JOINED</th>
+                                    <th style={{ textAlign: 'right', padding: '12px 16px', fontSize: '0.75rem', color: '#64748B', fontWeight: 800 }}>ACTIONS</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((u) => (
+                                    <tr key={u._id} className="row-hover">
+                                        <td style={{ padding: '16px', borderRadius: '20px 0 0 20px', border: '1px solid #F1F5F9', borderRight: 'none' }}>
+                                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                                <div style={{ width: 'clamp(32px, 8vw, 44px)', height: 'clamp(32px, 8vw, 44px)', borderRadius: '12px', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.8rem' }}>
+                                                    {u.name?.charAt(0)}
+                                                </div>
+                                                <div style={{ minWidth: 0 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                                        <p style={{ margin: 0, fontWeight: 850, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.name}</p>
+                                                        {u.business?.isKreddyConnected && (
+                                                            <span title="WhatsApp Connected" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#DCFCE7', color: '#166534', padding: '2px 6px', borderRadius: '6px', fontSize: '0.6rem', fontWeight: 900, whiteSpace: 'nowrap' }}>
+                                                                WA ACTIVE
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p style={{ margin: 0, fontSize: '0.7rem', color: '#64748B', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.email}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '16px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
+                                            <span style={{ 
+                                                padding: '4px 10px', borderRadius: '100px', fontSize: '0.65rem', fontWeight: 900,
+                                                background: u.business?.plan === 'hustler' ? '#F1F5F9' : u.business?.plan === 'oga' ? '#ECFDF5' : u.business?.plan === 'chairman' ? '#EEF2FF' : '#FFF7ED',
+                                                color: u.business?.plan === 'hustler' ? '#64748B' : u.business?.plan === 'oga' ? '#10B981' : u.business?.plan === 'chairman' ? '#6366F1' : '#EA580C',
+                                                textTransform: 'uppercase', letterSpacing: '0.05em'
+                                            }}>
+                                                {u.business?.plan || 'INCOMPLETE'}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '16px', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9', fontSize: '0.8rem', fontWeight: 700, color: '#64748B' }}>
+                                            {new Date(u.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' })}
+                                        </td>
+                                        <td style={{ padding: '16px', borderRadius: '0 20px 20px 0', border: '1px solid #F1F5F9', borderLeft: 'none', textAlign: 'right' }}>
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                <button onClick={() => { setItemToDelete(u._id); setShowDeleteConfirm(true); }} style={{ padding: '8px', borderRadius: '10px', background: '#FEF2F2', color: '#EF4444', border: 'none', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {/* Pagination Controls */}
+                <div style={{ padding: '24px', display: 'flex', justifyContent: 'center', gap: '16px', borderTop: '1px solid #F1F5F9', alignItems: 'center' }}>
+                    <button 
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(p => p - 1)}
+                        style={{ padding: '10px 20px', borderRadius: '12px', background: '#F8FAFC', border: '1px solid #E2E8F0', fontWeight: 800, color: '#64748B', cursor: 'pointer', fontSize: '0.85rem', opacity: currentPage === 1 ? 0.5 : 1 }}
+                    >
+                        Prev
+                    </button>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--primary)' }}>
+                        Page {currentPage} of {Math.ceil(filteredUsers.length / itemsPerPage) || 1}
+                    </div>
+                    <button 
+                        disabled={currentPage * itemsPerPage >= filteredUsers.length}
+                        onClick={() => setCurrentPage(p => p + 1)}
+                        style={{ padding: '10px 20px', borderRadius: '12px', background: '#F8FAFC', border: '1px solid #E2E8F0', fontWeight: 800, color: '#64748B', cursor: 'pointer', fontSize: '0.85rem', opacity: currentPage * itemsPerPage >= filteredUsers.length ? 0.5 : 1 }}
+                    >
+                        Next
+                    </button>
                 </div>
 
                 {showDeleteConfirm && createPortal(

@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { 
     Plus, Wallet, Clock, CheckCircle, ChevronRight, 
     TrendingUp, Users, MessagesSquare, Trash2, Shield, 
-    ArrowUpRight, Activity, Zap, Sparkles
+    ArrowUpRight, Activity, Zap, Sparkles, Copy, Mic
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
@@ -23,7 +23,7 @@ import { initiateSocketConnection, disconnectSocket, listenToEvent, stopListenin
 
 const Dashboard = () => {
     const { stats, sales, analytics, fetchSales, fetchStats, fetchAnalytics, loading, deleteSale } = useSales();
-    const { user, profile, updateProfile } = useAuth();
+    const { user, profile, updateProfile, checkAuth } = useAuth();
     const navigate = useNavigate();
     const [whatsappInput, setWhatsappInput] = useState("");
     const [updatingWhatsapp, setUpdatingWhatsapp] = useState(false);
@@ -32,6 +32,25 @@ const Dashboard = () => {
     const [visibleSales, setVisibleSales] = useState(5);
     const [deleteModal, setDeleteModal] = useState({ show: false, sale: null });
     const [showLimitModal, setShowLimitModal] = useState(false);
+
+    const handleCopyDraft = (sale) => {
+        const balance = sale.totalAmount - (sale.payments?.reduce((sum, p) => sum + p.amount, 0) || 0);
+        const link = `${window.location.origin}/i/${sale.invoiceNumber}`;
+        const tone = profile?.assistantSettings?.reminderTemplate || 'friendly';
+        
+        let draft = "";
+        if (tone === 'formal') {
+            draft = `Hi ${sale.customerName}, this is a formal reminder regarding your outstanding balance of ₦${balance.toLocaleString()} with ${profile?.displayName || 'us'}. You can view the details and pay securely here: ${link}`;
+        } else {
+            draft = `Hi ${sale.customerName}, just a friendly nudge from ${profile?.displayName || 'us'} regarding your balance of ₦${balance.toLocaleString()}. You can pay securely here: ${link} - Thank you!`;
+        }
+
+        navigator.clipboard.writeText(draft);
+        toast.success(`Kreddy's ${tone} draft copied!`, {
+            description: "Ready to paste and send on WhatsApp.",
+            icon: <Copy size={16} />
+        });
+    };
 
     useEffect(() => {
         fetchSales();
@@ -63,6 +82,17 @@ const Dashboard = () => {
                 console.log("⚡ Activity update received:", data);
                 fetchActivities();
             });
+
+            // 🚀 Trigger Welcome Message if needed (after landing on dashboard)
+            if (profile?.onboardingStep === 4 && profile?.welcomeSent === false) {
+                const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+                axios.post(`${API_URL}/business/trigger-welcome`, {}, { withCredentials: true })
+                     .then(() => {
+                        // Refresh profile state from backend (now has welcomeSent: true)
+                        if (checkAuth) checkAuth();
+                     })
+                     .catch(err => console.error("Welcome trigger failed", err));
+            }
         }
 
         return () => {
@@ -488,6 +518,27 @@ const Dashboard = () => {
                                         </div>
                                     </div>
                                     <div className="priority-amount" style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleCopyDraft(sale);
+                                            }}
+                                            className="hover-scale"
+                                            title="Copy Kreddy Draft"
+                                            style={{ 
+                                                background: 'var(--background)', 
+                                                border: '1px solid var(--border)', 
+                                                padding: '10px', 
+                                                borderRadius: '12px', 
+                                                color: 'var(--primary)', 
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}
+                                        >
+                                            <Copy size={16} />
+                                        </button>
                                         <div style={{ textAlign: 'right', minWidth: '80px' }}>
                                             <p style={{ fontWeight: 950, fontSize: '1.05rem', color: 'var(--text)', marginBottom: '2px' }}>₦{(sale.totalAmount - (sale.payments?.reduce((sum, p) => sum + p.amount, 0) || 0)).toLocaleString()}</p>
                                             <span className="premium-badge" style={{ 
@@ -627,6 +678,24 @@ const Dashboard = () => {
                                                 }}>
                                                     {log.details.replace(/"/g, '')}
                                                 </p>
+                                                {log.originalText && (
+                                                    <div style={{ 
+                                                        background: 'var(--background)', 
+                                                        padding: '8px 12px', 
+                                                        borderRadius: '12px', 
+                                                        marginBottom: '8px', 
+                                                        borderLeft: '3px solid var(--primary)',
+                                                        fontSize: '0.8rem',
+                                                        color: 'var(--text-muted)',
+                                                        fontStyle: 'italic',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px'
+                                                    }}>
+                                                        <Mic size={12} color="var(--primary)" />
+                                                        <span>{log.originalText}</span>
+                                                    </div>
+                                                )}
                                                 <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                                     {new Date(log.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} • {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {log.action.replace(/_/g, ' ')}
                                                 </p>

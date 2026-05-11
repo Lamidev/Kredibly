@@ -14,6 +14,7 @@ router.post("/payout-settings", protect, businessController.saveBankDetails);
 
 // KYC & Compliance
 router.post("/kyc/verify", protect, businessController.verifyKYC);
+router.post("/trigger-welcome", protect, businessController.triggerWelcome);
 
 // Invoice Payment Initialization
 const paymentController = require("../../controllers/common/paymentController");
