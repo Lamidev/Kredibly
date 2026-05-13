@@ -37,10 +37,62 @@ self.addEventListener('fetch', event => {
       .catch(() => caches.match(event.request))
       .then(response => {
         if (!response) {
-            // Return a dummy offline page or just fail gracefully 
             return new Response('Offline: Resource not in cache.', { status: 503, statusText: 'Service Unavailable' });
         }
         return response;
       })
   );
+});
+
+// 🔔 PUSH NOTIFICATIONS
+self.addEventListener('push', event => {
+    let data = { title: 'Kredibly Notification', body: 'You have a new update.' };
+    
+    if (event.data) {
+        try {
+            data = event.data.json();
+        } catch (e) {
+            data = { title: 'Kredibly', body: event.data.text() };
+        }
+    }
+
+    const options = {
+        body: data.body,
+        icon: '/android-chrome-192x192.png',
+        badge: '/favicon-32x32.png',
+        vibrate: [100, 50, 100],
+        data: {
+            url: data.url || '/dashboard'
+        },
+        actions: [
+            { action: 'view', title: 'View Details' }
+        ]
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(data.title, options)
+    );
+});
+
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    
+    const urlToOpen = event.notification.data.url || '/dashboard';
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true })
+            .then(windowClients => {
+                // If a tab is already open, focus it
+                for (let i = 0; i < windowClients.length; i++) {
+                    const client = windowClients[i];
+                    if (client.url.includes(urlToOpen) && 'focus' in client) {
+                        return client.focus();
+                    }
+                }
+                // Otherwise open a new tab
+                if (clients.openWindow) {
+                    return clients.openWindow(urlToOpen);
+                }
+            })
+    );
 });

@@ -886,3 +886,28 @@ body.lock-scroll {
     .no-print { display: none !important; }
     @page { margin: 0.5cm; size: auto; }
 }
+/* Responsive Utilities */
+.hidden { display: none !important; }
+
+@media (min-width: 768px) {
+    .md\:grid { display: grid !important; }
+    .md\:flex { display: flex !important; }
+    .md\:hidden { display: none !important; }
+    .md\:block { display: block !important; }
+}
+
+@media (min-width: 1024px) {
+    .lg\:grid { display: grid !important; }
+    .lg\:flex { display: flex !important; }
+    .lg\:hidden { display: none !important; }
+    .lg\:block { display: block !important; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

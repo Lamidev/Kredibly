@@ -462,7 +462,7 @@ const Dashboard = () => {
                                 <motion.div
                                     key={sale._id}
                                     whileHover={{ x: 4, scale: 1.01 }}
-                                    className="dashboard-glass priority-item"
+                                    className="dashboard-glass priority-item mobile-stack"
                                     style={{ 
                                         padding: '16px 20px', 
                                         display: 'flex', 
@@ -475,7 +475,8 @@ const Dashboard = () => {
                                         background: 'white',
                                         width: '100%',
                                         boxSizing: 'border-box',
-                                        marginBottom: '12px'
+                                        marginBottom: '12px',
+                                        gap: '12px'
                                     }}
                                     onClick={() => navigate(`/dashboard/invoice/${sale.invoiceNumber}`)}
                                 >
@@ -821,6 +822,20 @@ const Dashboard = () => {
                 }
                 .hover-scale:hover {
                     transform: scale(1.02);
+                }
+                @media (max-width: 640px) {
+                    .mobile-stack {
+                        flex-direction: column !important;
+                        align-items: flex-start !important;
+                    }
+                    .priority-amount {
+                        width: 100% !important;
+                        justify-content: flex-start !important;
+                        margin-top: 8px !important;
+                        padding-top: 12px !important;
+                        border-top: 1px solid var(--border) !important;
+                        text-align: left !important;
+                    }
                 }
             `}</style>
         </div>

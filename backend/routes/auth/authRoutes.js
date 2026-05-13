@@ -11,5 +11,7 @@ router.get("/check-auth", protect, authController.checkAuth);
 router.post("/forgot-password", authController.forgotPassword);
 router.post("/reset-password/:token", authController.resetPassword);
 router.post("/verify-password", protect, authController.verifyPassword);
+router.post("/push-subscription", protect, authController.savePushSubscription);
+router.post("/push-unsubscribe", protect, authController.deletePushSubscription);
 
 module.exports = router;
