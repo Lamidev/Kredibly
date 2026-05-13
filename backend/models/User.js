@@ -37,7 +37,16 @@ const UserSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
-  }
+  },
+  pushSubscriptions: [{
+    endpoint: String,
+    keys: {
+      p256dh: String,
+      auth: String
+    },
+    deviceType: String,
+    lastUsed: { type: Date, default: Date.now }
+  }]
 });
 
 // Hash password before saving

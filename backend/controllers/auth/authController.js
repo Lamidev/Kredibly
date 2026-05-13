@@ -278,6 +278,51 @@ const verifyPassword = async (req, res) => {
     }
 };
 
+const savePushSubscription = async (req, res) => {
+  try {
+    const { subscription } = req.body;
+    if (!subscription) return res.status(400).json({ success: false, message: "Subscription is required" });
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    // Avoid duplicate subscriptions
+    const exists = user.pushSubscriptions.find(s => s.endpoint === subscription.endpoint);
+    if (!exists) {
+      user.pushSubscriptions.push({
+        endpoint: subscription.endpoint,
+        keys: subscription.keys,
+        deviceType: req.headers['user-agent']
+      });
+      await user.save();
+    } else {
+        exists.lastUsed = Date.now();
+        await user.save();
+    }
+
+    res.status(200).json({ success: true, message: "Subscription saved" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const deletePushSubscription = async (req, res) => {
+  try {
+    const { endpoint } = req.body;
+    if (!endpoint) return res.status(400).json({ success: false, message: "Endpoint is required" });
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    user.pushSubscriptions = user.pushSubscriptions.filter(s => s.endpoint !== endpoint);
+    await user.save();
+
+    res.status(200).json({ success: true, message: "Subscription removed" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -286,5 +331,7 @@ module.exports = {
   checkAuth,
   forgotPassword,
   resetPassword,
-  verifyPassword
+  verifyPassword,
+  savePushSubscription,
+  deletePushSubscription
 };

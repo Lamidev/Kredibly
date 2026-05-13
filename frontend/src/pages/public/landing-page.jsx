@@ -27,7 +27,8 @@ import {
     ChevronDown,
     Monitor,
     Tablet,
-    Layout
+    Layout,
+    Bell
 } from "lucide-react";
 import { motion } from "framer-motion";
 import PublicNavbar from "../../components/public/PublicNavbar";
@@ -597,14 +598,14 @@ const LandingPage = () => {
                                 <span className="premium-gradient">One Seamless App.</span>
                             </h2>
                             <p style={{ fontSize: '1.25rem', color: '#CBD5E1', fontWeight: 400, lineHeight: 1.6, marginBottom: '40px' }}>
-                                Install Kredibly on your phone, tablet, or laptop as a high-performance Progressive Web App (PWA). No App Store downloads. just lightning-fast access to your global commerce infrastructure.
+                                Install Kredibly on your phone, tablet, or laptop as a high-performance Progressive Web App (PWA). Get <b>Instant Push Alerts</b> for every payment without App Store downloads. Just lightning-fast access to your global commerce infrastructure.
                             </p>
                             
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '24px' }}>
                                 {[
                                     { icon: Smartphone, title: "Phone", desc: "Native speed for on-the-go management." },
-                                    { icon: Monitor, title: "Desktop", desc: "Full-screen power for deep ledger work." },
-                                    { icon: Tablet, title: "Tablet", desc: "The perfect balance for your physical store." }
+                                    { icon: Bell, title: "Push Alerts", desc: "Real-time payment notifications on your screen." },
+                                    { icon: Monitor, title: "Desktop", desc: "Full-screen power for deep ledger work." }
                                 ].map((f, i) => (
                                     <div key={i}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: 'var(--primary)' }}>

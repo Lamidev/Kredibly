@@ -411,6 +411,25 @@ const SalesList = ({ initialFilter }) => {
                 onClose={() => setShowLimitModal(false)}
                 onUpgrade={() => navigate('/settings')}
             />
+            <style>{`
+                @media (max-width: 1024px) {
+                    .sales-list-row {
+                        grid-template-columns: 2fr 100px 100px 40px !important;
+                    }
+                    .lg\:block { display: none !important; }
+                }
+                @media (max-width: 768px) {
+                    .sales-list-row {
+                        display: none !important;
+                    }
+                    .hidden.md\:grid {
+                        display: none !important;
+                    }
+                }
+                .sales-list-row:hover {
+                    background: #F8FAFC !important;
+                }
+            `}</style>
         </div>
     );
 };

@@ -17,7 +17,9 @@ import {
     CheckCircle,
     Loader2,
     Building2,
-    Search
+    Search,
+    Bell,
+    BellOff
 } from 'lucide-react';
 import axios from 'axios';
 import { isValidNigerianPhone, formatPhoneForDB } from '../../utils/validation';
@@ -73,6 +75,12 @@ const SettingsPage = () => {
     const [idNumber, setIdNumber] = useState("");
     const [dob, setDob] = useState("");
     const [isVerifying, setIsVerifying] = useState(false);
+    const [isSubscribing, setIsSubscribing] = useState(false);
+    const [pushStatus, setPushStatus] = useState(() => {
+        if (!('Notification' in window)) return 'unsupported';
+        return Notification.permission;
+    });
+    const { subscribeToPushNotifications, unsubscribeFromPushNotifications } = useAuth();
     
     const fileInputRef = React.useRef(null);
     const staffLimit = profile?.plan === 'chairman' ? 'Up to 3 Staff' : (profile?.plan === 'oga' ? 'Up to 1 Staff' : 'Owner Only');
@@ -168,6 +176,27 @@ const SettingsPage = () => {
             toast.error(err.response?.data?.message || "Verification failed. Check your details.");
         } finally {
             setIsVerifying(false);
+        }
+    };
+
+    const handlePushToggle = async () => {
+        setIsSubscribing(true);
+        try {
+            if (pushStatus === 'granted') {
+                await unsubscribeFromPushNotifications();
+                setPushStatus('default');
+                toast.success("Notifications turned off.");
+            } else {
+                await subscribeToPushNotifications();
+                setPushStatus(Notification.permission);
+                if (Notification.permission === 'granted') {
+                    toast.success("Notifications enabled successfully!");
+                }
+            }
+        } catch (err) {
+            toast.error("Action failed");
+        } finally {
+            setIsSubscribing(false);
         }
     };
 
@@ -896,6 +925,49 @@ const SettingsPage = () => {
                                     <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>Strict & clear for overdue accounts.</p>
                                 </button>
                             </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', background: '#F8FAFC', borderRadius: '16px', border: '1px solid #E2E8F0', marginTop: '24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
+                                <div style={{ 
+                                    background: pushStatus === 'granted' ? '#DCFCE7' : '#F1F5F9', 
+                                    color: pushStatus === 'granted' ? '#166534' : '#64748B', 
+                                    padding: '10px', 
+                                    borderRadius: '12px',
+                                    flexShrink: 0
+                                }}>
+                                    {pushStatus === 'granted' ? <Bell size={20} /> : <BellOff size={20} />}
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                    <p style={{ fontWeight: 700, color: '#1E293B', marginBottom: '4px', fontSize: '0.95rem' }}>Real-time Push Alerts</p>
+                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0, lineHeight: 1.4 }}>
+                                        {pushStatus === 'granted' ? 'Alerts are active on this device.' : 'Get notified about payments even when app is closed.'}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={handlePushToggle}
+                                disabled={isSubscribing || pushStatus === 'unsupported'}
+                                style={{
+                                    padding: '10px 18px',
+                                    borderRadius: '100px',
+                                    border: 'none',
+                                    background: pushStatus === 'granted' ? '#DCFCE7' : 'var(--primary)',
+                                    color: pushStatus === 'granted' ? '#166534' : 'white',
+                                    fontWeight: 800,
+                                    fontSize: '0.8rem',
+                                    cursor: (isSubscribing || pushStatus === 'unsupported') ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.3s ease',
+                                    whiteSpace: 'nowrap',
+                                    marginLeft: '12px'
+                                }}
+                            >
+                                {isSubscribing ? (
+                                    <Loader2 className="spin-animation" size={16} />
+                                ) : (
+                                    pushStatus === 'granted' ? 'Turn Off' : 'Turn On'
+                                )}
+                            </button>
                         </div>
                     </section>
                 )}

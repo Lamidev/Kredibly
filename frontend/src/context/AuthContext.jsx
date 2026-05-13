@@ -6,8 +6,14 @@ const AuthContext = createContext();
 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [profile, setProfile] = useState(null);
+    const [user, setUser] = useState(() => {
+        const savedUser = localStorage.getItem("kredibly_user");
+        return savedUser ? JSON.parse(savedUser) : null;
+    });
+    const [profile, setProfile] = useState(() => {
+        const savedProfile = localStorage.getItem("kredibly_profile");
+        return savedProfile ? JSON.parse(savedProfile) : null;
+    });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -17,20 +23,52 @@ export const AuthProvider = ({ children }) => {
 
     const checkAuth = async () => {
         try {
+            const token = localStorage.getItem("kredibly_token");
+            
+            // If we have no saved session at all, skip the network call
+            if (!token && !localStorage.getItem("kredibly_user")) {
+                setLoading(false);
+                return;
+            }
+
             const res = await axios.get(`${API_URL}/auth/check-auth`, { 
                 withCredentials: true,
                 headers: {
                     'Cache-Control': 'no-cache',
                     'Pragma': 'no-cache',
                     'Expires': '0',
+                    ...(token && { 'Authorization': `Bearer ${token}` })
                 }
             });
             if (res.data.success) {
                 setUser(res.data.user);
                 setProfile(res.data.profile);
+                localStorage.setItem("kredibly_user", JSON.stringify(res.data.user));
+                if (res.data.profile) {
+                    localStorage.setItem("kredibly_profile", JSON.stringify(res.data.profile));
+                }
+            } else {
+                // Server explicitly said "not authenticated"
+                setUser(null);
+                setProfile(null);
+                localStorage.removeItem("kredibly_user");
+                localStorage.removeItem("kredibly_profile");
+                localStorage.removeItem("kredibly_token");
             }
         } catch (err) {
-            // Not authenticated, silent fail
+            const status = err.response?.status;
+            
+            // ONLY clear session if the server explicitly said "unauthorized"
+            // For network errors, timeouts, or server downtime — keep the user logged in
+            if (status === 401 || status === 403) {
+                setUser(null);
+                setProfile(null);
+                localStorage.removeItem("kredibly_user");
+                localStorage.removeItem("kredibly_profile");
+                localStorage.removeItem("kredibly_token");
+            }
+            // For any other error (network, 500, timeout), keep the hydrated state
+            // The user stays on the dashboard and we retry on the next navigation
         } finally {
             setLoading(false);
         }
@@ -43,6 +81,13 @@ export const AuthProvider = ({ children }) => {
             if (res.data.success) {
                 setUser(res.data.user);
                 setProfile(res.data.profile);
+                localStorage.setItem("kredibly_user", JSON.stringify(res.data.user));
+                if (res.data.profile) {
+                    localStorage.setItem("kredibly_profile", JSON.stringify(res.data.profile));
+                }
+                if (res.data.token) {
+                    localStorage.setItem("kredibly_token", res.data.token);
+                }
                 return res.data;
             }
         } catch (err) {
@@ -67,6 +112,9 @@ export const AuthProvider = ({ children }) => {
             await axios.post(`${API_URL}/auth/logout`, {}, { withCredentials: true });
             setUser(null);
             setProfile(null);
+            localStorage.removeItem("kredibly_user");
+            localStorage.removeItem("kredibly_profile");
+            localStorage.removeItem("kredibly_token");
         } catch (err) {
             // Logout failed
         }
@@ -90,6 +138,9 @@ export const AuthProvider = ({ children }) => {
             setError(null);
             const res = await axios.post(`${API_URL}/auth/verify-email`, { code }, { withCredentials: true });
             if (res.data.success) {
+                if (res.data.token) {
+                    localStorage.setItem("kredibly_token", res.data.token);
+                }
                 await checkAuth();
             }
             return res.data;
@@ -121,11 +172,80 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const subscribeToPushNotifications = async () => {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            console.warn("Push notifications are not supported on this browser");
+            return;
+        }
+
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const permission = await Notification.requestPermission();
+            
+            if (permission !== 'granted') {
+                console.log("Push notification permission denied");
+                return;
+            }
+
+            const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+            if (!vapidPublicKey) {
+                console.warn("VAPID Public Key is missing in environment variables");
+                return;
+            }
+
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+            });
+
+            // Save subscription to backend
+            await axios.post(`${API_URL}/auth/push-subscription`, { subscription }, { withCredentials: true });
+            console.log("Successfully subscribed to push notifications");
+            
+        } catch (error) {
+            console.error("Error subscribing to push notifications:", error);
+        }
+    };
+
+    const unsubscribeFromPushNotifications = async () => {
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+            
+            if (subscription) {
+                const endpoint = subscription.endpoint;
+                await subscription.unsubscribe();
+                // Notify backend to remove the subscription
+                await axios.post(`${API_URL}/auth/push-unsubscribe`, { endpoint }, { withCredentials: true });
+                console.log("Successfully unsubscribed from push notifications");
+            }
+        } catch (error) {
+            console.error("Error unsubscribing from push notifications:", error);
+        }
+    };
+
+    // Helper for VAPID key conversion
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding)
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
+
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
     return (
         <AuthContext.Provider value={{
             user, profile, loading, error,
             login, registerUser, verifyEmail, logout, updateProfile, checkAuth,
-            forgotPassword, resetPassword
+            forgotPassword, resetPassword,
+            subscribeToPushNotifications, unsubscribeFromPushNotifications
         }}>
             {children}
         </AuthContext.Provider>
