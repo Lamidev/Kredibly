@@ -233,6 +233,7 @@ const Onboarding = () => {
         if (!isValidNigerianPhone(newStaffPhone)) return toast.error("Invalid staff phone number");
         const formatted = formatPhoneForDB(newStaffPhone);
         if (staffNumbers.includes(formatted)) return toast.error("Already added");
+        if (staffNumbers.length >= 3) return toast.error("Founding Member Limit: You can add up to 3 staff members during setup.");
         setStaffNumbers([...staffNumbers, formatted]);
         setNewStaffPhone("");
     };
@@ -279,7 +280,7 @@ const Onboarding = () => {
                 onClick={() => navigate('/')}
                 className="auth-logo-header animate-fade-in"
                 style={{ 
-                    padding: '40px',
+                    padding: '40px 40px 20px',
                     cursor: 'pointer',
                     zIndex: 100,
                     display: 'flex',
@@ -290,11 +291,12 @@ const Onboarding = () => {
                 <img 
                     src="/krediblyrevamped.png" 
                     alt="Kredibly" 
-                    style={{ height: '40px', width: 'auto' }} 
+                    className="auth-logo-img"
+                    style={{ height: '40px', width: 'auto', transition: 'height 0.3s ease' }} 
                 />
             </div>
             
-            <div className="onboarding-container" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px 40px', position: 'relative', zIndex: 10 }}>
+            <div className="onboarding-container" style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px 24px 60px', position: 'relative', zIndex: 10 }}>
                 <div style={{ maxWidth: '540px', width: '100%' }}>
                     
                     <div className="glass-card" style={{ padding: 'clamp(24px, 6vw, 48px)', borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)' }}>
@@ -308,9 +310,9 @@ const Onboarding = () => {
                                         <div style={{ width: '80px', height: '80px', background: 'linear-gradient(135deg, #7C3AED, #4C1D95)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: 'white', boxShadow: '0 15px 30px rgba(76, 29, 149, 0.3)' }}>
                                             <Zap size={40} fill="white" />
                                         </div>
-                                        <h2 style={{ fontSize: 'clamp(1.5rem, 6vw, 2rem)', fontWeight: 950, letterSpacing: '-0.04em', color: '#0F172A', marginBottom: '12px' }}>Welcome, {planTitle}.</h2>
-                                        <p style={{ color: '#0F172A', fontWeight: 600, fontSize: '1rem', lineHeight: 1.7 }}>
-                                            As a <span style={{ color: '#000000', fontWeight: 800 }}>Founding Member</span>, you've been granted <strong style={{ color: '#0F172A' }}>30 days</strong> of the <strong style={{ color: '#0F172A' }}>{planTitle} Plan</strong> for free during this beta phase.
+                                        <h2 style={{ fontSize: 'clamp(1.5rem, 6vw, 2rem)', fontWeight: 800, letterSpacing: '-0.04em', color: '#000000', marginBottom: '12px' }} className="mobile-heading">Welcome, {planTitle}.</h2>
+                                        <p style={{ color: '#000000', fontWeight: 500, fontSize: '1rem', lineHeight: 1.7 }} className="mobile-text">
+                                            As a <span style={{ color: '#000000', fontWeight: 700 }}>Founding Member</span>, you've been granted <strong style={{ color: '#000000' }}>30 days</strong> of the <strong style={{ color: '#000000' }}>{planTitle} Plan</strong> for free during this beta phase.
                                         </p>
                                     </div>
                                     <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1.5px solid #E2E8F0', marginBottom: '40px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
@@ -473,7 +475,8 @@ const Onboarding = () => {
                                     </div>
 
                                     <div className="input-group" style={{ marginBottom: '40px' }}>
-                                        <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>Add a Manager or Partner (Optional)</label>
+                                        <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>Add Managers or Partners (Optional)</label>
+                                        <p style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '12px', fontWeight: 600 }}>They'll be able to record sales on WhatsApp too. You can add multiple.</p>
                                         <div style={{ display: 'flex', gap: '8px' }}>
                                             <input 
                                                 type="tel" 
@@ -516,8 +519,14 @@ const Onboarding = () => {
             <style>{`
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
                 @media (max-width: 640px) {
-                    .auth-logo-header { padding: 24px 20px 10px !important; }
-                    .glass-card { padding: 24px !important; border-radius: 24px !important; }
+                    .auth-logo-header { padding: 24px 20px 8px !important; }
+                    .auth-logo-img { height: 28px !important; }
+                    .glass-card { padding: 20px !important; border-radius: 20px !important; }
+                    .mobile-heading { font-weight: 800 !important; font-size: 1.6rem !important; }
+                    .mobile-text { font-weight: 500 !important; font-size: 0.95rem !important; line-height: 1.5 !important; }
+                    .input-label { font-size: 0.85rem !important; font-weight: 700 !important; }
+                    .input-field { height: 52px !important; font-size: 1rem !important; }
+                    .btn-primary { height: 56px !important; font-size: 1.05rem !important; }
                 }
             `}</style>
         </div>

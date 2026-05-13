@@ -48,7 +48,7 @@ const ResetPassword = () => {
       boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)'
     }}>
       <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-        <h2 className="premium-gradient" style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em' }}>New Password</h2>
+        <h2 style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>New Password</h2>
         <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '1.05rem' }}>Enter the 6-digit code we sent you and set a new password.</p>
       </div>
 
@@ -64,6 +64,8 @@ const ResetPassword = () => {
                placeholder="Enter 6-digit code"
                value={formData.code}
                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+               autoComplete="one-time-code"
+               maxLength={6}
                required
              />
           </div>
@@ -77,11 +79,12 @@ const ResetPassword = () => {
               type={showPassword ? "text" : "password"}
               className="input-field"
               style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', paddingRight: '52px', background: 'var(--background)', fontWeight: 500 }}
-              placeholder="Minimum 8 characters"
+              placeholder="8+ chars, 1 number & 1 symbol"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
             />
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', fontWeight: 600 }}>Must include a number and a special character (e.g. !@#)</p>
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
@@ -98,7 +101,7 @@ const ResetPassword = () => {
             type="password"
             className="input-field"
             style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', background: 'var(--background)', fontWeight: 500 }}
-            placeholder="Repeat new password"
+            placeholder="Confirm new password"
             value={formData.confirmPassword}
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
             required

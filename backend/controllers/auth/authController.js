@@ -204,8 +204,8 @@ const forgotPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: "User not found" });
     }
 
-    // Generate reset token
-    const resetToken = crypto.randomBytes(20).toString("hex");
+    // Generate numeric reset token (6 digits)
+    const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
     const resetPasswordExpiresAt = Date.now() + 1 * 60 * 60 * 1000; // 1 hour
 
     user.resetPasswordToken = resetToken;
@@ -213,7 +213,7 @@ const forgotPassword = async (req, res) => {
 
     await user.save();
 
-    sendPasswordResetEmail(user.email, `${process.env.FRONTEND_URL}/auth/reset-password/${resetToken}`)
+    sendPasswordResetEmail(user.email, resetToken)
       .catch(err => console.error("Background Email Error (Forgot Password):", err.message));
 
     res.status(200).json({ success: true, message: "Password reset link sent to your email" });

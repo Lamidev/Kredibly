@@ -75,7 +75,7 @@ const SettingsPage = () => {
     const [isVerifying, setIsVerifying] = useState(false);
     
     const fileInputRef = React.useRef(null);
-    const staffLimit = profile?.plan === 'chairman' ? 'Unlimited' : (profile?.plan === 'oga' ? 'Up to 2 Staff' : 'Owner Only');
+    const staffLimit = profile?.plan === 'chairman' ? 'Up to 3 Staff' : (profile?.plan === 'oga' ? 'Up to 1 Staff' : 'Owner Only');
 
     // Handle Tab Change from URL
     useEffect(() => {
@@ -183,7 +183,8 @@ const SettingsPage = () => {
             }, { withCredentials: true });
 
             if (res.data.success) {
-                setForm(prev => ({ ...prev, accountName: res.data.data.bankDetails.accountName }));
+                const updatedBankDetails = res.data.data?.bankDetails || {};
+                setForm(prev => ({ ...prev, accountName: updatedBankDetails.accountName || "" }));
                 toast.success(res.data.message);
                 setShowPasswordModal(false);
                 setIsEditingPayout(false); // Switch back to view mode on success
@@ -292,7 +293,7 @@ const SettingsPage = () => {
         if (!newStaffPhone) return;
         
         // Plan Enforcement
-        const planLimit = profile?.plan === 'chairman' ? Infinity : (profile?.plan === 'oga' ? 1 : 0);
+        const planLimit = profile?.plan === 'chairman' ? 3 : (profile?.plan === 'oga' ? 1 : 0);
         if (form.staffNumbers.length >= planLimit) {
             return toast.error(`Plan Limit Reached: Your ${profile?.plan?.toUpperCase()} Plan allows only ${planLimit} staff member. Upgrade for more.`);
         }
@@ -592,9 +593,9 @@ const SettingsPage = () => {
                                                         setIsEditingPayout(false);
                                                         setForm(prev => ({ 
                                                             ...prev, 
-                                                            bankName: profile.bankDetails?.bankName || "",
-                                                            accountNumber: profile.bankDetails?.accountNumber || "",
-                                                            accountName: profile.bankDetails?.accountName || ""
+                                                            bankName: profile?.bankDetails?.bankName || "",
+                                                            accountNumber: profile?.bankDetails?.accountNumber || "",
+                                                            accountName: profile?.bankDetails?.accountName || ""
                                                         }));
                                                     }}
                                                     style={{ 
