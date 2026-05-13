@@ -27,7 +27,7 @@ function AuthLayout() {
         onClick={() => navigate('/')}
         className="auth-logo-header animate-fade-in"
         style={{ 
-          padding: '40px',
+          padding: '40px 40px 20px',
           cursor: 'pointer',
           zIndex: 100,
           display: 'flex',
@@ -38,7 +38,8 @@ function AuthLayout() {
         <img 
           src="/krediblyrevamped.png" 
           alt="Kredibly" 
-          style={{ height: '40px', width: 'auto' }} 
+          className="auth-logo-img"
+          style={{ height: '40px', width: 'auto', transition: 'height 0.3s ease' }} 
         />
       </div>
 
@@ -84,16 +85,19 @@ function AuthLayout() {
         }
         @media (max-width: 640px) {
           .auth-main-container {
-            padding: 0 12px 40px !important;
-            align-items: flex-start !important;
-          }
-          .dashboard-glass, .glass-card {
-            padding: 24px 20px !important;
-            border-radius: 24px !important;
-            margin-top: 10px;
+            padding: 0 16px 40px !important;
+            align-items: center !important;
           }
           .auth-logo-header {
-            padding: 24px 20px 10px !important;
+            padding: 32px 24px 12px !important;
+          }
+          .auth-logo-img {
+            height: 28px !important;
+          }
+          .dashboard-glass, .glass-card {
+            padding: 20px 18px !important;
+            border-radius: 20px !important;
+            margin-top: 0;
           }
         }
       `}</style>

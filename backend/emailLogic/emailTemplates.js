@@ -54,9 +54,10 @@ const PASSWORD_RESET_REQUEST_TEMPLATE = `
     <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
   </div>
   <p>Hello,</p>
-  <p>We received a request to reset your password. It happens to the best of us, but I want to make sure your business data stays secure. You can reset your password by clicking the link below:</p>
+  <p>We received a request to reset your password. It happens to the best of us, but I want to make sure your business data stays secure. Please use the security code below to reset your password:</p>
   <div style="margin: 32px 0;">
-    <a href="{resetURL}" style="background-color: #111827; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; display: inline-block;">Set New Password</a>
+    <p style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800; color: #6B7280; margin-bottom: 8px;">Security Code</p>
+    <span style="font-size: 32px; font-weight: 800; letter-spacing: 2px; color: #111827;">{resetURL}</span>
   </div>
   <p style="font-size: 14px; color: #6B7280;">This link will expire in 1 hour. If you didn't request this, you can safely ignore this email.</p>
   <div style="margin-top: 48px;">

@@ -24,7 +24,7 @@ const triggerWelcomeMessage = async (profile) => {
             hustler: "Digital Sales Ledger, Professional Payment Links, and Basic Debt Tracking."
         };
 
-        const welcomeText = `Welcome to the *${planName}* Life! 🚀\n\nI'm *Kreddy*, your AI business assistant. I've successfully launched your workspace for *${profile.displayName}*.\n\n*Here is how I make your life easier:*\n\n1️⃣ *Talk to Me:* You don't need to type. Just send me a voice note like: _"I just sold 2 bags of rice to Samuel for 50,000 naira"_ and I'll record it for you.\n\n2️⃣ *Collect Money Faster:* I can generate professional payment links you can send to customers. When they pay, I'll notify you immediately! 💰\n\n3️⃣ *Plan Benefits:* Since you're a ${planName}, you enjoy: ${features[profile.plan] || features.hustler}\n\n*Try it now:* Send me a message or voice note about your last sale! 🛡️`;
+        const welcomeText = `*Welcome to the ${planName} Life!* 🚀\n\nI'm *Kreddy*, your AI business assistant. I've successfully launched your workspace for *${profile.displayName}*.\n\n*Here is how I make your life easier:*\n\n1️⃣ *Talk to Me:* No need to type. Just send a voice note like: _"I just sold 2 bags of rice to Samuel for 50k"_ and I'll record it for you.\n\n2️⃣ *Get Paid Faster:* I generate professional payment links for your customers. When they pay, I'll notify you instantly! 💰\n\n3️⃣ *Plan Benefits:* As a ${planName}, you enjoy ${features[profile.plan] || features.hustler}.\n\n*Try it now:* Send me a message or voice note about your last sale! 🛡️`;
 
         // Send to Merchant
         await sendWhatsAppAlert(profile.whatsappNumber, planName, welcomeText);
@@ -60,7 +60,16 @@ exports.updateProfile = async (req, res) => {
             profile.phoneNumber = phoneNumber || profile.phoneNumber;
             profile.whatsappNumber = whatsappNumber ? cleanPhone(whatsappNumber) : profile.whatsappNumber;
             profile.address = address || profile.address;
-            if (prefersGatewayFeeAbsorption !== undefined) profile.prefersGatewayFeeAbsorption = prefersGatewayFeeAbsorption;
+            profile.prefersGatewayFeeAbsorption = prefersGatewayFeeAbsorption ?? profile.prefersGatewayFeeAbsorption;
+
+            if (bankDetails) {
+                profile.bankDetails = {
+                    ...profile.bankDetails,
+                    ...bankDetails,
+                    lastBankChangeAt: new Date()
+                };
+            }
+
             if (now < LAUNCH_DATE) { profile.plan = 'chairman'; profile.planStatus = 'trialing'; }
             if (assistantSettings) profile.assistantSettings = { ...profile.assistantSettings, ...assistantSettings };
             if (staffNumbers) {
@@ -95,7 +104,8 @@ exports.updateProfile = async (req, res) => {
             profile = new BusinessProfile({
                 ownerId: req.user._id, displayName, entityType, sellMode, logoUrl, phoneNumber,
                 whatsappNumber: cleanPhone(whatsappNumber), address, plan: 'chairman', planStatus: 'trialing',
-                walletBalance: 0, onboardingStep: req.body.onboardingStep || 0
+                walletBalance: 0, onboardingStep: req.body.onboardingStep || 0,
+                bankDetails: bankDetails || {}
             });
             await profile.save();
 
@@ -214,6 +224,7 @@ exports.triggerWelcome = async (req, res) => {
 
         // Update flag
         profile.welcomeSent = true;
+        profile.isKreddyConnected = true; // 🛡️ Prevent redundant "Intro" message when they first reply
         await profile.save();
 
         res.status(200).json({ success: true, message: "Welcome triggered" });

@@ -34,12 +34,12 @@ const ForgotPassword = () => {
     }}>
       <div style={{ textAlign: 'left', marginBottom: '32px' }}>
         <h2 style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>Reset Password</h2>
-        <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '1.05rem' }}>Enter your email to receive a password reset code.</p>
+        <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '1.05rem' }}>Enter your email to receive a 6-digit security code.</p>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 600 }}>Confirm Email</label>
+          <label className="input-label" style={{ fontWeight: 600 }}>Email Address</label>
           <div style={{ position: 'relative' }}>
              <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
              <input

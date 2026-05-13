@@ -51,6 +51,7 @@ const VerifyEmail = () => {
                         maxLength={6}
                         value={code}
                         onChange={(e) => setCode(e.target.value)}
+                        autoComplete="one-time-code"
                         required
                     />
                 </div>

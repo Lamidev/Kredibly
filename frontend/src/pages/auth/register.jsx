@@ -94,11 +94,12 @@ const Register = () => {
               type={showPassword ? "text" : "password"}
               className="input-field"
               style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', paddingRight: '52px', background: 'var(--background)', fontWeight: 500 }}
-              placeholder="At least 8 characters"
+              placeholder="8+ chars, 1 number & 1 symbol"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
             />
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', fontWeight: 600 }}>Must include a number and a special character (e.g. !@#)</p>
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
