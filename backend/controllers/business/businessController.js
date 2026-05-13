@@ -13,7 +13,7 @@ const cleanPhone = (num) => {
     return clean;
 };
 
-exports.triggerWelcomeMessage = async (profile) => {
+const triggerWelcomeMessage = async (profile) => {
     try {
         const { sendWhatsAppAlert } = require("../whatsapp/whatsappController");
         
@@ -199,6 +199,7 @@ exports.verifyKYC = async (req, res) => {
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };
 
+exports.triggerWelcomeMessage = triggerWelcomeMessage;
 exports.triggerWelcome = async (req, res) => {
     try {
         const profile = await BusinessProfile.findOne({ ownerId: req.user._id });
