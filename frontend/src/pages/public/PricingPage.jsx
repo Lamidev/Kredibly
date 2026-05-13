@@ -162,6 +162,82 @@ const PricingPage = () => {
                 </div>
             </section>
 
+            
+            {/* Compare All Plans Section */}
+            <section style={{ padding: '80px 24px', background: 'white' }}>
+                <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+                        <h2 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.5rem)', fontWeight: 900, letterSpacing: '-0.04em', marginBottom: '16px' }}>Compare All Plans</h2>
+                        <p style={{ color: '#64748B', fontSize: '1.1rem', fontWeight: 500 }}>Compare what each plan includes so you can choose the one that fits your workflow.</p>
+                    </div>
+
+                    <div style={{ overflowX: 'auto', borderRadius: '24px', border: '1px solid #E2E8F0', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', minWidth: '800px' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
+                                    <th style={{ padding: '32px 24px', textAlign: 'left', fontSize: '1.1rem', fontWeight: 800, width: '30%', background: '#F8FAFC' }}>Features</th>
+                                    <th style={{ padding: '32px 24px', textAlign: 'center', fontSize: '1.1rem', fontWeight: 800, background: '#F8FAFC' }}>Hustler</th>
+                                    <th style={{ padding: '32px 24px', textAlign: 'center', fontSize: '1.1rem', fontWeight: 800, background: 'var(--primary)', color: 'white' }}>Oga Plan</th>
+                                    <th style={{ padding: '32px 24px', textAlign: 'center', fontSize: '1.1rem', fontWeight: 800, background: '#F8FAFC' }}>Chairman</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {[
+                                    { category: "Infrastructure & AI", features: [
+                                        { name: "WhatsApp AI Assistant (Text)", hustler: true, oga: true, chairman: true },
+                                        { name: "Kreddy Voice Assistant", hustler: false, oga: true, chairman: true },
+                                        { name: "Instant Bank Settlements", hustler: true, oga: true, chairman: true },
+                                        { name: "Morning Business Briefing", hustler: false, oga: false, chairman: true },
+                                        { name: "Automated Ledger Sync", hustler: true, oga: true, chairman: true }
+                                    ]},
+                                    { category: "Business Management", features: [
+                                        { name: "Sales Records Limit", hustler: "10 / mo", oga: "Unlimited", chairman: "Unlimited" },
+                                        { name: "Staff Members", hustler: "0", oga: "1", chairman: "Unlimited" },
+                                        { name: "Multi-Office / Branches", hustler: false, oga: false, chairman: true },
+                                        { name: "WhatsApp Image Sync", hustler: false, oga: false, chairman: true }
+                                    ]},
+                                    { category: "Receipts & Branding", features: [
+                                        { name: "Digital Receipts", hustler: true, oga: true, chairman: true },
+                                        { name: "Custom Logo on Receipts", hustler: false, oga: true, chairman: true },
+                                        { name: "White-Label (No Kredibly Brand)", hustler: false, oga: false, chairman: true }
+                                    ]},
+                                    { category: "Recovery Engine", features: [
+                                        { name: "Basic Debt Reminders", hustler: true, oga: true, chairman: true },
+                                        { name: "Advanced AI Recovery Assistant", hustler: false, oga: true, chairman: true },
+                                        { name: "Automated Debt Tracking", hustler: true, oga: true, chairman: true }
+                                    ]},
+                                    { category: "Support & ROI", features: [
+                                        { name: "Zero Transfer Fees on Payouts", hustler: true, oga: true, chairman: true },
+                                        { name: "Priority Vault Access", hustler: false, oga: false, chairman: true },
+                                        { name: "Dedicated Support", hustler: false, oga: "Standard", chairman: "Priority" }
+                                    ]}
+                                ].map((cat, i) => (
+                                    <React.Fragment key={i}>
+                                        <tr style={{ background: '#F1F5F9' }}>
+                                            <td colSpan="4" style={{ padding: '16px 24px', fontWeight: 800, fontSize: '0.85rem', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{cat.category}</td>
+                                        </tr>
+                                        {cat.features.map((f, j) => (
+                                            <tr key={j} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                                                <td style={{ padding: '20px 24px', fontSize: '0.95rem', fontWeight: 600, color: '#334155' }}>{f.name}</td>
+                                                <td style={{ padding: '20px 24px', textAlign: 'center' }}>
+                                                    {typeof f.hustler === 'boolean' ? (f.hustler ? <Check size={20} color="#10B981" style={{ margin: '0 auto' }} /> : <X size={20} color="#CBD5E1" style={{ margin: '0 auto' }} />) : <span style={{ fontWeight: 700, color: '#0F172A' }}>{f.hustler}</span>}
+                                                </td>
+                                                <td style={{ padding: '20px 24px', textAlign: 'center', background: 'rgba(124, 58, 237, 0.02)' }}>
+                                                    {typeof f.oga === 'boolean' ? (f.oga ? <Check size={20} color="var(--primary)" style={{ margin: '0 auto' }} /> : <X size={20} color="#CBD5E1" style={{ margin: '0 auto' }} />) : <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{f.oga}</span>}
+                                                </td>
+                                                <td style={{ padding: '20px 24px', textAlign: 'center' }}>
+                                                    {typeof f.chairman === 'boolean' ? (f.chairman ? <Check size={20} color="#10B981" style={{ margin: '0 auto' }} /> : <X size={20} color="#CBD5E1" style={{ margin: '0 auto' }} />) : <span style={{ fontWeight: 700, color: '#0F172A' }}>{f.chairman}</span>}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </React.Fragment>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             {/* AI Call to Action */}
             <section style={{ padding: '80px 24px', background: 'white' }}>
                 <div className="pricing-cta-box" style={{ maxWidth: '1000px', margin: '0 auto', background: '#F5F3FF', padding: '60px', borderRadius: '48px', border: '1px solid rgba(124, 58, 237, 0.1)', textAlign: 'center' }}>

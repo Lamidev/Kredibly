@@ -540,7 +540,7 @@ const sendTemplateMessage = async (to, templateName, components = [], retryCount
             cleanTo = '234' + cleanTo.slice(1);
         }
 
-        // 🛡️ GLOBAL META SHIELD: Sanitize all text parameters in all components
+        // 🛡️ GLOBAL META SHIELD: Sanitize parameters
         const sanitizedComponents = components.map(comp => {
             if (comp.parameters && Array.isArray(comp.parameters)) {
                 return {
@@ -550,7 +550,7 @@ const sendTemplateMessage = async (to, templateName, components = [], retryCount
                             return {
                                 ...param,
                                 text: param.text
-                                    .replace(/[\n\r\t]/g, ' ') // Remove newlines/tabs
+                                    .replace(/[\r\t]/g, ' ') // Keep \n, but remove tabs/carriage returns
                                     .replace(/\s\s+/g, ' ')    // Collapse multiple spaces
                                     .trim()
                             };
@@ -687,9 +687,9 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
         console.log(`🔔 WhatsApp Session Closed for ${normalizedTo} — Sending paid template message`);
         
         // Meta template body parameters are capped at 1024 chars
-        // 🛡️ META STRICTNESS FIX: Strip newlines, tabs, and excessive spaces from parameters
+        // 🛡️ META STRICTNESS FIX: Keep newlines for formatting
         const safeMessage = String(textMessage)
-            .replace(/[\n\r\t]/g, ' ') // Remove newlines and tabs
+            .replace(/[\r\t]/g, ' ') // Remove tabs/carriage returns but keep \n
             .replace(/\s\s+/g, ' ')    // Collapse multiple spaces
             .trim()
             .substring(0, 1024);
@@ -884,7 +884,7 @@ const handleIncoming = async (req, res) => {
         from = message.from;
         const messageId = message.id;
         const msgType = message.type;
-        const text = message.text?.body?.trim() || "";
+        const text = message.text?.body?.trim() || message.image?.caption?.trim() || message.document?.caption?.trim() || "";
         const whatsappProfileName = value?.contacts?.[0]?.profile?.name || "";
         
         console.log(`📩 Message from ${whatsappProfileName} (${from}): "${text}"`);
@@ -1604,7 +1604,8 @@ Upgrade here: ${APP_URL}/pricing`);
                         entityType: profile.entityType,
                         preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
                         debtors: debtorContext || "No active debtors yet.",
-                        businessInsight: businessInsight
+                        businessInsight: businessInsight,
+                        caption: text
                     });
 
                     if (aiResponse) {

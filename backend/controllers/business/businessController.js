@@ -13,7 +13,7 @@ const cleanPhone = (num) => {
     return clean;
 };
 
-const triggerWelcomeMessage = async (profile) => {
+exports.triggerWelcomeMessage = async (profile) => {
     try {
         const { sendWhatsAppAlert } = require("../whatsapp/whatsappController");
         
@@ -63,12 +63,34 @@ exports.updateProfile = async (req, res) => {
             if (prefersGatewayFeeAbsorption !== undefined) profile.prefersGatewayFeeAbsorption = prefersGatewayFeeAbsorption;
             if (now < LAUNCH_DATE) { profile.plan = 'chairman'; profile.planStatus = 'trialing'; }
             if (assistantSettings) profile.assistantSettings = { ...profile.assistantSettings, ...assistantSettings };
-            if (staffNumbers) profile.staffNumbers = staffNumbers.map(n => cleanPhone(n)).filter(n => n);
+            if (staffNumbers) {
+                const incomingStaff = staffNumbers.map(n => cleanPhone(n)).filter(n => n);
+                const existingStaff = profile.staffNumbers || [];
+                const newStaff = incomingStaff.filter(n => !existingStaff.includes(n));
+                
+                profile.staffNumbers = incomingStaff;
+
+                // 🚀 If onboarding is already done, send welcome to ONLY the new staff
+                if (profile.onboardingStep === 4 && newStaff.length > 0) {
+                    const { sendWhatsAppAlert } = require("../whatsapp/whatsappController");
+                    for (const staffNum of newStaff) {
+                        const staffText = `Hello! I'm *Kreddy*, the AI business assistant for *${profile.displayName}*. 🚀\n\nYour manager has added you as a staff member. My job is to help you record sales and track payments without any paperwork.\n\n*How to use me:*\nWhen a customer buys something, just send me a message here like: _"Sold one phone charger for 5,000 naira."_\n\nI'll record it in the company ledger and notify your manager automatically. No more manual recording! 🛡️`;
+                        sendWhatsAppAlert(staffNum, "Staff", staffText).catch(e => console.error("Staff Welcome Fail:", e));
+                    }
+                }
+            }
             
             const wasIncomplete = (profile.onboardingStep || 0) < 4;
             if (req.body.onboardingStep === 4) profile.onboardingStep = 4;
             
             await profile.save();
+
+            // 🚀 Trigger Kreddy Welcome automatically when onboarding hits Step 4
+            if (wasIncomplete && profile.onboardingStep === 4 && !profile.welcomeSent) {
+                triggerWelcomeMessage(profile).catch(err => console.error("Auto Welcome Fail:", err));
+                profile.welcomeSent = true;
+                await profile.save();
+            }
         } else {
             profile = new BusinessProfile({
                 ownerId: req.user._id, displayName, entityType, sellMode, logoUrl, phoneNumber,
@@ -76,6 +98,13 @@ exports.updateProfile = async (req, res) => {
                 walletBalance: 0, onboardingStep: req.body.onboardingStep || 0
             });
             await profile.save();
+
+            // If created directly with step 4 (rare but possible)
+            if (profile.onboardingStep === 4) {
+                triggerWelcomeMessage(profile).catch(err => console.error("Auto Welcome Fail:", err));
+                profile.welcomeSent = true;
+                await profile.save();
+            }
         }
         res.status(200).json({ success: true, data: profile });
     } catch (error) { res.status(500).json({ message: error.message }); }
