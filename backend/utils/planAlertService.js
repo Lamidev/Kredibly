@@ -20,12 +20,12 @@ const sendIndividualPlanAlert = async (data) => {
             const expiry = profile.trialExpiresAt;
             if (!expiry) return { status: "skipped", reason: "No expiry date set" };
 
-            // Logic to determine subtype
-            const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+            const diffTime = expiry - now;
+            const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
-            if (daysLeft === 3) alertType = "grace_choice";
-            else if (daysLeft === 0) alertType = "active_expiry";
-            else if (daysLeft < -3) alertType = "benefit_lock";
+            if (daysLeft === 3) alertType = "trial_warning";
+            else if (daysLeft === 0) alertType = "trial_ended_grace";
+            else if (daysLeft === -3) alertType = "final_lockout";
             else return { status: "skipped", reason: `Notification not due (Days left: ${daysLeft})` };
         }
 
@@ -33,28 +33,20 @@ const sendIndividualPlanAlert = async (data) => {
         let msg = "";
 
         switch (alertType) {
-            case "trial_lock":
-                profile.planStatus = 'inactive';
-                profile.plan = 'hustler';
-                await profile.save();
-                msg = `Your trial has ended and the grace period is over. I've moved you to the *Hustler Plan* (Basic Text Only).\n\nScan and Voice features are now locked.`;
+            case "trial_warning":
+                msg = `Only 3 days left on your trial! Don't lose access to your Digital Chief of Staff. Subscribe now to keep your Scan and Voice powers at the **50% Launch Discount**. 🛡️`;
                 break;
 
-            case "grace_choice":
-                msg = `Your trial is over! Choose your plan now to keep your Scan and Voice powers at the **50% Launch Discount**: \n\n1️⃣ *Stay Chairman* (₦4,250/mo)\n2️⃣ *Switch to Oga* (₦2,500/mo)`;
-                break;
-
-            case "active_expiry":
+            case "trial_ended_grace":
                 profile.planStatus = 'past_due';
                 await profile.save();
-                msg = `Your premium features have paused. Renew now to continue tracking debt with AI without limits! 💰`;
+                msg = `Your trial has ended, but I'm staying on duty for **72 more hours** as a favor so your records stay sharp. Subscribe now to prevent any service interruption! 💰`;
                 break;
 
-            case "benefit_lock":
+            case "final_lockout":
                 profile.planStatus = 'inactive';
-                profile.plan = 'hustler';
                 await profile.save();
-                msg = `Your premium features have been locked because your plan is overdue. I've moved you back to the *Hustler Plan*.`;
+                msg = `Your Digital Chief of Staff is now **On Leave**. My automated services (Summaries & Voice Recording) are paused until your plan is active. Let's get back to work! 🚀`;
                 break;
 
             default:
@@ -62,31 +54,12 @@ const sendIndividualPlanAlert = async (data) => {
         }
 
         if (whatsappNumber) {
-            const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
-
-            if (isInsideWindow) {
-                // 🟢 FREE-FORM (Inside Window)
-                await sendWhatsAppMessage(whatsappNumber, `Hey ${bossTitle}! 🔔\n\n${msg}\n\n_Check your dashboard for more details._`);
-            } else {
-                // 🔴 EMAIL FALLBACK (Window Closed)
-                const { sendEmail } = require("./emailService");
-                const user = await require("../models/User").findById(profile.ownerId);
-                
-                if (user && user.email) {
-                    await sendEmail({
-                        to: user.email,
-                        subject: `🔔 Subscription Update from Kredibly`,
-                        html: `<div style="font-family: sans-serif; padding: 20px; color: #333;">
-                                <h2>Hello ${bossTitle},</h2>
-                                <p>${msg}</p>
-                                <hr />
-                                <p style="font-size: 12px; color: #777;">Kredibly Assistant: Helping you stay organized and profitable.</p>
-                               </div>`
-                    });
-                    console.log(`📪 Plan Alert for ${profile.displayName} sent to EMAIL.`);
-                }
-            }
+            const { sendWhatsAppAlert } = require("../controllers/whatsapp/whatsappController");
+            // sendWhatsAppAlert automatically handles Window Open (Free) vs Window Closed (Template)
+            await sendWhatsAppAlert(whatsappNumber, bossTitle, msg);
+            console.log(`✅ Plan Alert [${alertType}] sent to ${profile.displayName} on WhatsApp.`);
         }
+        
         return { status: "completed" };
 
     } catch (err) {

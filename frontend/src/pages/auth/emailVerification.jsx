@@ -5,7 +5,14 @@ const EmailVerification = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="glass-card auth-form-card w-full shadow-2xl" style={{ background: 'white', borderRadius: '32px', textAlign: 'center' }}>
+    <div className="glass-card auth-form-card animate-fade-in" style={{ 
+      background: 'white', 
+      borderRadius: 'clamp(20px, 4vw, 32px)', 
+      textAlign: 'center',
+      padding: 'clamp(24px, 6vw, 48px)',
+      width: '100%',
+      maxWidth: '500px'
+    }}>
       <div style={{
         width: '80px',
         height: '80px',
@@ -19,7 +26,7 @@ const EmailVerification = () => {
         <Mail size={40} color="#10B981" />
       </div>
 
-      <h2 style={{ fontSize: '2.2rem', fontWeight: 700, marginBottom: '12px', color: '#000', letterSpacing: '-0.02em' }}>Check Your Inbox</h2>
+      <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.2rem)', fontWeight: 700, marginBottom: '12px', color: '#000', letterSpacing: '-0.02em' }}>Check Your Inbox</h2>
       <p style={{ color: '#6B7280', fontWeight: 500, fontSize: '1.1rem', lineHeight: 1.6, marginBottom: '32px' }}>
         We've sent a verification link to your email address. Please click the link to activate your account.
       </p>

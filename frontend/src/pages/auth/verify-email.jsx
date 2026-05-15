@@ -27,16 +27,18 @@ const VerifyEmail = () => {
     };
 
     return (
-        <div className="glass-card" style={{ 
-            padding: '48px', 
-            borderRadius: '32px', 
-            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)'
+        <div className="glass-card animate-fade-in" style={{ 
+            padding: 'clamp(24px, 6vw, 48px)', 
+            borderRadius: 'clamp(20px, 4vw, 32px)', 
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)',
+            width: '100%',
+            maxWidth: '500px'
         }}>
             <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-                <h2 style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>Verify Account</h2>
-                <p style={{ color: '#6B7280', fontWeight: 500, fontSize: '1.05rem' }}>Enter the 6-digit code we sent you</p>
-                <p style={{ fontSize: '0.85rem', color: '#EF4444', marginTop: '8px', fontWeight: 600 }}>
-                    ⚠️ Not seeing it? Check your Spam or Promotions folder.
+                <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>Verify Account</h2>
+                <p style={{ color: '#6B7280', fontWeight: 500, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>Enter the 6-digit code we sent you</p>
+                <p style={{ fontSize: '0.8rem', color: '#EF4444', marginTop: '8px', fontWeight: 600 }}>
+                    ⚠️ Not seeing it? Check your Spam folder.
                 </p>
             </div>
 
@@ -45,7 +47,7 @@ const VerifyEmail = () => {
                     <label className="input-label">Verification Code</label>
                     <input
                         type="text"
-                        className="input-field text-center tracking-[0.5em] font-bold"
+                        className="input-field verify-code-input text-center tracking-[0.5em] font-bold"
                         style={{ height: '70px', border: '1.5px solid #E5E7EB', borderRadius: '14px', fontSize: '1.5rem' }}
                         placeholder="000000"
                         maxLength={6}
@@ -89,5 +91,28 @@ const VerifyEmail = () => {
         </div>
     );
 };
+
+const styles = `
+  @media (max-width: 640px) {
+    .input-field {
+      height: 52px !important;
+      font-size: 0.95rem !important;
+    }
+    .verify-code-input {
+      height: 60px !important;
+      font-size: 1.2rem !important;
+    }
+    .btn-primary {
+      height: 56px !important;
+      font-size: 1rem !important;
+    }
+  }
+`;
+
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement("style");
+  styleSheet.innerText = styles;
+  document.head.appendChild(styleSheet);
+}
 
 export default VerifyEmail;

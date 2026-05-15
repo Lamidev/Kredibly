@@ -273,8 +273,13 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
 
                         // 🔔 WHATSAPP SETTLEMENT ALERT
                         if (business.whatsappNumber) {
-                            const { sendReply } = require('../whatsapp/whatsappController');
-                            await sendReply(business.whatsappNumber, `💰 *Settlement Alert, ${business.displayName}!* \n\nI've successfully swept *₦${sweepAmount.toLocaleString()}* from the *${sale.customerName}* payment to your *${settlement.bankDetails.accountName}* account. \n\n🛡️ _Your money is safe!_`);
+                            let alertMsg = `💰 *Settlement Alert, ${business.displayName}!* \n\nI've successfully swept *₦${sweepAmount.toLocaleString()}* from the *${sale.customerName}* payment to your *${settlement.bankDetails.accountName}* account. \n\n🛡️ _Your money is safe!_`;
+                            
+                            if (business.planStatus === 'inactive' || business.planStatus === 'cancelled') {
+                                alertMsg += `\n\n⚠️ *Boss, even while I'm 'Off-Duty', I'm still securing your cash!* Subscribe now to get your full AI reports and debt tracking back. \n🔗 https://usekredibly.com/login?redirect=/settings`;
+                            }
+                            
+                            await sendWhatsAppAlert(business.whatsappNumber, business.displayName, alertMsg);
                         }
                     } catch (sweepErr) {
                         console.error(`❌ Auto-Sweep FAILED for Settlement ${settlement._id}:`, sweepErr.message);
@@ -335,8 +340,58 @@ async function processSubscriptionWebhook(reference, amount, payer, txRef) {
         business.plan = plan;
         business.planStatus = 'active';
         business.trialExpiresAt = nextBilling;
+        business.nextBillingDate = nextBilling;
         await business.save();
-    } catch (error) { console.error('❌ Sub Webhook Error:', error); }
+
+        const { sendEmail } = require("../../utils/emailService");
+        const { sendWhatsAppMessage } = require("../whatsapp/whatsappController");
+
+        // 🛡️ SUPER ADMIN NOTIFICATION
+        sendEmail({
+            to: "usekredibly@gmail.com",
+            subject: `💰 Subscription Alert: ${business.displayName} paid ₦${amount.toLocaleString()}`,
+            html: `
+                <div style="font-family: sans-serif; padding: 20px; color: #333;">
+                    <h2>Cash in the building! 🏦</h2>
+                    <p><strong>Merchant:</strong> ${business.displayName}</p>
+                    <p><strong>Plan:</strong> ${plan.toUpperCase()}</p>
+                    <p><strong>Amount:</strong> ₦${amount.toLocaleString()}</p>
+                    <p><strong>Reference:</strong> ${txRef || reference}</p>
+                    <hr />
+                    <p style="font-size: 12px; color: #777;">Kredibly Revenue Monitor</p>
+                </div>
+            `
+        }).catch(e => console.error("Admin Payment Alert Fail:", e.message));
+
+        // 👤 MERCHANT NOTIFICATION (Email)
+        const user = await require("../../models/User").findById(business.ownerId);
+        if (user && user.email) {
+            sendEmail({
+                to: user.email,
+                subject: `✅ Subscription Confirmed: Welcome to ${plan.toUpperCase()}!`,
+                html: `
+                    <div style="font-family: sans-serif; padding: 20px; color: #333;">
+                        <h2>High power, Boss! 🚀</h2>
+                        <p>Your <strong>${plan.toUpperCase()}</strong> plan is now active. Kreddy is officially back on duty to manage your business ledger and recover your debts.</p>
+                        <p><strong>Next Billing:</strong> ${nextBilling.toDateString()}</p>
+                        <p>Keep winning!</p>
+                    </div>
+                `
+            }).catch(e => console.error("Merchant Payment Email Fail:", e.message));
+        }
+
+        // 📱 MERCHANT NOTIFICATION (WhatsApp)
+        if (business.whatsappNumber) {
+            const bossTitle = business.assistantSettings?.preferredName || (plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss"));
+            const msg = `✅ *Subscription Confirmed!* \n\nHigh power, ${bossTitle}! 🚀 Your *${plan.toUpperCase()}* plan is now active. \n\nI'm back on duty and ready to help you grow. *What's the plan for today?*`;
+            sendWhatsAppMessage(business.whatsappNumber, msg).catch(e => console.error("Merchant WhatsApp Alert Fail:", e.message));
+        }
+
+        return { success: true, message: "Subscription updated!" };
+    } catch (err) {
+        console.error("Subscription Fulfillment Error:", err.message);
+        return { success: false, message: err.message };
+    }
 }
 
 exports.processDailyNombaSettlements = async () => {};

@@ -197,7 +197,7 @@ const scheduleRemindersWorker = () => {
                         continue;
                     }
 
-                    msg += `💰 *Debt Details:* \n- Customer: ${sale.customerName}\n- Balance: ₦${bal.toLocaleString()}\n- Link: ${APP_URL}/i/${sale.invoiceNumber}\n\n`;
+                    msg += `💰 *Debt Details:* \n- Customer: ${sale.customerName}\n- Item: ${sale.description}\n- Balance: ₦${bal.toLocaleString()}\n- Issued: ${new Date(sale.createdAt).toLocaleDateString()}\n- Link: ${APP_URL}/i/${sale.invoiceNumber}\n\n`;
                     msg += `*Forward this link to them to collect payment!* 💸\n\n`;
                 }
 
@@ -256,10 +256,10 @@ const scheduleRemindersWorker = () => {
                     const sale = acquired.saleId;
                     const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                     const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
-                    const draftMsg = `Hi ${sale.customerName}, this is a friendly reminder regarding your balance of ₦${bal.toLocaleString()} with ${acquired.businessId.displayName}. You can view and pay here: ${APP_URL}/i/${sale.invoiceNumber}`;
+                    const draftMsg = `Hi ${sale.customerName}, this is a friendly reminder regarding your balance of ₦${bal.toLocaleString()} for *${sale.description}* with ${acquired.businessId.displayName}. You can view and pay here: ${APP_URL}/i/${sale.invoiceNumber}`;
                     
                     setTimeout(async () => {
-                        await sendWhatsAppAlert(acquired.whatsappNumber, title, draftMsg).catch(e => {});
+                        await sendWhatsAppAlert(acquired.whatsappNumber, title, draftMsg, sale.invoiceNumber).catch(e => {});
                     }, 1000);
                 }
 

@@ -105,7 +105,10 @@ const SalesList = ({ initialFilter }) => {
                     className="btn-primary" 
                     style={{ padding: '12px 24px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}
                     onClick={() => {
-                        if (profile?.plan === 'hustler' && (stats?.totalSales || 0) >= 5) {
+                        // 🛡️ SUBSCRIPTION LOCK
+                        if (profile?.planStatus === 'inactive' || profile?.planStatus === 'cancelled') {
+                            setShowLimitModal(true);
+                        } else if (profile?.plan === 'hustler' && (stats?.totalSales || 0) >= 5) {
                             setShowLimitModal(true);
                         } else {
                             navigate('/sales/new');
@@ -309,6 +312,9 @@ const SalesList = ({ initialFilter }) => {
                                     <button 
                                         onClick={(e) => {
                                             e.stopPropagation();
+                                            if (profile?.planStatus === 'inactive' || profile?.planStatus === 'cancelled') {
+                                                return toast.error("Manage your plan to delete records");
+                                            }
                                             setDeleteModal({ show: true, sale });
                                         }}
                                         style={{ background: 'white', color: 'var(--error)', border: '1px solid #FEE2E2', padding: '10px', borderRadius: '12px', cursor: 'pointer' }}

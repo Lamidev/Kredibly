@@ -43,14 +43,16 @@ const Register = () => {
   };
 
   return (
-    <div className="glass-card" style={{ 
-      padding: '48px', 
-      borderRadius: '32px', 
-      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)'
+    <div className="glass-card animate-fade-in" style={{ 
+      padding: 'clamp(24px, 6vw, 48px)', 
+      borderRadius: 'clamp(20px, 4vw, 32px)', 
+      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)',
+      width: '100%',
+      maxWidth: '500px'
     }}>
       <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>Create Account</h2>
-        <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '1.05rem' }}>Join Kredibly and start growing your business today.</p>
+        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>Create Account</h2>
+        <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>Join Kredibly and start growing your business today.</p>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -99,7 +101,6 @@ const Register = () => {
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
             />
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', fontWeight: 600 }}>Must include a number and a special character (e.g. !@#)</p>
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
@@ -108,6 +109,7 @@ const Register = () => {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 600 }}>Must include a number and a special character (e.g. !@#)</p>
         </div>
 
         <button
@@ -139,5 +141,24 @@ const Register = () => {
     </div>
   );
 };
+
+const styles = `
+  @media (max-width: 640px) {
+    .input-field {
+      height: 52px !important;
+      font-size: 0.95rem !important;
+    }
+    .btn-primary {
+      height: 56px !important;
+      font-size: 1rem !important;
+    }
+  }
+`;
+
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement("style");
+  styleSheet.innerText = styles;
+  document.head.appendChild(styleSheet);
+}
 
 export default Register;

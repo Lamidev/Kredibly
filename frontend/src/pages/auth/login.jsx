@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -38,35 +38,41 @@ const Login = () => {
   };
 
   return (
-    <div className="glass-card" style={{ 
-      padding: '48px', 
-      borderRadius: '32px', 
-      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)'
+    <div className="glass-card animate-fade-in" style={{ 
+      padding: 'clamp(24px, 6vw, 48px)', 
+      borderRadius: 'clamp(20px, 4vw, 32px)', 
+      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)',
+      width: '100%',
+      maxWidth: '500px'
     }}>
       <div style={{ marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>Welcome Back</h2>
-        <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '1.05rem' }}>Login to your account to manage your business.</p>
+        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>Welcome Back</h2>
+        <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>Login to your account to manage your business.</p>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div className="input-group">
           <label className="input-label" style={{ fontWeight: 600 }}>Email Address</label>
-          <input
-            type="email"
-            className="input-field"
-            style={{ 
-                height: '56px', 
-                border: '1px solid var(--border)', 
-                borderRadius: '16px',
-                background: 'var(--background)',
-                fontSize: '1rem',
-                fontWeight: 500 
-            }}
-            placeholder="your@email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+          <div style={{ position: 'relative' }}>
+            <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+            <input
+              type="email"
+              className="input-field"
+              style={{ 
+                  height: '56px', 
+                  border: '1px solid var(--border)', 
+                  borderRadius: '16px',
+                  background: 'var(--background)',
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                  paddingLeft: '48px'
+              }}
+              placeholder="your@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
         </div>
 
         <div className="input-group">
@@ -75,6 +81,7 @@ const Login = () => {
             <Link to="/auth/forgot-password" style={{ color: '#000000', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600 }}>Forgot password?</Link>
           </div>
           <div style={{ position: 'relative' }}>
+            <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
             <input
               type={showPassword ? "text" : "password"}
               className="input-field"
@@ -82,6 +89,7 @@ const Login = () => {
                   height: '56px', 
                   border: '1px solid var(--border)', 
                   borderRadius: '16px', 
+                  paddingLeft: '48px',
                   paddingRight: '56px',
                   background: 'var(--background)',
                   fontSize: '1rem',
@@ -129,5 +137,24 @@ const Login = () => {
     </div>
   );
 };
+
+const styles = `
+  @media (max-width: 640px) {
+    .input-field {
+      height: 52px !important;
+      font-size: 0.95rem !important;
+    }
+    .btn-primary {
+      height: 56px !important;
+      font-size: 1rem !important;
+    }
+  }
+`;
+
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement("style");
+  styleSheet.innerText = styles;
+  document.head.appendChild(styleSheet);
+}
 
 export default Login;

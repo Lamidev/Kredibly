@@ -365,9 +365,10 @@ const SettingsPage = () => {
             }} className="no-scrollbar">
                 {[
                     { id: 'profile', label: 'Identity', icon: UserIcon },
-                    { id: 'payout', label: 'Payouts', icon: CreditCard },
-                    { id: 'kyc', label: 'Trust & Verification', icon: Shield },
+                    { id: 'notifications', label: 'Alerts', icon: Bell },
                     { id: 'ai', label: 'Kreddy AI', icon: MessageCircle },
+                    { id: 'payout', label: 'Payouts', icon: CreditCard },
+                    { id: 'kyc', label: 'Verification', icon: Shield },
                     { id: 'staff', label: 'Staff', icon: Building2 },
                     { id: 'plan', label: 'Plan', icon: Zap }
                 ].map((tab) => (
@@ -859,21 +860,112 @@ const SettingsPage = () => {
                     </section>
                 )}
 
+                {activeTab === 'notifications' && (
+                    <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+                            <div style={{ background: '#F0F9FF', color: '#0EA5E9', padding: '10px', borderRadius: '12px' }}>
+                                <Bell size={24} />
+                            </div>
+                            <div>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Notification Center</h2>
+                                <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>Choose how Kreddy keeps you updated.</p>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gap: '24px' }}>
+                            {/* Browser Push Alerts */}
+                            <div style={{ 
+                                padding: '24px', 
+                                background: pushStatus === 'granted' ? 'rgba(34, 197, 94, 0.03)' : '#F8FAFC', 
+                                borderRadius: '24px', 
+                                border: '1px solid',
+                                borderColor: pushStatus === 'granted' ? 'rgba(34, 197, 94, 0.1)' : '#E2E8F0',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: '20px',
+                                flexWrap: 'wrap'
+                            }}>
+                                <div style={{ flex: 1, minWidth: '200px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                                        <p style={{ fontWeight: 800, color: '#1E293B', margin: 0 }}>Real-time Browser Alerts</p>
+                                        {pushStatus === 'granted' && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#DCFCE7', color: '#166534', padding: '4px 10px', borderRadius: '100px', fontSize: '0.65rem', fontWeight: 950 }}>
+                                                <div className="pulse-dot" style={{ width: '6px', height: '6px', background: '#22C55E', borderRadius: '50%' }} />
+                                                LIVE
+                                            </div>
+                                        )}
+                                    </div>
+                                    <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>
+                                        Get instant notifications on this device the moment a customer pays an invoice.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={handlePushToggle}
+                                    disabled={isSubscribing || pushStatus === 'unsupported'}
+                                    style={{
+                                        padding: '14px 28px',
+                                        borderRadius: '16px',
+                                        border: 'none',
+                                        background: pushStatus === 'granted' ? '#FEE2E2' : 'var(--primary)',
+                                        color: pushStatus === 'granted' ? '#EF4444' : 'white',
+                                        fontWeight: 900,
+                                        fontSize: '0.9rem',
+                                        cursor: (isSubscribing || pushStatus === 'unsupported') ? 'not-allowed' : 'pointer',
+                                        transition: 'all 0.3s ease',
+                                        boxShadow: pushStatus === 'granted' ? 'none' : '0 10px 15px -3px rgba(76, 29, 149, 0.25)'
+                                    }}
+                                >
+                                    {isSubscribing ? <Loader2 size={18} className="spin-animation" /> : (pushStatus === 'granted' ? 'Disable Alerts' : 'Enable Alerts')}
+                                </button>
+                            </div>
+
+                            {/* WhatsApp Status Indicator */}
+                            <div style={{ 
+                                padding: '24px', 
+                                background: 'rgba(34, 197, 94, 0.03)', 
+                                borderRadius: '24px', 
+                                border: '1px solid rgba(34, 197, 94, 0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: '20px'
+                            }}>
+                                <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                                        <p style={{ fontWeight: 800, color: '#1E293B', margin: 0 }}>WhatsApp Channel</p>
+                                        <div style={{ background: '#DCFCE7', color: '#166534', padding: '4px 10px', borderRadius: '100px', fontSize: '0.65rem', fontWeight: 950 }}>ACTIVE</div>
+                                    </div>
+                                    <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0, fontWeight: 600 }}>
+                                        Kreddy is currently linked to **{form.whatsappNumber}**.
+                                    </p>
+                                </div>
+                                <div style={{ color: '#22C55E' }}>
+                                    <MessageCircle size={24} />
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                )}
+
                 {activeTab === 'ai' && (
                     <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
                             <div style={{ background: '#F5F3FF', color: 'var(--primary)', padding: '10px', borderRadius: '12px' }}>
                                 <MessageCircle size={24} />
                             </div>
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Kreddy (AI Partner)</h2>
+                            <div>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Kreddy Assistant</h2>
+                                <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>Configure how your Digital Chief of Staff behaves.</p>
+                            </div>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', background: '#F8FAFC', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px', background: '#F8FAFC', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
                             <div>
-                                <p style={{ fontWeight: 700, color: '#1E293B', marginBottom: '4px' }}>Proactive Debt Reminders</p>
-                                <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0 }}>Kreddy will automatically nudge customers when their balance is due.</p>
+                                <p style={{ fontWeight: 800, color: '#1E293B', marginBottom: '4px' }}>Proactive Debt Reminders</p>
+                                <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0, fontWeight: 600 }}>Kreddy will automatically nudge customers when their balance is due.</p>
                             </div>
-                            <div style={{ position: 'relative', display: 'inline-block', width: '50px', height: '28px' }}>
+                            <div style={{ position: 'relative', display: 'inline-block', width: '60px', height: '32px' }}>
                                 <input
                                     type="checkbox"
                                     id="reminder-toggle"
@@ -889,88 +981,53 @@ const SettingsPage = () => {
                                     }}
                                 >
                                     <span style={{
-                                        position: 'absolute', content: '""', height: '20px', width: '20px', left: '4px', bottom: '4px',
+                                        position: 'absolute', content: '""', height: '24px', width: '24px', left: '4px', bottom: '4px',
                                         backgroundColor: 'white', borderRadius: '50%', transition: '.4s',
-                                        transform: form.enableReminders ? 'translateX(22px)' : 'translateX(0)'
+                                        transform: form.enableReminders ? 'translateX(28px)' : 'translateX(0)',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                                     }}></span>
                                 </label>
                             </div>
                         </div>
 
-                        <div style={{ marginTop: '24px' }}>
-                            <p style={{ fontWeight: 700, color: '#1E293B', marginBottom: '12px', fontSize: '0.95rem' }}>Reminder Tone</p>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <div style={{ marginTop: '32px' }}>
+                            <p style={{ fontWeight: 800, color: '#1E293B', marginBottom: '16px', fontSize: '0.95rem' }}>Reminder Personality</p>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                                 <button 
                                     onClick={() => setForm({ ...form, reminderTemplate: 'friendly' })}
                                     style={{ 
-                                        padding: '16px', borderRadius: '16px', border: '2px solid', 
+                                        padding: '20px', borderRadius: '20px', border: '2px solid', 
                                         borderColor: form.reminderTemplate === 'friendly' ? 'var(--primary)' : '#F1F5F9',
-                                        background: form.reminderTemplate === 'friendly' ? '#F5F3FF' : 'white',
-                                        textAlign: 'left', cursor: 'pointer'
+                                        background: form.reminderTemplate === 'friendly' ? 'rgba(76, 29, 149, 0.03)' : 'white',
+                                        textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s ease'
                                     }}
                                 >
-                                    <p style={{ margin: 0, fontWeight: 800, color: form.reminderTemplate === 'friendly' ? 'var(--primary)' : '#475569' }}>Friendly Nudge</p>
-                                    <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>Soft, professional reminder.</p>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: form.reminderTemplate === 'friendly' ? 'var(--primary)' : '#CBD5E1' }} />
+                                        <p style={{ margin: 0, fontWeight: 900, color: form.reminderTemplate === 'friendly' ? 'var(--primary)' : '#475569' }}>Friendly Nudge</p>
+                                    </div>
+                                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748B', fontWeight: 600, lineHeight: 1.4 }}>Soft, professional reminder. Best for regular customers.</p>
                                 </button>
                                 <button 
                                     onClick={() => setForm({ ...form, reminderTemplate: 'formal' })}
                                     style={{ 
-                                        padding: '16px', borderRadius: '16px', border: '2px solid', 
+                                        padding: '20px', borderRadius: '20px', border: '2px solid', 
                                         borderColor: form.reminderTemplate === 'formal' ? 'var(--primary)' : '#F1F5F9',
-                                        background: form.reminderTemplate === 'formal' ? '#F5F3FF' : 'white',
-                                        textAlign: 'left', cursor: 'pointer'
+                                        background: form.reminderTemplate === 'formal' ? 'rgba(76, 29, 149, 0.03)' : 'white',
+                                        textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s ease'
                                     }}
                                 >
-                                    <p style={{ margin: 0, fontWeight: 800, color: form.reminderTemplate === 'formal' ? 'var(--primary)' : '#475569' }}>Formal Statement</p>
-                                    <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>Strict & clear for overdue accounts.</p>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: form.reminderTemplate === 'formal' ? 'var(--primary)' : '#CBD5E1' }} />
+                                        <p style={{ margin: 0, fontWeight: 900, color: form.reminderTemplate === 'formal' ? 'var(--primary)' : '#475569' }}>Formal Statement</p>
+                                    </div>
+                                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748B', fontWeight: 600, lineHeight: 1.4 }}>Strict & clear. Best for overdue or corporate accounts.</p>
                                 </button>
                             </div>
                         </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', background: '#F8FAFC', borderRadius: '16px', border: '1px solid #E2E8F0', marginTop: '24px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
-                                <div style={{ 
-                                    background: pushStatus === 'granted' ? '#DCFCE7' : '#F1F5F9', 
-                                    color: pushStatus === 'granted' ? '#166534' : '#64748B', 
-                                    padding: '10px', 
-                                    borderRadius: '12px',
-                                    flexShrink: 0
-                                }}>
-                                    {pushStatus === 'granted' ? <Bell size={20} /> : <BellOff size={20} />}
-                                </div>
-                                <div style={{ minWidth: 0 }}>
-                                    <p style={{ fontWeight: 700, color: '#1E293B', marginBottom: '4px', fontSize: '0.95rem' }}>Real-time Push Alerts</p>
-                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0, lineHeight: 1.4 }}>
-                                        {pushStatus === 'granted' ? 'Alerts are active on this device.' : 'Get notified about payments even when app is closed.'}
-                                    </p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={handlePushToggle}
-                                disabled={isSubscribing || pushStatus === 'unsupported'}
-                                style={{
-                                    padding: '10px 18px',
-                                    borderRadius: '100px',
-                                    border: 'none',
-                                    background: pushStatus === 'granted' ? '#DCFCE7' : 'var(--primary)',
-                                    color: pushStatus === 'granted' ? '#166534' : 'white',
-                                    fontWeight: 800,
-                                    fontSize: '0.8rem',
-                                    cursor: (isSubscribing || pushStatus === 'unsupported') ? 'not-allowed' : 'pointer',
-                                    transition: 'all 0.3s ease',
-                                    whiteSpace: 'nowrap',
-                                    marginLeft: '12px'
-                                }}
-                            >
-                                {isSubscribing ? (
-                                    <Loader2 className="spin-animation" size={16} />
-                                ) : (
-                                    pushStatus === 'granted' ? 'Turn Off' : 'Turn On'
-                                )}
-                            </button>
-                        </div>
                     </section>
                 )}
+
 
                 {activeTab === 'staff' && (
                     <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0', position: 'relative', overflow: 'hidden' }}>

@@ -673,11 +673,11 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
         if (isWindowOpen) {
             console.log(`💡 WhatsApp Session Open for ${normalizedTo} — Sending free session message`);
             // Format as a bold message with person's title
-            let sessionText = `*${finalTitle}!* 🚀\n\n${textMessage}`;
+            let sessionText = `*${finalTitle}!* 🔔\n\n${textMessage}`;
             
-            // If invoiceNumber provided but not in text, append it as a link
+            // If invoiceNumber provided but not in text, append it as a clear action link
             if (invoiceNumber && !textMessage.includes(invoiceNumber)) {
-                sessionText += `\n\n📄 *Receipt Link:* https://usekredibly.com/r/${invoiceNumber}`;
+                sessionText += `\n\n--- \n📄 *View Invoice:* \nhttps://usekredibly.com/r/${invoiceNumber}`;
             }
 
             return await sendReply(normalizedTo, sessionText);
@@ -686,8 +686,6 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
         // Window Closed or Profile not found: Use official Template (Paid)
         console.log(`🔔 WhatsApp Session Closed for ${normalizedTo} — Sending paid template message`);
         
-        // Meta template body parameters are capped at 1024 chars
-        // 🛡️ META STRICTNESS FIX: Keep newlines for formatting
         const safeMessage = String(textMessage)
             .replace(/[\r\t]/g, ' ') // Remove tabs/carriage returns but keep \n
             .replace(/\s\s+/g, ' ')    // Collapse multiple spaces
@@ -704,23 +702,23 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
             }
         ];
 
-        // 🚀 SMART DYNAMIC BUTTON ROUTING
-        // Since Meta requires the parameter if the template has a dynamic button, we ALWAYS send one.
-        // We configure the Meta template base URL to: https://usekredibly.com/
-        // If it's an invoice alert, we append "r/KR-XXXX". If it's generic, we append "dashboard".
-        const buttonPath = invoiceNumber ? `r/${invoiceNumber}` : `dashboard`;
+        // 🚀 DYNAMIC TEMPLATE SELECTION
+        // If we have an invoice, use the template WITH the button.
+        // If not, use the SIMPLE template (No button).
+        const templateName = invoiceNumber ? 'kreddy_system_alert' : 'kreddy_simple_alert';
 
-        components.push({
-            type: "button",
-            sub_type: "url",
-            index: "0",
-            parameters: [
-                { type: "text", text: buttonPath }
-            ]
-        });
+        if (invoiceNumber) {
+            components.push({
+                type: "button",
+                sub_type: "url",
+                index: "0",
+                parameters: [
+                    { type: "text", text: `r/${invoiceNumber}` }
+                ]
+            });
+        }
         
-        // ✅ Use normalizedTo (digits-only international format) for template
-        return await sendTemplateMessage(normalizedTo, 'kreddy_system_alert', components);
+        return await sendTemplateMessage(normalizedTo, templateName, components);
     } catch (err) {
         console.error("❌ sendWhatsAppAlert Error:", err.message);
         return false;
@@ -937,18 +935,29 @@ const handleIncoming = async (req, res) => {
         }
         await profile.save();
 
+        // 🛡️ PLAN STATUS LOCK: If the plan is inactive, Kreddy goes "On Leave"
+        const isControlKeyword = /help|subscribe|pay|plan|contact/i.test(text.toLowerCase());
+        if ((profile.planStatus === 'inactive' || profile.planStatus === 'cancelled') && !isControlKeyword) {
+            const upgradeLink = `https://usekredibly.com/login?redirect=/settings`;
+            const inactiveMsg = `⚠️ *I'm currently on Leave, ${bossTitle}!* \n\nMy automated services (summaries, voice recording, and debt tracking) are paused because your workspace is inactive. \n\nReactivate your plan now to get your Digital Chief of Staff back on duty! 🛡️🚀\n\n🔗 *Login & Reactivate:* ${upgradeLink}`;
+            await sendReply(from, inactiveMsg);
+            return;
+        }
+
         const isStaff = profile.whatsappNumber !== cleanFrom;
         const plan = profile.plan || "hustler";
 
-        // 🛡️ PRE-LAUNCH EXPENSE MANAGEMENT (Capped AI messages)
+        // 🛡️ AI USAGE CAPS (Managed pre-launch/trial expenses)
         const usedMessages = profile.monthlyUsage?.messages || 0;
-        const msgLimit = plan === "hustler" ? 50 : 150; // Trial Oga gets more bandwidth
+        const msgLimit = plan === "chairman" ? 500 : (plan === "oga" ? 250 : 50); 
 
         if (usedMessages >= msgLimit) {
-            const limitMsg = `⚠️ *Monthly AI Usage Limit Met*\n\nHigh power, ${bossTitle}! 🚀 You've used up your *${msgLimit}* AI-powered messages for this month.\n\nYou can still record sales & manage your dashboard on the website, but my brain needs a rest! 🧠💤\n\nNeed unlimited Kreddy? Upgrade or check your plan here: ${APP_URL}/pricing`;
+            const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
+            const limitMsg = `⚠️ *Monthly AI Usage Limit Met*\n\nHigh power, ${bossTitle}! 🚀 You've used up your *${msgLimit}* AI-powered messages for this month.\n\nYou can still record sales & manage your dashboard on the website, but my brain needs a rest! 🧠💤\n\nNeed unlimited Kreddy? Upgrade or check your plan here: ${APP_URL}/settings`;
             await sendReply(from, limitMsg);
             return;
         }
+
 
         const isTrialing = profile.planStatus === 'trialing';
         const isTrialExpired = false; 
@@ -1470,7 +1479,7 @@ Upgrade here: ${APP_URL}/pricing`);
         const isGreeting = /^hi|^hello|^hey|^h\b|^yo\b|kreddy/i.test(lowerText);
         const isThanks = /thanks|thank you|merci|jazak|nice/i.test(lowerText);
         
-        if (isGreeting && lowerText.split(' ').length <= 3) {
+        if (isGreeting && lowerText.split(' ').length <= 3 && !profile.welcomeSent) {
             const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
             const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;
             
@@ -1478,8 +1487,15 @@ Upgrade here: ${APP_URL}/pricing`);
             const statusLabel = plan === "chairman" ? "📊 *EMPIRE STATUS*" : "📊 *STATS*";
             const bossRole = plan === "chairman" ? "your Digital Chief of Staff" : "your Kredibly partner";
 
+            // Mark welcome as sent so this never triggers again
+            profile.welcomeSent = true;
+            await profile.save();
+
             await sendReply(from, `${wittyGreeting} \n\nI'm *Kreddy*, ${bossRole}. \n\n*What's the plan for today?*\n${statusLabel}: Type *S*\n⏳ *DEBTS*: Type *D*\n💡 *HELP*: Type *HELP*`);
             return;
+        } else if (isGreeting && lowerText.split(' ').length <= 3 && profile.welcomeSent) {
+            // Already welcomed? Just let the AI handle it or give a very short "How can I help?"
+            // We skip this block so it falls through to the AI for a natural response.
         } else if (isThanks) {
             const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
             const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;
