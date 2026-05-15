@@ -678,42 +678,50 @@ const SettingsPage = () => {
                         </div>
 
                         <div style={{ marginTop: '32px', paddingTop: '32px', borderTop: '1px solid #F1F5F9', position: 'relative', zIndex: 1 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', background: 'rgba(76, 29, 149, 0.04)', borderRadius: '20px', border: '1px solid rgba(76, 29, 149, 0.1)' }}>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                        <p style={{ fontWeight: 800, color: '#1E293B', margin: 0 }}>Transaction Fee Recovery</p>
-                                        <span style={{ fontSize: '10px', fontWeight: 900, background: 'var(--primary)', color: 'white', padding: '2px 8px', borderRadius: '100px', textTransform: 'uppercase' }}>Smart</span>
+                                <div style={{ 
+                                    position: 'relative', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'space-between', 
+                                    width: '100%', 
+                                    gap: '12px',
+                                    flexWrap: 'nowrap'
+                                }}>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                            <p style={{ fontWeight: 800, color: '#1E293B', margin: 0 }}>Transaction Fee Recovery</p>
+                                            <span style={{ fontSize: '10px', fontWeight: 900, background: 'var(--primary)', color: 'white', padding: '2px 8px', borderRadius: '100px', textTransform: 'uppercase' }}>Smart</span>
+                                        </div>
+                                        <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.4 }}>
+                                            {form.prefersGatewayFeeAbsorption 
+                                                ? "You are absorbing all gateway fees. Customers pay exactly the invoice amount." 
+                                                : "Customers cover the Gateway fee. You receive exactly the invoice amount."}
+                                        </p>
                                     </div>
-                                    <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0, fontWeight: 600 }}>
-                                        {form.prefersGatewayFeeAbsorption 
-                                            ? "You are absorbing all gateway fees. Customers pay exactly the invoice amount." 
-                                            : "Customers cover the Gateway fee. You receive exactly the invoice amount."}
-                                    </p>
+                                    <div style={{ position: 'relative', display: 'inline-block', width: '56px', height: '30px', flexShrink: 0 }}>
+                                        <input
+                                            type="checkbox"
+                                            id="fee-toggle"
+                                            checked={!form.prefersGatewayFeeAbsorption}
+                                            onChange={(e) => setForm({ ...form, prefersGatewayFeeAbsorption: !e.target.checked })}
+                                            style={{ opacity: 0, width: 0, height: 0 }}
+                                        />
+                                        <label
+                                            htmlFor="fee-toggle"
+                                            style={{
+                                                position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                                                backgroundColor: !form.prefersGatewayFeeAbsorption ? 'var(--primary)' : '#CBD5E1', borderRadius: '34px', transition: '.4s'
+                                            }}
+                                        >
+                                            <span style={{
+                                                position: 'absolute', content: '""', height: '22px', width: '22px', left: '4px', bottom: '4px',
+                                                backgroundColor: 'white', borderRadius: '50%', transition: '.4s',
+                                                transform: !form.prefersGatewayFeeAbsorption ? 'translateX(26px)' : 'translateX(0)',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                            }}></span>
+                                        </label>
+                                    </div>
                                 </div>
-                                <div style={{ position: 'relative', display: 'inline-block', width: '60px', height: '32px', marginLeft: '20px' }}>
-                                    <input
-                                        type="checkbox"
-                                        id="fee-toggle"
-                                        checked={!form.prefersGatewayFeeAbsorption}
-                                        onChange={(e) => setForm({ ...form, prefersGatewayFeeAbsorption: !e.target.checked })}
-                                        style={{ opacity: 0, width: 0, height: 0 }}
-                                    />
-                                    <label
-                                        htmlFor="fee-toggle"
-                                        style={{
-                                            position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                                            backgroundColor: !form.prefersGatewayFeeAbsorption ? 'var(--primary)' : '#CBD5E1', borderRadius: '34px', transition: '.4s'
-                                        }}
-                                    >
-                                        <span style={{
-                                            position: 'absolute', content: '""', height: '24px', width: '24px', left: '4px', bottom: '4px',
-                                            backgroundColor: 'white', borderRadius: '50%', transition: '.4s',
-                                            transform: !form.prefersGatewayFeeAbsorption ? 'translateX(28px)' : 'translateX(0)',
-                                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                        }}></span>
-                                    </label>
-                                </div>
-                            </div>
                         </div>
                     </section>
                 )}
@@ -960,12 +968,22 @@ const SettingsPage = () => {
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px', background: '#F8FAFC', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
-                            <div>
-                                <p style={{ fontWeight: 800, color: '#1E293B', marginBottom: '4px' }}>Proactive Debt Reminders</p>
-                                <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0, fontWeight: 600 }}>Kreddy will automatically nudge customers when their balance is due.</p>
+                        <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'space-between', 
+                            padding: '24px', 
+                            background: '#F8FAFC', 
+                            borderRadius: '24px', 
+                            border: '1px solid #E2E8F0',
+                            gap: '12px',
+                            flexWrap: 'nowrap'
+                        }}>
+                            <div style={{ flex: 1 }}>
+                                <p style={{ fontWeight: 800, color: '#1E293B', marginBottom: '4px', margin: 0 }}>Smart Reminder Drafts</p>
+                                <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0, fontWeight: 600, lineHeight: 1.4 }}>Kreddy will prepare draft reminders for you to send when a balance is due.</p>
                             </div>
-                            <div style={{ position: 'relative', display: 'inline-block', width: '60px', height: '32px' }}>
+                            <div style={{ position: 'relative', display: 'inline-block', width: '56px', height: '30px', flexShrink: 0 }}>
                                 <input
                                     type="checkbox"
                                     id="reminder-toggle"
@@ -981,9 +999,9 @@ const SettingsPage = () => {
                                     }}
                                 >
                                     <span style={{
-                                        position: 'absolute', content: '""', height: '24px', width: '24px', left: '4px', bottom: '4px',
+                                        position: 'absolute', content: '""', height: '22px', width: '22px', left: '4px', bottom: '4px',
                                         backgroundColor: 'white', borderRadius: '50%', transition: '.4s',
-                                        transform: form.enableReminders ? 'translateX(28px)' : 'translateX(0)',
+                                        transform: form.enableReminders ? 'translateX(26px)' : 'translateX(0)',
                                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                                     }}></span>
                                 </label>
@@ -1006,7 +1024,7 @@ const SettingsPage = () => {
                                         <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: form.reminderTemplate === 'friendly' ? 'var(--primary)' : '#CBD5E1' }} />
                                         <p style={{ margin: 0, fontWeight: 900, color: form.reminderTemplate === 'friendly' ? 'var(--primary)' : '#475569' }}>Friendly</p>
                                     </div>
-                                    <p className="mobile-hide" style={{ margin: 0, fontSize: '0.8rem', color: '#64748B', fontWeight: 600, lineHeight: 1.4 }}>Soft, professional reminder. Best for regulars.</p>
+                                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748B', fontWeight: 600, lineHeight: 1.4 }}>Soft, professional draft tone. Best for regulars.</p>
                                 </button>
                                 <button 
                                     onClick={() => setForm({ ...form, reminderTemplate: 'formal' })}
@@ -1021,7 +1039,7 @@ const SettingsPage = () => {
                                         <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: form.reminderTemplate === 'formal' ? 'var(--primary)' : '#CBD5E1' }} />
                                         <p style={{ margin: 0, fontWeight: 900, color: form.reminderTemplate === 'formal' ? 'var(--primary)' : '#475569' }}>Formal</p>
                                     </div>
-                                    <p className="mobile-hide" style={{ margin: 0, fontSize: '0.8rem', color: '#64748B', fontWeight: 600, lineHeight: 1.4 }}>Strict & clear. Best for overdue accounts.</p>
+                                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748B', fontWeight: 600, lineHeight: 1.4 }}>Strict & clear tone. Best for overdue accounts.</p>
                                 </button>
                             </div>
                         </div>
@@ -1192,8 +1210,8 @@ const SettingsPage = () => {
                     onConfirm={handlePayoutSave}
                 />
 
-                {/* 🛡️ Smart Footer: Hide save button if on KYC tab */}
-                {activeTab !== 'kyc' && (
+                {/* 🛡️ Smart Footer: Hide save button if on KYC or Notifications tab */}
+                {activeTab !== 'kyc' && activeTab !== 'notifications' && (
                     <div className="mobile-stack" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', paddingBottom: '40px' }}>
                         <button
                             className="btn-primary mobile-full-width"

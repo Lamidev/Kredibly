@@ -256,11 +256,24 @@ const scheduleRemindersWorker = () => {
                     const sale = acquired.saleId;
                     const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                     const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
-                    const draftMsg = `Hi ${sale.customerName}, this is a friendly reminder regarding your balance of ₦${bal.toLocaleString()} for *${sale.description}* with ${acquired.businessId.displayName}. You can view and pay here: ${APP_URL}/i/${sale.invoiceNumber}`;
+                    const tone = profile.assistantSettings?.reminderTemplate || "friendly";
+                    
+                    let draftBody = "";
+                    if (tone === "formal") {
+                        draftBody = `Hi ${sale.customerName}, this is a formal notice regarding your outstanding balance of ₦${bal.toLocaleString()} for *${sale.description}*. Please finalize payment to avoid service disruption.`;
+                    } else {
+                        draftBody = `Hi ${sale.customerName}, just a friendly nudge regarding your balance of ₦${bal.toLocaleString()} for *${sale.description}* with ${profile.displayName}. Hope you're having a great day!`;
+                    }
+
+                    const fullDraft = `📝 *REMINDER DRAFT READY*\n\nSend this to your customer:\n---\n${draftBody}\n\n🔗 *VIEW DETAILS:*\n${APP_URL}/i/${sale.invoiceNumber}`;
                     
                     setTimeout(async () => {
-                        await sendWhatsAppAlert(acquired.whatsappNumber, title, draftMsg, sale.invoiceNumber).catch(e => {});
-                    }, 1000);
+                        if (isInsideWindow) {
+                            await sendWhatsAppMessage(acquired.whatsappNumber, fullDraft).catch(e => {});
+                        } else {
+                            await sendWhatsAppAlert(acquired.whatsappNumber, title, fullDraft).catch(e => {});
+                        }
+                    }, 1500);
                 }
 
                 acquired.status = "delivered";

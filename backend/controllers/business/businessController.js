@@ -91,9 +91,7 @@ exports.updateProfile = async (req, res) => {
             await profile.save();
 
             // 🚀 SMART TRIAL LOGIC (June 1st Launch Aware)
-            const { LAUNCH_DATE } = require('../../config/pricing');
             const trialDurationDays = 14;
-            const now = new Date();
             const trialStartDate = now < LAUNCH_DATE ? LAUNCH_DATE : now;
             const expiryDate = new Date(trialStartDate);
             expiryDate.setDate(expiryDate.getDate() + trialDurationDays);

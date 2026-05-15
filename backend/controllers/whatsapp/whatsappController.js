@@ -677,7 +677,7 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
             
             // If invoiceNumber provided but not in text, append it as a clear action link
             if (invoiceNumber && !textMessage.includes(invoiceNumber)) {
-                sessionText += `\n\n--- \n📄 *View Invoice:* \nhttps://usekredibly.com/r/${invoiceNumber}`;
+                sessionText += `\n\n🔗 *VIEW DETAILS:*\nhttps://usekredibly.com/i/${invoiceNumber}`;
             }
 
             return await sendReply(normalizedTo, sessionText);
@@ -713,7 +713,7 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
                 sub_type: "url",
                 index: "0",
                 parameters: [
-                    { type: "text", text: `r/${invoiceNumber}` }
+                    { type: "text", text: `i/${invoiceNumber}` }
                 ]
             });
         }
@@ -760,7 +760,7 @@ const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName,
             
             // Append receipt URL if absent
             if (!message.includes('usekredibly.com/r/')) {
-                message += `\n\n📄 *Receipt:* https://usekredibly.com/r/${invoiceNumber}`;
+                message += `\n\n🔗 *VIEW RECEIPT:*\nhttps://usekredibly.com/r/${invoiceNumber}`;
             }
 
             return await sendReply(normalizedTo, message);
