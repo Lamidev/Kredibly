@@ -14,9 +14,8 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
     
     const [status, setStatus] = useState('billing'); // 'billing', 'verifying', 'success'
 
-    // Pioneer Offering: Subsizided Launch Rates (1500, 3000 & 4500)
-    // These rates cover the first 2 months for merchants who join during the launch window.
-    let basePrice = (plan === 'hustler') ? 1500 : (plan === 'oga' ? 3000 : (plan === 'chairman' ? 4500 : 0));
+    // Standard monthly rates
+    let basePrice = (plan === 'hustler') ? 2500 : (plan === 'oga' ? 5000 : (plan === 'chairman' ? 7500 : 0));
     
     // Calculate Final Price
     let finalPrice = basePrice;
@@ -224,7 +223,7 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
                                         <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748B', fontWeight: 700 }}>Billing Cycle</p>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#F0FDF4', padding: '6px 12px', borderRadius: '8px', border: '1px solid #BBF7D0' }}>
                                              <Sparkles size={14} color="#16A34A" />
-                                             <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#16A34A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pioneer Slash</span>
+                                             <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#16A34A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Monthly</span>
                                         </div>
                                     </div>
                                 </div>

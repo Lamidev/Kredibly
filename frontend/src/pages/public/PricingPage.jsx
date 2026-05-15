@@ -25,8 +25,9 @@ const PricingPage = () => {
             period: "/ month",
             fee: "Zero Transfer Fees*",
             features: [
-                "10 Sale Records limit per Month",
+                "50 Sales Records per Month",
                 "Kreddy AI Text Intelligence",
+                "10 Auto-Reminders & Tasks / mo",
                 "Basic Debt Recovery Assistant",
                 "Verified Ledger Seal",
                 "Digital Receipts & Invoices"
@@ -53,7 +54,7 @@ const PricingPage = () => {
                 "Co-Branded Receipts (Your Logo)",
                 "Advanced AI Recovery Assistant"
             ],
-            cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Gain Pioneer Access" : "Become an Oga",
+            cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade to Oga" : "Become an Oga",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
             highlight: true,
             color: "var(--primary)"
@@ -92,7 +93,6 @@ const PricingPage = () => {
                 
                 <div style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto' }}>
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                        <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem' }}>✨ FOUNDING MEMBER OFFERS ACTIVE</div>
                         <h1 style={{ fontSize: 'clamp(3rem, 7vw, 5rem)', fontWeight: 950, letterSpacing: '-0.05em', lineHeight: 1, marginBottom: '24px' }}>
                             Simple Pricing.<br />
                             <span className="premium-gradient">Unlimited Growth.</span>
@@ -112,11 +112,6 @@ const PricingPage = () => {
                             {plan.isPopular && (
                                 <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: 'var(--primary)', color: 'white', padding: '6px 16px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 900, whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(76, 29, 149, 0.2)' }}>
                                     MOST POPULAR
-                                </div>
-                            )}
-                            {plan.isFounding && (
-                                <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: '#0F172A', color: 'white', padding: '6px 16px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 900, whiteSpace: 'nowrap' }}>
-                                    FOUNDING MEMBER
                                 </div>
                             )}
                             
@@ -191,8 +186,8 @@ const PricingPage = () => {
                                         { name: "Automated Ledger Sync", hustler: true, oga: true, chairman: true }
                                     ]},
                                     { category: "Business Management", features: [
-                                        { name: "Sales Records Limit", hustler: "10 / mo", oga: "Unlimited", chairman: "Unlimited" },
-                                        { name: "Staff Members", hustler: "0", oga: "1", chairman: "Unlimited" },
+                                        { name: "Sales Records Limit", hustler: "50 / mo", oga: "Unlimited", chairman: "Unlimited" },
+                                        { name: "Staff Members", hustler: "0", oga: "1", chairman: "3" },
                                         { name: "Multi-Office / Branches", hustler: false, oga: false, chairman: true },
                                         { name: "WhatsApp Image Sync", hustler: false, oga: false, chairman: true }
                                     ]},
@@ -203,6 +198,7 @@ const PricingPage = () => {
                                     ]},
                                     { category: "Recovery Engine", features: [
                                         { name: "Basic Debt Reminders", hustler: true, oga: true, chairman: true },
+                                        { name: "Auto-Reminders & Tasks", hustler: "10 / mo", oga: "Unlimited", chairman: "Unlimited" },
                                         { name: "Advanced AI Recovery Assistant", hustler: false, oga: true, chairman: true },
                                         { name: "Automated Debt Tracking", hustler: true, oga: true, chairman: true }
                                     ]},

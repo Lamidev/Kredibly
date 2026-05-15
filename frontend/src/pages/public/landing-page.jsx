@@ -153,8 +153,9 @@ const LandingPage = () => {
             period: "/ month",
             fee: "Zero Transfer Fees*",
             features: [
-                "10 Sale Records limit per Month",
+                "50 Sales Records per Month",
                 "Kreddy AI Text Intelligence",
+                "10 Auto-Reminders & Tasks / mo",
                 "Basic Debt Recovery Assistant",
                 "Verified Ledger Seal",
                 "Digital Receipts & Invoices"
@@ -181,7 +182,7 @@ const LandingPage = () => {
                 "Co-Branded Receipts (Your Logo)",
                 "Advanced AI Recovery Assistant"
             ],
-            cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Gain Pioneer Access" : "Become an Oga",
+            cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade to Oga" : "Become an Oga",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
             highlight: true,
             color: "var(--primary)"
@@ -197,7 +198,7 @@ const LandingPage = () => {
             features: [
                 "Everything in Oga Plan",
                 "White-Label Receipts (Only Your Logo)",
-                "Unlimited Staff & Offices",
+                "Up to 3 Staff & Offices",
                 "WhatsApp Image Sync (Automatic)",
                 "8 AM Executive Intelligence Brief",
                 "Priority Vault & Support"
