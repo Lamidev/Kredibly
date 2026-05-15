@@ -42,14 +42,16 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="glass-card" style={{ 
-      padding: '48px', 
-      borderRadius: '32px', 
-      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)'
+    <div className="glass-card animate-fade-in" style={{ 
+      padding: 'clamp(24px, 6vw, 48px)', 
+      borderRadius: 'clamp(20px, 4vw, 32px)', 
+      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)',
+      width: '100%',
+      maxWidth: '500px'
     }}>
       <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>Reset Password</h2>
-        <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '1.05rem' }}>Securely update your credentials.</p>
+        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>Reset Password</h2>
+        <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>Securely update your credentials.</p>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -59,7 +61,7 @@ const ResetPassword = () => {
              <Key size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
              <input
                type="text"
-               className="input-field"
+               className="input-field security-code-input"
                style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', background: 'var(--background)', fontWeight: 700, fontSize: '1.2rem' }}
                placeholder="Enter 6-digit code"
                value={formData.code}
@@ -147,5 +149,27 @@ const ResetPassword = () => {
     </div>
   );
 };
+
+const styles = `
+  @media (max-width: 640px) {
+    .input-field {
+      height: 52px !important;
+      font-size: 0.95rem !important;
+    }
+    .security-code-input {
+      font-size: 1rem !important;
+    }
+    .btn-primary {
+      height: 56px !important;
+      font-size: 1rem !important;
+    }
+  }
+`;
+
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement("style");
+  styleSheet.innerText = styles;
+  document.head.appendChild(styleSheet);
+}
 
 export default ResetPassword;

@@ -338,15 +338,18 @@ const Onboarding = () => {
                                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} key="info">
                                     <div className="input-group" style={{ marginBottom: '24px' }}>
                                         <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>Name of your Business, Shop, or Service?</label>
-                                        <input 
-                                            type="text" 
-                                            className="input-field" 
-                                            style={{ height: '60px', fontSize: '1.1rem', fontWeight: 700 }}
-                                            placeholder="e.g. Trendy Collections, John The Plumber" 
-                                            value={displayName} 
-                                            onChange={e => setDisplayName(e.target.value)} 
-                                            autoFocus 
-                                        />
+                                        <div style={{ position: 'relative' }}>
+                                            <Store size={20} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }} />
+                                            <input 
+                                                type="text" 
+                                                className="input-field" 
+                                                style={{ height: '60px', paddingLeft: '56px', fontSize: '1.1rem', fontWeight: 700 }}
+                                                placeholder="e.g. Trendy Collections, John The Plumber" 
+                                                value={displayName} 
+                                                onChange={e => setDisplayName(e.target.value)} 
+                                                autoFocus 
+                                            />
+                                        </div>
                                     </div>
                                     <div className="input-group" style={{ marginBottom: '40px' }}>
                                         <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>WhatsApp for Kreddy Notifications</label>
@@ -382,7 +385,7 @@ const Onboarding = () => {
 
                                     <div className="input-group" style={{ marginBottom: '24px' }}>
                                         <div style={{ position: 'relative' }}>
-                                            <Search size={18} style={{ position: 'absolute', left: '16px', top: '20px', color: '#94A3B8', zIndex: 2 }} />
+                                            <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', zIndex: 2 }} />
                                             <input 
                                                 type="text" 
                                                 className="input-field" 
@@ -394,7 +397,7 @@ const Onboarding = () => {
                                                 disabled={banksLoading}
                                             />
                                             {banksLoading && (
-                                                <Loader2 size={16} style={{ position: 'absolute', right: '16px', top: '20px', color: '#94A3B8', animation: 'spin 1s linear infinite' }} />
+                                                <Loader2 size={16} style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', animation: 'spin 1s linear infinite' }} />
                                             )}
                                             {searchBank && !selectedBank && filteredBanks.length > 0 && (
                                                 <div style={{ position: 'absolute', top: '62px', left: 0, right: 0, background: 'white', border: '1px solid #E2E8F0', borderRadius: '16px', zIndex: 100, boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', maxHeight: '280px', overflowY: 'auto' }}>
@@ -426,7 +429,7 @@ const Onboarding = () => {
                                                 value={accountNumber} 
                                                 onChange={e => setAccountNumber(e.target.value.replace(/\D/g, "").trim())}
                                             />
-                                            {isResolving && <Loader2 className="spin" size={20} style={{ position: 'absolute', right: '16px', top: '18px', color: 'var(--primary)', animation: 'spin 1s linear infinite' }} />}
+                                            {isResolving && <Loader2 className="spin" size={20} style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)', animation: 'spin 1s linear infinite' }} />}
                                         </div>
                                     </div>
                                     {accountName && (
@@ -478,15 +481,18 @@ const Onboarding = () => {
                                         <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>Add Managers or Partners (Optional)</label>
                                         <p style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '12px', fontWeight: 600 }}>They'll be able to record sales on WhatsApp too. You can add multiple.</p>
                                         <div style={{ display: 'flex', gap: '8px' }}>
-                                            <input 
-                                                type="tel" 
-                                                className="input-field" 
-                                                style={{ height: '56px', fontSize: '1rem', fontWeight: 700 }}
-                                                placeholder="Their Phone Number" 
-                                                value={newStaffPhone}
-                                                onChange={e => setNewStaffPhone(e.target.value)}
-                                            />
-                                            <button onClick={addStaff} className="btn-secondary" style={{ padding: '0 20px', borderRadius: '14px' }}>Add</button>
+                                            <div style={{ position: 'relative', flex: 1 }}>
+                                                <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }} />
+                                                <input 
+                                                    type="tel" 
+                                                    className="input-field" 
+                                                    style={{ height: '56px', paddingLeft: '48px', fontSize: '1rem', fontWeight: 700, width: '100%' }}
+                                                    placeholder="Their Phone Number" 
+                                                    value={newStaffPhone}
+                                                    onChange={e => setNewStaffPhone(e.target.value)}
+                                                />
+                                            </div>
+                                            <button onClick={addStaff} className="btn-secondary" style={{ padding: '0 20px', borderRadius: '14px', height: '56px' }}>Add</button>
                                         </div>
                                         {staffNumbers.length > 0 && (
                                             <div style={{ marginTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>

@@ -22,7 +22,7 @@ const sendIndividualDebtNudge = async (data) => {
             const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planFTitle;
             const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
 
-            const msg = `🤔 *Did They Pay, ${bossTitle}?*\n\nYesterday, you had a reminder to collect from *${sale.customerName}*.\n\nMy records show they still owe *₦${bal.toLocaleString()}*. \n\nDid they pay offline? If yes, just say: _"${sale.customerName} paid"_. \n\nIf not, would you like me to snooze this reminder for later, or send them another message?`;
+            const msg = `🤔 *Did They Pay, ${bossTitle}?*\n\nYesterday, you had a reminder to collect from *${sale.customerName}* for *${sale.description}*.\n\nMy records show they still owe *₦${bal.toLocaleString()}*. \n\nDid they pay offline? If yes, just say: _"${sale.customerName} paid"_. \n\nIf not, would you like me to snooze this reminder for later, or send them another message?`;
             
             const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
             
@@ -58,7 +58,7 @@ const sendIndividualDebtNudge = async (data) => {
             const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planETitle;
             const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
             
-            const msg = `🚩 *Overdue Alert, ${bossTitle}!*\n\n*${sale.customerName}* was supposed to pay ₦${bal.toLocaleString()} yesterday, but the record is still unpaid.\n\nShould I draft a follow-up link for you to forward to them? \n\n_Type: "Send link to ${sale.customerName}"_`;
+            const msg = `🚩 *Overdue Alert, ${bossTitle}!*\n\n*${sale.customerName}* was supposed to pay *₦${bal.toLocaleString()}* for *${sale.description}* yesterday, but the record is still unpaid.\n\nShould I draft a follow-up link for you to forward to them? \n\n_Type: "Send link to ${sale.customerName}"_`;
             
             const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
 
@@ -90,13 +90,32 @@ const sendIndividualDebtNudge = async (data) => {
 
             const profile = sales[0].businessId;
             const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || (profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss"));
-            const tone = profile.assistantSettings?.reminderTemplate || "friendly";
+            
+            // Calculate specific timing
+            const now = new Date();
+            const startOfToday = new Date(now); startOfToday.setHours(0, 0, 0, 0);
+            const endOfToday = new Date(now); endOfToday.setHours(23, 59, 59, 999);
+            const startOfTomorrow = new Date(now); startOfTomorrow.setDate(now.getDate() + 1); startOfTomorrow.setHours(0, 0, 0, 0);
+            const endOfTomorrow = new Date(now); endOfTomorrow.setDate(now.getDate() + 1); endOfTomorrow.setHours(23, 59, 59, 999);
 
+            let hasToday = false;
+            let hasTomorrow = false;
+            sales.forEach(s => {
+                if (s.dueDate >= startOfToday && s.dueDate <= endOfToday) hasToday = true;
+                if (s.dueDate >= startOfTomorrow && s.dueDate <= endOfTomorrow) hasTomorrow = true;
+            });
+
+            const timingText = (hasToday && hasTomorrow) ? "today and tomorrow" : (hasToday ? "today" : "tomorrow");
             const totalBal = sales.reduce((sum, s) => sum + (s.totalAmount - s.payments.reduce((pSum, p) => pSum + p.amount, 0)), 0);
             
-            let msg = tone === "friendly"
-                ? `🌞 *Good Morning ${bossTitle}!* \n\nYou have *${sales.length}* sales expected to be paid today or tomorrow, totaling *₦${totalBal.toLocaleString()}*.\n\nI'm monitoring them for you! 🛡️`
-                : `📊 *Receivables Intelligence Summary*\n\nInfrastructure is monitoring *${sales.length}* sales due in this 48h period. \n\nTotal value: *₦${totalBal.toLocaleString()}*. \n\nStanding by for collection instructions. 🛡️`;
+            // Build Detailed List
+            const saleList = sales.map(s => {
+                const bal = s.totalAmount - s.payments.reduce((pSum, p) => pSum + p.amount, 0);
+                const day = (s.dueDate >= startOfToday && s.dueDate <= endOfToday) ? "Today" : "Tomorrow";
+                return `• *${s.customerName}*: ₦${bal.toLocaleString()} (${s.invoiceNumber}) - _${s.description}_ [${day}]`;
+            }).join('\n');
+
+            let msg = `🌞 *Good Morning ${bossTitle}!* \n\nYou have *${sales.length}* ${sales.length === 1 ? 'sale' : 'sales'} expected to be paid *${timingText}*, totaling *₦${totalBal.toLocaleString()}*.\n\n⏳ *Upcoming Collections:*\n${saleList}\n\nI'm monitoring them for you! 🛡️`;
 
             const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
 
@@ -113,11 +132,13 @@ const sendIndividualDebtNudge = async (data) => {
                         subject: `📊 Upcoming Receivables Summary`,
                         html: `<div style="font-family: sans-serif; padding: 20px; color: #333;">
                                 <h2>${bossTitle}, here is your upcoming summary:</h2>
-                                <p>You have <b>${sales.length}</b> sales expected to be paid in the next 48 hours, totaling <b>₦${totalBal.toLocaleString()}</b>.</p>
+                                <p>You have <b>${sales.length}</b> sales expected to be paid <b>${timingText}</b>, totaling <b>₦${totalBal.toLocaleString()}</b>.</p>
+                                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                                    ${saleList.replace(/\n/g, '<br>')}
+                                </div>
                                 <p>I'm monitoring them for you! 🛡️</p>
                                </div>`
                     });
-                    console.log(`📪 [EMAIL-SENT] Upcoming Summary for ${profile.displayName} sent.`);
                 }
             }
             return { status: "completed" };

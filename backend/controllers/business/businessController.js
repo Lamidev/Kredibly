@@ -18,16 +18,12 @@ const triggerWelcomeMessage = async (profile) => {
         const { sendWhatsAppAlert } = require("../whatsapp/whatsappController");
         
         const planName = profile.plan.charAt(0).toUpperCase() + profile.plan.slice(1);
-        const features = {
-            chairman: "Unlimited Invoice Recordings, AI Voice Note Sales, 0% Transaction Fees on Kreddy Settlements, and Global Currency Support.",
-            oga: "Priority AI Processing, Advanced Debt Recovery Reminders, and Daily Business Insights.",
-            hustler: "Digital Sales Ledger, Professional Payment Links, and Basic Debt Tracking."
-        };
+        const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || (profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss"));
 
-        const welcomeText = `*Welcome to the ${planName} Life!* 🚀\n\nI'm *Kreddy*, your AI business assistant. I've successfully launched your workspace for *${profile.displayName}*.\n\n*Here is how I make your life easier:*\n\n1️⃣ *Talk to Me:* No need to type. Just send a voice note like: _"I just sold 2 bags of rice to Samuel for 50k"_ and I'll record it for you.\n\n2️⃣ *Get Paid Faster:* I generate professional payment links for your customers. When they pay, I'll notify you instantly! 💰\n\n3️⃣ *Plan Benefits:* As a ${planName}, you enjoy ${features[profile.plan] || features.hustler}.\n\n*Try it now:* Send me a message or voice note about your last sale! 🛡️`;
+        const welcomeText = `I'm *Kreddy*, your new Digital Chief of Staff. I've successfully launched your workspace for *${profile.displayName}*! 🚀\n\n*What's the plan for today?*\n📊 EMPIRE STATUS: Type *S*\n⏳ DEBTS: Type *D*\n💡 HELP: Type *HELP*`;
 
         // Send to Merchant
-        await sendWhatsAppAlert(profile.whatsappNumber, planName, welcomeText);
+        await sendWhatsAppAlert(profile.whatsappNumber, bossTitle, welcomeText);
 
         // Send to Staff
         if (profile.staffNumbers && profile.staffNumbers.length > 0) {
@@ -91,29 +87,54 @@ exports.updateProfile = async (req, res) => {
             
             const wasIncomplete = (profile.onboardingStep || 0) < 4;
             if (req.body.onboardingStep === 4) profile.onboardingStep = 4;
-            
             await profile.save();
 
-            // 🚀 Trigger Kreddy Welcome automatically when onboarding hits Step 4
+            // 🚀 SMART TRIAL LOGIC (June 1st Launch Aware)
+            const { LAUNCH_DATE } = require('../../config/pricing');
+            const trialDurationDays = 14;
+            const now = new Date();
+            const trialStartDate = now < LAUNCH_DATE ? LAUNCH_DATE : now;
+            const expiryDate = new Date(trialStartDate);
+            expiryDate.setDate(expiryDate.getDate() + trialDurationDays);
+
+            // Trigger Kreddy Welcome and set Trial Expiry when onboarding hits Step 4
             if (wasIncomplete && profile.onboardingStep === 4 && !profile.welcomeSent) {
-                triggerWelcomeMessage(profile).catch(err => console.error("Auto Welcome Fail:", err));
+                profile.trialExpiresAt = expiryDate;
                 profile.welcomeSent = true;
                 await profile.save();
+                triggerWelcomeMessage(profile).catch(err => console.error("Auto Welcome Fail:", err));
             }
         } else {
+            // ... (Creation logic)
+            const { LAUNCH_DATE } = require('../../config/pricing');
+            const trialDurationDays = 14;
+            const now = new Date();
+            const trialStartDate = now < LAUNCH_DATE ? LAUNCH_DATE : now;
+            const expiryDate = new Date(trialStartDate);
+            expiryDate.setDate(expiryDate.getDate() + trialDurationDays);
+
             profile = new BusinessProfile({
-                ownerId: req.user._id, displayName, entityType, sellMode, logoUrl, phoneNumber,
-                whatsappNumber: cleanPhone(whatsappNumber), address, plan: 'chairman', planStatus: 'trialing',
-                walletBalance: 0, onboardingStep: req.body.onboardingStep || 0,
+                ownerId: req.user._id, 
+                displayName, 
+                entityType, 
+                sellMode, 
+                logoUrl, 
+                phoneNumber,
+                whatsappNumber: cleanPhone(whatsappNumber), 
+                address, 
+                plan: 'chairman', 
+                planStatus: 'trialing',
+                trialExpiresAt: expiryDate,
+                walletBalance: 0, 
+                onboardingStep: req.body.onboardingStep || 0,
                 bankDetails: bankDetails || {}
             });
             await profile.save();
 
-            // If created directly with step 4 (rare but possible)
             if (profile.onboardingStep === 4) {
-                triggerWelcomeMessage(profile).catch(err => console.error("Auto Welcome Fail:", err));
                 profile.welcomeSent = true;
                 await profile.save();
+                triggerWelcomeMessage(profile).catch(err => console.error("Auto Welcome Fail:", err));
             }
         }
         res.status(200).json({ success: true, data: profile });

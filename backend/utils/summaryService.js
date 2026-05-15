@@ -38,15 +38,15 @@ const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
         const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || "Chief";
 
         // 4. Determine if merchant is ACTIVE (Inside 24h WhatsApp Window)
-        // Group 1: Connected + Interacted in last 24h + Has WhatsApp
         const isInsideWindow = profile.isKreddyConnected && 
                              profile.lastInboundAt && 
                              (now - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
 
-        if (isInsideWindow && profile.whatsappNumber) {
-            // 🟢 GROUP 1: FULL ACCOUNTANT SUMMARY (WhatsApp - NO EMAIL)
-            // ... (keeping Mode A as is since it's WhatsApp)
-            console.log(`📡 [ACTIVE] Sending Full Summary to ${profile.displayName} on WhatsApp...`);
+        const isProUser = profile.plan === "oga" || profile.plan === "chairman";
+
+        if ((isInsideWindow || isProUser) && profile.whatsappNumber) {
+            // 🟢 GROUP 1: FULL ACCOUNTANT SUMMARY (WhatsApp)
+            console.log(`📡 [ACTIVE/PRO] Preparing Full Summary for ${profile.displayName} on WhatsApp...`);
 
             // Fetch Data for Report
             const startOfYesterday = new Date(startOfToday);
@@ -80,7 +80,7 @@ const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
             const remindersToday = await Reminder.find({
                 businessId: profile._id,
                 triggerDate: { $gte: startOfToday, $lte: new Date(startOfToday.getTime() + 86400000) },
-                status: { $ne: "completed" } // Don't show already done tasks
+                status: { $ne: "completed" } 
             }).limit(2);
 
             let agendaSection = "";
@@ -89,7 +89,7 @@ const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
                 agendaSection = `🗓️ *Today's Agenda:*\n${agendaText}\n\n`;
             }
 
-            // Top Aging Debts (Top 3 highest balances)
+            // Top Aging Debts
             const topDebtors = await Sale.find({
                 businessId: profile._id,
                 status: { $in: ["unpaid", "partial"] }
@@ -99,13 +99,24 @@ const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
 
             let debtorSection = "";
             if (topDebtors.length > 0) {
-                const debtorList = topDebtors.map(d => `• ${d.customerName}: *₦${(d.totalAmount - d.payments.reduce((s, p) => s + p.amount, 0)).toLocaleString()}*`).join('\n');
+                const debtorList = topDebtors.map(d => {
+                    const bal = d.totalAmount - d.payments.reduce((s, p) => s + p.amount, 0);
+                    return `• ${d.customerName}: *₦${bal.toLocaleString()}* (#${d.invoiceNumber}) - _${d.description}_`;
+                }).join('\n');
                 debtorSection = `🧐 *Top Debt Alerts:*\n${debtorList}\n\n`;
             }
 
             const message = `Good morning, ${bossTitle}! 🌅\n\n📊 *Yesterday's Performance:*\n💰 Cash Collected: *₦${totalCashIn.toLocaleString()}*\n📑 New Invoices: *${salesYesterday.length}* (₦${salesYesterday.reduce((sum, s) => sum + s.totalAmount, 0).toLocaleString()})\n⏳ Debt Recorded: *₦${pendingDebt.toLocaleString()}*\n\n${agendaSection}${debtorSection}🎯 *Kreddy Growth Masterclass:*\n${dailyTip}\n\n_Let's scale your empire today!_ 🛡️`;
 
-            const sent = await sendWhatsAppMessage(profile.whatsappNumber, message);
+            let sent = false;
+            if (isInsideWindow) {
+                sent = await sendWhatsAppMessage(profile.whatsappNumber, message);
+            } else {
+                // Closed window but PRO user -> Use Template
+                const { sendWhatsAppAlert } = require("../controllers/whatsapp/whatsappController");
+                sent = await sendWhatsAppAlert(profile.whatsappNumber, bossTitle, message);
+            }
+
             if (sent) {
                 console.log(`✅ [WHATSAPP] Summary delivered to ${profile.displayName}.`);
                 profile.lastSummaryAt = new Date();
@@ -113,7 +124,7 @@ const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
                 return { status: "sent", channel: "whatsapp" };
             } else {
                 console.error(`❌ [WHATSAPP] Delivery FAILED for ${profile.displayName}.`);
-                return { status: "failed", error: "WhatsApp Free-form failed for active user" };
+                return { status: "failed", error: "WhatsApp delivery failed" };
             }
 
         } else {

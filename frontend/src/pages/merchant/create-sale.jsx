@@ -47,6 +47,13 @@ const CreateSale = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // 🛡️ SUBSCRIPTION LOCK: Prevent recording if plan is inactive
+        if (profile?.planStatus === 'inactive' || profile?.planStatus === 'cancelled') {
+            setShowLimitModal(true);
+            return;
+        }
+
         if (!formData.description || !formData.totalAmount) {
             return toast.error("Description and Total Amount are required");
         }

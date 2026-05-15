@@ -8,7 +8,10 @@ import {
     Calculator
 } from 'lucide-react';
 
+import { useAuth } from "../../context/AuthContext";
+
 const PlanLimitModal = ({ isOpen, onClose, onUpgrade }) => {
+    const { profile } = useAuth();
     if (!isOpen) return null;
 
     const benefits = [
@@ -17,6 +20,13 @@ const PlanLimitModal = ({ isOpen, onClose, onUpgrade }) => {
         { icon: <Shield size={18} />, title: "Verified Ledger", desc: "Premium trust badges on all your public receipts." },
         { icon: <Calculator size={18} />, title: "Detailed Analytics", desc: "Understand your cashflow like a pro." }
     ];
+
+    const isExpired = profile?.planStatus === 'inactive' || profile?.planStatus === 'cancelled';
+    const headerTitle = isExpired ? "Trial Expired" : "Limit Reached";
+    const mainHeadline = isExpired ? "Your Trial has Ended" : "Upgrade to Oga";
+    const mainDesc = isExpired 
+        ? "Your 14-day trial and grace period are complete. Subscribe now to get your Digital Chief of Staff back on duty and continue recording sales."
+        : "You've hit the 10-invoice limit. Ready to professionalize your business and recover debt faster?";
 
     return createPortal(
         <AnimatePresence>
@@ -83,10 +93,10 @@ const PlanLimitModal = ({ isOpen, onClose, onUpgrade }) => {
                                     marginBottom: '16px'
                                 }}>
                                     <Sparkles size={14} color="var(--primary)" />
-                                    <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Trial Limit Reached</span>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{headerTitle}</span>
                                 </div>
-                                <h2 style={{ fontSize: '2.2rem', fontWeight: 950, color: '#0F172A', marginBottom: '16px', letterSpacing: '-0.04em', lineHeight: 1 }}>Upgrade to <span style={{ color: 'var(--primary)' }}>Oga</span></h2>
-                                <p style={{ color: '#64748B', fontWeight: 600, fontSize: '1.1rem', lineHeight: 1.5 }}>You've hit the 10-invoice limit. Ready to professionalize your business and recover debt faster?</p>
+                                <h2 style={{ fontSize: '2.2rem', fontWeight: 950, color: '#0F172A', marginBottom: '16px', letterSpacing: '-0.04em', lineHeight: 1 }}>{mainHeadline}</h2>
+                                <p style={{ color: '#64748B', fontWeight: 600, fontSize: '1.1rem', lineHeight: 1.5 }}>{mainDesc}</p>
                         </div>
 
                         {/* Benefits Grid */}
@@ -116,7 +126,7 @@ const PlanLimitModal = ({ isOpen, onClose, onUpgrade }) => {
                                 }}
                             >
                                 <Star size={20} fill="white" />
-                                Become an Oga Now
+                                {isExpired ? 'View Subscription Plans' : 'Become an Oga Now'}
                                 <ArrowRight size={20} strokeWidth={3} />
                             </button>
                             <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: '0.8rem', fontWeight: 700 }}>

@@ -172,6 +172,51 @@ exports.sendSubscriptionConfirmEmail = async (email, userData) => {
     }
 };
 
+// 🛡️ SUPER ADMIN ALERTS
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || sender.email;
+
+exports.sendAdminPaymentAlert = async (data) => {
+    try {
+        const { merchantName, planName, amount, reference, email } = data;
+        await resendClient.emails.send({
+            from: `${sender.name} <${sender.email}>`,
+            to: ADMIN_EMAIL,
+            subject: `💰 NEW PAYMENT: ₦${amount} from ${merchantName}`,
+            html: `<div style="font-family: sans-serif; padding: 20px;">
+                    <h2 style="color: #4C1D95;">Cash Received! 🎉</h2>
+                    <p><strong>Merchant:</strong> ${merchantName} (${email})</p>
+                    <p><strong>Plan:</strong> ${planName}</p>
+                    <p><strong>Amount:</strong> ₦${amount}</p>
+                    <p><strong>Reference:</strong> ${reference}</p>
+                    <hr />
+                    <p style="font-size: 12px; color: #777;">Kredibly Revenue Tracker</p>
+                   </div>`
+        });
+    } catch (error) {
+        console.error("Admin Payment Alert Error:", error.message);
+    }
+};
+
+exports.sendAdminNewUserAlert = async (data) => {
+    try {
+        const { name, email } = data;
+        await resendClient.emails.send({
+            from: `${sender.name} <${sender.email}>`,
+            to: ADMIN_EMAIL,
+            subject: `🚀 NEW PIONEER: ${name} joined Kredibly`,
+            html: `<div style="font-family: sans-serif; padding: 20px;">
+                    <h2 style="color: #4C1D95;">New Sign-up! 🚀</h2>
+                    <p><strong>Name:</strong> ${name}</p>
+                    <p><strong>Email:</strong> ${email}</p>
+                    <hr />
+                    <p style="font-size: 12px; color: #777;">Kredibly Growth Monitor</p>
+                   </div>`
+        });
+    } catch (error) {
+        console.error("Admin New User Alert Error:", error.message);
+    }
+};
+
 
 
 
