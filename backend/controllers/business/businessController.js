@@ -18,12 +18,13 @@ const triggerWelcomeMessage = async (profile) => {
         const { sendWhatsAppAlert } = require("../whatsapp/whatsappController");
         
         const planName = profile.plan.charAt(0).toUpperCase() + profile.plan.slice(1);
-        const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || (profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss"));
+        const bossTitle = profile.displayName || (profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss"));
+        const personalizedName = profile.assistantSettings?.preferredName || bossTitle;
 
-        const welcomeText = `I'm *Kreddy*, your new Digital Chief of Staff. I've successfully launched your workspace for *${profile.displayName}*! 🚀\n\n*What's the plan for today?*\n📊 EMPIRE STATUS: Type *S*\n⏳ DEBTS: Type *D*\n💡 HELP: Type *HELP*`;
+        const welcomeText = `Hello *${bossTitle}*! 🚀\n\nI'm *Kreddy*, your new Digital Chief of Staff. I've successfully launched your workspace and I'm ready to help you secure your revenue! 🛡️\n\n*Quick Tip:* You can tell me to call you any name you want (like "Chief" or your first name). Just say *"Kreddy, call me [Name]"* and I'll remember it! 🤝\n\n*What's the plan for today?*\n📊 EMPIRE STATUS: Type *S*\n⏳ DEBTS: Type *D*\n💡 HELP: Type *HELP*`;
 
         // Send to Merchant
-        await sendWhatsAppAlert(profile.whatsappNumber, bossTitle, welcomeText);
+        await sendWhatsAppAlert(profile.whatsappNumber, personalizedName, welcomeText);
 
         // Send to Staff
         if (profile.staffNumbers && profile.staffNumbers.length > 0) {

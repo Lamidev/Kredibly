@@ -147,7 +147,7 @@ const DashboardLayout = () => {
                         <img 
                             src="/krediblyrevamped.png" 
                             alt="Kredibly" 
-                            style={{ height: '35px', width: 'auto', filter: 'contrast(1.15) brightness(1.02)' }} 
+                            style={{ height: '28px', width: 'auto', filter: 'contrast(1.15) brightness(1.02)' }} 
                         />
                     </div>
                     {/* Mobile Close Button */}
@@ -227,17 +227,17 @@ const DashboardLayout = () => {
                     ))}
                 </nav>
 
-                <div className="sidebar-footer">
+                <div className="sidebar-footer" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <NavLink
                         to="/settings"
-                        className={({ isActive }) => `nav-item-premium ${isActive ? 'active' : ''}`}
+                        className={({ isActive }) => `nav-item-premium footer-item ${isActive ? 'active' : ''}`}
                         onClick={() => setIsSidebarOpen(false)}
                     >
                         <Settings size={20} /> <span style={{ fontWeight: 600, fontSize: 'clamp(0.9rem, 3.5vw, 1rem)' }}>Settings</span>
                     </NavLink>
                     <button
                         onClick={() => setShowLogoutConfirm(true)}
-                        className="nav-item-premium nav-item-logout"
+                        className="nav-item-premium footer-item nav-item-logout"
                     >
                         <LogOut size={20} /> <span style={{ fontWeight: 600, fontSize: 'clamp(0.9rem, 3.5vw, 1rem)' }}>Logout</span>
                     </button>
@@ -258,6 +258,15 @@ const DashboardLayout = () => {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {/* Mobile Logo */}
+                        <div className="lg:hidden" style={{ marginRight: '8px' }}>
+                            <img 
+                                src="/krediblyrevamped.png" 
+                                alt="Kredibly" 
+                                style={{ height: '22px', width: 'auto', filter: 'contrast(1.15) brightness(1.02)' }} 
+                            />
+                        </div>
+
                         <div style={{ position: 'relative', display: 'flex', gap: '8px' }}>
                             <button
                                 onClick={globalRefresh}
@@ -265,21 +274,21 @@ const DashboardLayout = () => {
                                 style={{ background: '#F1F5F9', border: 'none', padding: '10px', borderRadius: '12px', color: '#64748B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 title="Refresh Dashboard"
                             >
-                                <RefreshCcw size={20} className={isRefreshing ? 'spin-animation' : ''} />
+                                <RefreshCcw size={18} className={isRefreshing ? 'spin-animation' : ''} />
                             </button>
 
                             <button
                                 onClick={() => setShowNotifications(!showNotifications)}
                                 style={{ background: '#F1F5F9', border: 'none', padding: '10px', borderRadius: '12px', color: '#64748B', cursor: 'pointer', position: 'relative' }}
                             >
-                                <Bell size={20} />
+                                <Bell size={18} />
                                 {unreadCount > 0 && (
                                     <span style={{ 
                                         position: 'absolute', top: '-5px', right: '-5px', 
-                                        minWidth: '20px', height: '20px', 
+                                        minWidth: '18px', height: '18px', 
                                         background: '#EF4444', color: 'white',
                                         borderRadius: '50%', border: '2px solid white',
-                                        fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         fontWeight: 800, padding: '0 4px'
                                     }}>
                                         {unreadCount}

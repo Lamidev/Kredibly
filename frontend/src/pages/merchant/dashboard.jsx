@@ -32,6 +32,13 @@ const Dashboard = () => {
     const [visibleSales, setVisibleSales] = useState(5);
     const [deleteModal, setDeleteModal] = useState({ show: false, sale: null });
     const [showLimitModal, setShowLimitModal] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 1024);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const handleCopyDraft = (sale) => {
         const balance = sale.totalAmount - (sale.payments?.reduce((sum, p) => sum + p.amount, 0) || 0);
@@ -177,9 +184,11 @@ const Dashboard = () => {
             <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
                     <h1 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.5rem)', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.04em', lineHeight: 1.1 }}>
-                        {greeting()}, <span className="premium-gradient">{(user?.name || profile?.displayName || 'Founder').split(' ')[0]}</span>.
+                        {greeting()}, <span className="premium-gradient">
+                            {profile?.displayName || (user?.name && !user.name.includes('@') ? user.name.split(' ')[0] : 'Founder')}
+                        </span>.
                     </h1>
-                    <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.95rem' }}>
+                    <p className="mobile-hide" style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.95rem' }}>
                         Here's your business overview.
                     </p>
                 </div>
@@ -258,9 +267,9 @@ const Dashboard = () => {
                         </div>
                         <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                <span style={{ background: 'rgba(255,255,255,0.1)', color: 'white', fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '100px', textTransform: 'uppercase' }}>Limited Time</span>
+                                <span className="mobile-hide" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '100px', textTransform: 'uppercase' }}>Limited Time</span>
                                 <h3 style={{ fontSize: 'clamp(1.1rem, 4.5vw, 1.25rem)', fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>
-                                    The May Takeover
+                                    Launch Offer
                                 </h3>
                             </div>
                             <p style={{ fontSize: 'clamp(0.8rem, 3.5vw, 0.9rem)', color: '#94A3B8', fontWeight: 700, margin: 0, lineHeight: 1.4 }}>
@@ -283,7 +292,7 @@ const Dashboard = () => {
                             fontSize: '0.95rem',
                             boxShadow: '0 10px 20px -5px rgba(0,0,0,0.2)'
                         }}
-                        className="hover-scale"
+                        className="hover-scale mobile-full-width"
                     >
                         Secure My Discount
                     </button>
@@ -299,58 +308,82 @@ const Dashboard = () => {
                 width: '100%',
                 boxSizing: 'border-box'
             }}>
+                {/* Lifetime Total 1: Settled Cash */}
                 <motion.div 
                     whileHover={{ y: -5 }}
-                    className="dashboard-glass stat-card-premium" 
-                    style={{ padding: '24px', borderRadius: '28px', border: '1px solid var(--border)', background: 'white' }}
+                    style={{ 
+                        padding: '32px', 
+                        borderRadius: '32px', 
+                        border: '1px solid #E2E8F0', 
+                        background: 'white', 
+                        boxShadow: 'var(--shadow-premium)',
+                        position: 'relative',
+                        overflow: 'hidden'
+                    }}
                 >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                        <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '10px', borderRadius: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <div style={{ background: '#ECFDF5', color: '#10B981', padding: '10px', borderRadius: '14px' }}>
                             <Wallet size={20} strokeWidth={2.5} />
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--success)', background: 'rgba(16, 185, 129, 0.1)', padding: '3px 10px', borderRadius: '100px' }}>TOTAL REVENUE</span>
-                        </div>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#64748B', background: '#F1F5F9', padding: '4px 12px', borderRadius: '100px', letterSpacing: '0.05em' }}>LIFETIME SETTLED</span>
                     </div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Cash Collected</p>
-                    <h2 style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.03em' }}>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Settled Cash</p>
+                    <h2 style={{ fontSize: '2.2rem', fontWeight: 950, color: '#0F172A', letterSpacing: '-0.04em', margin: 0 }}>
                         ₦{stats?.revenue?.toLocaleString() || 0}
                     </h2>
                 </motion.div>
+
+                {/* Lifetime Total 2: Outstanding Debt */}
                 <motion.div 
                     whileHover={{ y: -5 }}
-                    className="dashboard-glass stat-card-premium" 
-                    style={{ padding: '24px', borderRadius: '28px', border: '1px solid var(--border)', background: 'white', cursor: 'pointer' }}
                     onClick={() => navigate("/sales?status=outstanding")}
+                    style={{ 
+                        padding: '32px', 
+                        borderRadius: '32px', 
+                        border: '1px solid #E2E8F0', 
+                        background: 'white', 
+                        boxShadow: 'var(--shadow-premium)',
+                        cursor: 'pointer'
+                    }}
                 >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                        <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning)', padding: '10px', borderRadius: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <div style={{ background: '#FEF2F2', color: '#EF4444', padding: '10px', borderRadius: '14px' }}>
                             <Clock size={20} strokeWidth={2.5} />
                         </div>
-                        <ArrowUpRight size={18} color="var(--warning)" />
+                        <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#64748B', background: '#F1F5F9', padding: '4px 12px', borderRadius: '100px', letterSpacing: '0.05em' }}>OUTSTANDING</span>
                     </div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Cash Outside</p>
-                    <h2 style={{ fontSize: '2rem', fontWeight: 900, color: '#DC2626', letterSpacing: '-0.03em' }}>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Uncollected Debt</p>
+                    <h2 style={{ fontSize: '2.2rem', fontWeight: 950, color: '#EF4444', letterSpacing: '-0.04em', margin: 0 }}>
                         ₦{stats?.outstanding?.toLocaleString() || 0}
                     </h2>
                 </motion.div>
 
+                {/* Lifetime Total 3: Kreddy Settlements */}
                 <motion.div 
                     whileHover={{ y: -5 }}
-                    className="dashboard-glass stat-card-premium" 
-                    style={{ padding: '24px', borderRadius: '28px', border: '1px solid var(--border)', background: 'white', cursor: 'pointer' }}
                     onClick={() => navigate("/sales?method=paystack")}
+                    style={{ 
+                        padding: '32px', 
+                        borderRadius: '32px', 
+                        border: '1px solid #E2E8F0', 
+                        background: 'white', 
+                        boxShadow: 'var(--shadow-premium)',
+                        cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'hidden'
+                    }}
                 >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                        <div style={{ background: 'rgba(76, 29, 149, 0.1)', color: 'var(--primary)', padding: '10px', borderRadius: '14px' }}>
+                    <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', background: 'var(--primary-glow)', filter: 'blur(30px)', opacity: 0.1 }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <div style={{ background: '#F5F3FF', color: 'var(--primary)', padding: '10px', borderRadius: '14px' }}>
                             <Zap size={20} strokeWidth={2.5} fill="currentColor" />
                         </div>
-                        <Sparkles size={18} color="var(--primary)" />
+                        <span style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--primary)', background: '#F5F3FF', padding: '4px 12px', borderRadius: '100px', letterSpacing: '0.05em' }}>KREDDY SETTLEMENTS</span>
                     </div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Kreddy Settlements</p>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-                        <h2 className="premium-gradient" style={{ fontSize: '2.5rem', fontWeight: 950, letterSpacing: '-0.03em' }}>₦{kreddySettlements.toLocaleString()}</h2>
-                    </div>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Invoice Settlements</p>
+                    <h2 className="premium-gradient" style={{ fontSize: '2.2rem', fontWeight: 950, letterSpacing: '-0.04em', margin: 0 }}>
+                        ₦{kreddySettlements.toLocaleString()}
+                    </h2>
                 </motion.div>
             </div>
 
@@ -359,49 +392,84 @@ const Dashboard = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 style={{ 
-                    background: 'white', 
-                    padding: '32px', 
+                    background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)', 
+                    padding: isMobile ? '24px' : '40px', 
                     borderRadius: '32px', 
                     border: '1px solid #E2E8F0', 
                     marginBottom: 'clamp(2rem, 5vw, 40px)',
-                    boxShadow: 'var(--shadow-premium)'
+                    boxShadow: 'var(--shadow-premium)',
+                    position: 'relative',
+                    overflow: 'hidden'
                 }}
             >
-                <div className="weekly-battle-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+                {/* Visual Flair */}
+                <div style={{ position: 'absolute', top: '-100px', right: '-100px', width: '300px', height: '300px', background: 'var(--primary-glow)', filter: 'blur(100px)', borderRadius: '50%', opacity: 0.1, pointerEvents: 'none' }} />
+
+                <div className="battle-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', flexWrap: 'wrap', gap: '24px' }}>
                     <div>
-                        <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text)', margin: 0 }}>This Week's Battle</h3>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600, marginTop: '4px' }}>Money In vs. Collection Pipeline</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                            <div style={{ background: 'var(--primary)', color: 'white', padding: '8px', borderRadius: '12px' }}>
+                                <Activity size={20} strokeWidth={3} />
+                            </div>
+                            <h3 style={{ fontSize: '1.6rem', fontWeight: 950, color: '#0F172A', margin: 0, letterSpacing: '-0.04em' }}>This Week's Battle</h3>
+                        </div>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', fontWeight: 600, marginLeft: '40px' }}>Tracking your collection velocity vs. outstanding targets.</p>
                     </div>
                     
                     {analytics?.summary && (
-                        <div className="weekly-summary-cards" style={{ display: 'flex', gap: '12px' }}>
-                            <div style={{ padding: '12px 20px', background: '#F0FDF4', borderRadius: '16px', border: '1px solid #DCFCE7' }}>
-                                <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase', marginBottom: '4px' }}>Money In</p>
-                                <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#14532D' }}>₦{analytics.summary.moneyIn.toLocaleString()}</p>
-                            </div>
-                            <div style={{ padding: '12px 20px', background: '#FEF2F2', borderRadius: '16px', border: '1px solid #FEE2E2' }}>
-                                <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#991B1B', textTransform: 'uppercase', marginBottom: '4px' }}>Collection Pipeline</p>
-                                <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#7F1D1D' }}>₦{analytics.summary.moneyOutside.toLocaleString()}</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                            <div style={{ textAlign: 'right' }}>
+                                <span style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--primary)', background: '#F5F3FF', padding: '4px 12px', borderRadius: '100px', letterSpacing: '0.05em', marginBottom: '4px', display: 'inline-block' }}>WEEKLY MOMENTUM</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'flex-end' }}>
+                                    <h4 style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--primary)', margin: 0, lineHeight: 1 }}>
+                                        {analytics.summary.collectionRate}%
+                                    </h4>
+                                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '4px solid #F1F5F9', borderTopColor: 'var(--primary)', transform: `rotate(${(analytics.summary.collectionRate / 100) * 360}deg)` }} />
+                                </div>
                             </div>
                         </div>
                     )}
                 </div>
 
-                <div style={{ width: '100%', height: 260 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '40px' }}>
+                    <div style={{ padding: '24px', background: 'rgba(16, 185, 129, 0.04)', borderRadius: '24px', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981' }} />
+                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Money In</span>
+                        </div>
+                        <h4 style={{ fontSize: '1.8rem', fontWeight: 950, color: '#0F172A', margin: 0 }}>₦{analytics?.summary?.moneyIn?.toLocaleString() || 0}</h4>
+                    </div>
+                    <div style={{ padding: '24px', background: 'rgba(239, 68, 68, 0.04)', borderRadius: '24px', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#EF4444' }} />
+                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#DC2626', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Money Outside</span>
+                        </div>
+                        <h4 style={{ fontSize: '1.8rem', fontWeight: 950, color: '#EF4444', margin: 0 }}>₦{analytics?.summary?.moneyOutside?.toLocaleString() || 0}</h4>
+                    </div>
+                </div>
+
+                <div style={{ width: '100%', height: 300, marginTop: '20px' }}>
                     {!analytics?.daily || analytics.daily.length === 0 ? (
                         <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#CBD5E1', flexDirection: 'column', gap: '12px' }}>
                             <Activity size={48} strokeWidth={1} />
-                            <p style={{ fontWeight: 600 }}>Analyzing this week's records...</p>
+                            <p style={{ fontWeight: 600 }}>Analyzing battlefield data...</p>
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={analytics.daily}>
+                            <AreaChart data={analytics.daily}>
+                                <defs>
+                                    <linearGradient id="colorIn" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.15}/>
+                                        <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                                 <XAxis 
                                     dataKey="date" 
                                     axisLine={false} 
                                     tickLine={false} 
-                                    tick={{ fontSize: 11, fontWeight: 700, fill: '#64748B' }}
+                                    tick={{ fontSize: 11, fontWeight: 700, fill: '#94A3B8' }}
+                                    dy={10}
                                 />
                                 <YAxis 
                                     axisLine={false} 
@@ -410,20 +478,41 @@ const Dashboard = () => {
                                     tickFormatter={(val) => `₦${val >= 1000 ? (val/1000).toFixed(0) + 'k' : val}`}
                                 />
                                 <Tooltip 
-                                    cursor={{ fill: '#F8FAFC' }}
-                                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', padding: '12px' }}
-                                    itemStyle={{ fontWeight: 800, fontSize: '12px' }}
-                                    labelStyle={{ fontWeight: 900, marginBottom: '4px', fontSize: '10px', color: '#94A3B8' }}
+                                    content={({ active, payload, label }) => {
+                                        if (active && payload && payload.length) {
+                                            return (
+                                                <div className="glass-card" style={{ padding: '16px', border: '1px solid #E2E8F0', boxShadow: 'var(--shadow-premium)' }}>
+                                                    <p style={{ margin: '0 0 8px 0', fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>{label}</p>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                        <p style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--primary)' }}>In: ₦{payload[0].value.toLocaleString()}</p>
+                                                        <p style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#EF4444' }}>Out: ₦{payload[1].value.toLocaleString()}</p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    }}
                                 />
-                                <Legend 
-                                    verticalAlign="top" 
-                                    align="right" 
-                                    iconType="circle"
-                                    wrapperStyle={{ paddingTop: '0', paddingBottom: '24px', fontSize: '11px', fontWeight: 700 }}
+                                <Area 
+                                    type="monotone" 
+                                    dataKey="Money In" 
+                                    stroke="var(--primary)" 
+                                    strokeWidth={4}
+                                    fillOpacity={1} 
+                                    fill="url(#colorIn)" 
+                                    animationDuration={2000}
                                 />
-                                <Bar dataKey="Money In" fill="var(--success)" radius={[6, 6, 0, 0]} barSize={24} />
-                                <Bar dataKey="Money Outside" name="Collection Pipeline" fill="#FCA5A5" radius={[6, 6, 0, 0]} barSize={24} />
-                            </BarChart>
+                                <Area 
+                                    type="monotone" 
+                                    dataKey="Money Outside" 
+                                    name="Collection Pipeline"
+                                    stroke="#FCA5A5" 
+                                    strokeWidth={3}
+                                    strokeDasharray="8 5"
+                                    fill="transparent"
+                                    animationDuration={2500}
+                                />
+                            </AreaChart>
                         </ResponsiveContainer>
                     )}
                 </div>
@@ -450,7 +539,7 @@ const Dashboard = () => {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         {sales.filter(s => s.status !== 'paid').length === 0 ? (
-                            <div style={{ padding: '80px 20px', textAlign: 'center', background: 'var(--background)', borderRadius: '32px', border: '2px dashed var(--border)' }}>
+                            <div style={{ padding: '80px 20px', textAlign: 'center', background: 'var(--background)', borderRadius: '32px', border: '2px dashed var(--border)', width: '100%' }}>
                                 <div style={{ background: 'white', width: '64px', height: '64px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: 'var(--shadow-premium)' }}>
                                     <CheckCircle size={32} color="var(--success)" />
                                 </div>
@@ -462,97 +551,81 @@ const Dashboard = () => {
                                 <motion.div
                                     key={sale._id}
                                     whileHover={{ x: 4, scale: 1.01 }}
-                                    className="dashboard-glass priority-item mobile-stack"
+                                    className="dashboard-glass priority-item"
                                     style={{ 
-                                        padding: '16px 20px', 
+                                        padding: '24px', 
                                         display: 'flex', 
-                                        flexDirection: 'row',
+                                        flexDirection: 'column',
                                         justifyContent: 'space-between', 
-                                        alignItems: 'center', 
+                                        alignItems: 'flex-start', 
                                         cursor: 'pointer', 
-                                        borderRadius: '18px', 
+                                        borderRadius: '28px', 
                                         border: '1px solid var(--border)',
                                         background: 'white',
                                         width: '100%',
                                         boxSizing: 'border-box',
-                                        marginBottom: '12px',
-                                        gap: '12px'
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
+                                        position: 'relative',
+                                        marginBottom: '12px'
                                     }}
                                     onClick={() => navigate(`/dashboard/invoice/${sale.invoiceNumber}`)}
                                 >
-                                    <div className="priority-info" style={{ display: 'flex', gap: '12px', alignItems: 'center', minWidth: 0, flex: 2 }}>
-                                        <div style={{
-                                            background: 'rgba(245, 158, 11, 0.1)',
-                                            padding: '10px',
-                                            borderRadius: '12px',
-                                            color: 'var(--warning)',
-                                            flexShrink: 0
-                                        }}>
-                                            <Clock size={20} strokeWidth={2.5} />
-                                        </div>
-                                        <div style={{ overflow: 'hidden' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <p style={{ fontWeight: 800, color: 'var(--text)', fontSize: '0.95rem', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sale.customerName || 'Standard Order'}</p>
-                                                {(() => {
-                                                    const isViewed = (sale.viewCount > 0) || (sale.lastOpenedAt && sale.lastLinkSentAt 
-                                                        ? new Date(sale.lastOpenedAt) > new Date(sale.lastLinkSentAt)
-                                                        : sale.viewed);
-                                                    
-                                                    if (!isViewed) return null;
-
-                                                    const lastSeenText = sale.lastOpenedAt 
-                                                        ? `Last seen: ${new Date(sale.lastOpenedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}`
-                                                        : "Viewed by customer";
-
-                                                    return (
-                                                        <span 
-                                                            title={lastSeenText}
-                                                            style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: 'var(--primary)', fontWeight: 800 }}
-                                                        >
-                                                            <Sparkles size={10} fill="var(--primary)" /> 
-                                                            VIEWED {sale.viewCount > 1 ? `(${sale.viewCount})` : ""}
-                                                        </span>
-                                                    );
-                                                })()}
+                                    <div style={{ width: '100%' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                                            <div style={{
+                                                background: 'rgba(245, 158, 11, 0.1)',
+                                                padding: '12px',
+                                                borderRadius: '16px',
+                                                color: 'var(--warning)',
+                                            }}>
+                                                <Clock size={24} strokeWidth={2.5} />
                                             </div>
-                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>#{sale.invoiceNumber} • {sale.description.slice(0, 30)}{sale.description.length > 30 ? '...' : ''}</p>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '2px' }}>Amount Due</p>
+                                                <h4 style={{ fontSize: '1.4rem', fontWeight: 950, color: '#0F172A', margin: 0 }}>₦{(sale.totalAmount - (sale.payments?.reduce((sum, p) => sum + p.amount, 0) || 0)).toLocaleString()}</h4>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <p style={{ fontWeight: 900, color: '#1E293B', fontSize: '1.1rem', margin: '0 0 4px 0' }}>{sale.customerName || 'Customer'}</p>
+                                            <p style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <span style={{ color: 'var(--primary)', fontWeight: 800 }}>#{sale.invoiceNumber}</span>
+                                                <span>•</span>
+                                                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sale.description || 'Order details...'}</span>
+                                            </p>
                                         </div>
                                     </div>
-                                    <div className="priority-amount" style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-                                        <button 
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleCopyDraft(sale);
-                                            }}
-                                            className="hover-scale"
-                                            title="Copy Kreddy Draft"
-                                            style={{ 
-                                                background: 'var(--background)', 
-                                                border: '1px solid var(--border)', 
-                                                padding: '10px', 
-                                                borderRadius: '12px', 
-                                                color: 'var(--primary)', 
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center'
-                                            }}
-                                        >
-                                            <Copy size={16} />
-                                        </button>
-                                        <div style={{ textAlign: 'right', minWidth: '80px' }}>
-                                            <p style={{ fontWeight: 950, fontSize: '1.05rem', color: 'var(--text)', marginBottom: '2px' }}>₦{(sale.totalAmount - (sale.payments?.reduce((sum, p) => sum + p.amount, 0) || 0)).toLocaleString()}</p>
-                                            <span className="premium-badge" style={{ 
-                                                background: 'rgba(245, 158, 11, 0.1)',
-                                                color: 'var(--warning)',
-                                                textTransform: 'uppercase', fontSize: '0.6rem', fontWeight: 900,
-                                                padding: '2px 8px', borderRadius: '6px'
-                                            }}
-                                            >
-                                                {sale.status === 'partial' ? 'PARTIAL' : 'UNPAID'}
-                                            </span>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingTop: '12px', borderTop: '1px solid #F1F5F9', marginTop: 'auto' }}>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            {(sale.viewCount > 0) && (
+                                                <span style={{ fontSize: '9px', fontWeight: 900, color: 'var(--primary)', background: '#F5F3FF', padding: '4px 10px', borderRadius: '100px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    <Sparkles size={10} fill="var(--primary)" /> VIEWED {sale.viewCount > 1 ? `(${sale.viewCount})` : ""}
+                                                </span>
+                                            )}
+                                            {sale.status === 'partial' && (
+                                                <span style={{ fontSize: '9px', fontWeight: 900, color: '#059669', background: '#ECFDF5', padding: '4px 10px', borderRadius: '100px' }}>PARTIAL</span>
+                                            )}
                                         </div>
-                                        <ChevronRight size={18} color="var(--text-muted)" />
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleCopyDraft(sale);
+                                                }}
+                                                style={{ 
+                                                    width: '36px', height: '36px', borderRadius: '50%', 
+                                                    background: '#F1F5F9', border: 'none', 
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                                    color: 'var(--primary)', cursor: 'pointer' 
+                                                }}
+                                            >
+                                                <Copy size={16} />
+                                            </button>
+                                            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                                                <ChevronRight size={18} strokeWidth={3} />
+                                            </div>
+                                        </div>
                                     </div>
                                 </motion.div>
                             ))

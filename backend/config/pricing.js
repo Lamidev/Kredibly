@@ -2,15 +2,17 @@ const LAUNCH_DATE = new Date('2026-06-01T00:00:00Z'); // Official Launch Day
 const SLASH_WINDOW_END = new Date('2026-06-01T00:00:00Z'); // Launch Promo Ends (End of May)
 
 const PRICING_PLANS = {
+    hustler: {
+        monthly: 2500,
+        yearly: 27000, // 10% discount for annual
+    },
     oga: {
-        monthly: 6000,
-        yearly: 64800, 
-        launch: 3000   
+        monthly: 5000,
+        yearly: 54000, 
     },
     chairman: {
-        monthly: 9000,
-        yearly: 97200, 
-        launch: 4500   
+        monthly: 7500,
+        yearly: 81000, 
     }
 };
 

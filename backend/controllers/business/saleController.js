@@ -388,52 +388,71 @@ exports.getDashboardStats = async (req, res) => {
         const business = await BusinessProfile.findOne({ ownerId: req.user._id });
         if (!business) return res.status(404).json({ message: "Business profile not found" });
 
-        const sales = await Sale.find({ businessId: business._id }).sort({ updatedAt: -1 });
-
         const startOfMonth = new Date();
         startOfMonth.setDate(1);
         startOfMonth.setHours(0,0,0,0);
-        const monthlySalesCount = await Sale.countDocuments({ 
-            businessId: business._id, 
-            createdAt: { $gte: startOfMonth } 
-        });
 
+        // 🚀 High-Performance Aggregation Pipeline
+        const statsAggregation = await Sale.aggregate([
+            { $match: { businessId: business._id } },
+            {
+                $facet: {
+                    "overall": [
+                        {
+                            $group: {
+                                _id: null,
+                                totalSales: { $sum: 1 },
+                                revenue: { $sum: { $sum: "$payments.amount" } },
+                                totalAmount: { $sum: "$totalAmount" },
+                                kreddyRevenue: {
+                                    $sum: {
+                                        $reduce: {
+                                            input: {
+                                                $filter: {
+                                                    input: "$payments",
+                                                    as: "p",
+                                                    cond: { $in: ["$$p.method", ['Paystack', 'Nomba', 'Kredibly Online', 'Squad']] }
+                                                }
+                                            },
+                                            initialValue: 0,
+                                            in: { $add: ["$$value", "$$this.amount"] }
+                                        }
+                                    }
+                                },
+                                confirmedCount: { $sum: { $cond: [{ $eq: ["$confirmed", true] }, 1, 0] } },
+                                paidFullCount: { $sum: { $cond: [{ $eq: ["$status", "paid"] }, 1, 0] } }
+                            }
+                        }
+                    ],
+                    "monthlyCount": [
+                        { $match: { createdAt: { $gte: startOfMonth } } },
+                        { $count: "count" }
+                    ],
+                    "recentSales": [
+                        { $sort: { updatedAt: -1 } },
+                        { $limit: 5 }
+                    ]
+                }
+            }
+        ]);
+
+        const results = statsAggregation[0].overall[0] || { totalSales: 0, revenue: 0, totalAmount: 0, kreddyRevenue: 0, confirmedCount: 0, paidFullCount: 0 };
+        const monthlyCount = statsAggregation[0].monthlyCount[0]?.count || 0;
+        const recentSales = statsAggregation[0].recentSales || [];
+
+        // Dynamic Trust Score Logic (Bank-Grade)
+        const calculatedScore = 60 + (results.confirmedCount * 8) + (results.paidFullCount * 4) + (results.totalSales * 1);
+        
         const stats = {
-            totalSales: sales.length,
-            monthlySalesCount,
-            revenue: 0,
-            kreddyRevenue: 0, 
-            outstanding: 0,
-            recentSales: sales.slice(0, 5),
-            trustScore: 60,
+            totalSales: results.totalSales,
+            monthlySalesCount: monthlyCount,
+            revenue: results.revenue,
+            kreddyRevenue: results.kreddyRevenue,
+            outstanding: Math.max(0, results.totalAmount - results.revenue),
+            recentSales,
+            trustScore: Math.min(99, calculatedScore),
             isKreddyConnected: business.isKreddyConnected
         };
-
-        let confirmedCount = 0;
-        let paidFullCount = 0;
-
-        sales.forEach(sale => {
-            const payments = (sale.payments || []);
-            const paid = payments.reduce((sum, p) => sum + p.amount, 0);
-            
-            const kreddyPaid = payments
-                .filter(p => ['Paystack', 'Nomba', 'Kredibly Online', 'Squad'].includes(p.method))
-                .reduce((sum, p) => sum + p.amount, 0);
-
-            stats.revenue += paid;
-            stats.kreddyRevenue += kreddyPaid;
-            stats.outstanding += (sale.totalAmount - paid);
-
-            if (sale.confirmed) confirmedCount++;
-            if (sale.status === 'paid') paidFullCount++;
-        });
-
-        // Dynamic Trust Score Logic
-        // Confirmed records are high trust (+8 per record)
-        // Fully paid records (+4 per record)
-        // Total volume bonus (+1 per record)
-        const calculatedScore = 60 + (confirmedCount * 8) + (paidFullCount * 4) + (sales.length * 1);
-        stats.trustScore = Math.min(99, calculatedScore);
 
         res.status(200).json({ success: true, data: stats });
     } catch (error) {
@@ -685,77 +704,88 @@ exports.getAnalytics = async (req, res) => {
         if (!business) return res.status(404).json({ message: "Business profile not found" });
 
         const now = new Date();
-        const startOfWeek = new Date();
-        startOfWeek.setDate(now.getDate() - 7);
+        const startOfWeek = new Date(now);
+        const day = startOfWeek.getDay(); 
+        const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); 
+        startOfWeek.setDate(diff);
         startOfWeek.setHours(0, 0, 0, 0);
 
-        // 1. Calculate "This Week" (Last 7 days)
-        const weeklySales = await Sale.find({
-            businessId: business._id,
-            createdAt: { $gte: startOfWeek }
-        });
+        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-        // Money In: Total cash received THIS WEEK (from any sale)
-        const allSalesWithPaymentsThisWeek = await Sale.find({
-            businessId: business._id,
-            "payments.date": { $gte: startOfWeek }
-        });
-
-        let moneyIn = 0;
-        allSalesWithPaymentsThisWeek.forEach(sale => {
-            sale.payments.forEach(p => {
-                if (new Date(p.date) >= startOfWeek) moneyIn += p.amount;
-            });
-        });
-
-        // Money Outside: Total currently unpaid from sales made THIS WEEK
-        let moneyOutside = 0;
-        let totalBilled = 0;
-        weeklySales.forEach(s => {
-            totalBilled += s.totalAmount;
-            const paidForThisSale = s.payments.reduce((sum, p) => sum + p.amount, 0);
-            moneyOutside += Math.max(0, s.totalAmount - paidForThisSale);
-        });
-
-        // 2. Prepare daily data for a simple bar chart (Last 7 days)
-        const dailyData = [];
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const dateStr = d.toISOString().split('T')[0];
-            dailyData.push({ 
-                date: d.toLocaleDateString('en-US', { weekday: 'short' }), 
-                "Money In": 0, 
-                "Money Outside": 0,
-                fullDate: dateStr
-            });
-        }
-
-        weeklySales.forEach(sale => {
-            const dayStr = sale.createdAt.toLocaleDateString('en-US', { weekday: 'short' });
-            const dayEntry = dailyData.find(d => d.date === dayStr);
-            const paidForThisSale = sale.payments.reduce((sum, p) => sum + p.amount, 0);
-            if (dayEntry) dayEntry["Money Outside"] += Math.max(0, sale.totalAmount - paidForThisSale);
-        });
-
-        allSalesWithPaymentsThisWeek.forEach(sale => {
-            sale.payments.forEach(p => {
-                if (p.date >= startOfWeek) {
-                    const dayStr = p.date.toLocaleDateString('en-US', { weekday: 'short' });
-                    const dayEntry = dailyData.find(d => d.date === dayStr);
-                    if (dayEntry) dayEntry["Money In"] += p.amount;
+        // 🚀 Multi-stage Analytics Pipeline
+        const analytics = await Sale.aggregate([
+            { $match: { businessId: business._id } },
+            {
+                $facet: {
+                    "weeklySales": [
+                        { $match: { createdAt: { $gte: startOfWeek } } },
+                        {
+                            $project: {
+                                totalAmount: 1,
+                                paid: { $sum: "$payments.amount" },
+                                createdAt: 1
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: null,
+                                totalBilled: { $sum: "$totalAmount" },
+                                moneyOutside: { $sum: { $max: [0, { $subtract: ["$totalAmount", "$paid"] }] } },
+                                dailyOutside: {
+                                    $push: {
+                                        day: { $subtract: [{ $dayOfWeek: "$createdAt" }, 1] }, // JS Day Fix
+                                        amount: { $max: [0, { $subtract: ["$totalAmount", "$paid"] }] }
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "weeklyPayments": [
+                        { $unwind: "$payments" },
+                        { $match: { "payments.date": { $gte: startOfWeek } } },
+                        {
+                            $group: {
+                                _id: null,
+                                moneyIn: { $sum: "$payments.amount" },
+                                dailyIn: {
+                                    $push: {
+                                        day: { $subtract: [{ $dayOfWeek: "$payments.date" }, 1] },
+                                        amount: "$payments.amount"
+                                    }
+                                }
+                            }
+                        }
+                    ]
                 }
-            });
+            }
+        ]);
+
+        const salesResults = analytics[0].weeklySales[0] || { totalBilled: 0, moneyOutside: 0, dailyOutside: [] };
+        const paymentResults = analytics[0].weeklyPayments[0] || { moneyIn: 0, dailyIn: [] };
+
+        // 📊 Map to Mon-Sun structure
+        const dailyData = days.map(day => ({ date: day, "Money In": 0, "Money Outside": 0 }));
+
+        salesResults.dailyOutside.forEach(item => {
+            let idx = item.day === 0 ? 6 : item.day - 1; // Map Sun(0) to index 6, Mon(1) to 0
+            if (dailyData[idx]) dailyData[idx]["Money Outside"] += item.amount;
+        });
+
+        paymentResults.dailyIn.forEach(item => {
+            let idx = item.day === 0 ? 6 : item.day - 1;
+            if (dailyData[idx]) dailyData[idx]["Money In"] += item.amount;
         });
 
         res.status(200).json({
             success: true,
             data: {
                 summary: {
-                    moneyIn,
-                    moneyOutside,
-                    totalBilled,
-                    collectionRate: totalBilled > 0 ? Math.round((moneyIn / totalBilled) * 100) : 0
+                    moneyIn: paymentResults.moneyIn,
+                    moneyOutside: salesResults.moneyOutside,
+                    totalBilled: salesResults.totalBilled,
+                    collectionRate: (paymentResults.moneyIn + salesResults.moneyOutside) > 0 
+                        ? Math.round((paymentResults.moneyIn / (paymentResults.moneyIn + salesResults.moneyOutside)) * 100) 
+                        : 0
                 },
                 daily: dailyData
             }
