@@ -344,9 +344,9 @@ const SettingsPage = () => {
 
     return (
         <div className="animate-fade-in" style={{ maxWidth: '900px' }}>
-            <div style={{ marginBottom: '40px' }}>
+            <div style={{ marginBottom: '32px' }}>
                 <h1 style={{ fontSize: 'clamp(1.6rem, 8vw, 2.5rem)', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.03em' }}>Settings</h1>
-                <p style={{ color: '#64748B', fontWeight: 600, margin: 0 }}>Manage your business identity, Kreddy (your AI partner), and payouts.</p>
+                <p className="mobile-hide" style={{ color: '#64748B', fontWeight: 600, margin: 0 }}>Manage your business identity, Kreddy (your AI partner), and payouts.</p>
             </div>
 
             {/* Tab Navigation */}
@@ -406,9 +406,9 @@ const SettingsPage = () => {
                     <section className="glass-card" style={{ padding: 'clamp(20px, 5%, 32px)', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
                             <div style={{ background: '#F0F9FF', color: '#0EA5E9', padding: '10px', borderRadius: '12px' }}>
-                                <UserIcon size={24} />
+                                <UserIcon size={20} />
                             </div>
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Business Identity</h2>
+                            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Identity Details</h2>
                         </div>
 
                         <div className="grid-2-col-responsive">
@@ -467,11 +467,11 @@ const SettingsPage = () => {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', position: 'relative', zIndex: 1 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={{ background: 'rgba(76, 29, 149, 0.08)', color: 'var(--primary)', padding: '10px', borderRadius: '12px' }}>
-                                    <CreditCard size={24} />
+                                    <CreditCard size={20} />
                                 </div>
                                 <div>
-                                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Payout Settings</h2>
-                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>Set where you receive money from debtors.</p>
+                                    <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>Payout Destination</h2>
+                                    <p className="mobile-hide" style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>Set where you receive money from debtors.</p>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
@@ -1004,9 +1004,9 @@ const SettingsPage = () => {
                                 >
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                                         <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: form.reminderTemplate === 'friendly' ? 'var(--primary)' : '#CBD5E1' }} />
-                                        <p style={{ margin: 0, fontWeight: 900, color: form.reminderTemplate === 'friendly' ? 'var(--primary)' : '#475569' }}>Friendly Nudge</p>
+                                        <p style={{ margin: 0, fontWeight: 900, color: form.reminderTemplate === 'friendly' ? 'var(--primary)' : '#475569' }}>Friendly</p>
                                     </div>
-                                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748B', fontWeight: 600, lineHeight: 1.4 }}>Soft, professional reminder. Best for regular customers.</p>
+                                    <p className="mobile-hide" style={{ margin: 0, fontSize: '0.8rem', color: '#64748B', fontWeight: 600, lineHeight: 1.4 }}>Soft, professional reminder. Best for regulars.</p>
                                 </button>
                                 <button 
                                     onClick={() => setForm({ ...form, reminderTemplate: 'formal' })}
@@ -1019,9 +1019,9 @@ const SettingsPage = () => {
                                 >
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                                         <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: form.reminderTemplate === 'formal' ? 'var(--primary)' : '#CBD5E1' }} />
-                                        <p style={{ margin: 0, fontWeight: 900, color: form.reminderTemplate === 'formal' ? 'var(--primary)' : '#475569' }}>Formal Statement</p>
+                                        <p style={{ margin: 0, fontWeight: 900, color: form.reminderTemplate === 'formal' ? 'var(--primary)' : '#475569' }}>Formal</p>
                                     </div>
-                                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748B', fontWeight: 600, lineHeight: 1.4 }}>Strict & clear. Best for overdue or corporate accounts.</p>
+                                    <p className="mobile-hide" style={{ margin: 0, fontSize: '0.8rem', color: '#64748B', fontWeight: 600, lineHeight: 1.4 }}>Strict & clear. Best for overdue accounts.</p>
                                 </button>
                             </div>
                         </div>
@@ -1088,31 +1088,34 @@ const SettingsPage = () => {
                         </div>
 
                         <div style={{ marginTop: '32px' }}>
-                            <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#94A3B8', textAlign: 'center', marginBottom: '20px', textTransform: 'uppercase' }}>Available Upgrades</p>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+                            <p className="mobile-hide" style={{ fontSize: '0.75rem', fontWeight: 900, color: '#94A3B8', textAlign: 'center', marginBottom: '20px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Choose Your Power Level</p>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+                                
+                                {/* HUSTLER */}
                                 <button 
                                     onClick={() => { setSelectedPlan('hustler'); setShowCheckout(true); }} 
                                     className="glass-card clickable-card" 
                                     style={{ 
                                         padding: '24px', 
-                                        border: profile?.plan === 'hustler' ? '2px solid #64748B' : '1px solid #E2E8F0', 
-                                        background: profile?.plan === 'hustler' ? 'rgba(100, 116, 139, 0.02)' : 'white', 
-                                        textAlign: 'left' 
+                                        border: profile?.plan === 'hustler' ? '2px solid var(--primary)' : '1px solid #E2E8F0', 
+                                        background: profile?.plan === 'hustler' ? 'rgba(76, 29, 149, 0.02)' : 'white', 
+                                        textAlign: 'left',
+                                        position: 'relative'
                                     }}
                                 >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                        <span style={{ fontWeight: 900, color: '#64748B' }}>HUSTLER</span>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                        <span style={{ fontWeight: 900, color: '#64748B', fontSize: '0.85rem' }}>HUSTLER</span>
                                         <div style={{ textAlign: 'right' }}>
-                                            <span style={{ fontSize: '0.65rem', color: '#94A3B8', textDecoration: 'line-through', display: 'block' }}>₦3,000</span>
-                                            <span style={{ fontWeight: 900, color: '#1E293B' }}>₦1,500/mo</span>
+                                            <span style={{ fontWeight: 900, color: '#1E293B', fontSize: '1.1rem' }}>₦2,500/mo</span>
                                         </div>
                                     </div>
-                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: '0 0 16px 0' }}>Basic invoice tracking & receipts.</p>
-                                    <div style={{ width: '100%', padding: '10px', borderRadius: '10px', background: profile?.plan === 'hustler' ? '#64748B' : 'white', border: profile?.plan === 'hustler' ? 'none' : '1px solid #E2E8F0', color: profile?.plan === 'hustler' ? 'white' : '#64748B', fontWeight: 800, fontSize: '0.8rem', textAlign: 'center' }}>
-                                        {profile?.plan === 'hustler' ? 'Current Plan' : (profile?.plan === 'oga' || profile?.plan === 'chairman' ? 'Downgrade' : 'Upgrade')}
+                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 20px 0', fontWeight: 600, lineHeight: 1.4 }}>Essential tracking, receipts, and automated invoices.</p>
+                                    <div style={{ width: '100%', padding: '12px', borderRadius: '14px', background: profile?.plan === 'hustler' ? '#64748B' : 'white', border: '1.5px solid #E2E8F0', color: profile?.plan === 'hustler' ? 'white' : '#64748B', fontWeight: 900, fontSize: '0.85rem', textAlign: 'center' }}>
+                                        {profile?.plan === 'hustler' ? 'Active Plan' : 'Select Plan'}
                                     </div>
                                 </button>
                                 
+                                {/* OGA */}
                                 <button 
                                     onClick={() => { setSelectedPlan('oga'); setShowCheckout(true); }} 
                                     className="glass-card clickable-card" 
@@ -1120,22 +1123,25 @@ const SettingsPage = () => {
                                         padding: '24px', 
                                         border: profile?.plan === 'oga' ? '2px solid var(--primary)' : '1px solid #E2E8F0', 
                                         background: profile?.plan === 'oga' ? 'rgba(76, 29, 149, 0.02)' : 'white', 
-                                        textAlign: 'left' 
+                                        textAlign: 'left',
+                                        position: 'relative',
+                                        boxShadow: profile?.plan === 'oga' ? 'none' : '0 10px 15px -3px rgba(0,0,0,0.05)'
                                     }}
                                 >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                        <span style={{ fontWeight: 900, color: 'var(--primary)' }}>OGA PLAN</span>
+                                    <div style={{ position: 'absolute', top: '-10px', right: '20px', background: 'var(--primary)', color: 'white', padding: '4px 12px', borderRadius: '100px', fontSize: '0.6rem', fontWeight: 950, letterSpacing: '0.05em' }}>PIONEER PRICE</div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                        <span style={{ fontWeight: 900, color: 'var(--primary)', fontSize: '0.85rem' }}>OGA PLAN</span>
                                         <div style={{ textAlign: 'right' }}>
-                                            <span style={{ fontSize: '0.65rem', color: '#94A3B8', textDecoration: 'line-through', display: 'block' }}>₦6,000</span>
-                                            <span style={{ fontWeight: 900, color: 'var(--primary)' }}>₦3,000/mo</span>
+                                            <span style={{ fontWeight: 900, color: 'var(--primary)', fontSize: '1.1rem' }}>₦5,000/mo</span>
                                         </div>
                                     </div>
-                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: '0 0 16px 0' }}>Voice Notes, Proactive Reminders & 1 Staff.</p>
-                                    <div style={{ width: '100%', padding: '10px', borderRadius: '10px', background: profile?.plan === 'oga' ? 'var(--primary)' : 'white', border: profile?.plan === 'oga' ? 'none' : '1px solid var(--primary)', color: profile?.plan === 'oga' ? 'white' : 'var(--primary)', fontWeight: 800, fontSize: '0.8rem', textAlign: 'center' }}>
-                                        {profile?.plan === 'oga' ? 'Current Plan' : (profile?.plan === 'chairman' ? 'Downgrade' : 'Upgrade')}
+                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 20px 0', fontWeight: 600, lineHeight: 1.4 }}>Kreddy AI Voice, Proactive Reminders & 1 Staff member.</p>
+                                    <div style={{ width: '100%', padding: '12px', borderRadius: '14px', background: profile?.plan === 'oga' ? 'var(--primary)' : 'white', border: '1.5px solid var(--primary)', color: profile?.plan === 'oga' ? 'white' : 'var(--primary)', fontWeight: 900, fontSize: '0.85rem', textAlign: 'center' }}>
+                                        {profile?.plan === 'oga' ? 'Active Plan' : 'Upgrade to Oga'}
                                     </div>
                                 </button>
 
+                                {/* CHAIRMAN */}
                                 <button 
                                     onClick={() => { setSelectedPlan('chairman'); setShowCheckout(true); }} 
                                     className="glass-card clickable-card" 
@@ -1146,16 +1152,15 @@ const SettingsPage = () => {
                                         textAlign: 'left' 
                                     }}
                                 >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                        <span style={{ fontWeight: 900, color: '#8B5CF6' }}>CHAIRMAN</span>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                        <span style={{ fontWeight: 900, color: '#8B5CF6', fontSize: '0.85rem' }}>CHAIRMAN</span>
                                         <div style={{ textAlign: 'right' }}>
-                                            <span style={{ fontSize: '0.65rem', color: '#94A3B8', textDecoration: 'line-through', display: 'block' }}>₦9,000</span>
-                                            <span style={{ fontWeight: 900, color: '#8B5CF6' }}>₦4,500/mo</span>
+                                            <span style={{ fontWeight: 900, color: '#8B5CF6', fontSize: '1.1rem' }}>₦7,500/mo</span>
                                         </div>
                                     </div>
-                                    <p style={{ fontSize: '0.75rem', color: '#64748B', margin: '0 0 16px 0' }}>Unlimited Staff, AI Insights & White-labeling.</p>
-                                    <div style={{ width: '100%', padding: '10px', borderRadius: '10px', background: profile?.plan === 'chairman' ? '#8B5CF6' : 'white', border: profile?.plan === 'chairman' ? 'none' : '1px solid #8B5CF6', color: profile?.plan === 'chairman' ? 'white' : '#8B5CF6', fontWeight: 800, fontSize: '0.8rem', textAlign: 'center' }}>
-                                        {profile?.plan === 'chairman' ? 'Current Plan' : 'Upgrade'}
+                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 20px 0', fontWeight: 600, lineHeight: 1.4 }}>Unlimited Staff, AI Insights & Priority White-labeling.</p>
+                                    <div style={{ width: '100%', padding: '12px', borderRadius: '14px', background: profile?.plan === 'chairman' ? '#8B5CF6' : 'white', border: '1.5px solid #8B5CF6', color: profile?.plan === 'chairman' ? 'white' : '#8B5CF6', fontWeight: 900, fontSize: '0.85rem', textAlign: 'center' }}>
+                                        {profile?.plan === 'chairman' ? 'Active Plan' : 'Go Chairman'}
                                     </div>
                                 </button>
                             </div>
@@ -1189,9 +1194,9 @@ const SettingsPage = () => {
 
                 {/* 🛡️ Smart Footer: Hide save button if on KYC tab */}
                 {activeTab !== 'kyc' && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', paddingBottom: '40px' }}>
+                    <div className="mobile-stack" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', paddingBottom: '40px' }}>
                         <button
-                            className="btn-primary"
+                            className="btn-primary mobile-full-width"
                             style={{ padding: '16px 40px', display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '16px' }}
                             disabled={saving}
                             onClick={handleSave}

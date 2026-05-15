@@ -28,7 +28,15 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   // 🛡️ Skip caching for API calls to prevent 401 crashes
   if (event.request.url.includes('/api/')) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(
+      fetch(event.request).catch(err => {
+        console.warn('🌐 API Fetch failed (expected if offline):', err);
+        return new Response(JSON.stringify({ success: false, error: 'Network unavailable' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      })
+    );
     return;
   }
 

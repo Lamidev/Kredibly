@@ -90,19 +90,19 @@ const SalesList = ({ initialFilter }) => {
     return (
         <div className="animate-fade-in" style={{ paddingBottom: '40px' }}>
             {/* Executive Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', gap: '20px', flexWrap: 'wrap' }}>
-                <div style={{ flex: 1, minWidth: '200px' }}>
-                    <h1 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text)', marginBottom: '4px', letterSpacing: '-0.04em' }}>
+            <div className="mobile-stack" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', gap: '20px' }}>
+                <div style={{ flex: 1 }}>
+                    <h1 style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--text)', marginBottom: '4px', letterSpacing: '-0.04em' }}>
                         {filterStatus === 'outstanding' ? 'Pending Collections' : 'All Ledger Entries'}
                     </h1>
-                    <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.9rem' }}>
+                    <p className="mobile-hide" style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.9rem' }}>
                         {filterStatus === 'outstanding' 
                             ? 'Monitor your recovery queue.' 
                             : 'See all your business transactions.'}
                     </p>
                 </div>
                 <button 
-                    className="btn-primary" 
+                    className="btn-primary mobile-full-width" 
                     style={{ padding: '12px 24px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}
                     onClick={() => {
                         // 🛡️ SUBSCRIPTION LOCK
@@ -121,8 +121,8 @@ const SalesList = ({ initialFilter }) => {
 
             {/* Premium Filter & Search Bar */}
             <div className="dashboard-glass" style={{ padding: '24px', borderRadius: '32px', border: '1px solid var(--border)', marginBottom: '32px', background: 'white' }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'center' }}>
-                    <div style={{ position: 'relative', flex: 1, minWidth: '300px' }}>
+                <div className="mobile-stack" style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                    <div style={{ position: 'relative', flex: 1, width: '100%' }}>
                         <Search size={20} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
                         <input
                             className="input-field"
@@ -133,7 +133,8 @@ const SalesList = ({ initialFilter }) => {
                                 border: '1px solid transparent',
                                 borderRadius: '18px',
                                 fontSize: '1rem',
-                                fontWeight: 600
+                                fontWeight: 600,
+                                width: '100%'
                             }}
                             placeholder="Find by name, invoice #, or details..."
                             value={searchTerm}
@@ -149,7 +150,7 @@ const SalesList = ({ initialFilter }) => {
                         )}
                     </div>
                     
-                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', width: '100%' }}>
+                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', maxWidth: '100%' }}>
                         <button onClick={() => setFilterStatus("all")} style={{ 
                             padding: '8px 20px', 
                             borderRadius: '100px', 

@@ -18,8 +18,8 @@ exports.initializeNombaSubscription = async (req, res) => {
         const business = await BusinessProfile.findOne({ ownerId: req.user._id });
         if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
 
-        const pioneerPrices = { hustler: 1500, oga: 3000, chairman: 4500 };
-        const amount = pioneerPrices[plan] || 1500;
+        const { PRICING_PLANS } = require("../../config/pricing");
+        const amount = PRICING_PLANS[plan]?.monthly || 2500;
 
         const orderReference = `SUB-${plan.toUpperCase()}-${business._id}-${Date.now().toString().slice(-4)}`;
         const checkoutLink = await createNombaCheckoutOrder({

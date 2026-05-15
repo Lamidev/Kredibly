@@ -512,15 +512,15 @@ const InvoicePage = () => {
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', background: paidAmount >= sale.totalAmount ? '#ECFDF5' : '#F5F3FF', borderRadius: '100px', border: `1px solid ${paidAmount >= sale.totalAmount ? '#D1FAE5' : '#E9E3FF'}`, marginBottom: '24px' }}>
                     <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: paidAmount >= sale.totalAmount ? '#10B981' : '#7C3AED' }} />
                     <span style={{ fontSize: '10px', fontWeight: 900, color: paidAmount >= sale.totalAmount ? '#065F46' : '#7C3AED', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                        {paidAmount >= sale.totalAmount ? 'Payment Fully Settled' : (sale.invoiceType === 'record' ? 'Verified Record' : 'Payment Collection Active')}
+                        {paidAmount >= sale.totalAmount ? 'Fully Settled' : (sale.invoiceType === 'record' ? 'Verified Record' : 'Collecting Payment')}
                     </span>
                 </div>
 
-                <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 56px)', fontFamily: 'Outfit', fontWeight: 950, color: '#0F172A', letterSpacing: '-0.04em', margin: '0 0 12px 0', lineHeight: 1 }}>
+                <h1 style={{ fontSize: 'clamp(2.2rem, 10vw, 56px)', fontFamily: 'Outfit', fontWeight: 950, color: '#0F172A', letterSpacing: '-0.04em', margin: '0 0 12px 0', lineHeight: 1 }}>
                     ₦{sale.totalAmount.toLocaleString()}
                 </h1>
                 
-                <p style={{ fontSize: '15px', fontWeight: 600, color: '#64748B', maxWidth: '400px', margin: '0 auto', lineHeight: 1.5 }}>
+                <p style={{ fontSize: 'clamp(13px, 3.5vw, 15px)', fontWeight: 600, color: '#64748B', maxWidth: '400px', margin: '0 auto', lineHeight: 1.5 }}>
                     Invoice <span style={{ color: '#0F172A', fontWeight: 800 }}>#{sale.invoiceNumber}</span> for <span style={{ color: '#0F172A', fontWeight: 800 }}>{sale.customerName || 'Walk-in Customer'}</span>
                 </p>
 
@@ -701,16 +701,16 @@ const InvoicePage = () => {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                     <button
                                         onClick={() => setShowPaymentModal(true)}
-                                        className="btn-primary"
+                                        className="btn-primary mobile-full-width"
                                         style={{ width: '100%', padding: '18px', borderRadius: '18px', fontWeight: 800, fontSize: '1rem' }}
                                     >
                                         <PlusCircle size={20} strokeWidth={2.5} /> Record Payment
                                     </button>
-                                    <div style={{ display: 'flex', gap: '12px' }}>
+                                    <div className="mobile-stack" style={{ display: 'flex', gap: '12px' }}>
                                         <button
                                             onClick={handleReminder}
                                             disabled={reminding}
-                                            className="btn-secondary"
+                                            className="btn-secondary mobile-full-width"
                                             style={{ flex: 3, padding: '18px', borderRadius: '18px', border: '1px solid #25D366', color: '#25D366', fontWeight: 800, background: 'rgba(37, 211, 102, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
                                         >
                                             <MessageCircle size={20} /> {reminding ? '...' : 'Recover now'}
@@ -721,7 +721,7 @@ const InvoicePage = () => {
                                                 navigator.clipboard.writeText(shareUrl);
                                                 toast.success("Link copied! Paste anywhere.");
                                             }}
-                                            className="btn-secondary"
+                                            className="btn-secondary mobile-full-width"
                                             style={{ flex: 1, padding: '18px', borderRadius: '18px', border: '1px solid var(--border)', color: 'var(--text-muted)', fontWeight: 800, background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                             title="Copy Invoice Link"
                                         >

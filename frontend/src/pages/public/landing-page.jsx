@@ -28,7 +28,8 @@ import {
     Monitor,
     Tablet,
     Layout,
-    Bell
+    Bell,
+    Star
 } from "lucide-react";
 import { motion } from "framer-motion";
 import PublicNavbar from "../../components/public/PublicNavbar";
@@ -148,16 +149,15 @@ const LandingPage = () => {
             slug: "hustler",
             tagline: "The Record-Keeper's Choice",
             description: "Stop writing in notebooks. Start building your digital reputation today.",
-            originalPrice: "₦3,000",
-            price: "₦1,500",
+            price: "₦2,500",
             period: "/ month",
             fee: "Zero Transfer Fees*",
             features: [
                 "10 Sale Records limit per Month",
-                "Kreddy AI Text Intelligence (Type normally)",
+                "Kreddy AI Text Intelligence",
                 "Basic Debt Recovery Assistant",
                 "Verified Ledger Seal",
-                "Digital Receipts (Kredibly Branded)"
+                "Digital Receipts & Invoices"
             ],
             cta: profile?.plan === "hustler" ? "Current Plan" : "Start Hustling",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -169,10 +169,8 @@ const LandingPage = () => {
             slug: "oga",
             tagline: "The Business Leader",
             isPopular: true,
-            description: "Step up to professional branding and lower fees for your growing business.",
-            originalPrice: "₦6,000",
-            price: "₦3,000", 
-            isSlash: true,
+            description: "Step up to professional branding and AI voice recording for your business.",
+            price: "₦5,000", 
             fee: "Zero Transfer Fees*",
             period: "/ month",
             features: [
@@ -193,9 +191,7 @@ const LandingPage = () => {
             slug: "chairman",
             tagline: "The Empire Command Center",
             description: "Run multiple shops without stress. Lead your empire with zero commissions.",
-            originalPrice: "₦9,000",
-            price: "₦4,500", 
-            isSlash: true,
+            price: "₦7,500", 
             fee: "Zero Transfer Fees*",
             period: "/ month",
             features: [
@@ -509,13 +505,13 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* 4. PRICING SECTION: Updated for Success-Fee Model */}
+            {/* 4. PRICING SECTION: Updated for Premium Pricing */}
             <section id="pricing" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: 'white', color: '#0F172A' }}>
                 <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: 'clamp(40px, 8vw, 80px)' }}>
                         <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 700, fontSize: 'clamp(0.7rem, 2vw, 0.85rem)', letterSpacing: '0.05em' }}>100% INSTANT SETTLEMENTS & ZERO BANK FEES</div>
-                        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 4rem)', fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Pioneer Pricing. <br /><span className="premium-gradient">Limited Launch Access.</span></h2>
-                        <p style={{ fontSize: 'clamp(0.9rem, 2.5vw, 1.2rem)', color: '#64748B', marginTop: '20px', maxWidth: '600px', margin: '20px auto 48px' }}>Join our first 1,000 merchants and lock in these subsidized rates. We cover your transfer charges so you keep more of your money.</p>
+                        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 4rem)', fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Premium Pricing. <br /><span className="premium-gradient">Unlimited Growth.</span></h2>
+                        <p style={{ fontSize: 'clamp(0.9rem, 2.5vw, 1.2rem)', color: '#64748B', marginTop: '20px', maxWidth: '600px', margin: '20px auto 48px' }}>Choose the plan that fits your ambition. No hidden bank charges, no transaction commissions — just pure business power.</p>
                     </div>
 
                     <div className="lp-pricing-grid">
@@ -527,47 +523,48 @@ const LandingPage = () => {
                                         top: '-16px', 
                                         left: '50%', 
                                         transform: 'translateX(-50%)',
-                                        background: '#fff',
-                                        color: '#000',
-                                        border: '1px solid #E2E8F0',
+                                        background: 'var(--primary)',
+                                        color: '#fff',
                                         padding: '6px 16px',
                                         borderRadius: '100px',
                                         fontSize: '0.7rem',
-                                        fontWeight: 700,
-                                        boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                                        fontWeight: 900,
+                                        boxShadow: '0 8px 16px rgba(76, 29, 149, 0.2)',
                                         zIndex: 10,
                                         letterSpacing: '0.05em',
                                         whiteSpace: 'nowrap'
                                     }}>MOST POPULAR</div>
                                 )}
 
-                                <h3 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', fontWeight: 700, marginBottom: '6px' }}>{plan.name}</h3>
-                                <p style={{ opacity: 0.7, fontSize: '0.9rem', fontWeight: 400, marginBottom: '24px' }}>{plan.description}</p>
+                                <h3 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', fontWeight: 900, marginBottom: '6px' }}>{plan.name}</h3>
+                                <p style={{ opacity: 0.7, fontSize: '0.9rem', fontWeight: 600, marginBottom: '24px', lineHeight: 1.4 }}>{plan.description}</p>
                                 
                                 <div style={{ marginBottom: '32px' }}>
                                     <div className="lp-price-row">
-                                        <span className="lp-price-original">{plan.originalPrice}</span>
                                         <span className="lp-price-main">{plan.price}</span>
                                         <span className="lp-price-period">{plan.period}</span>
                                     </div>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: plan.highlight ? 'white' : 'var(--primary)', marginTop: '4px' }}>{plan.fee}</div>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: plan.highlight ? '#4ADE80' : 'var(--primary)', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <Star size={14} fill={plan.highlight ? '#4ADE80' : 'var(--primary)'} />
+                                        {plan.fee}
+                                    </div>
                                 </div>
 
                                 <button 
                                     onClick={plan.ctaAction}
                                     className={plan.highlight ? "btn-primary" : "btn-secondary"} 
-                                    style={{ width: '100%', marginBottom: '32px', justifyContent: 'center', height: '54px', borderRadius: '16px', fontSize: '0.95rem', boxShadow: plan.highlight ? '0 10px 20px rgba(124, 58, 237, 0.3)' : 'none' }}
+                                    style={{ width: '100%', marginBottom: '32px', justifyContent: 'center', height: '58px', borderRadius: '18px', fontSize: '1rem', fontWeight: 900, boxShadow: plan.highlight ? '0 15px 30px -5px rgba(124, 58, 237, 0.4)' : 'none' }}
                                 >
-                                    {plan.cta} <ArrowRight size={16} />
+                                    {plan.cta} <ArrowRight size={18} strokeWidth={3} />
                                 </button>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                     {plan.features.map((feat, j) => (
-                                        <div key={j} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '0.9rem', fontWeight: 500 }}>
-                                            <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: plan.highlight ? 'rgba(255,255,255,0.1)' : 'rgba(76, 29, 149, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
-                                                <Check size={12} color={plan.highlight ? '#4ADE80' : 'var(--primary)'} />
+                                        <div key={j} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', fontSize: '0.9rem', fontWeight: 600 }}>
+                                            <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: plan.highlight ? 'rgba(255,255,255,0.1)' : 'rgba(76, 29, 149, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
+                                                <Check size={14} strokeWidth={3} color={plan.highlight ? '#4ADE80' : 'var(--primary)'} />
                                             </div>
-                                            {feat}
+                                            <span style={{ lineHeight: 1.4 }}>{feat}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -577,14 +574,6 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* 6. Premium Mobile Ecosystem Preview: THE MOBILE OS FOR MERCHANTS */}
-            
-            {/* 5. Mobile Experience Section: Pivoted to WhatsApp is the OS */}
-            
-            {/* 5. Progressive Web App (PWA) Section: Multi-Device Workspace */}
-            
-            {/* 5. Progressive Web App (PWA) Section: Multi-Device Workspace */}
-            
             {/* 5. Progressive Web App (PWA) Section: Multi-Device Workspace */}
             <section id="pwa-workspace" style={{ padding: 'clamp(4rem, 10vw, 8rem) 24px', background: '#0F172A', color: 'white', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -944,7 +933,7 @@ const LandingPage = () => {
             {/* 7. Final Conversion Section (Pioneer Edition): Oga Dark Theme */}
             <section style={{ padding: 'clamp(80px, 12vw, 150px) 24px', background: '#0F172A', textAlign: 'center', color: 'white' }}>
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} style={{ maxWidth: '900px', margin: '0 auto' }}>
-                    <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '100px', marginBottom: '32px', color: 'var(--primary-light)', fontWeight: 700, fontSize: '0.85rem', letterSpacing: '0.05em' }}>EXCLUSIVE PRE-LAUNCH ACCESS</div>
+                    <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '100px', marginBottom: '32px', color: 'white', fontWeight: 700, fontSize: '0.85rem', letterSpacing: '0.05em' }}>EXCLUSIVE PRE-LAUNCH ACCESS</div>
                     <h2 style={{ fontSize: 'clamp(2.1rem, 7vw, 4.5rem)', fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: '32px', color: 'white' }}>Build Your <span className="premium-gradient">Business Empire.</span></h2>
                     <p style={{ color: '#94A3B8', fontSize: 'clamp(1.1rem, 2.5vw, 1.35rem)', fontWeight: 400, maxWidth: '650px', margin: '0 auto 48px', lineHeight: 1.6 }}>Join the next generation of African merchants. Experience the full power of Kredibly's infrastructure with 14 days of Chairman access, absolutely free.</p>
                     
@@ -971,18 +960,23 @@ const LandingPage = () => {
                 .lp-pricing-grid {
                     display: grid;
                     grid-template-columns: repeat(3, 1fr);
-                    gap: 24px;
+                    gap: 32px;
                     align-items: start;
                 }
                 .lp-pricing-card {
-                    padding: 36px;
-                    border-radius: 28px;
+                    padding: 48px 40px;
+                    border-radius: 32px;
                     background: white;
                     color: #0F172A;
                     border: 1px solid #E2E8F0;
                     display: flex;
                     flex-direction: column;
                     box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+                    transition: all 0.3s ease;
+                }
+                .lp-pricing-card:hover {
+                    transform: translateY(-8px);
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.06);
                 }
                 .lp-pricing-card--featured {
                     background: #0F172A;
@@ -993,28 +987,22 @@ const LandingPage = () => {
                 .lp-price-row {
                     display: flex;
                     align-items: baseline;
-                    gap: 6px;
+                    gap: 8px;
                     flex-wrap: wrap;
                 }
-                .lp-price-original {
-                    font-size: 1.1rem;
-                    font-weight: 700;
-                    text-decoration: line-through;
-                    opacity: 0.4;
-                }
                 .lp-price-main {
-                    font-size: clamp(1.8rem, 4vw, 2.8rem);
+                    font-size: clamp(2rem, 4vw, 3.2rem);
                     font-weight: 950;
                     letter-spacing: -0.04em;
                     line-height: 1;
                 }
                 .lp-price-period {
                     opacity: 0.6;
-                    font-weight: 600;
-                    font-size: 0.9rem;
+                    font-weight: 700;
+                    font-size: 1rem;
                 }
 
-                @media (max-width: 900px) {
+                @media (max-width: 1000px) {
                     .lp-pricing-grid {
                         grid-template-columns: 1fr;
                         max-width: 480px;

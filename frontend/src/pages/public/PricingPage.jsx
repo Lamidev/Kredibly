@@ -4,18 +4,16 @@ import { useAuth } from '../../context/AuthContext';
 import PublicNavbar from '../../components/public/PublicNavbar';
 import PublicFooter from '../../components/public/PublicFooter';
 import { motion } from 'framer-motion';
-import { Check, X, Zap, HelpCircle, ArrowRight, ShieldCheck, Sparkles, Mic, Wallet, BadgeCheck } from 'lucide-react';
+import { Check, X, Zap, ArrowRight, Star, Sparkles, BadgeCheck } from 'lucide-react';
 
 const PricingPage = () => {
     const navigate = useNavigate();
-    const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'yearly'
+    const { profile } = useAuth();
 
     useEffect(() => {
         window.scrollTo(0, 0);
         document.title = "Pricing Plans | Kredibly — Hustler, Oga & Chairman Plans";
     }, []);
-
-    const { profile } = useAuth();
 
     const plans = [
         {
@@ -23,16 +21,15 @@ const PricingPage = () => {
             slug: "hustler",
             tagline: "The Record-Keeper's Choice",
             description: "Stop writing in notebooks. Start building your digital reputation today.",
-            originalPrice: "₦3,000",
-            price: "₦1,500",
+            price: "₦2,500",
             period: "/ month",
             fee: "Zero Transfer Fees*",
             features: [
                 "10 Sale Records limit per Month",
-                "Kreddy AI Text Intelligence (Type normally)",
+                "Kreddy AI Text Intelligence",
                 "Basic Debt Recovery Assistant",
                 "Verified Ledger Seal",
-                "Digital Receipts (Kredibly Branded)"
+                "Digital Receipts & Invoices"
             ],
             cta: profile?.plan === "hustler" ? "Current Plan" : "Start Hustling",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -43,10 +40,9 @@ const PricingPage = () => {
             name: "Oga Plan",
             slug: "oga",
             tagline: "The Business Leader",
-            description: "Step up to professional branding and lower fees for your growing business.",
-            originalPrice: "₦6,000",
-            price: "₦3,000", 
-            isSlash: true,
+            description: "Step up to professional branding and AI voice recording for your business.",
+            price: "₦5,000", 
+            isPopular: true,
             fee: "Zero Transfer Fees*",
             period: "/ month",
             features: [
@@ -67,9 +63,8 @@ const PricingPage = () => {
             slug: "chairman",
             tagline: "The Empire Command Center",
             description: "Run multiple shops without stress. Lead your empire with zero commissions.",
-            originalPrice: "₦9,000",
-            price: "₦4,500", 
-            isSlash: true,
+            price: "₦7,500", 
+            isFounding: true,
             fee: "Zero Transfer Fees*",
             period: "/ month",
             features: [
@@ -91,63 +86,69 @@ const PricingPage = () => {
         <div style={{ minHeight: '100vh', background: 'white', color: '#0F172A', fontFamily: "'Outfit', sans-serif" }}>
             <PublicNavbar />
             
-            {/* Header - Pioneer Vibe */}
+            {/* Header - Premium Vibe */}
             <section className="pricing-header" style={{ padding: 'clamp(80px, 12vw, 150px) 20px 60px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: '#FDFCFE' }}>
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.05, background: 'radial-gradient(circle at 50% 50%, var(--primary) 0%, transparent 70%)' }} />
                 
                 <div style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto' }}>
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                        <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem' }}>PIONEER LAUNCH (SUBSIZED RATES)</div>
+                        <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem' }}>✨ FOUNDING MEMBER OFFERS ACTIVE</div>
                         <h1 style={{ fontSize: 'clamp(3rem, 7vw, 5rem)', fontWeight: 950, letterSpacing: '-0.05em', lineHeight: 1, marginBottom: '24px' }}>
                             Simple Pricing.<br />
-                            <span className="premium-gradient">Zero Hidden Fees.</span>
+                            <span className="premium-gradient">Unlimited Growth.</span>
                         </h1>
                         <p style={{ fontSize: '1.25rem', color: '#64748B', marginBottom: '48px', maxWidth: '700px', margin: '0 auto 48px', fontWeight: 600 }}>
-                            Join during our Grand Launch and lock in <strong>subsidized rates</strong> forever. No hidden bank charges — ZERO transfer fees on payouts.
+                            Choose the plan that fits your ambition. No hidden bank charges, no transaction commissions — just pure business power.
                         </p>
                     </motion.div>
                 </div>
             </section>
 
-
             {/* Pricing Grid */}
             <section style={{ padding: '40px 24px 100px', background: '#FDFCFE' }}>
                 <div className="pp-pricing-grid" style={{ maxWidth: '1200px', margin: '0 auto' }}>
                     {plans.map((plan, i) => (
-                        <div key={i} className={`pp-pricing-card ${plan.highlight ? 'pp-pricing-card--featured' : ''}`}>
-                            {/* Badge ABOVE plan name */}
-                            {plan.isSlash && (
-                                <div className="pp-pricing-badge">
-                                    🎉 Limited Time Pioneer Offer
+                        <div key={i} className={`pp-pricing-card ${plan.highlight ? 'pp-pricing-card--featured' : ''}`} style={{ position: 'relative' }}>
+                            {plan.isPopular && (
+                                <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: 'var(--primary)', color: 'white', padding: '6px 16px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 900, whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(76, 29, 149, 0.2)' }}>
+                                    MOST POPULAR
                                 </div>
                             )}
+                            {plan.isFounding && (
+                                <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: '#0F172A', color: 'white', padding: '6px 16px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 900, whiteSpace: 'nowrap' }}>
+                                    FOUNDING MEMBER
+                                </div>
+                            )}
+                            
                             <h3 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', fontWeight: 900, marginBottom: '8px' }}>{plan.name}</h3>
-                            <p style={{ opacity: 0.7, fontSize: '0.9rem', fontWeight: 500, marginBottom: '24px' }}>{plan.description}</p>
+                            <p style={{ opacity: 0.7, fontSize: '0.9rem', fontWeight: 600, marginBottom: '24px', lineHeight: 1.5 }}>{plan.description}</p>
                             
                             <div style={{ marginBottom: '32px' }}>
                                 <div className="pp-price-row">
-                                    <span className="pp-price-original">{plan.originalPrice}</span>
                                     <span className="pp-price-main">{plan.price}</span>
                                     <span className="pp-price-period">{plan.period}</span>
                                 </div>
-                                <div style={{ fontSize: '0.9rem', fontWeight: 900, color: plan.highlight ? 'white' : 'var(--primary)', marginTop: '4px' }}>{plan.fee}</div>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: plan.highlight ? '#4ADE80' : 'var(--primary)', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <Star size={14} fill={plan.highlight ? '#4ADE80' : 'var(--primary)'} />
+                                    {plan.fee}
+                                </div>
                             </div>
 
                             <button 
                                 onClick={plan.ctaAction}
                                 className={plan.highlight ? "btn-primary" : "btn-secondary"} 
-                                style={{ width: '100%', marginBottom: '32px', justifyContent: 'center', height: '54px', borderRadius: '16px', fontSize: '0.95rem', boxShadow: plan.highlight ? '0 10px 20px rgba(124, 58, 237, 0.3)' : 'none' }}
+                                style={{ width: '100%', marginBottom: '32px', justifyContent: 'center', height: '58px', borderRadius: '18px', fontSize: '1rem', fontWeight: 900, boxShadow: plan.highlight ? '0 15px 30px -5px rgba(124, 58, 237, 0.4)' : 'none' }}
                             >
-                                {plan.cta} <ArrowRight size={16} />
+                                {plan.cta} <ArrowRight size={18} strokeWidth={3} />
                             </button>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 {plan.features.map((feat, j) => (
-                                    <div key={j} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '0.9rem', fontWeight: 600 }}>
-                                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: plan.highlight ? 'rgba(255,255,255,0.1)' : 'rgba(76, 29, 149, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
-                                            <Check size={12} color={plan.highlight ? '#4ADE80' : 'var(--primary)'} />
+                                    <div key={j} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', fontSize: '0.9rem', fontWeight: 600 }}>
+                                        <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: plan.highlight ? 'rgba(255,255,255,0.1)' : 'rgba(76, 29, 149, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
+                                            <Check size={14} strokeWidth={3} color={plan.highlight ? '#4ADE80' : 'var(--primary)'} />
                                         </div>
-                                        {feat}
+                                        <span style={{ lineHeight: 1.4 }}>{feat}</span>
                                     </div>
                                 ))}
                             </div>
@@ -156,19 +157,18 @@ const PricingPage = () => {
                 </div>
                 
                 <div style={{ marginTop: '60px', textAlign: 'center', maxWidth: '800px', margin: '60px auto 0' }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#16A34A', fontWeight: 800, fontSize: '1rem', background: 'rgba(22, 163, 74, 0.05)', padding: '12px 24px', borderRadius: '100px' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#16A34A', fontWeight: 800, fontSize: '0.95rem', background: 'rgba(22, 163, 74, 0.05)', padding: '14px 28px', borderRadius: '100px', border: '1px solid rgba(22, 163, 74, 0.1)' }}>
                         <BadgeCheck size={20} /> WE COVER YOUR BANK CHARGES — Zero transfer fees on payouts.
                     </div>
                 </div>
             </section>
 
-            
             {/* Compare All Plans Section */}
             <section style={{ padding: '80px 24px', background: 'white' }}>
                 <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '60px' }}>
                         <h2 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.5rem)', fontWeight: 900, letterSpacing: '-0.04em', marginBottom: '16px' }}>Compare All Plans</h2>
-                        <p style={{ color: '#64748B', fontSize: '1.1rem', fontWeight: 500 }}>Compare what each plan includes so you can choose the one that fits your workflow.</p>
+                        <p style={{ color: '#64748B', fontSize: '1.1rem', fontWeight: 600 }}>Professional tools for professional businesses.</p>
                     </div>
 
                     <div style={{ overflowX: 'auto', borderRadius: '24px', border: '1px solid #E2E8F0', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
@@ -220,13 +220,13 @@ const PricingPage = () => {
                                             <tr key={j} style={{ borderBottom: '1px solid #F1F5F9' }}>
                                                 <td style={{ padding: '20px 24px', fontSize: '0.95rem', fontWeight: 600, color: '#334155' }}>{f.name}</td>
                                                 <td style={{ padding: '20px 24px', textAlign: 'center' }}>
-                                                    {typeof f.hustler === 'boolean' ? (f.hustler ? <Check size={20} color="#10B981" style={{ margin: '0 auto' }} /> : <X size={20} color="#CBD5E1" style={{ margin: '0 auto' }} />) : <span style={{ fontWeight: 700, color: '#0F172A' }}>{f.hustler}</span>}
+                                                    {typeof f.hustler === 'boolean' ? (f.hustler ? <Check size={20} color="#10B981" style={{ margin: '0 auto' }} /> : <X size={20} color="#CBD5E1" style={{ margin: '0 auto' }} />) : <span style={{ fontWeight: 800, color: '#0F172A' }}>{f.hustler}</span>}
                                                 </td>
                                                 <td style={{ padding: '20px 24px', textAlign: 'center', background: 'rgba(124, 58, 237, 0.02)' }}>
-                                                    {typeof f.oga === 'boolean' ? (f.oga ? <Check size={20} color="var(--primary)" style={{ margin: '0 auto' }} /> : <X size={20} color="#CBD5E1" style={{ margin: '0 auto' }} />) : <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{f.oga}</span>}
+                                                    {typeof f.oga === 'boolean' ? (f.oga ? <Check size={20} color="var(--primary)" style={{ margin: '0 auto' }} /> : <X size={20} color="#CBD5E1" style={{ margin: '0 auto' }} />) : <span style={{ fontWeight: 800, color: 'var(--primary)' }}>{f.oga}</span>}
                                                 </td>
                                                 <td style={{ padding: '20px 24px', textAlign: 'center' }}>
-                                                    {typeof f.chairman === 'boolean' ? (f.chairman ? <Check size={20} color="#10B981" style={{ margin: '0 auto' }} /> : <X size={20} color="#CBD5E1" style={{ margin: '0 auto' }} />) : <span style={{ fontWeight: 700, color: '#0F172A' }}>{f.chairman}</span>}
+                                                    {typeof f.chairman === 'boolean' ? (f.chairman ? <Check size={20} color="#10B981" style={{ margin: '0 auto' }} /> : <X size={20} color="#CBD5E1" style={{ margin: '0 auto' }} />) : <span style={{ fontWeight: 800, color: '#0F172A' }}>{f.chairman}</span>}
                                                 </td>
                                             </tr>
                                         ))}
@@ -265,18 +265,23 @@ const PricingPage = () => {
                 .pp-pricing-grid {
                     display: grid;
                     grid-template-columns: repeat(3, 1fr);
-                    gap: 24px;
+                    gap: 32px;
                     align-items: start;
                 }
                 .pp-pricing-card {
-                    padding: 40px;
-                    border-radius: 28px;
+                    padding: 48px 40px;
+                    border-radius: 32px;
                     background: white;
                     color: #0F172A;
                     border: 1px solid #E2E8F0;
                     display: flex;
                     flex-direction: column;
                     box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+                    transition: all 0.3s ease;
+                }
+                .pp-pricing-card:hover {
+                    transform: translateY(-8px);
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.06);
                 }
                 .pp-pricing-card--featured {
                     background: #0F172A;
@@ -284,43 +289,25 @@ const PricingPage = () => {
                     border: 2px solid var(--primary);
                     box-shadow: 0 20px 50px -10px rgba(15,23,42,0.3);
                 }
-                .pp-pricing-badge {
-                    display: inline-flex;
-                    align-items: center;
-                    background: var(--primary);
-                    color: white;
-                    padding: 5px 12px;
-                    border-radius: 100px;
-                    font-size: 0.72rem;
-                    font-weight: 800;
-                    margin-bottom: 14px;
-                    width: fit-content;
-                }
                 .pp-price-row {
                     display: flex;
                     align-items: baseline;
-                    gap: 6px;
+                    gap: 8px;
                     flex-wrap: wrap;
                 }
-                .pp-price-original {
-                    font-size: 1.1rem;
-                    font-weight: 700;
-                    text-decoration: line-through;
-                    opacity: 0.4;
-                }
                 .pp-price-main {
-                    font-size: clamp(1.8rem, 4vw, 2.8rem);
+                    font-size: clamp(2rem, 4vw, 3.2rem);
                     font-weight: 950;
                     letter-spacing: -0.04em;
                     line-height: 1;
                 }
                 .pp-price-period {
                     opacity: 0.6;
-                    font-weight: 600;
-                    font-size: 0.9rem;
+                    font-weight: 700;
+                    font-size: 1rem;
                 }
 
-                @media (max-width: 900px) {
+                @media (max-width: 1000px) {
                     .pp-pricing-grid {
                         grid-template-columns: 1fr;
                         max-width: 480px;
@@ -332,18 +319,7 @@ const PricingPage = () => {
                         padding: 36px 20px !important;
                     }
                     .pricing-header h1 {
-                        font-size: clamp(2rem, 8vw, 3.5rem) !important;
-                    }
-                    .pricing-header p {
-                        font-size: clamp(0.85rem, 3.5vw, 1.1rem) !important;
-                    }
-                }
-                @media (max-width: 480px) {
-                    .pp-pricing-card, .pp-pricing-card--featured {
-                        padding: 24px 20px !important;
-                    }
-                    .pp-pricing-badge {
-                        font-size: 0.62rem;
+                        font-size: clamp(2.2rem, 8vw, 3.5rem) !important;
                     }
                 }
             `}</style>
