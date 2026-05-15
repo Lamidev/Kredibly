@@ -582,30 +582,13 @@ exports.sendReminder = async (req, res) => {
                       `Thank you!`;
         }
 
-        // Send to customer if phone exists
-        if (sale.customerPhone) {
-            const components = [
-                {
-                    type: "body",
-                    parameters: [
-                        { type: "text", text: sale.customerName || "Customer" },
-                        { type: "text", text: message },
-                        { type: "text", text: business.displayName }
-                    ]
-                },
-                {
-                    type: "button",
-                    sub_type: "url",
-                    index: "0",
-                    parameters: [
-                        { type: "text", text: sale.invoiceNumber }
-                    ]
-                }
-            ];
-            await sendWhatsAppTemplate(sale.customerPhone, 'kreddy_customer_invoice', components).catch(e => {
-                console.error("WhatsApp Link Error:", e.message);
-            });
-        }
+        // Send the Draft to the MERCHANT (not the customer)
+        const { sendWhatsAppAlert } = require("../whatsapp/whatsappController");
+        
+        const draftHeader = `📝 *REMINDER DRAFT READY*\n\nSend this to *${sale.customerName || "your customer"}*:\n---\n`;
+        const fullDraft = `${draftHeader}${message}\n\n🔗 ${paymentLink}`;
+
+        await sendWhatsAppAlert(business.whatsappNumber, business.displayName, fullDraft);
 
         sale.reminderSentAt = new Date();
         sale.lastLinkSentAt = new Date();
@@ -618,13 +601,13 @@ exports.sendReminder = async (req, res) => {
 
         await logActivity({
             businessId: business._id,
-            action: "REMINDER_SENT",
+            action: "REMINDER_DRAFTED",
             entityType: "SALE",
             entityId: sale._id,
-            details: `Sent ${tone} payment reminder to ${sale.customerName}`
+            details: `Kreddy prepared a ${tone} reminder draft for ${sale.customerName}`
         });
 
-        res.status(200).json({ success: true, message: "Reminder sent to customer via WhatsApp!" });
+        res.status(200).json({ success: true, message: "Draft sent to your WhatsApp! You can now forward it to your customer. 🤝" });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
