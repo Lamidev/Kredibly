@@ -181,7 +181,7 @@ const LandingPage = () => {
                 "Co-Branded Receipts (Your Logo)",
                 "Advanced AI Recovery Assistant"
             ],
-            cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Gain Pioneer Access" : "Become an Oga",
+            cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade to Oga" : "Become an Oga",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
             highlight: true,
             color: "var(--primary)"
@@ -197,7 +197,7 @@ const LandingPage = () => {
             features: [
                 "Everything in Oga Plan",
                 "White-Label Receipts (Only Your Logo)",
-                "Unlimited Staff & Offices",
+                "Up to 3 Staff & Offices",
                 "WhatsApp Image Sync (Automatic)",
                 "8 AM Executive Intelligence Brief",
                 "Priority Vault & Support"

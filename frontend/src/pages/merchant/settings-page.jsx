@@ -1108,7 +1108,17 @@ const SettingsPage = () => {
                         <div style={{ marginTop: '32px' }}>
                             <p className="mobile-hide" style={{ fontSize: '0.75rem', fontWeight: 900, color: '#94A3B8', textAlign: 'center', marginBottom: '20px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Choose Your Power Level</p>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-                                
+                                {(() => {
+                                    const planRank = { hustler: 1, oga: 2, chairman: 3 };
+                                    const currentRank = planRank[profile?.plan] || 0;
+                                    const getPlanLabel = (targetPlan) => {
+                                        if (profile?.plan === targetPlan) return 'Active Plan';
+                                        const targetRank = planRank[targetPlan];
+                                        if (targetRank > currentRank) return `Upgrade to ${targetPlan === 'oga' ? 'Oga' : 'Chairman'}`;
+                                        return `Switch to ${targetPlan === 'oga' ? 'Oga' : 'Hustler'}`;
+                                    };
+                                    return (
+                                        <>
                                 {/* HUSTLER */}
                                 <button 
                                     onClick={() => { setSelectedPlan('hustler'); setShowCheckout(true); }} 
@@ -1129,7 +1139,7 @@ const SettingsPage = () => {
                                     </div>
                                     <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 20px 0', fontWeight: 600, lineHeight: 1.4 }}>Essential tracking, receipts, and automated invoices.</p>
                                     <div style={{ width: '100%', padding: '12px', borderRadius: '14px', background: profile?.plan === 'hustler' ? '#64748B' : 'white', border: '1.5px solid #E2E8F0', color: profile?.plan === 'hustler' ? 'white' : '#64748B', fontWeight: 900, fontSize: '0.85rem', textAlign: 'center' }}>
-                                        {profile?.plan === 'hustler' ? 'Active Plan' : 'Select Plan'}
+                                        {getPlanLabel('hustler')}
                                     </div>
                                 </button>
                                 
@@ -1146,7 +1156,6 @@ const SettingsPage = () => {
                                         boxShadow: profile?.plan === 'oga' ? 'none' : '0 10px 15px -3px rgba(0,0,0,0.05)'
                                     }}
                                 >
-                                    <div style={{ position: 'absolute', top: '-10px', right: '20px', background: 'var(--primary)', color: 'white', padding: '4px 12px', borderRadius: '100px', fontSize: '0.6rem', fontWeight: 950, letterSpacing: '0.05em' }}>PIONEER PRICE</div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                                         <span style={{ fontWeight: 900, color: 'var(--primary)', fontSize: '0.85rem' }}>OGA PLAN</span>
                                         <div style={{ textAlign: 'right' }}>
@@ -1155,7 +1164,7 @@ const SettingsPage = () => {
                                     </div>
                                     <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 20px 0', fontWeight: 600, lineHeight: 1.4 }}>Kreddy AI Voice, Proactive Reminders & 1 Staff member.</p>
                                     <div style={{ width: '100%', padding: '12px', borderRadius: '14px', background: profile?.plan === 'oga' ? 'var(--primary)' : 'white', border: '1.5px solid var(--primary)', color: profile?.plan === 'oga' ? 'white' : 'var(--primary)', fontWeight: 900, fontSize: '0.85rem', textAlign: 'center' }}>
-                                        {profile?.plan === 'oga' ? 'Active Plan' : 'Upgrade to Oga'}
+                                        {getPlanLabel('oga')}
                                     </div>
                                 </button>
 
@@ -1176,11 +1185,14 @@ const SettingsPage = () => {
                                             <span style={{ fontWeight: 900, color: '#8B5CF6', fontSize: '1.1rem' }}>₦7,500/mo</span>
                                         </div>
                                     </div>
-                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 20px 0', fontWeight: 600, lineHeight: 1.4 }}>Unlimited Staff, AI Insights & Priority White-labeling.</p>
+                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 20px 0', fontWeight: 600, lineHeight: 1.4 }}>Up to 3 Staff, AI Insights & Priority White-labeling.</p>
                                     <div style={{ width: '100%', padding: '12px', borderRadius: '14px', background: profile?.plan === 'chairman' ? '#8B5CF6' : 'white', border: '1.5px solid #8B5CF6', color: profile?.plan === 'chairman' ? 'white' : '#8B5CF6', fontWeight: 900, fontSize: '0.85rem', textAlign: 'center' }}>
-                                        {profile?.plan === 'chairman' ? 'Active Plan' : 'Go Chairman'}
+                                        {getPlanLabel('chairman')}
                                     </div>
                                 </button>
+                                        </>
+                                    );
+                                })()}
                             </div>
                         </div>
                     </section>
@@ -1210,8 +1222,8 @@ const SettingsPage = () => {
                     onConfirm={handlePayoutSave}
                 />
 
-                {/* 🛡️ Smart Footer: Hide save button if on KYC or Notifications tab */}
-                {activeTab !== 'kyc' && activeTab !== 'notifications' && (
+                {/* 🛡️ Smart Footer: Hide save button if on KYC, Notifications or Plan tab */}
+                {activeTab !== 'kyc' && activeTab !== 'notifications' && activeTab !== 'plan' && (
                     <div className="mobile-stack" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', paddingBottom: '40px' }}>
                         <button
                             className="btn-primary mobile-full-width"

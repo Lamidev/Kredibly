@@ -242,62 +242,6 @@ const Dashboard = () => {
             </div>
 
             {/* 🚀 Grand Launch Urgency Banner - Refined Dark Theme */}
-            {(profile?.plan === 'hustler' || profile?.planStatus === 'trialing') && (
-                <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    style={{ 
-                        background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)', 
-                        padding: '24px 32px', 
-                        borderRadius: '28px', 
-                        marginBottom: '40px',
-                        color: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                        gap: '24px',
-                        border: '1px solid rgba(124, 58, 237, 0.3)',
-                        boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.4)'
-                    }}
-                >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                        <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: 'rgba(124, 58, 237, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <Sparkles size={28} className="text-secondary" fill="currentColor" />
-                        </div>
-                        <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                <span className="mobile-hide" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '100px', textTransform: 'uppercase' }}>Limited Time</span>
-                                <h3 style={{ fontSize: 'clamp(1.1rem, 4.5vw, 1.25rem)', fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>
-                                    Launch Offer
-                                </h3>
-                            </div>
-                            <p style={{ fontSize: 'clamp(0.8rem, 3.5vw, 0.9rem)', color: '#94A3B8', fontWeight: 700, margin: 0, lineHeight: 1.4 }}>
-                                {new Date() < new Date('2026-06-01') 
-                                    ? "Pre-Launch Gift: Enjoy 100% free Chairman status and AI features until our June 1st launch!" 
-                                    : "Claim your 50% Grand Launch discount before they expire. Don't pay full price later!"}
-                            </p>
-                        </div>
-                    </div>
-                    <button 
-                        onClick={() => navigate('/settings')}
-                        style={{ 
-                            padding: '14px 32px', 
-                            borderRadius: '16px', 
-                            background: 'white', 
-                            color: '#0F172A', 
-                            fontWeight: 900, 
-                            border: 'none', 
-                            cursor: 'pointer',
-                            fontSize: '0.95rem',
-                            boxShadow: '0 10px 20px -5px rgba(0,0,0,0.2)'
-                        }}
-                        className="hover-scale mobile-full-width"
-                    >
-                        Secure My Discount
-                    </button>
-                </motion.div>
-            )}
 
             {/* Premium Stats Bento Grid */}
             <div style={{

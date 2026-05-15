@@ -2615,9 +2615,8 @@ Upgrade here: ${APP_URL}/pricing`);
                         const rawMethod = (aiResponseItem.data?.method || "").toLowerCase();
                         const method = rawMethod.includes("transfer") ? "transfer" : "card"; 
                         const authFee = method === "card" ? 50 : 500;
-                        const targetPlan = "chairman"; // Trial is always Chairman at launch
+                        const targetPlan = "chairman"; // Trial is always Chairman
                         const fullPrice = getPlanPrice(targetPlan, "monthly");
-                        const discountPrice = getPlanPrice(targetPlan, "launch");
 
                         const reference = `KREDDY_TRIAL_${Date.now()}`;
                         const metadata = { 
@@ -2626,9 +2625,7 @@ Upgrade here: ${APP_URL}/pricing`);
                             billingCycle: 'monthly', 
                             businessId: profile._id.toString(),
                             email: user.email,
-                            isLaunchPromo: true,
                             fullPrice: fullPrice,
-                            discountPrice: discountPrice,
                             method: method
                         };
                         
@@ -2674,7 +2671,7 @@ Upgrade here: ${APP_URL}/pricing`);
                 } else if (aiResponseItem && aiResponseItem.intent === "add_staff") {
                     
                     if (plan === "hustler" || !plan) {
-                        await sendReply(from, `${bossTitle}! 🛑 Adding staff via WhatsApp is a premium feature. \n\nUpgrade to the *Oga Plan* to add up to 2 staff, or the *Chairman Plan* for unlimited branch tracking! 🚀`);
+                        await sendReply(from, `${bossTitle}! 🛑 Adding staff via WhatsApp is a premium feature. \n\nUpgrade to the *Oga Plan* to add 1 staff member, or the *Chairman Plan* for up to 3 staff! 🚀`);
                     } else {
                         const newPhoneRaw = aiResponseItem.data.phoneNumber || "";
                         const newPhone = newPhoneRaw.replace(/\D/g, "");
@@ -2684,13 +2681,13 @@ Upgrade here: ${APP_URL}/pricing`);
                         } else {
                             if (!profile.staffNumbers) profile.staffNumbers = [];
                             
-                            const staffLimit = plan === "oga" ? 2 : (plan === "chairman" ? 9999 : 0);
+                            const staffLimit = plan === "oga" ? 1 : (plan === "chairman" ? 3 : 0);
                             
                             if (profile.staffNumbers.length >= staffLimit) {
                                 if (plan === "oga") {
-                                    await sendReply(from, `${bossTitle}! You've reached your limit of ${staffLimit} staff members on the Oga plan. Upgrade to the *Chairman Plan* to add an unlimited number of staff! 🚀`);
+                                    await sendReply(from, `${bossTitle}! You've reached your limit of 1 staff member on the Oga plan. Upgrade to the *Chairman Plan* to add up to 3 staff! 🚀`);
                                 } else {
-                                    await sendReply(from, `You've reached your maximum staff limit, ${bossTitle}!`);
+                                    await sendReply(from, `You've reached your maximum of 3 staff members on the Chairman plan, ${bossTitle}!`);
                                 }
                             } else {
                                 let formattedNewPhone = newPhone;

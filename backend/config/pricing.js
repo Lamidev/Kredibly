@@ -1,10 +1,9 @@
 const LAUNCH_DATE = new Date('2026-06-01T00:00:00Z'); // Official Launch Day
-const SLASH_WINDOW_END = new Date('2026-06-01T00:00:00Z'); // Launch Promo Ends (End of May)
 
 const PRICING_PLANS = {
     hustler: {
         monthly: 2500,
-        yearly: 27000, // 10% discount for annual
+        yearly: 27000,
     },
     oga: {
         monthly: 5000,
@@ -24,6 +23,5 @@ const getPlanPrice = (plan, cycle = "monthly") => {
 module.exports = {
     PRICING_PLANS,
     getPlanPrice,
-    LAUNCH_DATE,
-    SLASH_WINDOW_END
+    LAUNCH_DATE
 };
