@@ -25,8 +25,9 @@ const PricingPage = () => {
             period: "/ month",
             fee: "Zero Transfer Fees*",
             features: [
-                "10 Sale Records limit per Month",
+                "50 Sales Records per Month",
                 "Kreddy AI Text Intelligence",
+                "10 Auto-Reminders & Tasks / mo",
                 "Basic Debt Recovery Assistant",
                 "Verified Ledger Seal",
                 "Digital Receipts & Invoices"
@@ -70,7 +71,7 @@ const PricingPage = () => {
             features: [
                 "Everything in Oga Plan",
                 "White-Label Receipts (Only Your Logo)",
-                "Up to 3 Staff & Offices",
+                "Unlimited Staff & Offices",
                 "WhatsApp Image Sync (Automatic)",
                 "8 AM Executive Intelligence Brief",
                 "Priority Vault & Support"
@@ -185,7 +186,7 @@ const PricingPage = () => {
                                         { name: "Automated Ledger Sync", hustler: true, oga: true, chairman: true }
                                     ]},
                                     { category: "Business Management", features: [
-                                        { name: "Sales Records Limit", hustler: "10 / mo", oga: "Unlimited", chairman: "Unlimited" },
+                                        { name: "Sales Records Limit", hustler: "50 / mo", oga: "Unlimited", chairman: "Unlimited" },
                                         { name: "Staff Members", hustler: "0", oga: "1", chairman: "3" },
                                         { name: "Multi-Office / Branches", hustler: false, oga: false, chairman: true },
                                         { name: "WhatsApp Image Sync", hustler: false, oga: false, chairman: true }
@@ -197,6 +198,7 @@ const PricingPage = () => {
                                     ]},
                                     { category: "Recovery Engine", features: [
                                         { name: "Basic Debt Reminders", hustler: true, oga: true, chairman: true },
+                                        { name: "Auto-Reminders & Tasks", hustler: "10 / mo", oga: "Unlimited", chairman: "Unlimited" },
                                         { name: "Advanced AI Recovery Assistant", hustler: false, oga: true, chairman: true },
                                         { name: "Automated Debt Tracking", hustler: true, oga: true, chairman: true }
                                     ]},

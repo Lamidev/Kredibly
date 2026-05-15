@@ -153,8 +153,9 @@ const LandingPage = () => {
             period: "/ month",
             fee: "Zero Transfer Fees*",
             features: [
-                "10 Sale Records limit per Month",
+                "50 Sales Records per Month",
                 "Kreddy AI Text Intelligence",
+                "10 Auto-Reminders & Tasks / mo",
                 "Basic Debt Recovery Assistant",
                 "Verified Ledger Seal",
                 "Digital Receipts & Invoices"

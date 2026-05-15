@@ -290,12 +290,17 @@ const PublicReceiptPage = () => {
                         </div>
                         
                         <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                            {/* Merchant Logo (Always for Oga/Chairman, fallback for Hustler) */}
-                            {sale?.businessId?.logoUrl ? (
-                                <img src={sale.businessId.logoUrl} alt="Merchant Logo" style={{ height: '48px', maxWidth: '180px', objectFit: 'contain', marginBottom: '8px' }} />
-                            ) : (
-                                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: '#0F172A', marginBottom: '4px' }}>{sale?.businessId?.displayName}</h3>
-                            )}
+                            {/* Merchant Logo (Only for Oga/Chairman) */}
+                            {sale?.businessId?.plan !== 'hustler' && sale?.businessId?.plan ? (
+                                sale?.businessId?.logoUrl ? (
+                                    <img src={sale.businessId.logoUrl} alt="Merchant Logo" style={{ height: '48px', maxWidth: '180px', objectFit: 'contain', marginBottom: '8px' }} />
+                                ) : (
+                                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: sale?.businessId?.brandColor || '#4C1D95', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 900, marginBottom: '8px' }}>
+                                        {sale?.businessId?.displayName?.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+                                    </div>
+                                )
+                            ) : null}
+                            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: '#0F172A', marginBottom: '4px' }}>{sale?.businessId?.displayName}</h3>
                             <p style={{ margin: 0, fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Invoice #{sale?.invoiceNumber}</p>
                             {isPaid && (
                                 <div style={{ 
@@ -376,9 +381,14 @@ const PublicReceiptPage = () => {
                     </div>
 
                     {/* Footer */}
-                    <div style={{ borderTop: '2px solid #F1F5F9', paddingTop: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        <p style={{ fontSize: '11px', color: '#334155', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <ShieldCheck size={14} color="#334155" /> Secured by Kredibly • {sale?.invoiceNumber}
+                    <div style={{ marginTop: '40px', padding: '32px 0 0', borderTop: '2px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '16px', opacity: 0.6 }} />
+                            <div style={{ width: '1px', height: '12px', background: '#E2E8F0' }} />
+                            <span style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Verified Ledger</span>
+                        </div>
+                        <p style={{ fontSize: '11px', color: '#64748B', fontWeight: 700, margin: 0 }}>
+                            Digitally Signed Document • Verified by Kredibly Infrastructure
                         </p>
                     </div>
                 </div>
@@ -467,10 +477,15 @@ const PublicReceiptPage = () => {
                             overflow: 'hidden'
                         }}
                     >
-                    {/* Merchant Info */}
                     <div style={{ padding: '32px', borderBottom: '1px solid #F8FAFC', display: 'flex', alignItems: 'center', gap: '20px' }}>
                         <div style={{ width: '64px', height: '64px', background: 'var(--primary)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', overflow: 'hidden' }}>
-                            {sale.businessId?.logoUrl ? <img src={sale.businessId.logoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Building2 size={32} />}
+                            {sale.businessId?.logoUrl && sale.businessId?.plan !== 'hustler' ? (
+                                <img src={sale.businessId.logoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                                <span style={{ fontSize: '24px', fontWeight: 900 }}>
+                                    {sale?.businessId?.displayName?.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+                                </span>
+                            )}
                         </div>
                         <div style={{ flex: 1 }}>
                             <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A', marginBottom: '4px' }}>{sale.businessId?.displayName}</h3>
@@ -630,13 +645,12 @@ const PublicReceiptPage = () => {
 
 
                 {/* Secured by Kredibly Watermark (Universal Footer) */}
-                <div style={{ textAlign: 'center', marginTop: '64px', padding: '24px 0', borderTop: '1px solid #F1F5F9' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px', opacity: 0.8 }}>
-                        <div style={{ height: '1.5px', width: '20px', background: '#CBD5E1' }}></div>
-                        <p style={{ fontSize: '11px', color: '#64748B', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>Secured by Kredibly</p>
-                        <div style={{ height: '1.5px', width: '20px', background: '#CBD5E1' }}></div>
+                <div style={{ marginTop: '64px', textAlign: 'center', paddingBottom: '24px' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'white', borderRadius: '100px', border: '1px solid #F1F5F9', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                        <img src="/krediblyrevamped.png" alt="" style={{ height: '14px', opacity: 0.6 }} />
+                        <div style={{ width: '1px', height: '12px', background: '#E2E8F0' }} />
+                        <span style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Verified Infrastructure</span>
                     </div>
-                    <p style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 700, margin: 0, opacity: 0.9 }}>Digital Settlement Log: {sale.invoiceNumber}</p>
                 </div>
             </div>
         </div>

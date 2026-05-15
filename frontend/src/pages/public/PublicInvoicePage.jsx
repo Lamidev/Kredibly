@@ -869,14 +869,33 @@ const PublicInvoicePage = () => {
                     {/* Header Section */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '48px' }}>
                         <div>
-                            {sale?.businessId?.logoUrl ? (
-                                <img src={sale.businessId.logoUrl} alt={sale.businessId.displayName} style={{ height: '56px', objectFit: 'contain', marginBottom: '16px' }} />
+                            {sale?.businessId?.plan === 'hustler' || !sale?.businessId?.plan ? (
+                                <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '36px', objectFit: 'contain', marginBottom: '16px' }} />
+                            ) : sale?.businessId?.plan === 'oga' ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+                                    <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '30px' }} />
+                                    <div style={{ width: '1px', height: '24px', background: '#E2E8F0' }}></div>
+                                    {sale?.businessId?.logoUrl ? (
+                                        <img src={sale.businessId.logoUrl} alt={sale.businessId.displayName} style={{ height: '36px', objectFit: 'contain' }} />
+                                    ) : (
+                                        <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: primaryColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 900 }}>
+                                            {sale.businessId.displayName?.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+                                        </div>
+                                    )}
+                                </div>
                             ) : (
-                                <h1 style={{ fontFamily: 'Outfit', fontSize: '28px', fontWeight: 900, color: primaryColor, margin: '0 0 8px 0', textTransform: 'uppercase' }}>
-                                    {sale?.businessId?.displayName}
-                                </h1>
+                                <div style={{ marginBottom: '16px' }}>
+                                    {sale?.businessId?.logoUrl ? (
+                                        <img src={sale.businessId.logoUrl} alt={sale.businessId.displayName} style={{ height: '48px', objectFit: 'contain' }} />
+                                    ) : (
+                                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: primaryColor, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 900 }}>
+                                            {sale.businessId.displayName?.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+                                        </div>
+                                    )}
+                                </div>
                             )}
                             <div style={{ color: mutedColor, fontSize: '13px', fontWeight: 600 }}>
+                                <p style={{ margin: 0, color: secondaryColor, fontWeight: 900, fontSize: '18px', marginBottom: '4px' }}>{sale?.businessId?.displayName}</p>
                                 <p style={{ margin: 0 }}>Official Merchant Record</p>
                                 <p style={{ margin: '2px 0 0' }}>{sale?.businessId?.email || `Verified by ${sale?.businessId?.displayName}`}</p>
                             </div>
@@ -1018,8 +1037,20 @@ const PublicInvoicePage = () => {
                 {/* Institutional Navbar */}
                 <nav style={{ maxWidth: '42rem', margin: '0 auto', width: '100%', position: 'relative', zIndex: 10, padding: '24px 16px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        {sale?.businessId?.plan === 'chairman' ? (
+                        {sale?.businessId?.plan === 'hustler' || !sale?.businessId?.plan ? (
                             <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '24px', opacity: 0.9 }} />
+                        ) : sale?.businessId?.plan === 'oga' ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <img src="/krediblyrevamped.png" alt="Kredibly" style={{ height: '20px', opacity: 0.8 }} />
+                                <div style={{ width: '1px', height: '16px', background: '#CBD5E1' }}></div>
+                                {sale?.businessId?.logoUrl ? (
+                                    <img src={sale.businessId.logoUrl} alt={sale.businessId.displayName} style={{ height: '24px', objectFit: 'contain' }} />
+                                ) : (
+                                    <span style={{ fontFamily: 'Outfit', fontSize: '20px', fontWeight: 900, color: primaryColor, letterSpacing: '-0.02em' }}>
+                                        {sale?.businessId?.displayName?.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+                                    </span>
+                                )}
+                            </div>
                         ) : (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 {sale?.businessId?.logoUrl ? (
@@ -1088,11 +1119,13 @@ const PublicInvoicePage = () => {
                         <div className="glass-card" style={{ borderRadius: '32px', overflow: 'hidden', background: 'white', border: '1px solid #F1F5F9', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.04)' }}>
                             {/* Merchant Header */}
                             <div style={{ padding: '32px', borderBottom: '1px solid #F8FAFC', display: 'flex', alignItems: 'center', gap: '20px' }}>
-                                <div style={{ width: '80px', height: '80px', background: '#F8FAFC', borderRadius: '24px', overflow: 'hidden', border: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    {sale.businessId?.logoUrl ? (
+                                <div style={{ width: '80px', height: '80px', background: primaryColor, borderRadius: '24px', overflow: 'hidden', border: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    {sale.businessId?.logoUrl && sale.businessId?.plan !== 'hustler' ? (
                                         <img src={sale.businessId.logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     ) : (
-                                        <Building2 size={32} color={primaryColor} />
+                                        <span style={{ fontSize: '28px', fontWeight: 900, color: 'white' }}>
+                                            {sale?.businessId?.displayName?.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+                                        </span>
                                     )}
                                 </div>
                                 <div style={{ flex: 1 }}>

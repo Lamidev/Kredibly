@@ -1137,7 +1137,7 @@ const SettingsPage = () => {
                                             <span style={{ fontWeight: 900, color: '#1E293B', fontSize: '1.1rem' }}>₦2,500/mo</span>
                                         </div>
                                     </div>
-                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 20px 0', fontWeight: 600, lineHeight: 1.4 }}>Essential tracking, receipts, and automated invoices.</p>
+                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 20px 0', fontWeight: 600, lineHeight: 1.4 }}>Up to 50 sales/mo, 10 auto-reminders, and basic receipts.</p>
                                     <div style={{ width: '100%', padding: '12px', borderRadius: '14px', background: profile?.plan === 'hustler' ? '#64748B' : 'white', border: '1.5px solid #E2E8F0', color: profile?.plan === 'hustler' ? 'white' : '#64748B', fontWeight: 900, fontSize: '0.85rem', textAlign: 'center' }}>
                                         {getPlanLabel('hustler')}
                                     </div>
