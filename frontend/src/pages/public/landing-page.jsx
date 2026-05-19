@@ -272,7 +272,7 @@ const LandingPage = () => {
                 }} />
 
                 <header style={{
-                    padding: 'clamp(80px, 10vw, 110px) 24px clamp(2rem, 6vw, 70px)',
+                    padding: 'calc(clamp(80px, 10vw, 110px) + env(safe-area-inset-top, 0px)) 24px clamp(2rem, 6vw, 70px)',
                     maxWidth: '1400px',
                     margin: '0 auto',
                     textAlign: 'center',

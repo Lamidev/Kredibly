@@ -147,7 +147,7 @@ const DashboardLayout = () => {
                         <img 
                             src="/krediblyrevamped.png" 
                             alt="Kredibly" 
-                            style={{ height: '28px', width: 'auto', filter: 'contrast(1.15) brightness(1.02)' }} 
+                            style={{ height: '20px', width: 'auto', filter: 'contrast(1.15) brightness(1.02)' }} 
                         />
                     </div>
                     {/* Mobile Close Button */}

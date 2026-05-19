@@ -89,7 +89,7 @@ function AuthLayout() {
             align-items: center !important;
           }
           .auth-logo-header {
-            padding: 32px 24px 12px !important;
+            padding: calc(32px + env(safe-area-inset-top, 0px)) 24px 12px !important;
           }
           .auth-logo-img {
             height: 28px !important;
