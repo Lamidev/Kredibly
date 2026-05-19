@@ -76,7 +76,7 @@ const AdminLayout = () => {
       >
         <div
           className="sidebar-header"
-          style={{ padding: "32px 24px", marginBottom: "10px" }}
+          style={{ padding: "calc(32px + env(safe-area-inset-top, 0px)) 24px 32px", marginBottom: "10px" }}
         >
           <div
             style={{
@@ -90,7 +90,7 @@ const AdminLayout = () => {
               src="/krediblyrevamped.png"
               alt="Kredibly"
               style={{
-                height: "26px",
+                height: "20px",
                 width: "auto",
                 filter: "brightness(0) invert(1)",
                 flexShrink: 0,
@@ -102,7 +102,7 @@ const AdminLayout = () => {
             onClick={() => setIsSidebarOpen(false)}
             style={{
               position: "absolute",
-              top: "24px",
+              top: "calc(24px + env(safe-area-inset-top, 0px))",
               right: "16px",
               background: "rgba(255,255,255,0.05)",
               border: "1px solid rgba(255,255,255,0.1)",

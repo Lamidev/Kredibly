@@ -88,7 +88,7 @@ const PricingPage = () => {
             <PublicNavbar />
             
             {/* Header - Premium Vibe */}
-            <section className="pricing-header" style={{ padding: 'clamp(80px, 12vw, 150px) 20px 60px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: '#FDFCFE' }}>
+            <section className="pricing-header" style={{ padding: 'calc(clamp(80px, 12vw, 150px) + env(safe-area-inset-top, 0px)) 20px 60px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: '#FDFCFE' }}>
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.05, background: 'radial-gradient(circle at 50% 50%, var(--primary) 0%, transparent 70%)' }} />
                 
                 <div style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto' }}>

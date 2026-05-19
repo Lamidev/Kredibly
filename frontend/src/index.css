@@ -648,7 +648,7 @@ body.lock-scroll {
 }
 
 .sidebar-header {
-  padding: 32px 24px;
+  padding: calc(32px + env(safe-area-inset-top, 0px)) 24px 32px;
 }
 
 .sidebar-nav {
