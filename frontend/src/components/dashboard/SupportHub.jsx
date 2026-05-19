@@ -173,7 +173,7 @@ const SupportHub = () => {
     };
 
     return createPortal(
-        <div style={{ position: 'fixed', bottom: '30px', right: '30px', zIndex: 10000 }}>
+        <div className="support-hub-container">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -507,13 +507,30 @@ const SupportHub = () => {
             </motion.button>
 
             <style>{`
+                .support-hub-container {
+                    position: fixed;
+                    bottom: 30px;
+                    right: 30px;
+                    z-index: 10000;
+                    /* GPU Acceleration Layer to prevent scroll displacement/shake */
+                    transform: translate3d(0, 0, 0);
+                    -webkit-transform: translate3d(0, 0, 0);
+                    will-change: transform;
+                }
+                
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
                 
                 @media (max-width: 480px) {
+                    .support-hub-container {
+                        bottom: 20px !important;
+                        right: 20px !important;
+                        left: auto !important;
+                    }
                     .support-hub-card {
                         width: calc(100vw - 32px) !important;
                         right: 16px !important;
+                        left: auto !important;
                         bottom: 80px !important;
                         position: fixed !important;
                         height: calc(100dvh - 120px) !important;

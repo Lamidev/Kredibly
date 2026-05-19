@@ -216,22 +216,7 @@ const AdminLayout = () => {
 
       {/* Main Content Area */}
       <main className="main-content-layout" style={{ background: "#F8FAFC" }}>
-        <header
-          className="top-header"
-          style={{
-            background: "rgba(255,255,255,0.9)",
-            backdropFilter: "blur(20px)",
-            borderBottom: "1px solid #E2E8F0",
-            padding: "0 24px",
-            position: "sticky",
-            top: 0,
-            zIndex: 40,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            height: "80px",
-          }}
-        >
+        <header className="top-header">
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <button
               onClick={() => setIsSidebarOpen(true)}
