@@ -687,8 +687,9 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
         console.log(`🔔 WhatsApp Session Closed for ${normalizedTo} — Sending paid template message`);
         
         const safeMessage = String(textMessage)
-            .replace(/[\r\t]/g, ' ') // Remove tabs/carriage returns but keep \n
-            .replace(/\s\s+/g, ' ')    // Collapse multiple spaces
+            .replace(/\n+/g, '  •  ') // Convert newlines to elegant bullet separators since Meta templates reject newlines in parameters
+            .replace(/[\r\t]/g, ' ')  // Remove carriage returns/tabs
+            .replace(/\s\s+/g, ' ')   // Collapse excessive spaces
             .trim()
             .substring(0, 1024);
         
@@ -1054,7 +1055,28 @@ Upgrade here: ${APP_URL}/pricing`);
         }
 
         // PERSISTENT SESSION HANDLING
-        const session = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
+        let session = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
+        if (session) {
+            // 🌅 WAKE-UP FLOW: Intercept pending morning summary session
+            if (session.type === 'pending_summary') {
+                const lowerText = text ? text.toLowerCase().trim() : "";
+                const isTrigger = /^(yes|yep|y|ok|okay|sure|summary|report|performance|show|view|check|hi|hello|hey|morning|good\s*morning|send\s*summary|view\s*summary)$/i.test(lowerText);
+                
+                if (isTrigger && msgType === 'text') {
+                    await WhatsAppSession.deleteOne({ _id: session._id });
+                    const summaryText = session.data?.summaryText;
+                    if (summaryText) {
+                        await sendReply(from, summaryText);
+                        return;
+                    }
+                } else {
+                    // Quietly delete the pending summary session so it doesn't block their new task
+                    await WhatsAppSession.deleteOne({ _id: session._id });
+                    session = null;
+                }
+            }
+        }
+
         if (session) {
             // Check if it's a numeric choice for disambiguation
             const choice = parseInt(text);

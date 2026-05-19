@@ -47,12 +47,17 @@ h1, h2, h3, h4, .premium-font {
   background-clip: text;
 }
 
+html, body {
+  max-width: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none; /* Prevents horizontal elastic drag/dangling */
+}
+
 body {
   background-color: var(--background);
   color: var(--text);
-  overflow-x: hidden;
   transition: background-color 0.3s ease;
-  width: 100%;
   position: relative;
 }
 
@@ -523,12 +528,16 @@ body.lock-scroll {
 /* Responsive Pill Navbar */
 .pill-nav-container {
     position: fixed;
-    top: 12px;
+    top: calc(12px + env(safe-area-inset-top, 0px));
     left: 0;
     right: 0;
     z-index: 3000;
     padding: 0 12px;
     pointer-events: none;
+    /* Force GPU composition layer to prevent fixed element disappearing on iOS scroll momentum */
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    will-change: transform;
 }
 
 .pill-nav {
@@ -726,6 +735,7 @@ body.lock-scroll {
   position: relative;
   width: 100%;
   padding-left: 280px;
+  padding-top: 80px; /* Exact height of fixed desktop header to prevent overlap */
   overflow-x: hidden;
   box-sizing: border-box;
 }
@@ -758,7 +768,7 @@ body.lock-scroll {
 }
 
 .top-header {
-  height: 80px;
+  height: calc(80px + env(safe-area-inset-top, 0px));
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -766,10 +776,16 @@ body.lock-scroll {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 40px;
-  position: sticky;
+  padding: env(safe-area-inset-top, 0px) 40px 0;
+  position: fixed; /* FIXED positioning to bypass parent overflow breaks */
   top: 0;
+  left: 280px; /* Desktop sidebar offset */
+  right: 0;
   z-index: 1500;
+  /* Lock header rendering in a GPU layer to prevent disappearing on iOS stand-alone scrolls */
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  will-change: transform;
 }
 
 .search-container {
@@ -807,8 +823,16 @@ body.lock-scroll {
   .lg\:hidden { display: block !important; }
   .sidebar { transform: translateX(-100%); }
   .sidebar.mobile-open { transform: translateX(0); }
-  .main-content-layout { padding-left: 0 !important; width: 100% !important; }
-  .top-header { padding: 0 16px; }
+  .main-content-layout { 
+    padding-left: 0 !important; 
+    padding-top: calc(80px + env(safe-area-inset-top, 0px)) !important; /* Dynamic safe area top offset on mobile */
+    width: 100% !important; 
+  }
+  .top-header { 
+    padding: env(safe-area-inset-top, 0px) 16px 0; 
+    height: calc(80px + env(safe-area-inset-top, 0px)); 
+    left: 0; /* Remove sidebar left offset since sidebar is collapsed */
+  }
   .content-body { padding: 32px 16px; margin: 0 auto; width: 100%; max-width: 100%; }
 }
 
@@ -987,7 +1011,9 @@ body.lock-scroll {
 
     .top-header {
         justify-content: center !important;
-        padding: 0 12px !important;
+        padding: env(safe-area-inset-top, 0px) 12px 0 !important;
+        height: calc(80px + env(safe-area-inset-top, 0px)) !important;
+        left: 0 !important; /* Full horizontal coverage on mobile PWA views */
     }
 }
 
