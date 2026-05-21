@@ -242,15 +242,15 @@ const Onboarding = () => {
         <div style={{ marginBottom: '32px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <div>
-                    <h3 style={{ margin: 0, fontWeight: 950, fontSize: '1.5rem', letterSpacing: '-0.02em', color: '#0F172A' }}>
+                    <h3 style={{ margin: 0, fontWeight: 700, fontSize: '1.5rem', letterSpacing: '-0.02em', color: '#0F172A' }}>
                         {step === 1 ? 'Elite Access' : 'Quick Setup'}
                     </h3>
-                    <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: '#0F172A', fontWeight: 600 }}>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: '#0F172A', fontWeight: 400 }}>
                         {step === 1 ? 'You are a Founding Member.' : `Step ${step - 1} of 3`}
                     </p>
                 </div>
                 {step > 1 && (
-                    <div style={{ background: 'rgba(76, 29, 149, 0.05)', padding: '8px 16px', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 900, color: 'var(--primary)' }}>
+                    <div style={{ background: 'rgba(76, 29, 149, 0.05)', padding: '8px 16px', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)' }}>
                         {Math.round(((step-1)/3)*100)}% COMPLETED
                     </div>
                 )}
@@ -310,23 +310,23 @@ const Onboarding = () => {
                                         <div style={{ width: '80px', height: '80px', background: 'linear-gradient(135deg, #7C3AED, #4C1D95)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: 'white', boxShadow: '0 15px 30px rgba(76, 29, 149, 0.3)' }}>
                                             <Zap size={40} fill="white" />
                                         </div>
-                                        <h2 style={{ fontSize: 'clamp(1.5rem, 6vw, 2rem)', fontWeight: 800, letterSpacing: '-0.04em', color: '#000000', marginBottom: '12px' }} className="mobile-heading">Welcome, {planTitle}.</h2>
-                                        <p style={{ color: '#000000', fontWeight: 500, fontSize: '1rem', lineHeight: 1.7 }} className="mobile-text">
-                                            As a <span style={{ color: '#000000', fontWeight: 700 }}>Founding Member</span>, you've been granted <strong style={{ color: '#000000' }}>30 days</strong> of the <strong style={{ color: '#000000' }}>{planTitle} Plan</strong> for free during this beta phase.
+                                        <h2 style={{ fontSize: 'clamp(1.5rem, 6vw, 2rem)', fontWeight: 700, letterSpacing: '-0.04em', color: '#000000', marginBottom: '12px' }} className="mobile-heading">Welcome, {planTitle}.</h2>
+                                        <p style={{ color: '#000000', fontWeight: 400, fontSize: '1rem', lineHeight: 1.7 }} className="mobile-text">
+                                            As a <span style={{ color: '#000000', fontWeight: 600 }}>Founding Member</span>, you've been granted <strong style={{ color: '#000000' }}>30 days</strong> of the <strong style={{ color: '#000000' }}>{planTitle} Plan</strong> for free during this beta phase.
                                         </p>
                                     </div>
                                     <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1.5px solid #E2E8F0', marginBottom: '40px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
                                             <CheckCircle2 size={18} color="#10B981" />
-                                            <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#1E293B' }}>Unlimited Invoice Records (No 10 sale limit)</span>
+                                            <span style={{ fontWeight: 500, fontSize: '0.92rem', color: '#1E293B' }}>Unlimited Invoice Records (No 10 sale limit)</span>
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
                                             <CheckCircle2 size={18} color="#10B981" />
-                                            <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#1E293B' }}>Kreddy AI Voice Notes (Just Speak!)</span>
+                                            <span style={{ fontWeight: 500, fontSize: '0.92rem', color: '#1E293B' }}>Kreddy AI Voice Notes (Just Speak!)</span>
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                             <CheckCircle2 size={18} color="#10B981" />
-                                            <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#1E293B' }}>0% Transaction Fees, Always</span>
+                                            <span style={{ fontWeight: 500, fontSize: '0.92rem', color: '#1E293B' }}>0% Transaction Fees, Always</span>
                                         </div>
                                     </div>
                                     <button onClick={() => setStep(2)} className="btn-primary" style={{ width: '100%', height: '64px', fontSize: '1.15rem' }}>Verify Business Profile <ArrowRight size={20} /></button>
@@ -337,13 +337,13 @@ const Onboarding = () => {
                             {step === 2 && (
                                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} key="info">
                                     <div className="input-group" style={{ marginBottom: '24px' }}>
-                                        <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>Name of your Business, Shop, or Service?</label>
+                                        <label className="input-label" style={{ fontWeight: 500, color: '#0F172A' }}>Name of your Business, Shop, or Service?</label>
                                         <div style={{ position: 'relative' }}>
                                             <Store size={20} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }} />
                                             <input 
                                                 type="text" 
                                                 className="input-field" 
-                                                style={{ height: '60px', paddingLeft: '56px', fontSize: '1.1rem', fontWeight: 700 }}
+                                                style={{ height: '60px', paddingLeft: '56px', fontSize: '1.1rem', fontWeight: 400 }}
                                                 placeholder="e.g. Trendy Collections, John The Plumber" 
                                                 value={displayName} 
                                                 onChange={e => setDisplayName(e.target.value)} 
@@ -352,19 +352,19 @@ const Onboarding = () => {
                                         </div>
                                     </div>
                                     <div className="input-group" style={{ marginBottom: '40px' }}>
-                                        <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>WhatsApp for Kreddy Notifications</label>
+                                        <label className="input-label" style={{ fontWeight: 500, color: '#0F172A' }}>WhatsApp for Kreddy Notifications</label>
                                         <div style={{ position: 'relative' }}>
                                             <MessageCircle size={20} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }} />
                                             <input 
                                                 type="tel" 
                                                 className="input-field" 
-                                                style={{ paddingLeft: '56px', height: '60px', fontSize: '1.1rem', fontWeight: 700 }}
+                                                style={{ paddingLeft: '56px', height: '60px', fontSize: '1.1rem', fontWeight: 400 }}
                                                 placeholder="08123456789" 
                                                 value={whatsappNumber} 
                                                 onChange={e => setWhatsappNumber(e.target.value)} 
                                             />
                                         </div>
-                                        <p style={{ fontSize: '0.8rem', color: '#0F172A', marginTop: '8px', fontWeight: 600 }}>We'll use this to send you daily summaries and AI insights.</p>
+                                        <p style={{ fontSize: '0.8rem', color: '#0F172A', marginTop: '8px', fontWeight: 400 }}>We'll use this to send you daily summaries and AI insights.</p>
                                     </div>
                                     <div style={{ display: 'flex', gap: '16px' }}>
                                         <button onClick={nextStep} className="btn-primary" style={{ flex: 1, height: '64px', fontSize: '1.1rem' }}>Next: Payout Details <Landmark size={20} /></button>
@@ -379,8 +379,8 @@ const Onboarding = () => {
                                         <div style={{ width: '64px', height: '64px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'var(--primary)' }}>
                                             <Landmark size={32} />
                                         </div>
-                                        <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0F172A', marginBottom: '8px' }}>Payout Settlement</h3>
-                                        <p style={{ fontSize: '0.9rem', color: '#64748B', fontWeight: 600 }}>Where should we pay your money?</p>
+                                        <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', marginBottom: '8px' }}>Payout Settlement</h3>
+                                        <p style={{ fontSize: '0.9rem', color: '#64748B', fontWeight: 400 }}>Where should we pay your money?</p>
                                     </div>
 
                                     <div className="input-group" style={{ marginBottom: '24px' }}>
@@ -389,7 +389,7 @@ const Onboarding = () => {
                                             <input 
                                                 type="text" 
                                                 className="input-field" 
-                                                style={{ height: '56px', paddingLeft: '48px', fontSize: '1rem', fontWeight: 700 }}
+                                                style={{ height: '56px', paddingLeft: '48px', fontSize: '1rem', fontWeight: 400 }}
                                                 placeholder={banksLoading ? "Loading banks..." : "Search Bank (e.g. Kuda, GTB)"}
                                                 value={selectedBank ? selectedBank.name : searchBank}
                                                 onChange={e => { setSearchBank(e.target.value); setSelectedBank(null); }}
@@ -405,7 +405,7 @@ const Onboarding = () => {
                                                         <div 
                                                             key={b.code} 
                                                             onMouseDown={() => { setSelectedBank(b); setSearchBank(""); setAccountName(""); }} 
-                                                            style={{ padding: '14px 20px', cursor: 'pointer', borderBottom: '1px solid #F1F5F9', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '10px' }}
+                                                            style={{ padding: '14px 20px', cursor: 'pointer', borderBottom: '1px solid #F1F5F9', fontWeight: 500, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '10px' }}
                                                             onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'}
                                                             onMouseLeave={e => e.currentTarget.style.background = 'white'}
                                                         >
@@ -418,12 +418,12 @@ const Onboarding = () => {
                                         </div>
                                     </div>
                                     <div className="input-group" style={{ marginBottom: '24px' }}>
-                                        <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>Account Number</label>
+                                        <label className="input-label" style={{ fontWeight: 500, color: '#0F172A' }}>Account Number</label>
                                         <div style={{ position: 'relative' }}>
                                             <input 
                                                 type="text" 
                                                 className="input-field" 
-                                                style={{ height: '56px', fontSize: '1.2rem', fontWeight: 800, letterSpacing: '0.2em' }}
+                                                style={{ height: '56px', fontSize: '1.2rem', fontWeight: 600, letterSpacing: '0.2em' }}
                                                 placeholder="0123456789" 
                                                 maxLength={10}
                                                 value={accountNumber} 
@@ -435,19 +435,19 @@ const Onboarding = () => {
                                     {accountName && (
                                         <div style={{ background: '#F0FDF4', padding: '16px 20px', borderRadius: '16px', border: '1px solid #BBF7D0', marginBottom: '40px', display: 'flex', gap: '12px', alignItems: 'center' }}>
                                             <CheckCircle2 size={20} color="#16A34A" />
-                                            <span style={{ fontWeight: 900, color: '#166534', fontSize: '0.95rem' }}>{accountName}</span>
+                                            <span style={{ fontWeight: 600, color: '#166534', fontSize: '0.95rem' }}>{accountName}</span>
                                         </div>
                                     )}
                                     <div style={{ display: 'flex', gap: '16px' }}>
                                         <button onClick={nextStep} className="btn-primary" style={{ flex: 1, height: '64px', fontSize: '1.1rem' }}>Verify & Continue <ArrowRight size={20} /></button>
                                     </div>
-                                 </motion.div>
-                             )}
+                                </motion.div>
+                            )}
 
-                             {/* Step 4: Finishing Touches — Logo + Staff (Optional) */}
-                             {step === 4 && (
-                                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} key="staff">
-                                     {/* Logo Upload */}
+                            {/* Step 4: Finishing Touches — Logo + Staff (Optional) */}
+                            {step === 4 && (
+                                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} key="staff">
+                                    {/* Logo Upload */}
                                     <div style={{ textAlign: 'center', marginBottom: '32px' }}>
                                         <div
                                             onClick={() => fileInputRef.current.click()}
@@ -457,7 +457,7 @@ const Onboarding = () => {
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center', 
                                                 margin: '0 auto 12px', border: '3px dashed #E2E8F0', 
                                                 cursor: 'pointer', overflow: 'hidden',
-                                                fontWeight: 900, fontSize: '1.8rem', color: 'var(--primary)'
+                                                fontWeight: 600, fontSize: '1.8rem', color: 'var(--primary)'
                                             }}
                                         >
                                             {uploading ? (
@@ -468,25 +468,25 @@ const Onboarding = () => {
                                                 getInitials(displayName)
                                             )}
                                         </div>
-                                        <p style={{ fontWeight: 800, color: '#0F172A', cursor: 'pointer', marginBottom: '4px' }} onClick={() => fileInputRef.current.click()}>
+                                        <p style={{ fontWeight: 600, color: '#0F172A', cursor: 'pointer', marginBottom: '4px' }} onClick={() => fileInputRef.current.click()}>
                                             {logoUrl ? "Logo Uploaded ✓" : "Upload Brand Logo (Optional)"}
                                         </p>
-                                        <p style={{ fontSize: '0.78rem', color: '#0F172A', fontWeight: 600 }}>
+                                        <p style={{ fontSize: '0.78rem', color: '#0F172A', fontWeight: 400 }}>
                                             {logoUrl ? "Click to change" : "Your initials show until you add a logo — you can also do this in Settings later"}
                                         </p>
                                         <input ref={fileInputRef} type="file" hidden onChange={handleLogoUpload} accept="image/*" />
                                     </div>
 
                                     <div className="input-group" style={{ marginBottom: '40px' }}>
-                                        <label className="input-label" style={{ fontWeight: 800, color: '#0F172A' }}>Add Managers or Partners (Optional)</label>
-                                        <p style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '12px', fontWeight: 600 }}>They'll be able to record sales on WhatsApp too. You can add multiple.</p>
+                                        <label className="input-label" style={{ fontWeight: 500, color: '#0F172A' }}>Add Managers or Partners (Optional)</label>
+                                        <p style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '12px', fontWeight: 400 }}>They'll be able to record sales on WhatsApp too. You can add multiple.</p>
                                         <div style={{ display: 'flex', gap: '8px' }}>
                                             <div style={{ position: 'relative', flex: 1 }}>
                                                 <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }} />
                                                 <input 
                                                     type="tel" 
                                                     className="input-field" 
-                                                    style={{ height: '56px', paddingLeft: '48px', fontSize: '1rem', fontWeight: 700, width: '100%' }}
+                                                    style={{ height: '56px', paddingLeft: '48px', fontSize: '1rem', fontWeight: 400, width: '100%' }}
                                                     placeholder="Their Phone Number" 
                                                     value={newStaffPhone}
                                                     onChange={e => setNewStaffPhone(e.target.value)}
@@ -496,7 +496,7 @@ const Onboarding = () => {
                                         </div>
                                         {staffNumbers.length > 0 && (
                                             <div style={{ marginTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                                {staffNumbers.map(s => <div key={s} style={{ background: '#F1F5F9', padding: '6px 12px', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 800 }}>{s}</div>)}
+                                                {staffNumbers.map(s => <div key={s} style={{ background: '#F1F5F9', padding: '6px 12px', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 600 }}>{s}</div>)}
                                             </div>
                                         )}
                                     </div>
@@ -515,7 +515,7 @@ const Onboarding = () => {
                     </div>
 
                     <div style={{ marginTop: '32px', textAlign: 'center' }}>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 500, color: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                             <ShieldCheck size={16} color="#0F172A" /> DATA ENCRYPTED & BANK-GRADE SECURE
                         </p>
                     </div>
@@ -528,9 +528,9 @@ const Onboarding = () => {
                     .auth-logo-header { padding: 24px 20px 8px !important; }
                     .auth-logo-img { height: 28px !important; }
                     .glass-card { padding: 20px !important; border-radius: 20px !important; }
-                    .mobile-heading { font-weight: 800 !important; font-size: 1.6rem !important; }
-                    .mobile-text { font-weight: 500 !important; font-size: 0.95rem !important; line-height: 1.5 !important; }
-                    .input-label { font-size: 0.85rem !important; font-weight: 700 !important; }
+                    .mobile-heading { font-weight: 700 !important; font-size: 1.6rem !important; }
+                    .mobile-text { font-weight: 400 !important; font-size: 0.95rem !important; line-height: 1.5 !important; }
+                    .input-label { font-size: 0.85rem !important; font-weight: 500 !important; }
                     .input-field { height: 52px !important; font-size: 1rem !important; }
                     .btn-primary { height: 56px !important; font-size: 1.05rem !important; }
                 }
