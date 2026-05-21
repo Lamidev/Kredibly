@@ -35,19 +35,19 @@ const ForgotPassword = () => {
       maxWidth: '500px'
     }}>
       <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>Reset Password</h2>
-        <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>Enter your email to receive a 6-digit security code.</p>
+        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px', letterSpacing: '-0.03em', color: '#000000' }}>Reset Password</h2>
+        <p style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>Enter your email to receive a 6-digit security code.</p>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 600 }}>Email Address</label>
+          <label className="input-label" style={{ fontWeight: 500 }}>Email Address</label>
           <div style={{ position: 'relative' }}>
              <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
              <input
                type="email"
                className="input-field"
-               style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', background: 'var(--background)', fontWeight: 500 }}
+               style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', background: 'var(--background)', fontWeight: 400 }}
                placeholder="your@email.com"
                value={email}
                onChange={(e) => setEmail(e.target.value)}
@@ -64,7 +64,7 @@ const ForgotPassword = () => {
               height: '60px', 
               borderRadius: '16px', 
               fontSize: '1.1rem', 
-              fontWeight: 700, 
+              fontWeight: 600, 
               background: 'var(--primary)',
               boxShadow: '0 10px 20px -5px var(--primary-glow)' 
           }}
@@ -81,7 +81,7 @@ const ForgotPassword = () => {
           justifyContent: 'center',
           gap: '8px',
           color: 'var(--text-muted)',
-          fontWeight: 600,
+          fontWeight: 500,
           textDecoration: 'none',
           fontSize: '0.95rem'
         }}>

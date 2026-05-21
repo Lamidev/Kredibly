@@ -46,13 +46,13 @@ const Login = () => {
       maxWidth: '500px'
     }}>
       <div style={{ marginBottom: '32px' }}>
-        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>Welcome Back</h2>
-        <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>Login to your account to manage your business.</p>
+        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px', letterSpacing: '-0.03em', color: '#000000' }}>Welcome Back</h2>
+        <p style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>Login to your account to manage your business.</p>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 600 }}>Email Address</label>
+          <label className="input-label" style={{ fontWeight: 500 }}>Email Address</label>
           <div style={{ position: 'relative' }}>
             <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
             <input
@@ -64,7 +64,7 @@ const Login = () => {
                   borderRadius: '16px',
                   background: 'var(--background)',
                   fontSize: '1rem',
-                  fontWeight: 500,
+                  fontWeight: 400,
                   paddingLeft: '48px'
               }}
               placeholder="your@email.com"
@@ -77,8 +77,8 @@ const Login = () => {
 
         <div className="input-group">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <label className="input-label" style={{ margin: 0, fontWeight: 600 }}>Password</label>
-            <Link to="/auth/forgot-password" style={{ color: '#000000', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600 }}>Forgot password?</Link>
+            <label className="input-label" style={{ margin: 0, fontWeight: 500 }}>Password</label>
+            <Link to="/auth/forgot-password" style={{ color: '#000000', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 500 }}>Forgot password?</Link>
           </div>
           <div style={{ position: 'relative' }}>
             <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
@@ -93,7 +93,7 @@ const Login = () => {
                   paddingRight: '56px',
                   background: 'var(--background)',
                   fontSize: '1rem',
-                  fontWeight: 500  
+                  fontWeight: 400  
               }}
               placeholder="••••••••"
               value={password}
@@ -118,7 +118,7 @@ const Login = () => {
               height: '60px', 
               borderRadius: '16px', 
               fontSize: '1.1rem', 
-              fontWeight: 700, 
+              fontWeight: 600, 
               background: 'var(--primary)',
               boxShadow: '0 10px 20px -5px var(--primary-glow)' 
           }}
@@ -129,9 +129,9 @@ const Login = () => {
       </form>
 
       <div style={{ textAlign: 'center', marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--border)' }}>
-        <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+        <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', fontWeight: 400 }}>
           New to Kredibly? {" "}
-          <Link to="/auth/register" style={{ color: '#000000', fontWeight: 700, textDecoration: 'none' }}>Create an Account</Link>
+          <Link to="/auth/register" style={{ color: '#000000', fontWeight: 600, textDecoration: 'none' }}>Create an Account</Link>
         </p>
       </div>
     </div>

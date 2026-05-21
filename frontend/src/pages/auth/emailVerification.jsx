@@ -27,7 +27,7 @@ const EmailVerification = () => {
       </div>
 
       <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.2rem)', fontWeight: 700, marginBottom: '12px', color: '#000', letterSpacing: '-0.02em' }}>Check Your Inbox</h2>
-      <p style={{ color: '#6B7280', fontWeight: 500, fontSize: '1.1rem', lineHeight: 1.6, marginBottom: '32px' }}>
+      <p style={{ color: '#6B7280', fontWeight: 400, fontSize: '1.1rem', lineHeight: 1.6, marginBottom: '32px' }}>
         We've sent a verification link to your email address. Please click the link to activate your account.
       </p>
 
@@ -35,22 +35,22 @@ const EmailVerification = () => {
         <button
           onClick={() => window.open('https://mail.google.com', '_blank')}
           className="btn-primary"
-          style={{ width: '100%', height: '58px', borderRadius: '14px', fontSize: '1.1rem', fontWeight: 700, background: 'var(--primary)' }}
+          style={{ width: '100%', height: '58px', borderRadius: '14px', fontSize: '1.1rem', fontWeight: 600, background: 'var(--primary)' }}
         >
           Open Email App
         </button>
 
         <button
           onClick={() => navigate('/auth/login')}
-          style={{ width: '100%', height: '58px', borderRadius: '14px', fontSize: '1.1rem', fontWeight: 700, background: 'none', border: '1.5px solid #E5E7EB', color: '#374151', cursor: 'pointer' }}
+          style={{ width: '100%', height: '58px', borderRadius: '14px', fontSize: '1.1rem', fontWeight: 600, background: 'none', border: '1.5px solid #E5E7EB', color: '#374151', cursor: 'pointer' }}
         >
           Back to Login
         </button>
       </div>
 
-      <p style={{ marginTop: '32px', color: '#9CA3AF', fontSize: '0.95rem', fontWeight: 500 }}>
+      <p style={{ marginTop: '32px', color: '#9CA3AF', fontSize: '0.95rem', fontWeight: 400 }}>
         Didn't receive the link? <br />
-        <button style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer', padding: '4px' }}>
+        <button style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 600, cursor: 'pointer', padding: '4px' }}>
           Resend link
         </button>
       </p>

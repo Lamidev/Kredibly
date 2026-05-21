@@ -51,19 +51,19 @@ const Register = () => {
       maxWidth: '500px'
     }}>
       <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>Create Account</h2>
-        <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>Join Kredibly and start growing your business today.</p>
+        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px', letterSpacing: '-0.03em', color: '#000000' }}>Create Account</h2>
+        <p style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>Join Kredibly and start growing your business today.</p>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 600 }}>Full Name</label>
+          <label className="input-label" style={{ fontWeight: 500 }}>Full Name</label>
           <div style={{ position: 'relative' }}>
              <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
              <input
                type="text"
                className="input-field"
-               style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', background: 'var(--background)', fontWeight: 500 }}
+               style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', background: 'var(--background)', fontWeight: 400 }}
                placeholder="e.g. John Doe"
                value={formData.name}
                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -73,13 +73,13 @@ const Register = () => {
         </div>
 
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 600 }}>Email Address</label>
+          <label className="input-label" style={{ fontWeight: 500 }}>Email Address</label>
           <div style={{ position: 'relative' }}>
              <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
              <input
                type="email"
                className="input-field"
-               style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', background: 'var(--background)', fontWeight: 500 }}
+               style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', background: 'var(--background)', fontWeight: 400 }}
                placeholder="your@email.com"
                value={formData.email}
                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -89,13 +89,13 @@ const Register = () => {
         </div>
 
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 600 }}>Password</label>
+          <label className="input-label" style={{ fontWeight: 500 }}>Password</label>
           <div style={{ position: 'relative' }}>
             <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
             <input
               type={showPassword ? "text" : "password"}
               className="input-field"
-              style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', paddingRight: '52px', background: 'var(--background)', fontWeight: 500 }}
+              style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', paddingRight: '52px', background: 'var(--background)', fontWeight: 400 }}
               placeholder="8+ chars, 1 number & 1 symbol"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -109,7 +109,7 @@ const Register = () => {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 600 }}>Must include a number and a special character (e.g. !@#)</p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 500 }}>Must include a number and a special character (e.g. !@#)</p>
         </div>
 
         <button
@@ -121,7 +121,7 @@ const Register = () => {
               height: '60px', 
               borderRadius: '16px', 
               fontSize: '1.1rem', 
-              fontWeight: 700, 
+              fontWeight: 600, 
               background: 'var(--primary)',
               marginTop: '8px',
               cursor: 'pointer',
@@ -133,9 +133,9 @@ const Register = () => {
       </form>
 
       <div style={{ textAlign: 'center', marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--border)' }}>
-        <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+        <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', fontWeight: 400 }}>
           Already have an account? {" "}
-          <Link to="/auth/login" style={{ color: '#000000', fontWeight: 700, textDecoration: 'none' }}>Login instead</Link>
+          <Link to="/auth/login" style={{ color: '#000000', fontWeight: 600, textDecoration: 'none' }}>Login instead</Link>
         </p>
       </div>
     </div>

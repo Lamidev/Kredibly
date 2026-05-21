@@ -50,19 +50,19 @@ const ResetPassword = () => {
       maxWidth: '500px'
     }}>
       <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 950, marginBottom: '8px', letterSpacing: '-0.04em', color: '#000000' }}>Reset Password</h2>
-        <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>Securely update your credentials.</p>
+        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px', letterSpacing: '-0.03em', color: '#000000' }}>Reset Password</h2>
+        <p style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>Securely update your credentials.</p>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 600 }}>Security Code</label>
+          <label className="input-label" style={{ fontWeight: 500 }}>Security Code</label>
           <div style={{ position: 'relative' }}>
              <Key size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
              <input
                type="text"
                className="input-field security-code-input"
-               style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', background: 'var(--background)', fontWeight: 700, fontSize: '1.2rem' }}
+               style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', background: 'var(--background)', fontWeight: 600, fontSize: '1.2rem' }}
                placeholder="Enter 6-digit code"
                value={formData.code}
                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
@@ -74,13 +74,13 @@ const ResetPassword = () => {
         </div>
 
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 600 }}>New Password</label>
+          <label className="input-label" style={{ fontWeight: 500 }}>New Password</label>
           <div style={{ position: 'relative' }}>
             <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
             <input
               type={showPassword ? "text" : "password"}
               className="input-field"
-              style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', paddingRight: '52px', background: 'var(--background)', fontWeight: 500 }}
+              style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', paddingRight: '52px', background: 'var(--background)', fontWeight: 400 }}
               placeholder="8+ chars, 1 number & 1 symbol"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -94,17 +94,17 @@ const ResetPassword = () => {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 600 }}>Must include a number and a special character (e.g. !@#)</p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 500 }}>Must include a number and a special character (e.g. !@#)</p>
         </div>
 
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 600 }}>Confirm Password</label>
+          <label className="input-label" style={{ fontWeight: 500 }}>Confirm Password</label>
           <div style={{ position: 'relative' }}>
             <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
             <input
               type="password"
               className="input-field"
-              style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', background: 'var(--background)', fontWeight: 500 }}
+              style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', background: 'var(--background)', fontWeight: 400 }}
               placeholder="Confirm new password"
               value={formData.confirmPassword}
               onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
@@ -121,7 +121,7 @@ const ResetPassword = () => {
               height: '60px', 
               borderRadius: '16px', 
               fontSize: '1.1rem', 
-              fontWeight: 700, 
+              fontWeight: 600, 
               background: 'var(--primary)',
               marginTop: '8px',
               boxShadow: '0 10px 20px -5px var(--primary-glow)' 
@@ -139,7 +139,7 @@ const ResetPassword = () => {
           justifyContent: 'center',
           gap: '8px',
           color: 'var(--text-muted)',
-          fontWeight: 600,
+          fontWeight: 500,
           textDecoration: 'none',
           fontSize: '0.95rem'
         }}>
