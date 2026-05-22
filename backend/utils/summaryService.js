@@ -42,11 +42,9 @@ const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
                              profile.lastInboundAt && 
                              (now - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
 
-        const isProUser = profile.plan === "oga" || profile.plan === "chairman";
-
-        if ((isInsideWindow || isProUser) && profile.whatsappNumber) {
-            // 🟢 GROUP 1: FULL ACCOUNTANT SUMMARY (WhatsApp)
-            console.log(`📡 [ACTIVE/PRO] Preparing Full Summary for ${profile.displayName} on WhatsApp...`);
+        if (isInsideWindow && profile.whatsappNumber) {
+            // 🟢 GROUP 1: FULL ACCOUNTANT SUMMARY (WhatsApp - Active Inside 24h Window)
+            console.log(`📡 [ACTIVE] Preparing Full Summary for ${profile.displayName} on WhatsApp...`);
 
             // Fetch Data for Report
             const startOfYesterday = new Date(startOfToday);
@@ -108,38 +106,7 @@ const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
 
             const message = `Good morning, ${bossTitle}! 🌅\n\n📊 *Yesterday's Performance:*\n💰 Cash Collected: *₦${totalCashIn.toLocaleString()}*\n📑 New Invoices: *${salesYesterday.length}* (₦${salesYesterday.reduce((sum, s) => sum + s.totalAmount, 0).toLocaleString()})\n⏳ Debt Recorded: *₦${pendingDebt.toLocaleString()}*\n\n${agendaSection}${debtorSection}💡 *Today's Kreddy Tip:*\n${dailyTip}\n\n_Let's scale your empire today!_ 🛡️`;
 
-            let sent = false;
-            if (isInsideWindow) {
-                sent = await sendWhatsAppMessage(profile.whatsappNumber, message);
-            } else {
-                // Closed window but PRO user -> Use Teaser Alert + Stored Session
-                const { sendWhatsAppAlert } = require("../controllers/whatsapp/whatsappController");
-                const WhatsAppSession = require("../models/WhatsAppSession");
-                
-                const cleanNumber = String(profile.whatsappNumber).replace(/\D/g, '');
-                let finalNum = cleanNumber;
-                if (finalNum.startsWith('0') && finalNum.length === 11) {
-                    finalNum = '234' + finalNum.slice(1);
-                }
-
-                // Create or update pending summary session (24h expiry)
-                await WhatsAppSession.findOneAndUpdate(
-                    { whatsappNumber: finalNum },
-                    {
-                        type: "pending_summary",
-                        data: { summaryText: message },
-                        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
-                    },
-                    { upsert: true, new: true }
-                );
-
-                const hasActivity = salesYesterday.length > 0 || totalCashIn > 0 || pendingDebt > 0;
-                const teaserMsg = hasActivity
-                    ? "Your morning performance summary is ready! 📊 We tracked some clean numbers yesterday. Reply 'yes' to see the full breakdown and unlock today's Kreddy Tip! 🚀🛡️"
-                    : "Good morning, Boss! 🌅 Your performance overview is ready. Let's prep the ledger for a big day of wins today! Reply 'yes' to view and unlock today's Kreddy Tip! 🚀🛡️";
-
-                sent = await sendWhatsAppAlert(profile.whatsappNumber, bossTitle, teaserMsg);
-            }
+            const sent = await sendWhatsAppMessage(profile.whatsappNumber, message);
 
             if (sent) {
                 console.log(`✅ [WHATSAPP] Summary delivered to ${profile.displayName}.`);
