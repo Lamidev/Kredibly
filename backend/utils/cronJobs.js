@@ -569,7 +569,7 @@ const startBackgroundJobRunner = () => {
                     }
 
                     // 3. Finalize Job
-                    if (result.status === "completed" || result.status === "skipped") {
+                    if (result.status === "completed" || result.status === "skipped" || result.status === "sent") {
                         job.status = "completed";
                         job.completedAt = new Date();
                         job.error = null;
