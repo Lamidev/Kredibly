@@ -20,16 +20,27 @@ jobs:
           port: 22
           script: |
             echo "🚀 Starting Deployment..."
-            cd ~/Kredibly/backend
+            cd ~/Kredibly
             
             # Force clean pull (prevents package-lock and other file conflicts)
             git fetch origin main
             git reset --hard origin/main
             
-            # Install dependencies
+            # 1. Deploy Backend
+            echo "📦 Deploying Backend..."
+            cd ~/Kredibly/backend
             npm install
-            
-            # Restart the service with updated env
             pm2 restart 0 --update-env
+            
+            # 2. Deploy Frontend
+            echo "📦 Deploying Frontend..."
+            cd ~/Kredibly/frontend
+            npm install
+            VITE_API_BASE_URL=https://api.usekredibly.com/api npm run build
+            
+            # Copy built static files to Nginx folder
+            mkdir -p /var/www/usekredibly.com/html
+            rm -rf /var/www/usekredibly.com/html/*
+            cp -r dist/* /var/www/usekredibly.com/html/
             
             echo "✅ Deployment Complete!"

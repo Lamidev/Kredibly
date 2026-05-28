@@ -13,13 +13,15 @@ const initialState = {
   message: null
 };
 
+const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+
 // Register Business
 export const registerBusiness = createAsyncThunk(
   "auth/register",
   async (formData, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/auth/register`,
+        `${API_URL}/auth/register`,
         formData
       );
       localStorage.setItem("emailForVerification", formData.email);
@@ -38,7 +40,7 @@ export const loginBusiness = createAsyncThunk(
   async (formData, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`,
+        `${API_URL}/auth/login`,
         formData
       );
       return response.data;
@@ -56,7 +58,7 @@ export const verifyEmail = createAsyncThunk(
   async (code, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/auth/verify-email`,
+        `${API_URL}/auth/verify-email`,
         { code }
       );
       return response.data;
@@ -77,7 +79,7 @@ export const resendVerificationCode = createAsyncThunk(
       if (!email) throw new Error("No email found for verification");
       
       const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/auth/resend-verification`,
+        `${API_URL}/auth/resend-verification`,
         { email }
       );
       return response.data;
@@ -95,7 +97,7 @@ export const forgotPassword = createAsyncThunk(
   async (email, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/auth/forgot-password`,
+        `${API_URL}/auth/forgot-password`,
         { email }
       );
       return response.data;
@@ -113,7 +115,7 @@ export const resetPassword = createAsyncThunk(
   async ({ token, password }, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/auth/reset-password/${token}`,
+        `${API_URL}/auth/reset-password/${token}`,
         { password }
       );
       return response.data;
@@ -130,7 +132,7 @@ export const logoutBusiness = createAsyncThunk(
   "auth/logoutBusiness",
   async (_, { rejectWithValue }) => {
     try {
-      await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/logout`);
+      await axios.post(`${API_URL}/auth/logout`);
       return {};
     } catch (error) {
       return rejectWithValue(
@@ -146,7 +148,7 @@ export const checkAuth = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/api/auth/check-auth`
+        `${API_URL}/auth/check-auth`
       );
       return response.data;
     } catch (error) {
