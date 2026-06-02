@@ -178,6 +178,7 @@ const LandingPage = () => {
                 "Everything in Hustler Plan",
                 "Unlimited Sales Records",
                 "Kreddy Voice Notes (Just speak!)",
+                "8 AM Morning Business Brief",
                 "Add 1 Staff Member",
                 "Co-Branded Receipts (Your Logo)",
                 "Advanced AI Recovery Assistant"
@@ -199,8 +200,7 @@ const LandingPage = () => {
                 "Everything in Oga Plan",
                 "White-Label Receipts (Only Your Logo)",
                 "Up to 3 Staff & Offices",
-                "WhatsApp Image Sync (Automatic)",
-                "8 AM Executive Intelligence Brief",
+                "Paper Invoice Scanning",
                 "Priority Vault & Support"
             ],
             cta: profile?.plan === "chairman" ? "Current Plan" : profile ? "Lead Your Empire" : "Claim Chairman Title",
@@ -310,33 +310,6 @@ const LandingPage = () => {
                     transition={{ duration: 0.8 }}
                     style={{ textAlign: 'center', maxWidth: '1000px', margin: '0 auto', position: 'relative', zIndex: 10 }}
                 >
-                    {/* Velocity Ticker / Social Proof Badge */}
-                    <motion.div
-                        className="glass-premium animate-float"
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            padding: '8px 16px',
-                            borderRadius: '100px',
-                            marginBottom: '24px',
-                            fontSize: '0.85rem',
-                            fontWeight: 700,
-                            color: 'var(--primary)'
-                        }}
-                    >
-                        <span style={{ display: 'flex', gap: '4px' }}>
-                            {[1, 2, 3].map(i => (
-                                <motion.div 
-                                    key={i}
-                                    animate={{ opacity: [0.3, 1, 0.3] }}
-                                    transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.2 }}
-                                    style={{ width: '6px', height: '6px', background: 'var(--success)', borderRadius: '50%' }} 
-                                />
-                            ))}
-                        </span>
-                        <span>₦1.2M+ Settled Instantly Today</span>
-                    </motion.div>
 
                     <h1 style={{ 
                         fontSize: 'clamp(2.5rem, 8vw, 5.5rem)', 
@@ -376,7 +349,7 @@ const LandingPage = () => {
                         marginInline: 'auto',
                         fontWeight: 400
                     }}>
-                        The most powerful workspace for the modern Nigerian merchant. Use <b>Kreddy AI</b> to record sales by simply speaking, let our <b>AI Recovery Engine</b> chase down debts on autopilot, and enjoy <b>Instant Bank Sweeps</b> with zero transfer fees. Your money lands exactly where it belongs: in your bank account, immediately.
+                        The most powerful workspace for the modern Nigerian merchant. Use <b>Kreddy AI</b> to record sales, let our <b>AI Recovery Engine</b> chase down debts on autopilot, and enjoy <b>Instant Bank Sweeps</b> with zero transfer fees. Your money lands exactly where it belongs: in your bank account, immediately.
                     </p>
                     <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
                         <Link to="/auth/register" className="btn-primary btn-magnetic" style={{ padding: '20px 40px', fontSize: '1.1rem', borderRadius: '18px' }}>
@@ -415,7 +388,7 @@ const LandingPage = () => {
                     <div className="bento-item bento-3" style={{ background: 'white', position: 'relative', overflow: 'hidden' }}>
                         <div style={{ position: 'relative', zIndex: 2 }}>
                             <h4 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '12px' }}>Automated Ledger Intelligence</h4>
-                            <p style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 400 }}>Forward bank slips to Kreddy. She matches them to invoices and updates your ledger instantly.</p>
+                            <p style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 400 }}>Send paper invoices or store receipts to Kreddy. She reads the details and logs the sales instantly.</p>
                         </div>
                         <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.05 }}><Lock size={200} color="#7C3AED" /></div>
                     </div>
@@ -512,7 +485,7 @@ const LandingPage = () => {
                     <div style={{ textAlign: 'center', marginBottom: 'clamp(40px, 8vw, 80px)' }}>
                         <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 700, fontSize: 'clamp(0.7rem, 2vw, 0.85rem)', letterSpacing: '0.05em' }}>100% INSTANT SETTLEMENTS & ZERO BANK FEES</div>
                         <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 4rem)', fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Premium Pricing. <br /><span className="premium-gradient">Unlimited Growth.</span></h2>
-                        <p style={{ fontSize: 'clamp(0.9rem, 2.5vw, 1.2rem)', color: '#64748B', marginTop: '20px', maxWidth: '600px', margin: '20px auto 48px' }}>Choose the plan that fits your ambition. No hidden bank charges, no transaction commissions — just pure business power.</p>
+                        <p style={{ fontSize: 'clamp(0.9rem, 2.5vw, 1.2rem)', color: '#64748B', marginTop: '20px', maxWidth: '600px', margin: '20px auto 48px' }}>Choose the plan that fits your ambition. No hidden bank charges, no transaction commissions, just pure business power.</p>
                     </div>
 
                     <div className="lp-pricing-grid">
@@ -529,7 +502,7 @@ const LandingPage = () => {
                                         padding: '6px 16px',
                                         borderRadius: '100px',
                                         fontSize: '0.7rem',
-                                        fontWeight: 900,
+                                        fontWeight: 800,
                                         boxShadow: '0 8px 16px rgba(76, 29, 149, 0.2)',
                                         zIndex: 10,
                                         letterSpacing: '0.05em',
@@ -537,7 +510,7 @@ const LandingPage = () => {
                                     }}>MOST POPULAR</div>
                                 )}
 
-                                <h3 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', fontWeight: 900, marginBottom: '6px' }}>{plan.name}</h3>
+                                <h3 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', fontWeight: 800, marginBottom: '6px' }}>{plan.name}</h3>
                                 <p style={{ opacity: 0.7, fontSize: '0.9rem', fontWeight: 600, marginBottom: '24px', lineHeight: 1.4 }}>{plan.description}</p>
                                 
                                 <div style={{ marginBottom: '32px' }}>
@@ -554,7 +527,7 @@ const LandingPage = () => {
                                 <button 
                                     onClick={plan.ctaAction}
                                     className={plan.highlight ? "btn-primary" : "btn-secondary"} 
-                                    style={{ width: '100%', marginBottom: '32px', justifyContent: 'center', height: '58px', borderRadius: '18px', fontSize: '1rem', fontWeight: 900, boxShadow: plan.highlight ? '0 15px 30px -5px rgba(124, 58, 237, 0.4)' : 'none' }}
+                                    style={{ width: '100%', marginBottom: '32px', justifyContent: 'center', height: '58px', borderRadius: '18px', fontSize: '1rem', fontWeight: 800, boxShadow: plan.highlight ? '0 15px 30px -5px rgba(124, 58, 237, 0.4)' : 'none' }}
                                 >
                                     {plan.cta} <ArrowRight size={18} strokeWidth={3} />
                                 </button>
@@ -834,9 +807,8 @@ const LandingPage = () => {
                             { date: "SEPT '25", title: "Strategic Architecture", desc: "Core blueprinting of the Kredibly workspace and AI interface flow.", status: "completed" },
                             { date: "DEC '25", title: "Kreddy AI Core", desc: "Intelligence engine development. Teaching Kreddy to understand merchant slang and complex debts.", status: "completed" },
                             { date: "JAN '26", title: "Premium Platform UX", desc: "Rollout of smart telemetry, professional document generators, and cross-device syncing.", status: "done" },
-                            { date: "JAN '26: MAY '26", title: "Pioneer Program", desc: "Onboarding our first 1,000 pioneers. Lifetime status and exclusive rewards for our founding merchants.", status: "completed", isFounding: true },
-                            { date: "JUNE 1ST", title: "Public Launch", desc: "Opening the ecosystem for public merchant registration and global transactions. Kredibly goes live for everyone.", status: "active" },
-                            { date: "Q3 2026", title: "Kredibly Mobile (Native)", desc: "Your entire business in your pocket. Offline-first, biometric security, and instant push intelligence.", status: "future", isMobile: true }
+                            { date: "JAN '26: JUNE '26", title: "Pioneer Program", desc: "Onboarding our first 1,000 pioneers. Lifetime status and exclusive rewards for our founding merchants.", status: "active", isFounding: true },
+                            { date: "JULY 1ST", title: "Public Launch", desc: "Opening the ecosystem for public merchant registration and global transactions. Kredibly goes live for everyone.", status: "future" }
                         ].map((m, i) => (
                             <motion.div 
                                 key={i}
@@ -993,7 +965,7 @@ const LandingPage = () => {
                 }
                 .lp-price-main {
                     font-size: clamp(2rem, 4vw, 3.2rem);
-                    font-weight: 950;
+                    font-weight: 800;
                     letter-spacing: -0.04em;
                     line-height: 1;
                 }

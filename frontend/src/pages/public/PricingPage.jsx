@@ -50,6 +50,7 @@ const PricingPage = () => {
                 "Everything in Hustler Plan",
                 "Unlimited Sales Records",
                 "Kreddy Voice Notes (Just speak!)",
+                "8 AM Morning Business Brief",
                 "Add 1 Staff Member",
                 "Co-Branded Receipts (Your Logo)",
                 "Advanced AI Recovery Assistant"
@@ -71,9 +72,8 @@ const PricingPage = () => {
             features: [
                 "Everything in Oga Plan",
                 "White-Label Receipts (Only Your Logo)",
-                "Unlimited Staff & Offices",
-                "WhatsApp Image Sync (Automatic)",
-                "8 AM Executive Intelligence Brief",
+                "Up to 3 Staff & Offices",
+                "Paper Invoice Scanning",
                 "Priority Vault & Support"
             ],
             cta: profile?.plan === "chairman" ? "Current Plan" : profile ? "Lead Your Empire" : "Claim Chairman Title",
@@ -93,7 +93,7 @@ const PricingPage = () => {
                 
                 <div style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto' }}>
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                        <h1 style={{ fontSize: 'clamp(3rem, 7vw, 5rem)', fontWeight: 950, letterSpacing: '-0.05em', lineHeight: 1, marginBottom: '24px' }}>
+                        <h1 style={{ fontSize: 'clamp(3rem, 7vw, 5rem)', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 1, marginBottom: '24px' }}>
                             Simple Pricing.<br />
                             <span className="premium-gradient">Unlimited Growth.</span>
                         </h1>
@@ -110,12 +110,12 @@ const PricingPage = () => {
                     {plans.map((plan, i) => (
                         <div key={i} className={`pp-pricing-card ${plan.highlight ? 'pp-pricing-card--featured' : ''}`} style={{ position: 'relative' }}>
                             {plan.isPopular && (
-                                <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: 'var(--primary)', color: 'white', padding: '6px 16px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 900, whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(76, 29, 149, 0.2)' }}>
+                                <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: 'var(--primary)', color: 'white', padding: '6px 16px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 800, whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(76, 29, 149, 0.2)' }}>
                                     MOST POPULAR
                                 </div>
                             )}
                             
-                            <h3 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', fontWeight: 900, marginBottom: '8px' }}>{plan.name}</h3>
+                            <h3 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', fontWeight: 800, marginBottom: '8px' }}>{plan.name}</h3>
                             <p style={{ opacity: 0.7, fontSize: '0.9rem', fontWeight: 600, marginBottom: '24px', lineHeight: 1.5 }}>{plan.description}</p>
                             
                             <div style={{ marginBottom: '32px' }}>
@@ -132,7 +132,7 @@ const PricingPage = () => {
                             <button 
                                 onClick={plan.ctaAction}
                                 className={plan.highlight ? "btn-primary" : "btn-secondary"} 
-                                style={{ width: '100%', marginBottom: '32px', justifyContent: 'center', height: '58px', borderRadius: '18px', fontSize: '1rem', fontWeight: 900, boxShadow: plan.highlight ? '0 15px 30px -5px rgba(124, 58, 237, 0.4)' : 'none' }}
+                                style={{ width: '100%', marginBottom: '32px', justifyContent: 'center', height: '58px', borderRadius: '18px', fontSize: '1rem', fontWeight: 800, boxShadow: plan.highlight ? '0 15px 30px -5px rgba(124, 58, 237, 0.4)' : 'none' }}
                             >
                                 {plan.cta} <ArrowRight size={18} strokeWidth={3} />
                             </button>
@@ -162,7 +162,7 @@ const PricingPage = () => {
             <section style={{ padding: '80px 24px', background: 'white' }}>
                 <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-                        <h2 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.5rem)', fontWeight: 900, letterSpacing: '-0.04em', marginBottom: '16px' }}>Compare All Plans</h2>
+                        <h2 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.5rem)', fontWeight: 800, letterSpacing: '-0.04em', marginBottom: '16px' }}>Compare All Plans</h2>
                         <p style={{ color: '#64748B', fontSize: '1.1rem', fontWeight: 600 }}>Professional tools for professional businesses.</p>
                     </div>
 
@@ -182,14 +182,14 @@ const PricingPage = () => {
                                         { name: "WhatsApp AI Assistant (Text)", hustler: true, oga: true, chairman: true },
                                         { name: "Kreddy Voice Assistant", hustler: false, oga: true, chairman: true },
                                         { name: "Instant Bank Settlements", hustler: true, oga: true, chairman: true },
-                                        { name: "Morning Business Briefing", hustler: false, oga: false, chairman: true },
+                                        { name: "Morning Business Briefing", hustler: false, oga: true, chairman: true },
                                         { name: "Automated Ledger Sync", hustler: true, oga: true, chairman: true }
                                     ]},
                                     { category: "Business Management", features: [
                                         { name: "Sales Records Limit", hustler: "50 / mo", oga: "Unlimited", chairman: "Unlimited" },
                                         { name: "Staff Members", hustler: "0", oga: "1", chairman: "3" },
                                         { name: "Multi-Office / Branches", hustler: false, oga: false, chairman: true },
-                                        { name: "WhatsApp Image Sync", hustler: false, oga: false, chairman: true }
+                                        { name: "Paper Invoice Scanning", hustler: false, oga: false, chairman: true }
                                     ]},
                                     { category: "Receipts & Branding", features: [
                                         { name: "Digital Receipts", hustler: true, oga: true, chairman: true },
@@ -237,7 +237,7 @@ const PricingPage = () => {
             {/* AI Call to Action */}
             <section style={{ padding: '80px 24px', background: 'white' }}>
                 <div className="pricing-cta-box" style={{ maxWidth: '1000px', margin: '0 auto', background: '#F5F3FF', padding: '60px', borderRadius: '48px', border: '1px solid rgba(124, 58, 237, 0.1)', textAlign: 'center' }}>
-                    <h2 style={{ fontSize: '2.5rem', fontWeight: 950, letterSpacing: '-0.04em', marginBottom: '24px' }}>Build your empire. <br /><span className="premium-gradient">Try Chairman Free.</span></h2>
+                    <h2 style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.04em', marginBottom: '24px' }}>Build your empire. <br /><span className="premium-gradient">Try Chairman Free.</span></h2>
                     <p style={{ fontSize: '1.15rem', color: '#4C1D95', fontWeight: 700, marginBottom: '40px', maxWidth: '600px', margin: '0 auto 40px' }}>
                         Get 14 days of unlimited staff, AI voice notes, and executive briefings. Switch to any plan anytime.
                     </p>
@@ -293,7 +293,7 @@ const PricingPage = () => {
                 }
                 .pp-price-main {
                     font-size: clamp(2rem, 4vw, 3.2rem);
-                    font-weight: 950;
+                    font-weight: 800;
                     letter-spacing: -0.04em;
                     line-height: 1;
                 }
