@@ -11,7 +11,7 @@ const extendTrials = async () => {
         const statuses = await BusinessProfile.aggregate([{ $group: { _id: "$planStatus", count: { $sum: 1 } } }]);
         console.log("Current Status Counts:", JSON.stringify(statuses));
 
-        const newExpiry = new Date('2026-06-01T00:00:00Z');
+        const newExpiry = new Date('2026-07-01T00:00:00Z');
         
         console.log(`⏳ Updating all 'trialing' profiles to expire on ${newExpiry.toDateString()}...`);
         

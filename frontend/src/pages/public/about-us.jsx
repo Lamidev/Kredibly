@@ -58,9 +58,8 @@ const AboutUs = () => {
                             { date: "JULY '25", title: "The Genesis", desc: "Concept & Research Phase. Identifying the 'Trust Gap' in African commerce.", status: "completed" },
                             { date: "SEPT '25", title: "Strategic Architecture", desc: "Core blueprinting of the Kredibly ledger and AI interface flow.", status: "completed" },
                             { date: "DEC '25", title: "Kreddy AI Core", desc: "Intelligence engine development. Teaching Kreddy to understand merchant slang and complex debts.", status: "completed" },
-                            { date: "JAN '26 - MAY '26", title: "Pioneer Program", desc: "Onboarding our first 1,000 pioneers. Early access rewards and lifetime status for our founding merchants.", status: "completed" },
-                            { date: "JUNE 1ST '26", title: "Global Public Launch", desc: "Opening the ecosystem for public merchant registration and global transactions. The OS for African commerce goes live.", status: "active" },
-                            { date: "Q3 2026", title: "Kredibly Mobile (Native)", desc: "The full ledger in your pocket. Offline-first, biometric security, and instant push intelligence.", status: "future" }
+                            { date: "JAN '26 - JUNE '26", title: "Pioneer Program", desc: "Onboarding our first 1,000 pioneers. Early access rewards and lifetime status for our founding merchants.", status: "active" },
+                            { date: "JULY 1ST '26", title: "Global Public Launch", desc: "Opening the ecosystem for public merchant registration and global transactions. The OS for African commerce goes live.", status: "future" }
                         ].map((m, i) => (
                             <motion.div 
                                 key={i}

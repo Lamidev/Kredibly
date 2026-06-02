@@ -100,6 +100,7 @@ exports.updateProfile = async (req, res) => {
             if (wasIncomplete && profile.onboardingStep === 4 && !profile.welcomeSent) {
                 profile.trialExpiresAt = expiryDate;
                 profile.welcomeSent = true;
+                profile.isKreddyConnected = true; // Prevent duplicate connection welcome
                 await profile.save();
                 triggerWelcomeMessage(profile).catch(err => console.error("Auto Welcome Fail:", err));
             }
@@ -132,6 +133,7 @@ exports.updateProfile = async (req, res) => {
 
             if (profile.onboardingStep === 4) {
                 profile.welcomeSent = true;
+                profile.isKreddyConnected = true; // Prevent duplicate connection welcome
                 await profile.save();
                 triggerWelcomeMessage(profile).catch(err => console.error("Auto Welcome Fail:", err));
             }
