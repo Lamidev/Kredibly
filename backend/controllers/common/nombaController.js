@@ -82,7 +82,7 @@ exports.initializeNombaAccount = async (req, res) => {
             reference: nombaData.reference,
             accountName: nombaData.accountName,
             amount: amountToCharge,
-            baseAmount: absorbFee ? FINANCIAL_CONFIG.calculateNetAmount(requestedAmount) : requestedAmount,
+            baseAmount: requestedAmount,
             status: 'active',
             expiresAt: new Date(nombaData.expiresAt)
         });
