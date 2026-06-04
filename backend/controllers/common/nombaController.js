@@ -182,16 +182,40 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
         if (!sale) return { success: false, message: "Sale not found" };
 
         const business = sale.businessId;
-        const creditAmount = vaRecord.baseAmount || amount; 
 
-        // Update Sale Ledger
+        // ✅ The invoice ALWAYS logs the base amount the DVA was generated for.
+        // This represents the invoice debt, regardless of what was actually transferred.
+        const creditAmount = vaRecord.baseAmount || amount;
+
+        // Determine payment scenario for merchant notification
+        const tolerance = 5; // ₦5 tolerance for floating point / rounding edge cases
+        const diff = amount - vaRecord.amount; // positive = overpaid, negative = underpaid
+        const isExact = Math.abs(diff) <= tolerance;
+        const isUnderpaid = diff < -tolerance;
+        const isOverpaid = diff > tolerance;
+
+        // Calculate expected new status based on payments
+        const totalPaidSoFar = sale.payments.reduce((sum, p) => sum + p.amount, 0);
+        const newTotalPaid = totalPaidSoFar + creditAmount;
+        let newStatus = 'unpaid';
+        if (newTotalPaid >= sale.totalAmount) {
+            newStatus = 'paid';
+        } else if (newTotalPaid > 0) {
+            newStatus = 'partial';
+        }
+
+        // 🔐 Update Sale Ledger atomically — push payment AND update status in one query
         const updatedSale = await Sale.findOneAndUpdate(
             { _id: sale._id, "payments.reference": { $ne: accountReference } },
-            { $push: { payments: { amount: creditAmount, method: 'Nomba', reference: accountReference, externalReference: transactionReference, date: new Date() } } },
+            { 
+                $push: { payments: { amount: creditAmount, method: 'Nomba', reference: accountReference, externalReference: transactionReference, date: new Date() } },
+                $set: { status: newStatus }
+            },
             { new: true }
         );
 
         if (!updatedSale) {
+            // Duplicate webhook — mark VA used and bail
             vaRecord.status = 'used';
             await vaRecord.save();
             return { success: true, message: "Duplicate avoided" };
@@ -200,18 +224,40 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
         vaRecord.status = 'used';
         await vaRecord.save();
 
+        const totalPaid = updatedSale.payments.reduce((sum, p) => sum + p.amount, 0);
+        const balanceRemaining = Math.max(0, sale.totalAmount - totalPaid);
+
+        // ⚡ REAL-TIME SOCKET UPDATE (Public Invoice Page + Merchant Dashboard)
         const { getIO } = require('../../utils/socket');
         const io = getIO();
         if (io) {
-            io.to(sale._id.toString()).emit('payment_detected', {
+            const payload = {
                 saleId: sale._id,
+                invoiceId: sale.invoiceNumber,
+                invoiceNumber: sale.invoiceNumber,
                 amount: creditAmount,
-                status: 'paid'
-            });
+                customerName: sale.customerName,
+                status: updatedSale.status,
+                balance: balanceRemaining,
+                amountPaid: creditAmount
+            };
+
+            // Emit to business room (merchant dashboard)
+            if (business && business._id) {
+                io.to(business._id.toString().toLowerCase()).emit('sale_updated', payload);
+            }
+
+            // Emit to invoice-specific rooms (public invoice page — all possible room formats)
+            io.to(`invoice:${sale.invoiceNumber.toLowerCase()}`).emit('sale_updated', payload);
+            io.to(`invoice:${sale._id.toString().toLowerCase()}`).emit('sale_updated', payload);
+            if (sale.publicSlug) {
+                io.to(`invoice:${sale.publicSlug.toLowerCase()}`).emit('sale_updated', payload);
+            }
         }
 
         // 🚀 PERSISTENT AUTO-SWEEP LOGIC
-        // Instead of volatile setTimeout, we log it in the DB first for reliability.
+        // Sweep the actual net of what Nomba received (based on real transfer amount).
+        // This may differ from creditAmount when there's an underpayment or overpayment.
         (async () => {
             try {
                 const Settlement = require('../../models/Settlement');
@@ -222,10 +268,10 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                     return;
                 }
 
-                const actualNet = FINANCIAL_CONFIG.calculateNetAmount(amount);
-                const sweepAmount = Math.min(creditAmount, actualNet);
+                // Sweep the net of the ACTUAL amount that landed in Nomba wallet
+                const sweepAmount = FINANCIAL_CONFIG.calculateNetAmount(amount);
 
-                // 1. Create Persistent Record
+                // 1. Create Persistent Settlement Record
                 const settlement = await Settlement.create({
                     businessId: business._id,
                     saleId: sale._id,
@@ -236,12 +282,12 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                         accountName: bankDetails.accountName || business.displayName
                     },
                     status: 'pending',
-                    scheduledFor: new Date(Date.now() + 20000) // 20s buffer for Nomba sync
+                    scheduledFor: new Date(Date.now() + 20000) // 20s buffer for Nomba ledger sync
                 });
 
                 console.log(`📡 Settlement Record Created: ${settlement._id} for ₦${sweepAmount}. Waiting 20s...`);
 
-                // 2. Process after delay (Harden with error tracking)
+                // 2. Execute sweep after delay
                 setTimeout(async () => {
                     try {
                         settlement.status = 'processing';
@@ -271,7 +317,7 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                             });
                         }
 
-                        // 🔔 WHATSAPP SETTLEMENT ALERT
+                        // 🔔 WHATSAPP SETTLEMENT CONFIRMATION
                         if (business.whatsappNumber) {
                             let alertMsg = `💰 *Settlement Alert, ${business.displayName}!* \n\nI've successfully swept *₦${sweepAmount.toLocaleString()}* from the *${sale.customerName}* payment to your *${settlement.bankDetails.accountName}* account. \n\n🛡️ _Your money is safe!_`;
                             
@@ -288,7 +334,6 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                         settlement.attempts += 1;
                         await settlement.save();
 
-                        // Notify Oga of failure (Mission Critical)
                         if (business.whatsappNumber) {
                             const { sendReply } = require('../whatsapp/whatsappController');
                             await sendReply(business.whatsappNumber, `⚠️ *Settlement Issue, ${business.displayName}!* \n\nI tried to sweep *₦${sweepAmount.toLocaleString()}* to your bank, but it failed. \n\n*Reason:* ${sweepErr.message}\n\nDon't worry, the funds are safe in your Kredibly wallet. I'll try again shortly or you can check your dashboard! 🛡️`);
@@ -301,13 +346,42 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
             }
         })();
 
+        // 📱 WHATSAPP PAYMENT NOTIFICATION — contextual message based on payment scenario
         if (business.whatsappNumber) {
+            let customText = "";
+
+            if (isExact) {
+                // Normal payment — report balance or full clearance
+                customText = balanceRemaining <= 0
+                    ? `✅ Invoice fully paid! This debt is now cleared.`
+                    : `⏳ Balance Remaining: ₦${balanceRemaining.toLocaleString()}`;
+
+            } else if (isUnderpaid) {
+                // Customer paid less than expected
+                const shortfall = Math.abs(diff);
+                customText = `⚠️ *Underpayment Alert!* Your customer transferred *₦${amount.toLocaleString()}* but the invoice expected *₦${vaRecord.amount.toLocaleString()}* (short by ₦${shortfall.toLocaleString()}). \n\nThe invoice has been credited for ₦${creditAmount.toLocaleString()}. Outstanding balance: ₦${balanceRemaining.toLocaleString()}. \n\nKindly follow up with ${sale.customerName} for the shortfall.`;
+
+            } else if (isOverpaid) {
+                // Customer paid more than expected
+                customText = `💰 *Overpayment Alert!* Your customer transferred *₦${amount.toLocaleString()}* but the invoice expected *₦${vaRecord.amount.toLocaleString()}* (excess of ₦${Math.abs(diff).toLocaleString()}). \n\nThe invoice has been marked as fully paid. The full net amount (₦${FINANCIAL_CONFIG.calculateNetAmount(amount).toLocaleString()}) has been swept to your bank. \n\nYou may need to refund ₦${Math.abs(diff).toLocaleString()} to ${sale.customerName} directly.`;
+            }
+
             const { sendWhatsAppPaymentAlert } = require('../whatsapp/whatsappController');
-            sendWhatsAppPaymentAlert(business.whatsappNumber, creditAmount, sale.invoiceNumber, sale.customerName || payer, "", business.displayName, "");
+            sendWhatsAppPaymentAlert(
+                business.whatsappNumber,
+                creditAmount,
+                sale.invoiceNumber,
+                sale.customerName || payer,
+                customText,
+                business.displayName || 'Chief',
+                ""
+            ).catch(err => console.error('❌ WhatsApp Payment Alert Failed:', err.message));
         }
 
+        console.log(`✅ Nomba Payment Processed: Invoice ${sale.invoiceNumber} | Credited: ₦${creditAmount} | Actual Transfer: ₦${amount} | Status: ${newStatus}`);
         return { success: true, message: "Payment processed!" };
     } catch (err) {
+        console.error('❌ internalProcessNombaPayment Error:', err.message);
         return { success: false, message: err.message };
     }
 };
@@ -395,3 +469,4 @@ async function processSubscriptionWebhook(reference, amount, payer, txRef) {
 }
 
 exports.processDailyNombaSettlements = async () => {};
+exports.internalProcessNombaPayment = internalProcessNombaPayment;
