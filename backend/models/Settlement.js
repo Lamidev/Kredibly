@@ -10,8 +10,7 @@ const settlementSchema = new mongoose.Schema({
     saleId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Sale',
-        required: true,
-        index: true
+        required: true
     },
     amount: {
         type: Number,
