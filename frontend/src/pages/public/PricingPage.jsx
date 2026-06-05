@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import PublicNavbar from '../../components/public/PublicNavbar';
 import PublicFooter from '../../components/public/PublicFooter';
 import { motion } from 'framer-motion';
-import { Check, X, Zap, ArrowRight, Star, Sparkles, BadgeCheck } from 'lucide-react';
+import { Check, X, ArrowRight, Star, BadgeCheck } from 'lucide-react';
 
 const PricingPage = () => {
     const navigate = useNavigate();
-    const { profile } = useAuth();
+    const { profile, updateProfile } = useAuth();
+
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -53,7 +54,8 @@ const PricingPage = () => {
                 "8 AM Morning Business Brief",
                 "Add 1 Staff Member",
                 "Co-Branded Receipts (Your Logo)",
-                "Advanced AI Recovery Assistant"
+                "Advanced AI Recovery Assistant",
+                "Kreddy AI Language (English / Pidgin)"
             ],
             cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade to Oga" : "Become an Oga",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -129,6 +131,8 @@ const PricingPage = () => {
                                 </div>
                             </div>
 
+
+
                             <button 
                                 onClick={plan.ctaAction}
                                 className={plan.highlight ? "btn-primary" : "btn-secondary"} 
@@ -183,7 +187,8 @@ const PricingPage = () => {
                                         { name: "Kreddy Voice Assistant", hustler: false, oga: true, chairman: true },
                                         { name: "Instant Bank Settlements", hustler: true, oga: true, chairman: true },
                                         { name: "Morning Business Briefing", hustler: false, oga: true, chairman: true },
-                                        { name: "Automated Ledger Sync", hustler: true, oga: true, chairman: true }
+                                        { name: "Automated Ledger Sync", hustler: true, oga: true, chairman: true },
+                                        { name: "Kreddy AI Language (English / Pidgin)", hustler: false, oga: true, chairman: true }
                                     ]},
                                     { category: "Business Management", features: [
                                         { name: "Sales Records Limit", hustler: "50 / mo", oga: "Unlimited", chairman: "Unlimited" },
@@ -237,12 +242,12 @@ const PricingPage = () => {
             {/* AI Call to Action */}
             <section style={{ padding: '80px 24px', background: 'white' }}>
                 <div className="pricing-cta-box" style={{ maxWidth: '1000px', margin: '0 auto', background: '#F5F3FF', padding: '60px', borderRadius: '48px', border: '1px solid rgba(124, 58, 237, 0.1)', textAlign: 'center' }}>
-                    <h2 style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.04em', marginBottom: '24px' }}>Build your empire. <br /><span className="premium-gradient">Try Chairman Free.</span></h2>
+                    <h2 style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.04em', marginBottom: '24px' }}>Build your empire. <br /><span className="premium-gradient">Start with Chairman.</span></h2>
                     <p style={{ fontSize: '1.15rem', color: '#4C1D95', fontWeight: 700, marginBottom: '40px', maxWidth: '600px', margin: '0 auto 40px' }}>
-                        Get 14 days of unlimited staff, AI voice notes, and executive briefings. Switch to any plan anytime.
+                        Unlock unlimited staff, AI voice notes, white-label receipts, and executive briefings. Your empire starts today.
                     </p>
                     <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', height: 'auto', borderRadius: '20px' }}>Start My 14-Day Free Trial</button>
+                        <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', height: 'auto', borderRadius: '20px' }}>Claim Chairman Title <ArrowRight size={18} strokeWidth={3} /></button>
                     </div>
                 </div>
             </section>

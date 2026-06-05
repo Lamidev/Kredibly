@@ -46,7 +46,21 @@ const sendIndividualPlanAlert = async (data) => {
             case "final_lockout":
                 profile.planStatus = 'inactive';
                 await profile.save();
-                msg = `Your Digital Chief of Staff is now **On Leave**. My automated services (Summaries & Voice Recording) are paused until your plan is active. Let's get back to work! 🚀`;
+                msg = `Your Digital Chief of Staff is now *On Leave*. My automated services (Summaries & Voice Recording) are paused until your plan is active. Let's get back to work! 🚀`;
+
+                // 🔔 IN-APP NOTIFICATION: Also ring the dashboard bell so the merchant
+                // sees the lockout even if they missed the WhatsApp message.
+                try {
+                    const Notification = require("../models/Notification");
+                    await Notification.create({
+                        businessId: profile._id,
+                        title: "Plan Ended 🔒",
+                        message: "Your plan has ended. Your existing records and invoice payments are safe. Reactivate to create new records.",
+                        type: "system"
+                    });
+                } catch (notifErr) {
+                    console.error("Plan Alert: Failed to create lockout notification:", notifErr.message);
+                }
                 break;
 
             default:

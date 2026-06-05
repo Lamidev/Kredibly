@@ -776,7 +776,7 @@ const InvoicePage = () => {
                                  <span style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', background: '#F8FAFC', padding: '4px 8px', borderRadius: '6px' }}>Drafted</span>
                              </div>
 
-                             {[...(sale.payments || [])].slice(-5).reverse().map((p, idx, array) => (
+                             {[...(sale.payments || [])].filter(p => p.amount > 0).slice(-5).reverse().map((p, idx, array) => (
                                  <div key={idx} style={{ 
                                      padding: isMobile ? '20px 16px' : '16px 20px', 
                                      borderBottom: idx === array.length - 1 ? 'none' : '1px solid #EEF2F6', 

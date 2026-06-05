@@ -357,8 +357,9 @@ const PublicInvoicePage = () => {
         if (!sale || loading) return;
         
         const bal = calcCurrentBalance(sale);
-        if (sale.payments?.length > 0) {
-            const lastPayment = sale.payments[sale.payments.length - 1];
+        const activePayments = sale.payments?.filter(p => p.amount > 0) || [];
+        if (activePayments.length > 0) {
+            const lastPayment = activePayments[activePayments.length - 1];
             
             // 🛡️ Ensure Transaction Slip is always ready for the last payment
             if (!currentTransaction) {
@@ -1103,7 +1104,7 @@ const PublicInvoicePage = () => {
                         </div>
 
                         {/* Recent Payment Banner (If any) */}
-                        {!isPaid && sale.payments?.length > 0 && (
+                        {!isPaid && sale.payments?.filter(p => p.amount > 0).length > 0 && (
                             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ background: 'white', border: '1px solid #10B981', borderRadius: '24px', padding: '16px 20px', marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '16px', boxShadow: '0 10px 20px rgba(16, 185, 129, 0.05)' }}>
                                 <div style={{ width: '40px', height: '40px', background: '#ECFDF5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10B981' }}>
                                     <CheckCircle size={20} />
@@ -1184,14 +1185,14 @@ const PublicInvoicePage = () => {
                                 </div>
                                 
                                 {/* Verified Payment Ledger */}
-                                {sale.payments?.length > 0 && (
+                                {sale.payments?.filter(p => p.amount > 0).length > 0 && (
                                     <div style={{ marginBottom: '32px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                                             <p style={{ fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Verified Payment Ledger</p>
                                             <div style={{ flex: 1, height: '1px', background: '#F1F5F9' }} />
                                         </div>
                                         <div style={{ background: '#F8FAFC', borderRadius: '20px', overflow: 'hidden', border: '1px solid #F1F5F9' }}>
-                                            {sale.payments.map((p, idx) => (
+                                            {sale.payments.filter(p => p.amount > 0).map((p, idx) => (
                                                 <div key={idx} style={{ 
                                                     padding: isMobile ? '20px 16px' : '12px 16px', 
                                                     borderBottom: idx === sale.payments.length - 1 ? 'none' : '1px solid #EEF2F6', 

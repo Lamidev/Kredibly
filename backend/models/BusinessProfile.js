@@ -42,6 +42,7 @@ const BusinessProfileSchema = new mongoose.Schema({
         reminderFrequency: { type: String, default: "daily" },
         reminderTemplate: { type: String, enum: ["friendly", "formal"], default: "friendly" },
         preferredName: { type: String, default: "" }, // What Kreddy calls the merchant (e.g. "Tunde", "Boss", "The Chairman")
+        preferredLanguage: { type: String, enum: ["english", "pidgin"], default: "english" },
         lastInteractionType: { type: String, default: "chat" } // To track context logically
     },
     lastInboundAt: { type: Date, default: null }, // CRITICAL for Meta 24h Window Cost Saving
