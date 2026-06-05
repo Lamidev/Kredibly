@@ -17,18 +17,105 @@ import {
     LogOut,
     User as UserIcon,
     MessagesSquare,
-    RefreshCcw
+    RefreshCcw,
+    AlertTriangle,
+    ArrowRight
 } from 'lucide-react';
 import { useSales } from '../../context/SaleContext';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import SupportHub from './SupportHub';
 import PlanLimitModal from '../payment/PlanLimitModal';
 
 const getInitials = (name) => {
     if (!name) return "K";
     return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+};
+
+// 🔒 PLAN EXPIRED BANNER
+// Shown at the top of the dashboard content area when planStatus is inactive/cancelled.
+// It's a soft nudge — not a wall. Merchants can still read all their records.
+const PlanExpiredBanner = ({ navigate }) => {
+    const [dismissed, setDismissed] = useState(false);
+    if (dismissed) return null;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.3 }}
+            style={{
+                background: 'linear-gradient(135deg, #1E293B, #0F172A)',
+                color: 'white',
+                borderRadius: '20px',
+                padding: '20px 24px',
+                marginBottom: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                flexWrap: 'wrap',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                boxShadow: '0 4px 24px rgba(239, 68, 68, 0.12)'
+            }}
+        >
+            <div style={{
+                width: '40px', height: '40px', borderRadius: '12px',
+                background: 'rgba(239, 68, 68, 0.15)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0
+            }}>
+                <AlertTriangle size={20} color="#EF4444" />
+            </div>
+            <div style={{ flex: 1, minWidth: '200px' }}>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: '0.95rem', color: 'white' }}>
+                    Your plan has ended
+                </p>
+                <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#94A3B8', fontWeight: 500, lineHeight: 1.5 }}>
+                    Your existing records and invoice payments are safe and still working. Reactivate to create new records.
+                </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+                <button
+                    onClick={() => navigate('/settings')}
+                    style={{
+                        background: '#EF4444',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '12px',
+                        padding: '10px 20px',
+                        fontSize: '0.85rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+                    }}
+                >
+                    Reactivate <ArrowRight size={14} strokeWidth={3} />
+                </button>
+                <button
+                    onClick={() => setDismissed(true)}
+                    style={{
+                        background: 'rgba(255,255,255,0.1)',
+                        border: 'none',
+                        borderRadius: '10px',
+                        padding: '10px',
+                        cursor: 'pointer',
+                        color: '#94A3B8',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
+                    title="Dismiss"
+                >
+                    <X size={16} />
+                </button>
+            </div>
+        </motion.div>
+    );
 };
 
 const DashboardLayout = () => {
@@ -375,6 +462,12 @@ const DashboardLayout = () => {
                 </header>
 
                 <section className="content-body">
+                    {/* Plan Expired Banner — only shown for inactive/cancelled plans */}
+                    <AnimatePresence>
+                        {(profile?.planStatus === 'inactive' || profile?.planStatus === 'cancelled') && (
+                            <PlanExpiredBanner navigate={navigate} />
+                        )}
+                    </AnimatePresence>
                     <Outlet />
                 </section>
             </main>

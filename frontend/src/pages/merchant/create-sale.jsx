@@ -79,7 +79,8 @@ const CreateSale = () => {
                 }, 300);
             }
         } catch (err) {
-            if (err.response?.data?.errorCode === 'LIMIT_REACHED') {
+            const errorCode = err.response?.data?.code;
+            if (errorCode === 'LIMIT_REACHED' || errorCode === 'PLAN_INACTIVE') {
                 setShowLimitModal(true);
             } else {
                 toast.error(err.response?.data?.message || "Failed to finalize sale");

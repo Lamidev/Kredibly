@@ -4,6 +4,8 @@ const Notification = require("../../models/Notification");
 const { sendWhatsAppMessage, sendWhatsAppAlert, sendWhatsAppTemplate } = require("../whatsapp/whatsappController");
 const { logActivity } = require("../../utils/activityLogger");
 
+const { isPlanActive } = require('../../utils/planGate');
+
 // Create a new sale
 exports.createSale = async (req, res) => {
     try {
@@ -15,6 +17,18 @@ exports.createSale = async (req, res) => {
         const business = await BusinessProfile.findOne({ ownerId: req.user._id });
         if (!business) {
             return res.status(404).json({ message: "Business profile not found. Please complete onboarding." });
+        }
+
+        // 🛡️ PLAN GATE: Block new record creation on inactive/cancelled plans.
+        // NOTE: read operations, addPayment, and invoice webhooks are always allowed.
+        if (!isPlanActive(business)) {
+            return res.status(403).json({
+                success: false,
+                code: 'PLAN_INACTIVE',
+                message: 'Your plan has ended. Reactivate to continue creating records.',
+                planStatus: business.planStatus,
+                reactivateUrl: '/settings'
+            });
         }
 
         // Plan Limit Enforcement (Monthly Reset for Hustlers)

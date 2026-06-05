@@ -366,6 +366,12 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 customText = `💰 *Overpayment Alert!* Your customer transferred *₦${amount.toLocaleString()}* but the invoice expected *₦${vaRecord.amount.toLocaleString()}* (excess of ₦${Math.abs(diff).toLocaleString()}). \n\nThe invoice has been marked as fully paid. The full net amount (₦${FINANCIAL_CONFIG.calculateNetAmount(amount).toLocaleString()}) has been swept to your bank. \n\nYou may need to refund ₦${Math.abs(diff).toLocaleString()} to ${sale.customerName} directly.`;
             }
 
+            // 🛡️ PLAN EXPIRED NUDGE: Even on inactive plans, payment notifications always
+            // fire — but we append a resubscribe nudge to bring them back.
+            if (business.planStatus === 'inactive' || business.planStatus === 'cancelled') {
+                customText += `\n\n⚡ *Kreddy Note:* Even while I'm off-duty, your money is still moving! Subscribe now to get your full AI briefings and debt recovery back.\n🔗 https://usekredibly.com/settings`;
+            }
+
             const { sendWhatsAppPaymentAlert } = require('../whatsapp/whatsappController');
             sendWhatsAppPaymentAlert(
                 business.whatsappNumber,
@@ -413,8 +419,9 @@ async function processSubscriptionWebhook(reference, amount, payer, txRef) {
 
         business.plan = plan;
         business.planStatus = 'active';
-        business.trialExpiresAt = nextBilling;
         business.nextBillingDate = nextBilling;
+        // NOTE: Do NOT overwrite trialExpiresAt here — it's the trial's own field.
+        // nextBillingDate is what the expiry cron should check for paid subscribers.
         await business.save();
 
         const { sendEmail } = require("../../utils/emailService");

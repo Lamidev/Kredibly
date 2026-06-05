@@ -35,6 +35,7 @@ import { motion } from "framer-motion";
 import PublicNavbar from "../../components/public/PublicNavbar";
 import PublicFooter from "../../components/public/PublicFooter";
 import { useAuth } from "../../context/AuthContext";
+import { toast } from "sonner";
 
 const Typewriter = ({ phrases }) => {
     const [displayText, setDisplayText] = useState("");
@@ -181,7 +182,8 @@ const LandingPage = () => {
                 "8 AM Morning Business Brief",
                 "Add 1 Staff Member",
                 "Co-Branded Receipts (Your Logo)",
-                "Advanced AI Recovery Assistant"
+                "Advanced AI Recovery Assistant",
+                "Kreddy AI Language (English / Pidgin)"
             ],
             cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade to Oga" : "Become an Oga",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -353,7 +355,7 @@ const LandingPage = () => {
                     </p>
                     <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
                         <Link to="/auth/register" className="btn-primary btn-magnetic" style={{ padding: '20px 40px', fontSize: '1.1rem', borderRadius: '18px' }}>
-                            Start Your Free Trial <ArrowRight size={20} />
+                            Get Started <ArrowRight size={20} />
                         </Link>
                         <div className="glass-premium" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 24px', borderRadius: '18px', color: '#64748B', fontSize: '0.9rem', fontWeight: 400 }}>
                             <ShieldCheck size={20} color="var(--success)" /> Direct-to-Bank Verified
@@ -523,6 +525,8 @@ const LandingPage = () => {
                                         {plan.fee}
                                     </div>
                                 </div>
+
+
 
                                 <button 
                                     onClick={plan.ctaAction}

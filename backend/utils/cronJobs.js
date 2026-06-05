@@ -311,8 +311,16 @@ const schedulePlanExpiryReminders = () => {
     cron.schedule("0 9 * * *", async () => {
         try {
             const now = new Date();
+            // Catch accounts within 3 days of expiry on EITHER the trial OR billing date.
+            // This covers: (1) trialing merchants, (2) paid subscribers approaching renewal.
+            const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+
             const query = await BusinessProfile.find({
-                planStatus: { $in: ["trialing", "active", "past_due"] }
+                planStatus: { $in: ["trialing", "active", "past_due"] },
+                $or: [
+                    { trialExpiresAt: { $lte: threeDaysFromNow } },
+                    { nextBillingDate: { $lte: threeDaysFromNow } }
+                ]
             });
 
             for (const profile of query) {
@@ -558,6 +566,17 @@ const startBackgroundJobRunner = () => {
                     switch (job.type) {
                         case "MORNING_SUMMARY":
                             result = await sendIndividualMorningSummary(job.businessId);
+                            break;
+                        case "TRIAL_EXPIRY":
+                            const { sendIndividualPlanAlert } = require('../utils/planAlertService');
+                            const profile = await BusinessProfile.findById(job.businessId);
+                            result = profile
+                                ? await sendIndividualPlanAlert({
+                                    type: null, // Let planAlertService calculate based on expiry date
+                                    profileId: job.businessId,
+                                    whatsappNumber: profile.whatsappNumber
+                                })
+                                : { status: 'skipped', reason: 'Profile not found' };
                             break;
                         case "DEBT_NUDGE":
                             result = await sendIndividualDebtNudge(job.data);

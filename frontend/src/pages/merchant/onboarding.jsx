@@ -27,12 +27,21 @@ import { isValidNigerianPhone, formatPhoneForDB } from "../../utils/validation";
 
 const Onboarding = () => {
     const [step, setStep] = useState(1);
+    const [showWelcomePreview, setShowWelcomePreview] = useState(false);
     
     // Step 1 & 2 Data
     const [displayName, setDisplayName] = useState("");
     const [entityType, setEntityType] = useState("individual");
     const [sellMode, setSellMode] = useState("both");
     const [whatsappNumber, setWhatsappNumber] = useState("");
+
+    const parseWhatsAppMarkdown = (text) => {
+        if (!text) return "";
+        return text
+            .replace(/\*(.*?)\*/g, "<strong>$1</strong>")
+            .replace(/_(.*?)_/g, "<em>$1</em>")
+            .replace(/\n/g, "<br />");
+    };
 
     // Step 4 Data: Settlement
     const [banks, setBanks] = useState([]);
@@ -198,6 +207,7 @@ const Onboarding = () => {
     const handleSubmit = async () => {
         setLoading(true);
         try {
+            const savedLang = localStorage.getItem('kreddy_preferred_language') || 'english';
             const payload = {
                 displayName,
                 entityType,
@@ -216,11 +226,14 @@ const Onboarding = () => {
                     status: kycStatus,
                     method: kycStatus === 'verified' ? kycType : 'none',
                     idNumber: kycStatus === 'verified' ? idNumber.substring(0, 4) + '****' : ''
+                },
+                assistantSettings: {
+                    preferredLanguage: savedLang
                 }
             };
             await updateProfile(payload);
             toast.success(`Setup Complete! Welcome to the ${planTitle} Life.`);
-            navigate("/dashboard");
+            setShowWelcomePreview(true);
         } catch (err) {
             toast.error(err.response?.data?.message || "Setup failed. Check details.");
         } finally {
@@ -300,11 +313,47 @@ const Onboarding = () => {
                 <div style={{ maxWidth: '540px', width: '100%' }}>
                     
                     <div className="glass-card" style={{ padding: 'clamp(24px, 6vw, 48px)', borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)' }}>
-                        <ProgressHeader />
+                        {!showWelcomePreview && <ProgressHeader />}
                         
                         <AnimatePresence mode="wait">
+                            {showWelcomePreview && (
+                                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} key="welcome-preview">
+                                    <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                                        <div style={{ width: '64px', height: '64px', background: 'rgba(34, 197, 94, 0.05)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#10B981' }}>
+                                            <CheckCircle2 size={32} />
+                                        </div>
+                                        <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0F172A', marginBottom: '8px' }}>Workspace Launched!</h3>
+                                        <p style={{ fontSize: '0.9rem', color: '#64748B', fontWeight: 500 }}>
+                                            Kreddy has sent the first message to your WhatsApp number: <strong style={{ color: '#0F172A' }}>{whatsappNumber}</strong>.
+                                        </p>
+                                    </div>
+
+                                    {/* Mock WhatsApp Bubble */}
+                                    <div style={{ background: '#E5DDD5', borderRadius: '24px', padding: '20px', border: '1px solid #CBD5E1', marginBottom: '32px', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '10px' }}>
+                                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'white', fontSize: '0.8rem' }}>K</div>
+                                            <div>
+                                                <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0, color: '#1E293B' }}>Kreddy AI</p>
+                                                <p style={{ fontSize: '0.65rem', opacity: 0.8, margin: 0, color: '#64748B' }}>Business Assistant</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ background: 'white', padding: '14px 16px', borderRadius: '0 16px 16px 16px', fontSize: '0.88rem', maxWidth: '90%', boxShadow: '0 1px 2px rgba(0,0,0,0.1)', color: '#334155', lineHeight: 1.5 }}
+                                            dangerouslySetInnerHTML={{ __html: parseWhatsAppMarkdown(`Hello *${displayName || 'Boss'}*! 🚀\n\nI'm *Kreddy*, your new Digital Chief of Staff. I've successfully launched your workspace and I'm ready to help you secure your revenue! 🛡️\n\n*Quick Tip:* You can tell me to call you any name you want (like "Chief" or your first name). Just say *"Kreddy, call me [Name]"* and I'll remember it! 🤝\n\n*What's the plan for today?*\n📊 EMPIRE STATUS: Type *S*\n⏳ DEBTS: Type *D*\n💡 HELP: Type *HELP*`) }}
+                                        />
+                                    </div>
+
+                                    <button 
+                                        onClick={() => navigate("/dashboard")} 
+                                        className="btn-primary" 
+                                        style={{ width: '100%', height: '60px', fontSize: '1.1rem', boxShadow: '0 10px 15px -3px rgba(76, 29, 149, 0.3)' }}
+                                    >
+                                        Go to Dashboard 🚀
+                                    </button>
+                                </motion.div>
+                            )}
                             {/* Step 1: Founding Member Welcome */}
-                            {step === 1 && (
+                            {!showWelcomePreview && step === 1 && (
                                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} key="welcome">
                                     <div style={{ textAlign: 'center', marginBottom: '40px' }}>
                                         <div style={{ width: '80px', height: '80px', background: 'linear-gradient(135deg, #7C3AED, #4C1D95)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: 'white', boxShadow: '0 15px 30px rgba(76, 29, 149, 0.3)' }}>
@@ -334,7 +383,7 @@ const Onboarding = () => {
                             )}
 
                             {/* Step 2: Basic Business Info */}
-                            {step === 2 && (
+                            {!showWelcomePreview && step === 2 && (
                                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} key="info">
                                     <div className="input-group" style={{ marginBottom: '24px' }}>
                                         <label className="input-label" style={{ fontWeight: 500, color: '#0F172A' }}>Name of your Business, Shop, or Service?</label>
@@ -373,7 +422,7 @@ const Onboarding = () => {
                             )}
 
                             {/* Step 3: Payout Settlement (Moved before KYC) */}
-                            {step === 3 && (
+                            {!showWelcomePreview && step === 3 && (
                                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} key="bank">
                                     <div style={{ textAlign: 'center', marginBottom: '32px' }}>
                                         <div style={{ width: '64px', height: '64px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'var(--primary)' }}>
@@ -445,7 +494,7 @@ const Onboarding = () => {
                             )}
 
                             {/* Step 4: Finishing Touches — Logo + Staff (Optional) */}
-                            {step === 4 && (
+                            {!showWelcomePreview && step === 4 && (
                                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} key="staff">
                                     {/* Logo Upload */}
                                     <div style={{ textAlign: 'center', marginBottom: '32px' }}>

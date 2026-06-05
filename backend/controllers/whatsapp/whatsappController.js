@@ -1205,7 +1205,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         customerName,
                         description: item,
                         totalAmount,
-                        payments: [{ amount: paidAmount || 0, method: "WhatsApp" }],
+                        payments: (paidAmount && paidAmount > 0) ? [{ amount: paidAmount, method: "WhatsApp" }] : [],
                         dueDate: dueDate ? new Date(dueDate) : undefined,
                         recordedBy: cleanFrom,
                         invoiceType: invoiceType || 'billing'
@@ -1573,6 +1573,12 @@ Upgrade here: ${APP_URL}/pricing`);
                 : "No recent transactions found. They are just starting out.";
 
             const preferredTone = profile.assistantSettings?.reminderTemplate || "friendly";
+            const preferredLanguage = profile.assistantSettings?.preferredLanguage || "english";
+
+            // Compute days since last active (for welcome-back nudge context)
+            const daysSinceLastActive = profile.lastInboundAt
+                ? Math.floor((Date.now() - new Date(profile.lastInboundAt).getTime()) / (1000 * 60 * 60 * 24))
+                : 0;
 
             if (msgType === "audio" || msgType === "voice") {
                 if (plan !== "chairman" && plan !== "oga") {
@@ -1594,6 +1600,8 @@ Upgrade here: ${APP_URL}/pricing`);
                         plan: plan,
                         entityType: profile.entityType,
                         preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
+                        preferredLanguage: preferredLanguage,
+                        daysSinceLastActive: daysSinceLastActive,
                         debtors: debtorContext || "No active debtors yet.",
                         businessInsight: businessInsight
                     });
@@ -1641,6 +1649,8 @@ Upgrade here: ${APP_URL}/pricing`);
                         plan: plan,
                         entityType: profile.entityType,
                         preferredTone: profile.assistantSettings?.reminderTemplate || "friendly",
+                        preferredLanguage: preferredLanguage,
+                        daysSinceLastActive: daysSinceLastActive,
                         debtors: debtorContext || "No active debtors yet.",
                         businessInsight: businessInsight,
                         caption: text
@@ -1677,6 +1687,8 @@ Upgrade here: ${APP_URL}/pricing`);
                     plan: plan,
                     entityType: profile.entityType,
                     preferredTone: preferredTone,
+                    preferredLanguage: preferredLanguage,
+                    daysSinceLastActive: daysSinceLastActive,
                     debtors: debtorContext || "No active debtors yet.",
                     activeReminders: reminderContext,
                     currentSession: session || null,
@@ -1900,7 +1912,7 @@ Upgrade here: ${APP_URL}/pricing`);
                     customerName: customerName || (session?.data?.customerName) || "Customer",
                     description: item && item !== "Item" ? item : "Purchase recorded via WhatsApp",
                     totalAmount: totalAmount,
-                    payments: [{ amount: paidAmount || 0, method: "WhatsApp" }],
+                    payments: (paidAmount && paidAmount > 0) ? [{ amount: paidAmount, method: "WhatsApp" }] : [],
                     dueDate: dueDate && !isNaN(new Date(dueDate).getTime()) ? new Date(dueDate) : undefined,
                     recordedBy: cleanFrom
                 });
@@ -1982,6 +1994,21 @@ Upgrade here: ${APP_URL}/pricing`);
                         await sendReply(from, reply);
                     } else {
                         await sendReply(from, "I catch that you want me to call you something else, but I didn't get the name clearly. 😵‍ Try say: _'Kreddy, call me Boss'_");
+                    }
+                    isProcessed = true;
+                } else if (aiResponseItem && aiResponseItem.intent === "set_language") {
+                    // 🌍 LANGUAGE PREFERENCE: Save merchant's preferred language for Kreddy
+                    const newLang = (aiResponseItem.data?.preferredLanguage || "").toLowerCase();
+                    if (newLang && ["english", "pidgin"].includes(newLang)) {
+                        if (!profile.assistantSettings) profile.assistantSettings = {};
+                        profile.assistantSettings.preferredLanguage = newLang;
+                        await profile.save();
+
+                        const langLabel = newLang === "pidgin" ? "Pidgin English" : "standard English";
+                        let reply = aiResponseItem.data?.reply || `Got it, ${bossTitle}! 🫡 I'll be speaking *${langLabel}* from now on.`;
+                        await sendReply(from, reply);
+                    } else {
+                        await sendReply(from, `No wahala, ${bossTitle}! Just say _"Speak Pidgin to me"_ or _"Speak English"_ and I'll switch right away. 🫡`);
                     }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "check_debt") {
