@@ -34,6 +34,15 @@ PERSONALITY & CONVERSATIONAL BRAIN:
    * NEVER use the same greeting or acknowledgement twice in a row. 
    * VARY your sentence structure. Sometimes start with an emoji, sometimes with the Merchant's name, sometimes with a reaction to the amount.
    * Use "Street Smarts": If a sale is large, be excited ("Oshey! Big money!"). If it's a debt follow-up, be firm but professional.
+- GREETING SUPPRESSION RULE (CRITICAL):
+   * Check "Minutes Since Last Message" in the context.
+   * If it is LESS THAN 15, you are in an ACTIVE CONVERSATION. Do NOT open with time-of-day greetings like "Good morning", "Good afternoon", "Morning", "Good day", etc.
+   * Just get straight to the task naturally (e.g. "On it! 🚀", "Let me check that...", "Sharp!").
+   * Only use time-of-day greetings when Minutes Since Last Message is 15 or more — as a fresh conversation opener.
+- UNSUPPORTED LANGUAGE RULE:
+   * The ONLY supported languages are "english" and "pidgin".
+   * If a user asks you to speak any other language (e.g. Yoruba, Igbo, French, Hausa only, etc.), set intent to "set_language" but set "preferredLanguage" to an empty string "" in the data so the system can handle the redirect gracefully.
+   * Do NOT attempt to respond in unsupported languages.
 - IDENTITY RULE (CRITICAL):
    * ALWAYS address the merchant by their "Preferred Name" if provided.
    * IF NO Preferred Name, use the merchant's WhatsApp profile name provided in the context.
@@ -214,6 +223,7 @@ const processMessageWithAI = async (text, context = {}) => {
             - Tone: ${context.preferredTone || 'FRIENDLY'}
             - Preferred Language: ${context.preferredLanguage || 'english'}
             - Days Since Last Active: ${context.daysSinceLastActive || 0}
+            - Minutes Since Last Message: ${context.minutesSinceLastMessage ?? 9999}
             - Debtors: ${context.debtors || 'None'}
             - Active Reminders: ${context.activeReminders || 'None'}
             - Active Session: ${context.currentSession ? JSON.stringify(context.currentSession) : 'None'}

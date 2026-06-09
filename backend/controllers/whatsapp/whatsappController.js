@@ -156,7 +156,14 @@ const extractInfoRobust = (text, context = {}) => {
     }
 
     // PERFORMANCE: "how much did I make", "revenue", "daily summary", "performance"
-    if (lower.includes("how much") || lower.includes("revenue") || lower.includes("make") || lower.includes("performance") || lower.includes("summary") || lower.includes("collection") || lower.includes("total collected")) {
+    // Guard "make" tightly so Pidgin directives like "make I buzz Nuel" don't get swallowed.
+    const makeIsBusinessContext = lower.includes("make") && (
+        lower.includes("naira") || lower.includes("₦") || lower.includes("money") ||
+        lower.includes("revenue") || lower.includes("invoice") || lower.includes("amount") ||
+        lower.includes("today") || lower.includes("yesterday") || lower.includes("week") ||
+        lower.includes("how much did i make") || lower.includes("how much we make")
+    );
+    if (lower.includes("how much") || lower.includes("revenue") || makeIsBusinessContext || lower.includes("performance") || lower.includes("summary") || lower.includes("collection") || lower.includes("total collected")) {
         result.intent = "check_performance";
         if (lower.includes("yesterday")) result.data.targetDate = "yesterday";
         else if (lower.includes("today")) result.data.targetDate = "today";
@@ -250,9 +257,14 @@ const extractInfoRobust = (text, context = {}) => {
         const minMatch = text.match(/(\d+)/);
         result.data.snoozeDuration = minMatch ? parseInt(minMatch[1]) : 30;
     } else if (lower.includes(" paid") || lower.includes(" pay") || lower.includes(" brought") || lower.includes(" sent") || lower.includes("received") || lower.includes("collect") || lower.includes("already paid")) {
-        result.intent = "update_record";
-        if (lower.includes("paid outside") || lower.includes("outside") || lower.includes("already") || lower.includes("money received already") || lower.includes("cash in hand")) {
-            result.data.invoiceType = "record";
+        // Guard against negation: "hasn't paid", "didn't pay", "not paid yet", "never sent"
+        const negationWords = ["haven't", "hasn't", "didn't", "not paid", "never", "yet to pay", "yet to send", "hasn't paid", "has not"];
+        const hasNegation = negationWords.some(n => lower.includes(n));
+        if (!hasNegation) {
+            result.intent = "update_record";
+            if (lower.includes("paid outside") || lower.includes("outside") || lower.includes("already") || lower.includes("money received already") || lower.includes("cash in hand")) {
+                result.data.invoiceType = "record";
+            }
         }
     } else if (lower.includes("sold") || lower.includes("selling") || lower.includes("sale") || lower.includes("record") || lower.includes("bought") || lower.includes("asking for money")) {
         result.intent = "create_sale";
@@ -305,8 +317,8 @@ const extractInfoRobust = (text, context = {}) => {
     const stopWords = ["who", "paid", "pay", "which", "is", "was", "will", "with", "that", "gave", "sent", "he", "she", "they", "it", "today", "tomorrow", "at", "for", "to", "just", "bought", "sold", "item", "for", "from"];
     const stoppersJoin = stopWords.join("|");
     
-    // Pattern A: After "to", "for", etc.
-    const customerRegex = new RegExp(`(?:to|for|from|of|reminder|remind)\\s+(?:for|to|from)?\\s*([a-z0-9\\s’'&-]+)(?=[\\s.,!]|\\b(?:${stoppersJoin})\\b|$)`, "i");
+    // Pattern A: After "to", "for", etc. — allow dots for domain-style names like Nuelbata.ng
+    const customerRegex = new RegExp(`(?:to|for|from|of|reminder|remind)\\s+(?:for|to|from)?\\s*([a-z0-9\\s''\.\&-]+)(?=[\\s.,!]|\\b(?:${stoppersJoin})\\b|$)`, "i");
     const customerMatch = text.match(customerRegex);
     
     if (customerMatch) {
@@ -314,7 +326,7 @@ const extractInfoRobust = (text, context = {}) => {
         result.data.customerName = name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
     } 
     else if (text.split(' ').length > 2 && !stopWords.includes(text.split(' ')[0].toLowerCase())) {
-        const startRegex = new RegExp(`^([a-z0-9\\s’'&-]+?)(?=\\s+(?:\\b(?:${stoppersJoin})\\b)|$)`, "i");
+        const startRegex = new RegExp(`^([a-z0-9\\s''\.\&-]+?)(?=\\s+(?:\\b(?:${stoppersJoin})\\b)|$)`, "i");
         const startMatch = text.match(startRegex);
         if (startMatch && startMatch[1].trim().split(' ').length <= 4) {
              let name = startMatch[1].trim();
@@ -1580,6 +1592,11 @@ Upgrade here: ${APP_URL}/pricing`);
                 ? Math.floor((Date.now() - new Date(profile.lastInboundAt).getTime()) / (1000 * 60 * 60 * 24))
                 : 0;
 
+            // ⏱️ CONVERSATION WINDOW: Time since last inbound message (used to suppress mid-chat greetings)
+            const minutesSinceLastMessage = profile.lastInboundAt
+                ? Math.floor((Date.now() - new Date(profile.lastInboundAt).getTime()) / (1000 * 60))
+                : 9999;
+
             if (msgType === "audio" || msgType === "voice") {
                 if (plan !== "chairman" && plan !== "oga") {
                     return await sendReply(from, "Boss! 🛡️ Voice notes are an exclusive feature for the *Oga* and *Chairman* plans. Upgrade now to unlock Voice Sync! 🦁");
@@ -1689,6 +1706,7 @@ Upgrade here: ${APP_URL}/pricing`);
                     preferredTone: preferredTone,
                     preferredLanguage: preferredLanguage,
                     daysSinceLastActive: daysSinceLastActive,
+                    minutesSinceLastMessage: minutesSinceLastMessage,
                     debtors: debtorContext || "No active debtors yet.",
                     activeReminders: reminderContext,
                     currentSession: session || null,
@@ -2008,7 +2026,12 @@ Upgrade here: ${APP_URL}/pricing`);
                         let reply = aiResponseItem.data?.reply || `Got it, ${bossTitle}! 🫡 I'll be speaking *${langLabel}* from now on.`;
                         await sendReply(from, reply);
                     } else {
-                        await sendReply(from, `No wahala, ${bossTitle}! Just say _"Speak Pidgin to me"_ or _"Speak English"_ and I'll switch right away. 🫡`);
+                        // Unsupported language request — politely redirect
+                        const isEnglishLang = preferredLanguage === "english";
+                        const unsupportedReply = isEnglishLang
+                            ? `I appreciate the request, ${bossTitle}! 🌍 Currently, I only support *English* and *Pidgin English*. Just say _"Speak Pidgin to me"_ or _"Speak English"_ and I'll switch right away! 🫡`
+                            : `${bossTitle}, e no reach there yet o! 😄 For now, I only sabi *English* and *Pidgin English*. Just tell me _"Speak Pidgin"_ or _"Speak English"_ make I switch sharp sharp! 🫡`;
+                        await sendReply(from, unsupportedReply);
                     }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "check_debt") {
