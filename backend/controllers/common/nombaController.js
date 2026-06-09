@@ -319,7 +319,12 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
 
                         // 🔔 WHATSAPP SETTLEMENT CONFIRMATION
                         if (business.whatsappNumber) {
-                            let alertMsg = `💰 *Settlement Alert, ${business.displayName}!* \n\nI've successfully swept *₦${sweepAmount.toLocaleString()}* from the *${sale.customerName}* payment to your *${settlement.bankDetails.accountName}* account. \n\n🛡️ _Your money is safe!_`;
+                            const isPidgin = business.assistantSettings?.preferredLanguage === "pidgin";
+                            const reassurance = isPidgin 
+                                ? "🏦 *Your cash don land your bank account!* ⚡"
+                                : "🏦 *Your bank account has been credited!* ⚡";
+                            
+                            let alertMsg = `💰 *Settlement Alert, ${business.displayName}!* \n\nI've successfully swept *₦${sweepAmount.toLocaleString()}* from the *${sale.customerName}* payment to your *${settlement.bankDetails.accountName}* account. \n\n${reassurance}`;
                             
                             if (business.planStatus === 'inactive' || business.planStatus === 'cancelled') {
                                 alertMsg += `\n\n⚠️ *Boss, even while I'm 'Off-Duty', I'm still securing your cash!* Subscribe now to get your full AI reports and debt tracking back. \n🔗 https://usekredibly.com/login?redirect=/settings`;

@@ -257,6 +257,7 @@ const scheduleRemindersWorker = () => {
                     const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                     const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
                     const tone = profile.assistantSettings?.reminderTemplate || "friendly";
+                    const isPidgin = profile.assistantSettings?.preferredLanguage === "pidgin";
                     
                     let draftBody = "";
                     if (tone === "formal") {
@@ -265,20 +266,28 @@ const scheduleRemindersWorker = () => {
                         draftBody = `Hi ${sale.customerName}, just a friendly nudge regarding your balance of ₦${bal.toLocaleString()} for *${sale.description}* with ${profile.displayName}. Hope you're having a great day!`;
                     }
 
-                    const fullDraft = `📝 *REMINDER DRAFT READY*\n\nSend this to your customer:\n---\n${draftBody}\n\n🔗 *VIEW DETAILS:*\n${APP_URL}/i/${sale.invoiceNumber}`;
+                    const draftHeader = isPidgin
+                        ? `📝 *Draft message ready* \n\nCopy this one send to your customer:`
+                        : `📝 *Reminder Draft Ready* \n\nCopy and forward the message below to your customer:`;
+                    
+                    const copyableDraft = `${draftBody}\n\n🔗 *VIEW DETAILS:*\n${APP_URL}/i/${sale.invoiceNumber}`;
                     
                     setTimeout(async () => {
-                        if (isInsideWindow) {
-                            await sendWhatsAppMessage(acquired.whatsappNumber, fullDraft).catch(e => {});
-                        } else {
-                            await sendWhatsAppAlert(acquired.whatsappNumber, title, fullDraft).catch(e => {});
+                        // Re-query reminder state to verify it hasn't been snoozed/updated during the delay
+                        const currentRem = await Reminder.findById(acquired._id);
+                        if (!currentRem || currentRem.status !== "delivered") {
+                            return;
                         }
-                    }, 1500);
-                }
 
-                acquired.status = "delivered";
-                acquired.deliveredAt = new Date();
-                await acquired.save();
+                        if (isInsideWindow) {
+                            await sendWhatsAppMessage(acquired.whatsappNumber, draftHeader).catch(e => {});
+                            await sendWhatsAppMessage(acquired.whatsappNumber, copyableDraft).catch(e => {});
+                        } else {
+                            await sendWhatsAppAlert(acquired.whatsappNumber, title, draftHeader).catch(e => {});
+                            await sendWhatsAppAlert(acquired.whatsappNumber, title, copyableDraft).catch(e => {});
+                        }
+                    }, 3000);
+                }
 
                 if (acquired.recurrence && acquired.recurrence !== "none") {
                     const nextDate = new Date(acquired.triggerDate);
@@ -495,6 +504,28 @@ const scheduleUpcomingNudges = () => {
                 const sales = grouped[bId];
                 const business = sales[0].businessId;
                 if (!business || !business.whatsappNumber || !business.isKreddyConnected) continue;
+
+                // 🛡️ DEDUPLICATION: Skip if merchant already got a morning summary today
+                const alreadyGotSummary = await BackgroundJob.findOne({
+                    businessId: bId,
+                    type: "MORNING_SUMMARY",
+                    status: "completed",
+                    createdAt: { $gte: todayStart }
+                });
+
+                // Also skip if a task reminder was already delivered today for any of these sales
+                const saleIds = sales.map(s => s._id);
+                const alreadyGotReminder = await Reminder.findOne({
+                    businessId: bId,
+                    saleId: { $in: saleIds },
+                    status: { $in: ["delivered", "pending"] },
+                    triggerDate: { $gte: todayStart }
+                });
+
+                if (alreadyGotSummary && alreadyGotReminder) {
+                    console.log(`⏩ [DEDUP] Skipping 10AM collection nudge for ${business.displayName} — already notified today.`);
+                    continue;
+                }
 
                 await BackgroundJob.create({
                     type: "DEBT_NUDGE",

@@ -26,6 +26,19 @@ const sendIndividualDebtNudge = async (data) => {
             
             const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
             
+            // 🛡️ Save session state to capture Yes/No replies
+            const cleanFrom = String(whatsappNumber).replace(/\D/g, '');
+            const WhatsAppSession = require("../models/WhatsAppSession");
+            await WhatsAppSession.findOneAndUpdate(
+                { whatsappNumber: cleanFrom },
+                {
+                    type: "recovery_followup",
+                    data: { saleId: sale._id, customerName: sale.customerName, balance: bal },
+                    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+                },
+                { upsert: true }
+            );
+
             if (isInsideWindow) {
                 await sendWhatsAppMessage(whatsappNumber, msg);
             } else if (profile.plan === "oga" || profile.plan === "chairman") {
@@ -61,6 +74,19 @@ const sendIndividualDebtNudge = async (data) => {
             const msg = `🚩 *Overdue Alert, ${bossTitle}!*\n\n*${sale.customerName}* was supposed to pay *₦${bal.toLocaleString()}* for *${sale.description}* yesterday, but the record is still unpaid.\n\nShould I draft a follow-up link for you to forward to them? \n\n_Type: "Send link to ${sale.customerName}"_`;
             
             const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
+
+            // 🛡️ Save session state to capture Yes/No confirmations
+            const cleanFrom = String(whatsappNumber).replace(/\D/g, '');
+            const WhatsAppSession = require("../models/WhatsAppSession");
+            await WhatsAppSession.findOneAndUpdate(
+                { whatsappNumber: cleanFrom },
+                {
+                    type: "alarm_confirmation",
+                    data: { saleId: sale._id, customerName: sale.customerName },
+                    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+                },
+                { upsert: true }
+            );
 
             if (isInsideWindow) {
                 await sendWhatsAppMessage(whatsappNumber, msg);
