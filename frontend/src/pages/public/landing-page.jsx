@@ -17,7 +17,6 @@ import {
     TrendingUp,
     FileText,
     Lock,
-    Mic,
     Calendar,
     Clock,
     Wallet,
@@ -29,13 +28,15 @@ import {
     Tablet,
     Layout,
     Bell,
-    Star
+    Star,
+    Mic
 } from "lucide-react";
 import { motion } from "framer-motion";
 import PublicNavbar from "../../components/public/PublicNavbar";
 import PublicFooter from "../../components/public/PublicFooter";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
+import kreddyWhatsapp from "../../assets/kreddy-whatsapp.jpg";
 
 const Typewriter = ({ phrases }) => {
     const [displayText, setDisplayText] = useState("");
@@ -211,7 +212,9 @@ const LandingPage = () => {
             color: "#0F172A"
         }
     ];
+
     const location = useLocation();
+    const [showInstallBanner, setShowInstallBanner] = useState(false);
 
     const scrollToSection = (sectionId) => {
         const element = document.getElementById(sectionId);
@@ -240,6 +243,19 @@ const LandingPage = () => {
             window.scrollTo(0, 0);
         }
     }, [location]);
+
+    // Install banner: show once, 4 s after first visit, never again after dismiss
+    useEffect(() => {
+        const dismissed = localStorage.getItem('kredibly_install_dismissed');
+        if (dismissed) return;
+        const t = setTimeout(() => setShowInstallBanner(true), 4000);
+        return () => clearTimeout(t);
+    }, []);
+
+    const dismissInstallBanner = () => {
+        setShowInstallBanner(false);
+        localStorage.setItem('kredibly_install_dismissed', '1');
+    };
 
     return (
         <div className="noise-bg" style={{
@@ -422,41 +438,43 @@ const LandingPage = () => {
                     </div>
 
                     <div className="landing-mockup-grid">
-                        <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                            <motion.div className="phone-mockup" style={{ width: '100%', maxWidth: '360px', height: '680px', background: '#0F172A', borderRadius: '48px', padding: '12px', position: 'relative', boxShadow: '0 60px 120px -20px rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
-                                <div style={{ width: '100%', height: '100%', background: '#E5DDD5', borderRadius: '40px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                                    <div style={{ background: '#075E54', padding: '40px 20px 16px', color: 'white', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'white' }}>K</div>
-                                        <div><p style={{ fontSize: '0.95rem', fontWeight: 700 }}>KreddyAI</p><p style={{ fontSize: '0.65rem', opacity: 0.8 }}>Business Assistant</p></div>
-                                    </div>
-                                    <div style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
-                                        {/* Step 1: Voice Note */}
-                                        <div style={{ alignSelf: 'flex-end', background: '#DCF8C6', padding: '16px', borderRadius: '16px 0 16px 16px', fontSize: '0.85rem', color: '#111', fontWeight: 400, maxWidth: '85%' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                                                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#128C7E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Mic size={20} color="white" /></div>
-                                                <div style={{ width: '120px', height: '6px', background: 'rgba(18, 140, 126, 0.3)', borderRadius: '3px' }} />
-                                            </div>
-                                            <p style={{ margin: '0', opacity: 0.7, fontSize: '0.75rem', fontStyle: 'italic' }}>"Kreddy, I just sold a laptop to Emeka for ₦300k. Send him the invoice link."</p>
-                                        </div>
-                                        {/* Step 2: Invoice Created */}
-                                        <div style={{ alignSelf: 'flex-start', background: 'white', padding: '16px', borderRadius: '0 16px 16px 16px', fontSize: '0.85rem', maxWidth: '85%' }}>
-                                            <p style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.75rem', marginBottom: '6px' }}>Kreddy Assistant</p>
-                                            <p style={{ fontWeight: 500, lineHeight: 1.5, margin: 0 }}>
-                                                Done! Invoice created. 📄<br /><br />
-                                                🔗 <b>Payment Link:</b> pay.kredibly.com/emeka
-                                            </p>
-                                        </div>
-                                        {/* Step 3: Payment Alert */}
-                                        <div style={{ alignSelf: 'flex-start', background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '16px', borderRadius: '0 16px 16px 16px', fontSize: '0.85rem', maxWidth: '85%', marginTop: '8px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#10B981', fontWeight: 700 }}>
-                                                <Zap size={16} /> Instant Payout Alert
-                                            </div>
-                                            <p style={{ fontWeight: 500, lineHeight: 1.5, margin: 0 }}>
-                                                Emeka just paid! ₦300,000 has been sent to your GTBank account. 💸
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div style={{ padding: '16px', background: '#f0f0f0', display: 'flex', gap: '10px' }}><div style={{ flex: 1, height: '40px', background: 'white', borderRadius: '20px' }} /><div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#128C7E' }} /></div>
+                        <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                            <motion.div
+                                className="phone-mockup"
+                                initial={{ opacity: 0, y: 30 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.7, ease: 'easeOut' }}
+                                style={{
+                                    width: '100%',
+                                    maxWidth: '340px',
+                                    background: '#0F172A',
+                                    borderRadius: '48px',
+                                    padding: '12px',
+                                    boxShadow: '0 60px 120px -20px rgba(76,29,149,0.25), 0 0 0 1px rgba(255,255,255,0.08)',
+                                    overflow: 'hidden',
+                                    position: 'relative'
+                                }}
+                            >
+                                {/* No notch overlay — real screenshot fills from top */}
+
+                                <div style={{
+                                    width: '100%',
+                                    borderRadius: '40px',
+                                    overflow: 'hidden',
+                                    lineHeight: 0
+                                }}>
+                                    <img
+                                        src={kreddyWhatsapp}
+                                        alt="Real Kreddy AI WhatsApp conversation showing sales recording, scheduling, and debt tracking"
+                                        style={{
+                                            width: '100%',
+                                            height: 'auto',
+                                            display: 'block',
+                                            objectFit: 'cover',
+                                            objectPosition: 'top'
+                                        }}
+                                    />
                                 </div>
                             </motion.div>
                         </div>
@@ -923,9 +941,92 @@ const LandingPage = () => {
 
             <PublicFooter />
 
+            {/* ── Install Kredibly Banner ── */}
+            {showInstallBanner && (
+                <motion.div
+                    initial={{ opacity: 0, y: 80, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 60, scale: 0.95 }}
+                    transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+                    style={{
+                        position: 'fixed',
+                        bottom: '24px',
+                        right: '24px',
+                        zIndex: 9999,
+                        background: 'white',
+                        borderRadius: '24px',
+                        boxShadow: '0 24px 64px -12px rgba(76,29,149,0.22), 0 0 0 1px rgba(76,29,149,0.08)',
+                        padding: '24px 28px 22px',
+                        maxWidth: '340px',
+                        width: 'calc(100vw - 48px)',
+                        fontFamily: 'inherit'
+                    }}
+                >
+                    {/* Dismiss */}
+                    <button
+                        onClick={dismissInstallBanner}
+                        style={{
+                            position: 'absolute', top: '16px', right: '16px',
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            color: '#94A3B8', padding: '4px', display: 'flex', alignItems: 'center'
+                        }}
+                        aria-label="Dismiss"
+                    >
+                        <X size={18} />
+                    </button>
+
+                    {/* Header row */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+                        <div style={{
+                            width: '52px', height: '52px', borderRadius: '16px',
+                            background: 'linear-gradient(135deg, #4C1D95 0%, #7C3AED 100%)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            flexShrink: 0
+                        }}>
+                            <Smartphone size={26} color="white" />
+                        </div>
+                        <div>
+                            <p style={{ fontWeight: 700, fontSize: '1.05rem', color: '#0F172A', margin: 0, lineHeight: 1.3 }}>Install Kredibly App</p>
+                            <p style={{ color: '#64748B', fontSize: '0.82rem', margin: '4px 0 0', lineHeight: 1.4 }}>Add to your home screen for instant access and a better mobile experience.</p>
+                        </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div style={{ height: '1px', background: '#F1F5F9', marginBottom: '18px' }} />
+
+                    {/* Steps */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                            <div style={{
+                                width: '28px', height: '28px', borderRadius: '50%',
+                                background: 'rgba(76,29,149,0.08)', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center',
+                                fontWeight: 700, fontSize: '0.8rem', color: '#4C1D95', flexShrink: 0
+                            }}>1</div>
+                            <p style={{ color: '#334155', fontSize: '0.88rem', margin: 0, lineHeight: 1.4 }}>
+                                Tap the <strong>Share</strong> button ⬆ in Safari or Chrome
+                            </p>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                            <div style={{
+                                width: '28px', height: '28px', borderRadius: '50%',
+                                background: 'rgba(76,29,149,0.08)', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center',
+                                fontWeight: 700, fontSize: '0.8rem', color: '#4C1D95', flexShrink: 0
+                            }}>2</div>
+                            <p style={{ color: '#334155', fontSize: '0.88rem', margin: 0, lineHeight: 1.4 }}>
+                                Choose <strong>Add to Home Screen</strong> ⊞
+                            </p>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
             <style>{`
-                .landing-mockup-grid { display: grid; grid-template-columns: 1fr; gap: 4rem; align-items: center; }
-                @media (min-width: 992px) { .landing-mockup-grid { grid-template-columns: 1.15fr 0.85fr; } }
+                .landing-mockup-grid { display: grid; grid-template-columns: 1fr; gap: 3rem; align-items: center; }
+                @media (min-width: 992px) { .landing-mockup-grid { grid-template-columns: 1fr 1.2fr; gap: 5rem; } }
+                /* Flip order on desktop: image left, features right */
+                @media (min-width: 992px) { .landing-mockup-grid > *:first-child { order: 1; } .landing-mockup-grid > *:last-child { order: 2; } }
 
                 .premium-gradient {
                     background: linear-gradient(135deg, var(--primary) 0%, #F472B6 100%);
@@ -988,7 +1089,7 @@ const LandingPage = () => {
                 }
 
                 @media (max-width: 768px) {
-                    .phone-mockup { transform: scale(0.95); }
+                    .phone-mockup { transform: scale(1); max-width: 300px !important; }
                     section h2 { font-size: clamp(1.5rem, 6vw, 2.4rem) !important; }
                     section h3 { font-size: clamp(1rem, 4vw, 1.4rem) !important; }
                     section h4 { font-size: clamp(0.95rem, 3.5vw, 1.2rem) !important; }
