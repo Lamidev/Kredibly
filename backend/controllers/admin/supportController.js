@@ -163,9 +163,9 @@ exports.replyToTicket = async (req, res) => {
                              
                              let text = "";
                              if (plan === 'chairman') {
-                                 text = `🦁 *Chairman ${nameToUse}, Urgent Support Update!* \n\nI have a priority response from the team regarding your ticket: \n\n" *${message}* "\n\nYou can reply directly to me here, or check your Support Hub! 💎`;
+                                 text = `🦁 *Chairman ${nameToUse}, Urgent Support Update!* \n\nI have a priority response from the team regarding your ticket: \n\n" *${message}* "\n\nLog in to your dashboard to view the full response and reply! 💎`;
                              } else {
-                                 text = `🚀 *High power, Oga ${nameToUse}!* \n\nThe team has sent a sharp response to your issue: \n\n" *${message}* "\n\nRecord is safe and we're moving! Check your Support Hub for more. 🛡️`;
+                                 text = `🚀 *High power, Oga ${nameToUse}!* \n\nThe team has sent a sharp response to your issue: \n\n" *${message}* "\n\nPlease check your dashboard Support Hub to view the message and reply. 🛡️`;
                              }
                              
                              await whatsappController.sendWhatsAppMessage(biz.whatsappNumber, text);

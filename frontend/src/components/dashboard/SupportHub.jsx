@@ -1,20 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
-    MessageSquare,
     MessagesSquare,
     X,
     Send,
-    Heart,
-    ShieldCheck,
     ChevronRight,
     Clock,
-    MessageCircle,
     CheckCircle2,
-    Bot,
-    Sparkles,
-    History,
-    AlertCircle
+    AlertCircle,
+    Heart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -29,6 +23,7 @@ const SupportHub = () => {
     const [message, setMessage] = useState('');
     const [replyText, setReplyText] = useState('');
     const [loading, setLoading] = useState(false);
+    const [isSending, setIsSending] = useState(false);
     const [tickets, setTickets] = useState([]);
     const [unreadReplyCount, setUnreadReplyCount] = useState(0);
     const { profile } = useAuth();
@@ -38,6 +33,12 @@ const SupportHub = () => {
             document.body.classList.add('lock-scroll');
         } else {
             document.body.classList.remove('lock-scroll');
+            // Delay resetting view to menu until after the close animation finishes
+            const timer = setTimeout(() => {
+                setView('menu');
+                setActiveFaq(null);
+            }, 450);
+            return () => clearTimeout(timer);
         }
         return () => document.body.classList.remove('lock-scroll');
     }, [isOpen]);
@@ -101,8 +102,9 @@ const SupportHub = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!message.trim()) return;
+        if (!message.trim() || isSending) return;
 
+        setIsSending(true);
         setLoading(true);
         try {
             await axios.post(`${API_URL}/support/tickets`, {
@@ -114,20 +116,21 @@ const SupportHub = () => {
             setView('sent');
             setMessage('');
             setTimeout(() => {
-                setView('menu');
                 setIsOpen(false);
             }, 3500);
         } catch (err) {
             toast.error("Failed to send message");
         } finally {
             setLoading(false);
+            setIsSending(false);
         }
     };
 
     const handleReply = async (e) => {
         e.preventDefault();
-        if (!replyText.trim() || !activeTicket) return;
+        if (!replyText.trim() || !activeTicket || isSending) return;
 
+        setIsSending(true);
         setLoading(true);
         try {
             await axios.patch(`${API_URL}/support/tickets/${activeTicket._id}/reply`, {
@@ -140,6 +143,14 @@ const SupportHub = () => {
             toast.error("Reply failed");
         } finally {
             setLoading(false);
+            setIsSending(false);
+        }
+    };
+
+    const handleReplyKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleReply(e);
         }
     };
 
@@ -222,14 +233,14 @@ const SupportHub = () => {
                                     </div>
                                     <div>
                                         <h3 style={{ margin: 0, fontWeight: 900, fontSize: '1.25rem', letterSpacing: '-0.02em' }}>
-                                            Kreddy 🌿
+                                            Kreddy
                                         </h3>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 600, opacity: 0.9 }}>
-                                            Online • Ready to help
+                                            Online • Response time: ~10 mins
                                         </div>
                                     </div>
                                 </div>
-                                <button onClick={() => { setIsOpen(false); setView('menu'); }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '12px', color: 'white', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <button onClick={() => setIsOpen(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '12px', color: 'white', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <X size={20} />
                                 </button>
                             </div>
@@ -245,7 +256,7 @@ const SupportHub = () => {
                                             Hey there! {profile?.displayName || 'Chief'} 👋
                                         </p>
                                         <p style={{ fontSize: '0.8rem', color: '#6D28D9', margin: '4px 0 0 0', lineHeight: 1.4 }}>
-                                            Kreddy is here! Ask me anything about your records, trust score, or business scaling. 🌿
+                                            Kreddy is here! Ask me anything about your records, trust score, or business scaling.
                                         </p>
                                     </div>
 
@@ -275,16 +286,19 @@ const SupportHub = () => {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
                                         <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', paddingLeft: '8px' }}>Common Questions</p>
                                         {[
-                                            { q: "How do I record a sale?", a: "Just use the 'Plus' button or text Kreddy on WhatsApp: 'Sold a bag to Funke for 20k'." },
-                                            { q: "What is the Trust Score?", a: "It's your reliability rating based on verified receipts. High scores = more trust!" },
+                                            { q: "How do I record a sale?", a: "Tap the '+' button on your dashboard or message Kreddy on WhatsApp with something like: 'Sold a bag to Funke for 20k.' We'll log it instantly!" },
+                                            { q: "How do I create or send an invoice?", a: "Go to your Invoices tab, tap 'New Invoice', fill in your customer details and items, then share the payment link directly with your buyer via WhatsApp or copy link." },
+                                            { q: "My customer paid but it's not reflecting — what do I do?", a: "First, ask your customer to share the payment receipt. Then log the payment manually from the invoice page by tapping 'Record Payment'. If it still doesn't reflect, open a support ticket here." },
+                                            { q: "How do I add or manage my products/services?", a: "Head to the Products section on your dashboard. You can add items with names, prices, and descriptions. These will be auto-suggested when you create invoices or record sales." },
+                                            { q: "Why can't I withdraw my balance?", a: "Withdrawals require a verified bank account. Go to Settings → Payout Details and add your bank info. If it's already added and still failing, contact support — it could be a verification issue." },
                                         ].map((f, i) => (
                                             <button
                                                 key={i}
                                                 onClick={() => { setActiveFaq(f); setView('faq'); }}
-                                                style={{ textAlign: 'left', padding: '14px 16px', borderRadius: '16px', background: 'white', border: '1px solid #F1F5F9', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                                style={{ textAlign: 'left', padding: '14px 16px', borderRadius: '16px', background: 'white', border: '1px solid #F1F5F9', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}
                                             >
                                                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155' }}>{f.q}</span>
-                                                <ChevronRight size={14} color="#CBD5E1" />
+                                                <ChevronRight size={14} color="#CBD5E1" style={{ flexShrink: 0 }} />
                                             </button>
                                         ))}
                                     </div>
@@ -388,20 +402,47 @@ const SupportHub = () => {
                                     </div>
 
                                     {activeTicket.status !== 'resolved' && (
-                                        <form onSubmit={handleReply} style={{ marginTop: '16px', position: 'relative', flexShrink: 0 }}>
-                                            <input
-                                                value={replyText}
-                                                onChange={(e) => setReplyText(e.target.value)}
-                                                placeholder="Ask something else..."
-                                                style={{ width: '100%', padding: '14px 45px 14px 16px', borderRadius: '16px', border: '1px solid #E2E8F0', outline: 'none', fontSize: '0.9rem' }}
-                                            />
-                                            <button
-                                                disabled={!replyText.trim() || loading}
-                                                type="submit"
-                                                style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'var(--primary)', border: 'none', color: 'white', padding: '8px', borderRadius: '10px', display: 'flex', cursor: 'pointer' }}
-                                            >
-                                                <Send size={18} />
-                                            </button>
+                                        <form onSubmit={handleReply} style={{ marginTop: '16px', flexShrink: 0 }}>
+                                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '18px', padding: '8px 8px 8px 14px' }}>
+                                                <textarea
+                                                    value={replyText}
+                                                    onChange={(e) => setReplyText(e.target.value)}
+                                                    onKeyDown={handleReplyKeyDown}
+                                                    placeholder="Type a message... (Shift+Enter for new line)"
+                                                    rows={1}
+                                                    style={{
+                                                        flex: 1,
+                                                        border: 'none',
+                                                        outline: 'none',
+                                                        fontSize: '0.9rem',
+                                                        resize: 'none',
+                                                        background: 'transparent',
+                                                        lineHeight: '1.5',
+                                                        maxHeight: '100px',
+                                                        overflowY: 'auto',
+                                                        padding: '4px 0',
+                                                        fontFamily: 'inherit'
+                                                    }}
+                                                />
+                                                <button
+                                                    disabled={!replyText.trim() || isSending}
+                                                    type="submit"
+                                                    style={{
+                                                        flexShrink: 0,
+                                                        background: replyText.trim() && !isSending ? 'var(--primary)' : '#E2E8F0',
+                                                        border: 'none',
+                                                        color: replyText.trim() && !isSending ? 'white' : '#94A3B8',
+                                                        padding: '9px',
+                                                        borderRadius: '12px',
+                                                        display: 'flex',
+                                                        cursor: replyText.trim() && !isSending ? 'pointer' : 'default',
+                                                        transition: 'background 0.2s, color 0.2s'
+                                                    }}
+                                                >
+                                                    <Send size={18} />
+                                                </button>
+                                            </div>
+                                            <p style={{ margin: '4px 0 0 4px', fontSize: '0.65rem', color: '#94A3B8' }}>Enter to send • Shift+Enter for new line</p>
                                         </form>
                                     )}
                                 </motion.div>
