@@ -335,7 +335,7 @@ const LandingPage = () => {
                         lineHeight: 0.95, 
                         marginBottom: '32px',
                         letterSpacing: '-0.06em',
-                        fontFamily: "'Outfit', sans-serif"
+                        fontFamily: 'var(--font-heading)'
                     }}>
                         <span style={{ display: 'block', marginBottom: '16px' }}>Send invoices. Get paid.</span>
                         <div style={{ 
@@ -347,7 +347,7 @@ const LandingPage = () => {
                             justifyContent: 'center',
                             width: '100%',
                             fontSize: 'clamp(2.4rem, 9vw, 5.5rem)',
-                            fontFamily: "'Outfit', sans-serif",
+                            fontFamily: 'var(--font-heading)',
                             overflow: 'hidden',
                             whiteSpace: 'nowrap'
                         }}>
