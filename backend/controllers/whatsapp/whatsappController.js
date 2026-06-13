@@ -699,9 +699,7 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
         console.log(`🔔 WhatsApp Session Closed for ${normalizedTo} — Sending paid template message`);
         
         const safeMessage = String(textMessage)
-            .replace(/\n+/g, '  •  ') // Convert newlines to elegant bullet separators since Meta templates reject newlines in parameters
-            .replace(/[\r\t]/g, ' ')  // Remove carriage returns/tabs
-            .replace(/\s\s+/g, ' ')   // Collapse excessive spaces
+            .replace(/\r/g, '') // Remove carriage returns
             .trim()
             .substring(0, 1024);
         
@@ -1251,14 +1249,16 @@ Upgrade here: ${APP_URL}/pricing`);
                     }
 
                     // Log Activity for Dashboard (with Transcription)
-                    await logActivity({
-                        businessId: profile._id,
-                        action: "PAYMENT_RECORDED_WHATSAPP",
-                        entityType: "PAYMENT",
-                        entityId: sale._id,
-                        details: `Recorded payment of ₦${paidAmount.toLocaleString()} for ${sale.customerName} via Kreddy`,
-                        originalText: logText
-                    });
+                    if (paidAmount && paidAmount > 0) {
+                        await logActivity({
+                            businessId: profile._id,
+                            action: "PAYMENT_RECORDED_WHATSAPP",
+                            entityType: "PAYMENT",
+                            entityId: newSale._id,
+                            details: `Recorded payment of ₦${paidAmount.toLocaleString()} for ${newSale.customerName} via Kreddy`,
+                            originalText: logText
+                        });
+                    }
 
                     const bal = totalAmount - (paidAmount || 0);
                     const successMsg = getRandom(HUMANIZE.success, {}, plan);

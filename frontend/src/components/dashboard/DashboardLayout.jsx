@@ -274,7 +274,7 @@ const DashboardLayout = () => {
                         className="btn-primary"
                         style={{ width: '100%', padding: '14px', borderRadius: '14px', fontSize: '0.9rem' }}
                     >
-                        <Plus size={20} strokeWidth={3} /> Create Sale
+                        <Plus size={20} strokeWidth={3} /> New Invoice
                     </button>
                 </div>
 

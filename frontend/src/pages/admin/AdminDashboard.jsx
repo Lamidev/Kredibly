@@ -120,17 +120,7 @@ const AdminDashboard = () => {
                         <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Verified Online Transactions</p>
                     </div>
 
-                    <div className="admin-stats-card" style={{ border: '1px solid #FB923C', background: 'linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                            <div style={{ padding: '12px', background: '#FFEDD5', color: '#EA580C', borderRadius: '16px' }}>
-                                <ShieldCheck size={24} />
-                            </div>
-                            <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#EA580C', background: '#FFEDD5', padding: '4px 10px', borderRadius: '100px' }}>ESCROW</span>
-                        </div>
-                        <p style={{ color: '#9A3412', fontWeight: 800, fontSize: '0.85rem' }}>Platform Escrow</p>
-                        <h3 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', fontWeight: 950, color: '#1E293B', letterSpacing: '-0.04em', margin: '4px 0' }}>₦{stats?.totalEscrowBalance?.toLocaleString() || 0}</h3>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9A3412' }}>Merchant Funds Held</p>
-                    </div>
+
                 </div>
 
                 {/* ACTIVITIES & STREAM */}

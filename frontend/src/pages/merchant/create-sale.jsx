@@ -108,7 +108,7 @@ const CreateSale = () => {
                     <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#4C1D95', textTransform: 'uppercase', letterSpacing: '0.05em' }}>New Entry</span>
                 </div>
                 <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.8rem)', fontWeight: 950, color: '#0F172A', letterSpacing: '-0.05em', marginBottom: '8px' }}>
-                    Record New Sale
+                    Create New Invoice
                 </h1>
                 <p style={{ color: '#64748B', fontWeight: 600, fontSize: '0.95rem' }}>
                     Capture a past sale or send a fresh bill to a customer instantly.
@@ -125,7 +125,7 @@ const CreateSale = () => {
                             <div style={{ background: 'rgba(76, 29, 149, 0.1)', color: '#4C1D95', padding: '10px', borderRadius: '12px' }}>
                                 <FileText size={20} strokeWidth={2.5} />
                             </div>
-                            <h3 style={{ fontWeight: 800, fontSize: '0.9rem', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Sale Identity</h3>
+                            <h3 style={{ fontWeight: 800, fontSize: '0.9rem', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Invoice Identity</h3>
                         </div>
 
                         <div className="input-group">
