@@ -260,7 +260,7 @@ const HelpPage = () => {
                                 <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', paddingRight: '12px' }} className="no-scrollbar">
                                     {/* Original Message */}
                                     <div style={{ alignSelf: 'flex-end', maxWidth: '80%', background: 'var(--primary)', color: 'white', padding: '16px 20px', borderRadius: '24px 24px 4px 24px', boxShadow: 'var(--shadow-premium)' }}>
-                                        <p style={{ margin: 0, fontWeight: 500, lineHeight: 1.5 }}>{activeTicket.message}</p>
+                                        <p style={{ margin: 0, fontWeight: 500, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{activeTicket.message}</p>
                                         <p style={{ margin: '8px 0 0 0', fontSize: '0.7rem', opacity: 0.7, textAlign: 'right' }}>{new Date(activeTicket.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                     </div>
 
@@ -276,23 +276,39 @@ const HelpPage = () => {
                                             border: r.sender === 'admin' ? '1px solid var(--border)' : 'none',
                                             boxShadow: 'var(--shadow-premium)'
                                         }}>
-                                            <p style={{ margin: 0, fontWeight: 500, lineHeight: 1.5 }}>{r.message}</p>
+                                            <p style={{ margin: 0, fontWeight: 500, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{r.message}</p>
                                             <p style={{ margin: '8px 0 0 0', fontSize: '0.7rem', opacity: 0.7, textAlign: r.sender === 'admin' ? 'left' : 'right' }}>{new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                         </div>
                                     ))}
                                 </div>
 
                                 {activeTicket.status !== 'resolved' && (
-                                    <form onSubmit={handleReply} style={{ marginTop: '24px', position: 'relative' }}>
-                                        <input 
-                                            value={replyText}
-                                            onChange={(e) => setReplyText(e.target.value)}
-                                            placeholder="Type your message..."
-                                            style={{ width: '100%', padding: '18px 60px 18px 24px', borderRadius: '20px', border: '1px solid var(--border)', background: 'white', outline: 'none', fontSize: '1rem' }}
-                                        />
-                                        <button type="submit" disabled={!replyText.trim() || loading} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'var(--primary)', color: 'white', border: 'none', height: '44px', width: '44px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                                            <Send size={20} />
-                                        </button>
+                                    <form onSubmit={handleReply} style={{ marginTop: '24px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', background: 'white', border: '1px solid var(--border)', borderRadius: '20px', padding: '10px 10px 10px 20px' }}>
+                                            <textarea
+                                                value={replyText}
+                                                onChange={(e) => setReplyText(e.target.value)}
+                                                placeholder="Type your message..."
+                                                rows={1}
+                                                style={{
+                                                    flex: 1,
+                                                    border: 'none',
+                                                    outline: 'none',
+                                                    fontSize: '1rem',
+                                                    resize: 'none',
+                                                    background: 'transparent',
+                                                    lineHeight: '1.5',
+                                                    maxHeight: '120px',
+                                                    overflowY: 'auto',
+                                                    padding: '4px 0',
+                                                    fontFamily: 'inherit'
+                                                }}
+                                            />
+                                            <button type="submit" disabled={!replyText.trim() || loading} style={{ flexShrink: 0, background: replyText.trim() && !loading ? 'var(--primary)' : '#E2E8F0', color: replyText.trim() && !loading ? 'white' : '#94A3B8', border: 'none', height: '44px', width: '44px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: replyText.trim() && !loading ? 'pointer' : 'default', transition: 'background 0.2s' }}>
+                                                <Send size={20} />
+                                            </button>
+                                        </div>
+                                        <p style={{ margin: '4px 0 0 8px', fontSize: '0.7rem', color: 'var(--text-muted)' }}>Tap the send button to send your message</p>
                                     </form>
                                 )}
                            </motion.div>

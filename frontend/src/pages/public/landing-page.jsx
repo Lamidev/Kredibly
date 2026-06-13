@@ -335,7 +335,7 @@ const LandingPage = () => {
                         lineHeight: 0.95, 
                         marginBottom: '32px',
                         letterSpacing: '-0.06em',
-                        fontFamily: "'Outfit', sans-serif"
+                        fontFamily: 'var(--font-heading)'
                     }}>
                         <span style={{ display: 'block', marginBottom: '16px' }}>Send invoices. Get paid.</span>
                         <div style={{ 
@@ -346,16 +346,16 @@ const LandingPage = () => {
                             alignItems: 'center', 
                             justifyContent: 'center',
                             width: '100%',
-                            fontSize: 'clamp(3.2rem, 9vw, 5.5rem)',
-                            fontFamily: "'Outfit', sans-serif",
+                            fontSize: 'clamp(2.4rem, 9vw, 5.5rem)',
+                            fontFamily: 'var(--font-heading)',
                             overflow: 'hidden',
                             whiteSpace: 'nowrap'
                         }}>
                              <Typewriter phrases={[
                                 "Instantly.",
                                 "Seamlessly.",
-                                "With Kreddy AI.",
-                                "On autopilot."
+                                "On autopilot.",
+                                "With Kreddy AI"
                             ]} />
                         </div>
                     </h1>

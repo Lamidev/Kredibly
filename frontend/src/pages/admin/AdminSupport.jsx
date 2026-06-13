@@ -191,7 +191,7 @@ const AdminSupport = () => {
                                                     <span style={{ fontSize: '0.65rem', fontWeight: 900, color: reply.sender === 'admin' ? 'var(--primary)' : '#64748B', textTransform: 'uppercase' }}>{reply.sender === 'admin' ? 'You (Admin)' : t.businessId?.displayName || 'Merchant'}</span>
                                                     <span style={{ fontSize: '0.6rem', color: '#94A3B8', fontWeight: 700 }}>{new Date(reply.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                 </div>
-                                                <p style={{ margin: 0, fontSize: isMobile ? '0.85rem' : '0.9rem', color: '#334155', lineHeight: 1.5, fontWeight: 500 }}>{reply.message}</p>
+                                                <p style={{ margin: 0, fontSize: isMobile ? '0.85rem' : '0.9rem', color: '#334155', lineHeight: 1.5, fontWeight: 500, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{reply.message}</p>
                                             </div>
                                         ))}
                                     </motion.div>
