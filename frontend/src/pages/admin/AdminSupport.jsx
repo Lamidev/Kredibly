@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
-import { MessageSquare, ShieldCheck, Zap, RefreshCw, ChevronDown, ChevronUp, Clock, X, CheckCircle2, Trash2, AlertTriangle } from 'lucide-react';
+import { MessageSquare, ShieldCheck, Zap, RefreshCw, ChevronDown, ChevronUp, Clock, X, CheckCircle2, Trash2, AlertTriangle, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
@@ -43,7 +43,7 @@ const AdminSupport = () => {
     };
 
     const handleReply = async (ticket) => {
-        if (!ticket.replyText?.trim()) return;
+        if (!ticket.replyText?.trim() || processingId === ticket._id) return;
         setProcessingId(ticket._id);
         try {
             const res = await axios.patch(`${API_URL}/support/tickets/${ticket._id}/reply`, {
@@ -199,10 +199,9 @@ const AdminSupport = () => {
                             </AnimatePresence>
 
                             {t.status !== 'resolved' && (
-                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexDirection: isMobile ? 'column' : 'row', borderTop: '1px solid #F1F5F9', paddingTop: '20px' }}>
-                                    <input
-                                        type="text"
-                                        placeholder="Shield activated. Type your response..."
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', width: '100%', flexDirection: isMobile ? 'column' : 'row', borderTop: '1px solid #F1F5F9', paddingTop: '20px' }}>
+                                    <textarea
+                                        placeholder="Type your response... (Ctrl+Enter to send)"
                                         value={t.replyText || ''}
                                         onChange={(e) => {
                                             const newTickets = [...tickets];
@@ -210,16 +209,34 @@ const AdminSupport = () => {
                                             newTickets[idx].replyText = e.target.value;
                                             setTickets(newTickets);
                                         }}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleReply(t)}
-                                        style={{ flex: 1, width: isMobile ? '100%' : 'auto', padding: '14px 16px', borderRadius: '14px', border: '1px solid #E2E8F0', background: '#F8FAFC', fontWeight: 700, fontSize: '0.85rem', outline: 'none' }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                                                e.preventDefault();
+                                                handleReply(t);
+                                            }
+                                        }}
+                                        rows={2}
+                                        style={{ 
+                                            flex: 1, 
+                                            width: '100%', 
+                                            padding: '12px 16px', 
+                                            borderRadius: '14px', 
+                                            border: '1px solid #E2E8F0', 
+                                            background: '#F8FAFC', 
+                                            fontWeight: 700, 
+                                            fontSize: '0.85rem', 
+                                            outline: 'none',
+                                            resize: 'vertical',
+                                            fontFamily: 'inherit'
+                                        }}
                                     />
                                     <button 
                                         onClick={() => handleReply(t)} 
                                         disabled={!t.replyText?.trim() || processingId === t._id} 
                                         className="btn-primary" 
-                                        style={{ width: isMobile ? '100%' : 'auto', padding: '14px', borderRadius: '14px', background: t.replyText?.trim() ? 'var(--primary)' : '#CBD5E1', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                        style={{ width: isMobile ? '100%' : 'auto', padding: '14px', borderRadius: '14px', background: (t.replyText?.trim() && processingId !== t._id) ? 'var(--primary)' : '#CBD5E1', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                     >
-                                        {processingId === t._id ? <RefreshCw size={20} className="spin-animation" color="white" /> : <Zap size={22} fill="white" />}
+                                        {processingId === t._id ? <RefreshCw size={20} className="spin-animation" color="white" /> : <Send size={22} color="white" />}
                                     </button>
                                 </div>
                             )}

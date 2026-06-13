@@ -528,9 +528,9 @@ const SupportHub = () => {
                         left: auto !important;
                     }
                     .support-hub-card {
-                        width: calc(100vw - 32px) !important;
+                        left: 16px !important;
                         right: 16px !important;
-                        left: auto !important;
+                        width: auto !important;
                         bottom: 80px !important;
                         position: fixed !important;
                         height: calc(100dvh - 120px) !important;

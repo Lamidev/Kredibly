@@ -1251,14 +1251,16 @@ Upgrade here: ${APP_URL}/pricing`);
                     }
 
                     // Log Activity for Dashboard (with Transcription)
-                    await logActivity({
-                        businessId: profile._id,
-                        action: "PAYMENT_RECORDED_WHATSAPP",
-                        entityType: "PAYMENT",
-                        entityId: sale._id,
-                        details: `Recorded payment of ₦${paidAmount.toLocaleString()} for ${sale.customerName} via Kreddy`,
-                        originalText: logText
-                    });
+                    if (paidAmount && paidAmount > 0) {
+                        await logActivity({
+                            businessId: profile._id,
+                            action: "PAYMENT_RECORDED_WHATSAPP",
+                            entityType: "PAYMENT",
+                            entityId: newSale._id,
+                            details: `Recorded payment of ₦${paidAmount.toLocaleString()} for ${newSale.customerName} via Kreddy`,
+                            originalText: logText
+                        });
+                    }
 
                     const bal = totalAmount - (paidAmount || 0);
                     const successMsg = getRandom(HUMANIZE.success, {}, plan);

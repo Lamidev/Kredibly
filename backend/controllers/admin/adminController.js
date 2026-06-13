@@ -108,7 +108,7 @@ exports.getGlobalStats = async (req, res) => {
 
         // B. Add Verified Sales (The raw ledger)
         sales.filter(s => !s.businessId?.isBetaTester).forEach(s => {
-            s.payments.filter(p => verifiedMethods.includes(p.method)).forEach(p => {
+            s.payments.filter(p => verifiedMethods.includes(p.method) && p.amount > 0).forEach(p => {
                 const isTest = p.reference && testPatterns.some(ptrn => ptrn.test(p.reference));
                 if (isTest) return;
 
@@ -154,12 +154,6 @@ exports.getGlobalStats = async (req, res) => {
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, 100);
 
-        // 4. Platform Escrow (Held funds)
-        const totalEscrowBalanceRes = await BusinessProfile.aggregate([
-            { $group: { _id: null, total: { $sum: "$heldBalance" } } }
-        ]);
-        const totalEscrowBalance = totalEscrowBalanceRes[0]?.total || 0;
-
         res.status(200).json({
             success: true,
             stats: {
@@ -170,8 +164,7 @@ exports.getGlobalStats = async (req, res) => {
                 totalPlatformVolume, // Gross recorded (manual + online)
                 totalVerifiedVolume, // Real money (Online only)
                 totalOutstanding,
-                totalRevenue: totalKrediblyRevenue, // Subscription revenue (Paystack verified)
-                totalEscrowBalance
+                totalRevenue: totalKrediblyRevenue // Subscription revenue (Paystack verified)
             },
             activities: globalActivities
         });
@@ -297,6 +290,9 @@ exports.getInvoicePayments = async (req, res) => {
             if (sale.businessId?.isBetaTester) return;
 
             sale.payments.forEach(payment => {
+                // Skip payments with 0 or negative amount (e.g. invoice created but no payment recorded yet)
+                if (payment.amount === undefined || payment.amount <= 0) return;
+
                 // Skip Test references
                 const isTest = payment.reference && testPatterns.some(ptrn => ptrn.test(payment.reference));
                 if (isTest) return;
@@ -548,7 +544,7 @@ exports.getMissionControlFeed = async (req, res) => {
         // Add Customer Payments (Green) - Only show verified online payments
         const verifiedMethods = ['Nomba', 'Paystack', 'Squad', 'Kredibly Online'];
         filteredSales.forEach(s => {
-            s.payments.filter(p => verifiedMethods.includes(p.method)).forEach(p => {
+            s.payments.filter(p => verifiedMethods.includes(p.method) && p.amount > 0).forEach(p => {
                 // Skip Test references
                 const isTest = p.reference && testPatterns.some(ptrn => ptrn.test(p.reference));
                 if (isTest) return;
