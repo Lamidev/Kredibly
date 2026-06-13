@@ -346,7 +346,7 @@ const LandingPage = () => {
                             alignItems: 'center', 
                             justifyContent: 'center',
                             width: '100%',
-                            fontSize: 'clamp(3.2rem, 9vw, 5.5rem)',
+                            fontSize: 'clamp(2.4rem, 9vw, 5.5rem)',
                             fontFamily: "'Outfit', sans-serif",
                             overflow: 'hidden',
                             whiteSpace: 'nowrap'
@@ -354,8 +354,8 @@ const LandingPage = () => {
                              <Typewriter phrases={[
                                 "Instantly.",
                                 "Seamlessly.",
-                                "With Kreddy AI.",
-                                "On autopilot."
+                                "On autopilot.",
+                                "With Kreddy AI"
                             ]} />
                         </div>
                     </h1>

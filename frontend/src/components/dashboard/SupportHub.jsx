@@ -147,11 +147,10 @@ const SupportHub = () => {
         }
     };
 
-    const handleReplyKeyDown = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleReply(e);
-        }
+    // Only the send button triggers submission.
+    // Enter key in textarea naturally adds a newline — no interception needed.
+    const handleReplyKeyDown = (_e) => {
+        // Intentionally empty: sending is button-only.
     };
 
     const handleResolve = async (ticketId) => {
@@ -367,7 +366,7 @@ const SupportHub = () => {
                                     </div>
 
                                     <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', paddingRight: '4px' }} className="no-scrollbar">
-                                        <div style={{ alignSelf: 'flex-end', maxWidth: '85%', background: 'var(--primary)', color: 'white', padding: '12px 16px', borderRadius: '16px 16px 4px 16px', fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.1)' }}>
+                                        <div style={{ alignSelf: 'flex-end', maxWidth: '85%', background: 'var(--primary)', color: 'white', padding: '12px 16px', borderRadius: '16px 16px 4px 16px', fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.1)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                                             {activeTicket.message}
                                             <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.7)', marginTop: '6px', textAlign: 'right' }}>{new Date(activeTicket.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                                         </div>
@@ -381,7 +380,9 @@ const SupportHub = () => {
                                                 padding: '12px 16px',
                                                 borderRadius: r.sender === 'admin' ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
                                                 fontSize: '0.9rem',
-                                                boxShadow: r.sender === 'admin' ? 'none' : '0 4px 12px rgba(99, 102, 241, 0.2)'
+                                                boxShadow: r.sender === 'admin' ? 'none' : '0 4px 12px rgba(99, 102, 241, 0.2)',
+                                                whiteSpace: 'pre-wrap',
+                                                wordBreak: 'break-word'
                                             }}>
                                                 {r.message}
                                                 <div style={{ fontSize: '0.65rem', color: r.sender === 'admin' ? '#94A3B8' : 'rgba(255,255,255,0.7)', marginTop: '6px', textAlign: r.sender === 'admin' ? 'left' : 'right' }}>
@@ -406,7 +407,7 @@ const SupportHub = () => {
                                                     value={replyText}
                                                     onChange={(e) => setReplyText(e.target.value)}
                                                     onKeyDown={handleReplyKeyDown}
-                                                    placeholder="Type a message... (Shift+Enter for new line)"
+                                                    placeholder="Type a message..."
                                                     rows={1}
                                                     style={{
                                                         flex: 1,
@@ -440,7 +441,7 @@ const SupportHub = () => {
                                                     <Send size={18} />
                                                 </button>
                                             </div>
-                                            <p style={{ margin: '4px 0 0 4px', fontSize: '0.65rem', color: '#94A3B8' }}>Enter to send • Shift+Enter for new line</p>
+                                            <p style={{ margin: '4px 0 0 4px', fontSize: '0.65rem', color: '#94A3B8' }}>Tap the arrow to send</p>
                                         </form>
                                     )}
                                 </motion.div>
