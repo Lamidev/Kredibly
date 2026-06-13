@@ -194,6 +194,7 @@ const SupportHub = () => {
                         className="support-hub-card"
                         style={{
                             width: '400px',
+                            height: '600px',
                             background: 'white',
                             borderRadius: '28px',
                             boxShadow: '0 25px 60px rgba(0,0,0,0.18)',
@@ -240,14 +241,11 @@ const SupportHub = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <button onClick={() => setIsOpen(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '12px', color: 'white', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <X size={20} />
-                                </button>
                             </div>
                         </div>
 
                         {/* Body */}
-                        <div style={{ padding: '20px', height: '500px', display: 'flex', flexDirection: 'column', background: '#F8FAFC', overflow: 'hidden' }}>
+                        <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column', background: '#F8FAFC', overflow: 'hidden' }}>
 
                             {view === 'menu' && (
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ overflowY: 'auto' }} className="no-scrollbar">
@@ -553,10 +551,6 @@ const SupportHub = () => {
                     bottom: 30px;
                     right: 30px;
                     z-index: 10000;
-                    /* GPU Acceleration Layer to prevent scroll displacement/shake */
-                    transform: translate3d(0, 0, 0);
-                    -webkit-transform: translate3d(0, 0, 0);
-                    will-change: transform;
                 }
                 
                 .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -576,10 +570,6 @@ const SupportHub = () => {
                         position: fixed !important;
                         height: calc(100dvh - 120px) !important;
                         max-height: 600px !important;
-                    }
-                    div[style*="height: 500px"] {
-                        height: 100% !important;
-                        min-height: 0 !important;
                     }
                 }
                 

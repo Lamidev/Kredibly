@@ -330,11 +330,12 @@ const LandingPage = () => {
                 >
 
                     <h1 style={{ 
-                        fontSize: 'clamp(2.5rem, 8vw, 5.5rem)', 
-                        fontWeight: 700, 
-                        lineHeight: 1, 
+                        fontSize: 'clamp(3.2rem, 9vw, 5.5rem)', 
+                        fontWeight: 950, 
+                        lineHeight: 0.95, 
                         marginBottom: '32px',
-                        letterSpacing: '-0.05em' 
+                        letterSpacing: '-0.06em',
+                        fontFamily: "'Outfit', sans-serif"
                     }}>
                         <span style={{ display: 'block', marginBottom: '16px' }}>Send invoices. Get paid.</span>
                         <div style={{ 
@@ -345,7 +346,8 @@ const LandingPage = () => {
                             alignItems: 'center', 
                             justifyContent: 'center',
                             width: '100%',
-                            fontSize: 'clamp(2.5rem, 8vw, 5.5rem)',
+                            fontSize: 'clamp(3.2rem, 9vw, 5.5rem)',
+                            fontFamily: "'Outfit', sans-serif",
                             overflow: 'hidden',
                             whiteSpace: 'nowrap'
                         }}>
