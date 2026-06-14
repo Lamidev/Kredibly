@@ -257,7 +257,6 @@ const scheduleRemindersWorker = () => {
                     const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                     const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
                     const tone = profile.assistantSettings?.reminderTemplate || "friendly";
-                    const isPidgin = profile.assistantSettings?.preferredLanguage === "pidgin";
                     
                     let draftBody = "";
                     if (tone === "formal") {
@@ -266,9 +265,7 @@ const scheduleRemindersWorker = () => {
                         draftBody = `Hi ${sale.customerName}, just a friendly nudge regarding your balance of ₦${bal.toLocaleString()} for *${sale.description}* with ${profile.displayName}. Hope you're having a great day!`;
                     }
 
-                    const draftHeader = isPidgin
-                        ? `📝 *Draft message ready* \n\nCopy this one send to your customer:`
-                        : `📝 *Reminder Draft Ready* \n\nCopy and forward the message below to your customer:`;
+                    const draftHeader = `📝 *Reminder Draft Ready* \n\nCopy and forward the message below to your customer:`;
                     
                     const copyableDraft = `${draftBody}\n\n🔗 *VIEW DETAILS:*\n${APP_URL}/i/${sale.invoiceNumber}`;
                     

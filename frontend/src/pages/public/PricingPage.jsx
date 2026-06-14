@@ -54,8 +54,7 @@ const PricingPage = () => {
                 "8 AM Morning Business Brief",
                 "Add 1 Staff Member",
                 "Co-Branded Receipts (Your Logo)",
-                "Advanced AI Recovery Assistant",
-                "Kreddy AI Language (English / Pidgin)"
+                "Advanced AI Recovery Assistant"
             ],
             cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade to Oga" : "Become an Oga",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -188,7 +187,7 @@ const PricingPage = () => {
                                         { name: "Instant Bank Settlements", hustler: true, oga: true, chairman: true },
                                         { name: "Morning Business Briefing", hustler: false, oga: true, chairman: true },
                                         { name: "Automated Ledger Sync", hustler: true, oga: true, chairman: true },
-                                        { name: "Kreddy AI Language (English / Pidgin)", hustler: false, oga: true, chairman: true }
+                
                                     ]},
                                     { category: "Business Management", features: [
                                         { name: "Sales Records Limit", hustler: "50 / mo", oga: "Unlimited", chairman: "Unlimited" },

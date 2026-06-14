@@ -2015,24 +2015,10 @@ Upgrade here: ${APP_URL}/pricing`);
                     }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "set_language") {
-                    // 🌍 LANGUAGE PREFERENCE: Save merchant's preferred language for Kreddy
-                    const newLang = (aiResponseItem.data?.preferredLanguage || "").toLowerCase();
-                    if (newLang && ["english", "pidgin"].includes(newLang)) {
-                        if (!profile.assistantSettings) profile.assistantSettings = {};
-                        profile.assistantSettings.preferredLanguage = newLang;
-                        await profile.save();
-
-                        const langLabel = newLang === "pidgin" ? "Pidgin English" : "standard English";
-                        let reply = aiResponseItem.data?.reply || `Got it, ${bossTitle}! 🫡 I'll be speaking *${langLabel}* from now on.`;
-                        await sendReply(from, reply);
-                    } else {
-                        // Unsupported language request — politely redirect
-                        const isEnglishLang = preferredLanguage === "english";
-                        const unsupportedReply = isEnglishLang
-                            ? `I appreciate the request, ${bossTitle}! 🌍 Currently, I only support *English* and *Pidgin English*. Just say _"Speak Pidgin to me"_ or _"Speak English"_ and I'll switch right away! 🫡`
-                            : `${bossTitle}, e no reach there yet o! 😄 For now, I only sabi *English* and *Pidgin English*. Just tell me _"Speak Pidgin"_ or _"Speak English"_ make I switch sharp sharp! 🫡`;
-                        await sendReply(from, unsupportedReply);
-                    }
+                    // 🌍 LANGUAGE: Kreddy is English-only. Politely inform the merchant.
+                    const englishOnlyReply = aiResponseItem.data?.reply ||
+                        `Thanks for the request, ${bossTitle}! 🌍 Kreddy currently communicates in *standard English* only. No language change needed — I've got you covered in English! 🫡`;
+                    await sendReply(from, englishOnlyReply);
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "check_debt") {
                     const searchName = (aiResponseItem.data.customerName || "").trim();

@@ -5,15 +5,12 @@ const genAI = new GoogleGenerativeAI(process.env.KREDDY_API_KEY || "");
 
 /**
  * Generate a high-value, long-form Daily Business Masterclass using Gemini 2.5 Pro.
- * @param {String} tone - 'English' or 'Pidgin'
  */
 const generateDailyAdvice = async (tone = "English") => {
     try {
-        console.log(`🧠 Kreddy Brain: Generating ${tone} business advice...`);
+        console.log(`🧠 Kreddy Brain: Generating daily business advice...`);
 
-        const toneInstruction = tone === "Pidgin" 
-            ? "Use authentic Street-Smart Nigerian Pidgin only. Be warm, energetic, and encouraging."
-            : "Use professional and clear Standard English only. DO NOT use Pidgin or slang. Focus on clarity and authority.";
+        const toneInstruction = "Use professional and clear Standard English only. DO NOT use Pidgin or slang. Focus on clarity and authority.";
 
         const dayOfWeek = new Date().getDay(); // 0 (Sun) to 6 (Sat)
         const themes = [
@@ -79,11 +76,7 @@ const generateDailyAdvice = async (tone = "English") => {
     } catch (err) {
         console.error("❌ Critical AI Advice Failure:", err.message);
         
-        const fallbacks = tone === "Pidgin" ? [
-            `💡 *THE BIG INSIGHT:* Cashflow na Lifeblood\n\n🛡️ *WETIN MATTER:* Profit na paper, na cash dey pay light bill. Log every kobo today!\n\n✅ *WETIN TO DO:* Open Kredibly, log one sale now. Let's win! 🛡️`,
-            `🚀 *SCALE UP:* Customer Trust na Gold\n\n🛡️ *WETIN MATTER:* If you deliver on time, dem go come back. Check your pending orders now!\n\n✅ *WETIN TO DO:* Call one customer to confirm delivery. Oya! 🚀`,
-            `📈 *GROWTH:* Small Wins count\n\n🛡️ *WETIN MATTER:* No look for big money only, small small kobo dey build empire. Record everything!\n\n✅ *WETIN TO DO:* Log your smallest sale from yesterday. Focus! 📈`
-        ] : [
+        const fallbacks = [
             `💡 *THE BIG INSIGHT:* Cashflow is King\n\n🛡️ *WHY IT MATTERS:* Profit is just paper, but cash pays the bills. Record every kobo today!\n\n✅ *ACTION STEP:* Log one sale in Kredibly now. Let's win! 🛡️`,
             `🚀 *SCALE UP:* Consistency Wins\n\n🛡️ *WHY IT MATTERS:* Showing up every day is 80% of the battle. Keep your ledger updated.\n\n✅ *ACTION STEP:* Review your outstanding debts for 5 minutes. 🚀`,
             `📈 *GROWTH:* Customer Retention\n\n🛡️ *WHY IT MATTERS:* It's cheaper to keep a customer than to find a new one. Service is everything.\n\n✅ *ACTION STEP:* Send a thank-you note to your last customer. 📈`

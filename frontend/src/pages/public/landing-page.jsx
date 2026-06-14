@@ -37,7 +37,6 @@ import PublicFooter from "../../components/public/PublicFooter";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 import kreddyWhatsapp from "../../assets/kreddy-whatsapp.jpg";
-import handMockup from "../../assets/hand-mockup.png";
 
 const Typewriter = ({ phrases }) => {
     const [displayText, setDisplayText] = useState("");
@@ -184,8 +183,7 @@ const LandingPage = () => {
                 "8 AM Morning Business Brief",
                 "Add 1 Staff Member",
                 "Co-Branded Receipts (Your Logo)",
-                "Advanced AI Recovery Assistant",
-                "Kreddy AI Language (English / Pidgin)"
+                "Advanced AI Recovery Assistant"
             ],
             cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade to Oga" : "Become an Oga",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -433,7 +431,7 @@ const LandingPage = () => {
             </section>
 
             {/* 3. SIMULATED WHATSAPP FLOW: Kreddy Assistant Showcase */}
-            <section id="how-it-works" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: 'white', color: '#0F172A' }}>
+            <section id="how-it-works" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: 'white', color: '#0F172A', overflow: 'hidden' }}>
                 <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '60px' }}>
                         <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 700, letterSpacing: '-0.04em', marginBottom: '24px' }}>Meet Kreddy: Your AI Admin.</h2>
@@ -442,65 +440,49 @@ const LandingPage = () => {
 
                     <div className="landing-mockup-grid">
                         <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                            <div className="landing-mockup-hand-wrap" style={{ position: 'relative', width: '100%', maxWidth: '440px', display: 'flex', justifyContent: 'center' }}>
-                                {/* Hand Background Image */}
-                                <img 
-                                    src={handMockup} 
-                                    alt="Hand holding Kreddy AI interface" 
-                                    style={{ 
-                                        width: '100%', 
-                                        height: 'auto', 
-                                        display: 'block', 
-                                        position: 'relative',
-                                        zIndex: 1
-                                    }} 
-                                />
-
+                            <div className="phone-mockup-wrapper">
                                 <motion.div
                                     className="phone-mockup"
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    whileInView={{ opacity: 1, scale: 1 }}
+                                    initial={{ opacity: 0, y: 30 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true }}
-                                    transition={{ duration: 0.7, ease: 'easeOut', delay: 0.2 }}
+                                    transition={{ duration: 0.7, ease: 'easeOut' }}
                                     style={{
-                                        position: 'absolute',
-                                        top: '7.5%',
-                                        left: '33%',
-                                        width: '45.5%',
-                                        height: '69.2%',
+                                        width: '100%',
                                         background: '#0F172A',
-                                        borderRadius: '26px',
+                                        borderRadius: '48px',
+                                        padding: '12px',
+                                        boxShadow: '0 60px 120px -20px rgba(76,29,149,0.25), 0 0 0 1px rgba(255,255,255,0.08)',
                                         overflow: 'hidden',
-                                        zIndex: 2,
-                                        boxShadow: 'inset 0 0 0 2px #1A1A1A'
+                                        position: 'relative'
                                     }}
                                 >
                                     {/* Dynamic Island */}
                                     <div style={{
                                         position: 'absolute',
-                                        top: '10px',
+                                        top: '20px',
                                         left: '50%',
                                         transform: 'translateX(-50%)',
-                                        width: '70px',
-                                        height: '22px',
+                                        width: '100px',
+                                        height: '28px',
                                         backgroundColor: '#000000',
-                                        borderRadius: '20px',
+                                        borderRadius: '24px',
                                         zIndex: 20,
                                         display: 'flex',
                                         justifyContent: 'flex-end',
                                         alignItems: 'center',
-                                        padding: '0 8px',
-                                        boxShadow: '0 4px 10px rgba(0,0,0,0.5)'
+                                        padding: '0 10px',
+                                        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)'
                                     }}>
-                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#111', border: '1px solid #222' }}></div>
+                                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#111', border: '1px solid #222' }}></div>
                                     </div>
 
                                     <div style={{
                                         width: '100%',
-                                        height: '100%',
+                                        borderRadius: '40px',
                                         overflow: 'hidden',
                                         lineHeight: 0,
-                                        paddingTop: '24px',
+                                        paddingTop: '32px',
                                         backgroundColor: '#F6F6F6'
                                     }}>
                                         <img
@@ -508,7 +490,7 @@ const LandingPage = () => {
                                             alt="Real Kreddy AI WhatsApp conversation showing sales recording, scheduling, and debt tracking"
                                             style={{
                                                 width: '100%',
-                                                height: '100%',
+                                                height: 'auto',
                                                 display: 'block',
                                                 objectFit: 'cover',
                                                 objectPosition: 'top'
@@ -519,99 +501,86 @@ const LandingPage = () => {
 
                                 {/* Floating Bubble 1: Received 20k */}
                                 <motion.div
-                                    className="bubble-received"
                                     initial={{ opacity: 0, x: -30, y: 20 }}
                                     whileInView={{ opacity: 1, x: 0, y: 0 }}
                                     transition={{ delay: 0.3, duration: 0.6 }}
+                                    className="floating-bubble-1"
                                     style={{
-                                        position: 'absolute',
-                                        top: '4%',
-                                        left: '-5%',
                                         background: 'white',
                                         borderRadius: '100px',
-                                        padding: '8px 24px 8px 8px',
+                                        padding: '12px 32px 12px 12px',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '12px',
-                                        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)',
-                                        zIndex: 10
+                                        gap: '14px',
+                                        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)'
                                     }}
                                 >
-                                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#FCE7F3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#DB2777', fontSize: '16px' }}>
+                                    <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#FCE7F3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#DB2777', fontSize: '18px' }}>
                                         MN
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        <span style={{ fontWeight: 800, fontSize: '15px', color: '#0F172A', lineHeight: 1.2 }}>Received 20k</span>
+                                        <span style={{ fontWeight: 800, fontSize: '16.5px', color: '#0F172A', lineHeight: 1.2 }}>Received 20k</span>
                                         <span style={{ color: '#64748B', fontSize: '14px', fontWeight: 500 }}>from Mama Ngozi</span>
                                     </div>
                                 </motion.div>
 
                                 {/* Floating Bubble 2: Total Budget */}
                                 <motion.div
-                                    className="bubble-budget"
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    whileInView={{ opacity: 1, scale: 1 }}
+                                    initial={{ opacity: 0, x: 30, y: -20 }}
+                                    whileInView={{ opacity: 1, x: 0, y: 0 }}
                                     transition={{ delay: 0.5, duration: 0.6 }}
+                                    className="floating-bubble-2"
                                     style={{
-                                        position: 'absolute',
-                                        top: '9%',
-                                        right: '23%',
-                                        background: 'rgba(255,255,255,0.92)',
-                                        backdropFilter: 'blur(8px)',
-                                        borderRadius: '18px',
-                                        padding: '10px',
+                                        background: 'white',
+                                        borderRadius: '24px',
+                                        padding: '16px',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        boxShadow: '0 8px 24px -4px rgba(0,0,0,0.18)',
-                                        zIndex: 15
+                                        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)'
                                     }}
                                 >
-                                   <div style={{ position: 'relative', width: '72px', height: '72px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                   <div style={{ position: 'relative', width: '90px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                        <svg width="100%" height="100%" viewBox="0 0 36 36" style={{ position: 'absolute', top: 0, left: 0 }}>
                                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#F1F5F9" strokeWidth="3" />
                                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831" fill="none" stroke="#F59E0B" strokeWidth="3" strokeDasharray="60, 100" strokeLinecap="round" />
                                        </svg>
-                                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 1 }}>
-                                           <span style={{ fontSize: '7px', color: '#64748B', fontWeight: 600, letterSpacing: '0.02em', marginBottom: '2px' }}>Total Budget</span>
-                                           <span style={{ fontSize: '11px', fontWeight: 900, color: '#0F172A' }}>350,000</span>
+                                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 1, marginTop: '2px' }}>
+                                           <span style={{ fontSize: '9px', color: '#64748B', fontWeight: 600, letterSpacing: '0.02em', marginBottom: '2px' }}>Total Budget</span>
+                                           <span style={{ fontSize: '14px', fontWeight: 900, color: '#0F172A' }}>350,000</span>
                                        </div>
                                    </div>
                                 </motion.div>
 
                                 {/* Floating Bubble 3: Overlapping logos */}
                                 <motion.div
-                                    className="bubble-icons"
                                     initial={{ opacity: 0, y: 20 }}
                                     whileInView={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.7, duration: 0.6 }}
+                                    className="floating-bubble-3"
                                     style={{
-                                        position: 'absolute',
-                                        bottom: '14%',
-                                        left: '12%',
                                         background: 'white',
                                         borderRadius: '100px',
-                                        padding: '10px',
+                                        padding: '12px 16px',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)',
-                                        zIndex: 10
+                                        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)'
                                     }}
                                 >
-                                    <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3, border: '3px solid white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                                        <svg width="26" height="26" viewBox="0 0 40 40" fill="none">
+                                    <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3, border: '3px solid white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                                        <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
                                             <path d="M20 2 L36 10 L36 30 L20 38 L4 30 L4 10 Z" fill="#7C3AED" />
                                             <path d="M20 12 L28 16 L20 20 L16 18 M28 24 L20 28 L12 24 L12 16" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
                                     </div>
-                                    <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, border: '3px solid white', marginLeft: '-14px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                                        <svg width="26" height="26" viewBox="0 0 40 40" fill="none">
+                                    <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, border: '3px solid white', marginLeft: '-18px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                                        <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
                                             <circle cx="20" cy="20" r="14" stroke="#10B981" strokeWidth="8" />
                                             <rect x="2" y="15" width="12" height="10" fill="#1E3A8A" rx="2" />
                                         </svg>
                                     </div>
-                                    <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, border: '3px solid white', marginLeft: '-14px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                                        <svg width="26" height="26" viewBox="0 0 40 40" fill="none">
+                                    <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, border: '3px solid white', marginLeft: '-18px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                                        <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
                                             <path d="M20 4 L36 20 L20 36 L4 20 Z" stroke="#F97316" strokeWidth="4" />
                                             <path d="M20 12 L28 20 L20 28 L12 20 Z" stroke="#F97316" strokeWidth="4" />
                                             <rect x="18" y="18" width="4" height="4" fill="#F97316" />
@@ -1230,36 +1199,88 @@ const LandingPage = () => {
                     }
                 }
 
+                .phone-mockup-wrapper {
+                    position: relative;
+                    width: 100%;
+                    max-width: 340px;
+                    margin: 0 auto;
+                }
+                .floating-bubble-1 {
+                    position: absolute;
+                    top: 20px;
+                    left: -16%; /* Shifted to left to keep more of it outside the phone body */
+                    z-index: 25; /* Higher than dynamic island (20) to cover it */
+                    animation: float-1 5s ease-in-out infinite;
+                }
+                .floating-bubble-2 {
+                    position: absolute;
+                    top: 22px; /* Really close to dynamic island */
+                    right: -15%;
+                    z-index: 10;
+                    animation: float-2 6s ease-in-out infinite;
+                }
+                .floating-bubble-3 {
+                    position: absolute;
+                    bottom: 18%;
+                    left: -10%;
+                    z-index: 10;
+                    animation: float-3 7s ease-in-out infinite;
+                }
+
+                @keyframes float-1 {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-8px); }
+                }
+                @keyframes float-2 {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-6px); }
+                }
+                @keyframes float-3 {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-7px); }
+                }
+
                 @media (max-width: 768px) {
+                    .phone-mockup-wrapper {
+                        max-width: 280px !important;
+                    }
+                    .phone-mockup { transform: scale(1); max-width: 100% !important; }
+                    .floating-bubble-1 {
+                        top: 15px !important;
+                        left: -25px !important; /* Shifted to left so part of it hangs outside the phone body */
+                        z-index: 25 !important;
+                        animation: float-1-mobile 5s ease-in-out infinite !important;
+                        transform-origin: left center !important;
+                    }
+                    .floating-bubble-2 {
+                        top: 15px !important;
+                        right: -10px !important;
+                        animation: float-2-mobile 6s ease-in-out infinite !important;
+                        transform-origin: right center !important;
+                    }
+                    .floating-bubble-3 {
+                        bottom: 12% !important;
+                        left: -10px !important;
+                        animation: float-3-mobile 7s ease-in-out infinite !important;
+                        transform-origin: left center !important;
+                    }
                     section h2 { font-size: clamp(1.5rem, 6vw, 2.4rem) !important; }
                     section h3 { font-size: clamp(1rem, 4vw, 1.4rem) !important; }
                     section h4 { font-size: clamp(0.95rem, 3.5vw, 1.2rem) !important; }
                     section p  { font-size: clamp(0.82rem, 3vw, 1rem) !important; }
+                }
 
-                    /* Hand mockup: shrink container and keep bubbles visible */
-                    .landing-mockup-hand-wrap {
-                        max-width: 280px !important;
-                    }
-                    .landing-mockup-hand-wrap .bubble-received {
-                        top: 3% !important;
-                        left: -2% !important;
-                        padding: 5px 12px 5px 5px !important;
-                        gap: 7px !important;
-                    }
-                    .landing-mockup-hand-wrap .bubble-received span:first-child { font-size: 11px !important; }
-                    .landing-mockup-hand-wrap .bubble-received span:last-child { font-size: 10px !important; }
-                    .landing-mockup-hand-wrap .bubble-received > div:first-child { width: 30px !important; height: 30px !important; font-size: 11px !important; }
-                    .landing-mockup-hand-wrap .bubble-budget {
-                        top: 2% !important;
-                        right: -8% !important;
-                        padding: 8px !important;
-                    }
-                    .landing-mockup-hand-wrap .bubble-budget > div { width: 60px !important; height: 60px !important; }
-                    .landing-mockup-hand-wrap .bubble-budget span:first-child { font-size: 7px !important; }
-                    .landing-mockup-hand-wrap .bubble-budget span:last-child { font-size: 11px !important; }
-                    .landing-mockup-hand-wrap .bubble-icons { bottom: 12% !important; left: 10% !important; padding: 6px !important; }
-                    .landing-mockup-hand-wrap .bubble-icons > div { width: 30px !important; height: 30px !important; }
-                    .landing-mockup-hand-wrap .bubble-icons > div svg { width: 18px !important; height: 18px !important; }
+                @keyframes float-1-mobile {
+                    0%, 100% { transform: scale(0.85) translateY(0); }
+                    50% { transform: scale(0.85) translateY(-8px); }
+                }
+                @keyframes float-2-mobile {
+                    0%, 100% { transform: scale(0.85) translateY(0); }
+                    50% { transform: scale(0.85) translateY(-6px); }
+                }
+                @keyframes float-3-mobile {
+                    0%, 100% { transform: scale(0.85) translateY(0); }
+                    50% { transform: scale(0.85) translateY(-7px); }
                 }
                 
                 @keyframes blink {

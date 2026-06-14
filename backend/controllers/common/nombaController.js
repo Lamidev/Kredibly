@@ -319,10 +319,7 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
 
                         // 🔔 WHATSAPP SETTLEMENT CONFIRMATION
                         if (business.whatsappNumber) {
-                            const isPidgin = business.assistantSettings?.preferredLanguage === "pidgin";
-                            const reassurance = isPidgin 
-                                ? "🏦 *Your cash don land your bank account!* ⚡"
-                                : "🏦 *Your bank account has been credited!* ⚡";
+                            const reassurance = "🏦 *Your bank account has been credited!* ⚡";
                             
                             let alertMsg = `💰 *Settlement Alert, ${business.displayName}!* \n\nI've successfully swept *₦${sweepAmount.toLocaleString()}* from the *${sale.customerName}* payment to your *${settlement.bankDetails.accountName}* account. \n\n${reassurance}`;
                             

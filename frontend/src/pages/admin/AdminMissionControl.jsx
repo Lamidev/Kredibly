@@ -20,10 +20,7 @@ const AdminMissionControl = () => {
     const [adviceStatus, setAdviceStatus] = useState("pending");
     const [isRegenerating, setIsRegenerating] = useState(false);
     const [isApproving, setIsApproving] = useState(false);
-    const [tone, setTone] = useState("English");
-    const [savedTone, setSavedTone] = useState("English");
-    const [isSavingTone, setIsSavingTone] = useState(false);
- 
+
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
@@ -46,16 +43,8 @@ const AdminMissionControl = () => {
         try {
             const res = await axios.get(`${API_URL}/admin/daily-advice`, { withCredentials: true });
             const value = res.data?.value;
-            // value is now an object { adviceText, tone }
             setAdvice(value?.adviceText || value || "");
             setAdviceStatus(res.data?.status || "pending");
-            if (value?.tone) {
-                setTone(value.tone);
-                setSavedTone(value.tone);
-            } else if (res.data?.metadata?.tone) {
-                setTone(res.data.metadata.tone);
-                setSavedTone(res.data.metadata.tone);
-            }
         } catch (err) {
             console.error("Daily Advice Sync Error:", err);
         }
@@ -64,10 +53,10 @@ const AdminMissionControl = () => {
     const handleRegenerateAdvice = async () => {
         setIsRegenerating(true);
         try {
-            const res = await axios.post(`${API_URL}/admin/daily-advice/regenerate`, { tone }, { withCredentials: true });
+            const res = await axios.post(`${API_URL}/admin/daily-advice/regenerate`, { tone: "English" }, { withCredentials: true });
             setAdvice(res.data.advice);
             setAdviceStatus("pending");
-            toast.success(`New ${tone} lesson drafted!`);
+            toast.success(`New lesson drafted!`);
         } catch (err) {
             toast.error("Failed to regenerate advice.");
         } finally {
@@ -82,7 +71,7 @@ const AdminMissionControl = () => {
         try {
             const res = await axios.post(`${API_URL}/admin/daily-advice/approve`, { 
                 editedAdvice: advice,
-                tone 
+                tone: "English"
             }, { withCredentials: true });
             setAdviceStatus("approved");
             toast.success(res.data.message);
@@ -94,20 +83,6 @@ const AdminMissionControl = () => {
         }
     };
 
-    const handleSaveTonePreference = async () => {
-        setIsSavingTone(true);
-        try {
-            const res = await axios.patch(`${API_URL}/admin/daily-advice/tone`, { tone }, { withCredentials: true });
-            if (res.data.success) {
-                setSavedTone(tone);
-                toast.success(`System preference updated! Tomorrow's report will use ${tone}.`);
-            }
-        } catch (err) {
-            toast.error("Failed to sync preference. Ensure backend is running.");
-        } finally {
-            setIsSavingTone(false);
-        }
-    };
 
     const fetchMissionControlData = async (manual = false, silent = false) => {
         if (!manual && !silent) setLoading(true);
@@ -244,39 +219,6 @@ const AdminMissionControl = () => {
                             <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>Manage the daily street-smart advice and morning report dispatch.</p>
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                            {/* Tone Toggle */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                    {['English', 'Pidgin'].map(t => (
-                                        <button
-                                            key={t}
-                                            onClick={() => setTone(t)}
-                                            style={{
-                                                padding: '6px 12px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800,
-                                                background: tone === t ? 'var(--primary)' : 'transparent',
-                                                color: 'white', border: 'none', cursor: 'pointer', transition: 'all 0.2s'
-                                            }}
-                                        >
-                                            {t}
-                                        </button>
-                                    ))}
-                                </div>
-                                {tone !== savedTone && (
-                                    <motion.button 
-                                        initial={{ opacity: 0, y: -5 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        onClick={handleSaveTonePreference}
-                                        disabled={isSavingTone}
-                                        style={{ 
-                                            background: '#10B981', color: 'white', border: 'none', borderRadius: '8px', 
-                                            padding: '6px 12px', fontSize: '0.65rem', fontWeight: 900, cursor: 'pointer',
-                                            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
-                                        }}
-                                    >
-                                        {isSavingTone ? 'Saving...' : 'Save Configuration'}
-                                    </motion.button>
-                                )}
-                            </div>
                             <span style={{ 
                                 padding: '6px 14px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 900, 
                                 background: adviceStatus === 'pending' ? '#FEF3C7' : '#DCFCE7', 
