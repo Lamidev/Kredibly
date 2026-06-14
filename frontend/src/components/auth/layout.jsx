@@ -15,6 +15,12 @@ function AuthLayout() {
     }}>
       {/* Dynamic Background Overlays */}
       <div className="pattern-dots" style={{ opacity: 0.05 }}></div>
+      <div style={{ 
+        position: 'absolute', 
+        inset: 0, 
+        background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0) 0%, rgba(248, 250, 252, 0.4) 100%)',
+        pointerEvents: 'none'
+      }}></div>
 
       {/* Persistent Logo Header */}
       <div
