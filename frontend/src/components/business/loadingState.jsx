@@ -4,10 +4,10 @@ const LoadingState = () => {
   return (
     <div
       className="flex items-center justify-center min-h-screen bg-center bg-no-repeat bg-cover"
-      style={{ backgroundImage: "url('/KwikProofpattern.png')" }}
+      style={{ backgroundImage: "url('/Krediblypattern-sm.jpg')" }}
     >
       <motion.img
-        src="/Kwikproofnew.png"
+        src="/krediblyrevamped.png"
         alt="Loading..."
         className="w-24 sm:w-28 md:w-32 lg:w-36 h-auto"
         animate={{
