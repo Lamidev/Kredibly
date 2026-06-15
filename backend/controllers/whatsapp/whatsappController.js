@@ -903,7 +903,7 @@ const handleIncoming = async (req, res) => {
         from = message.from;
         const messageId = message.id;
         const msgType = message.type;
-        const text = message.text?.body?.trim() || message.image?.caption?.trim() || message.document?.caption?.trim() || "";
+        let text = message.text?.body?.trim() || message.image?.caption?.trim() || message.document?.caption?.trim() || "";
         const whatsappProfileName = value?.contacts?.[0]?.profile?.name || "";
         
         console.log(`📩 Message from ${whatsappProfileName} (${from}): "${text}"`);
@@ -1117,7 +1117,7 @@ Upgrade here: ${APP_URL}/pricing`);
                     } else {
                         const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                         const link = `${APP_URL}/i/${sale.invoiceNumber}`;
-                        const draft = `Hello ${sale.customerName}! 👋\n\nThis is a friendly reminder to settle your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\n🔗 *Tap here to view and pay securely:*\n${link}\n\n_Powered by Kredibly_ 🛡️`;
+                        const draft = `Hello ${sale.customerName}! 👋\n\nThis is a friendly reminder to settle your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\n🔗 *Tap here to view and pay securely:*\n${link}`;
                         await sendReply(from, `⚠️ I had trouble sending the reminder to their WhatsApp automatically. Here is the draft to send manually instead:\n\n${draft}`);
                     }
                     return;
@@ -1130,7 +1130,7 @@ Upgrade here: ${APP_URL}/pricing`);
                     }
                     const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                     const link = `${APP_URL}/i/${sale.invoiceNumber}`;
-                    const draft = `Hello ${sale.customerName}! 👋\n\nThis is a friendly reminder to settle your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\n🔗 *Tap here to view and pay securely:*\n${link}\n\n_Powered by Kredibly_ 🛡️`;
+                    const draft = `Hello ${sale.customerName}! 👋\n\nThis is a friendly reminder to settle your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\n🔗 *Tap here to view and pay securely:*\n${link}`;
                     
                     await sendReply(from, `📝 *Draft for ${sale.customerName}* (Copy the message below):`);
                     await sendReply(from, draft);
@@ -1260,7 +1260,7 @@ Upgrade here: ${APP_URL}/pricing`);
                                 from,
                                 "Invoice Reminder",
                                 `I found an active invoice for *${sale.customerName}* (Owes ₦${bal.toLocaleString()}) with phone *+${customerPhone}*.\n\nWould you like me to send a friendly reminder directly to their WhatsApp?`,
-                                "Powered by Kredibly",
+                                "",
                                 [
                                     { id: `send_chase_now:${sale._id}`, title: "✅ Send Reminder" },
                                     { id: `copy_draft_only:${sale._id}`, title: "📝 Copy Draft" }
@@ -1271,7 +1271,7 @@ Upgrade here: ${APP_URL}/pricing`);
                                 from,
                                 "Missing Customer Number",
                                 `I found an active invoice for *${sale.customerName}* (Owes ₦${bal.toLocaleString()}), but I don't have their WhatsApp number.\n\nWould you like to add their number to send a direct reminder, or just copy the draft?`,
-                                "Powered by Kredibly",
+                                "",
                                 [
                                     { id: `add_chase_phone:${sale._id}`, title: "📱 Add Phone" },
                                     { id: `copy_draft_only:${sale._id}`, title: "📝 Copy Draft" }
@@ -1406,10 +1406,10 @@ Upgrade here: ${APP_URL}/pricing`);
                         pendingSaleData.paidAmount > 0 ? `Subtotal: ₦${pendingSaleData.totalAmount.toLocaleString()}` : null,
                         pendingSaleData.paidAmount > 0 ? `Paid: ₦${pendingSaleData.paidAmount.toLocaleString()}` : null,
                         `Total: ₦${pendingSaleData.totalAmount.toLocaleString()}`,
-                        bal > 0 && pendingSaleData.paidAmount > 0 ? `Balance: ₦${bal.toLocaleString()}` : null,
+                        bal > 0 && pendingSaleData.paidAmount > 0 ? `Balance due: ₦${bal.toLocaleString()}` : null,
                         ``,
                         `Shall I go ahead and generate this invoice and send it to the customer?`
-                    ].filter(Boolean).join("\n");
+                    ].filter(v => v !== null).join("\n");
 
                     // Save data for confirmation approval
                     await WhatsAppSession.findOneAndUpdate(
@@ -1436,7 +1436,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         from,
                         "Invoice Summary",
                         summaryMsg,
-                        "Powered by Kredibly",
+                        "",
                         [
                             { id: "invoice_yes", title: "Yes" },
                             { id: "invoice_no", title: "No" }
@@ -1474,7 +1474,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         } else {
                             const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                             const link = `${APP_URL}/i/${sale.invoiceNumber}`;
-                            const draft = `Hello ${sale.customerName}! 👋\n\nThis is a friendly reminder to settle your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\n🔗 *Tap here to view and pay securely:*\n${link}\n\n_Powered by Kredibly_ 🛡️`;
+                            const draft = `Hello ${sale.customerName}! 👋\n\nThis is a friendly reminder to settle your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\n🔗 *Tap here to view and pay securely:*\n${link}`;
                             await sendReply(from, `⚠️ I had trouble sending the reminder to their WhatsApp automatically. Here is the draft to send manually instead:\n\n${draft}`);
                         }
                     } else {
@@ -2300,27 +2300,27 @@ Upgrade here: ${APP_URL}/pricing`);
 
                     // Build summary with phone number
                     const itemsDisplay = aiItems.length > 0
-                        ? aiItems.map(i => `  • ${i.name} ×${i.quantity || 1} — ₦${((i.unitPrice || 0) * (i.quantity || 1)).toLocaleString()}`).join("\n")
-                        : `  • ${item && item !== "Item" ? item : "Purchase"} — ₦${totalAmount.toLocaleString()}`;
+                        ? aiItems.map(i => `${i.name} × ${i.quantity || 1} — ₦${((i.unitPrice || 0) * (i.quantity || 1)).toLocaleString()}`).join("\n")
+                        : `${item && item !== "Item" ? item : "Purchase"} — ₦${totalAmount.toLocaleString()}`;
 
                     const bal = totalAmount - (paidAmount || 0);
-                    const typeLabel = (invoiceType === "record") ? "📦 Record (Already Paid)" : "📄 Invoice (Payment Request)";
+                    const typeLabel = (invoiceType === "record") ? "Record (Settled)" : "Invoice (Payment Request)";
 
                     const summaryMsg = [
-                        `${aiResponseItem.data.reply || "Got it, Chief! Here's the invoice summary:"}`,
+                        `Here's the invoice summary:`,
                         ``,
-                        `👤 *Customer:* ${resolvedName}`,
-                        `📱 *Phone:* +${cleanPhone}`,
+                        `Customer: *${resolvedName}*`,
+                        `Phone: +${cleanPhone}`,
                         ``,
                         itemsDisplay,
                         ``,
-                        `💰 *Total:* ₦${totalAmount.toLocaleString()}`,
-                        paidAmount > 0 ? `✅ *Paid:* ₦${paidAmount.toLocaleString()}` : null,
-                        bal > 0 ? `⏳ *Balance:* ₦${bal.toLocaleString()}` : null,
-                        `🏷️ *Type:* ${typeLabel}`,
+                        `Total: ₦${totalAmount.toLocaleString()}`,
+                        paidAmount > 0 ? `Paid: ₦${paidAmount.toLocaleString()}` : null,
+                        bal > 0 ? `Balance due: ₦${bal.toLocaleString()}` : null,
+                        invoiceType === "record" ? `Type: ${typeLabel}` : null,
                         ``,
                         `Shall I create this invoice and send it to the customer?`
-                    ].filter(Boolean).join("\n");
+                    ].filter(v => v !== null).join("\n");
 
                     // Save to session for approval
                     await WhatsAppSession.findOneAndUpdate(
@@ -2347,7 +2347,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         from,
                         "Invoice Summary",
                         summaryMsg,
-                        "Powered by Kredibly",
+                        "",
                         [
                             { id: "invoice_yes", title: "Yes" },
                             { id: "invoice_no", title: "No" }
@@ -3074,7 +3074,7 @@ Upgrade here: ${APP_URL}/pricing`);
                                 from,
                                 "Invoice Reminder",
                                 `I found an active invoice for *${sale.customerName}* (Owes ₦${bal.toLocaleString()}) with phone *+${customerPhone}*.\n\nWould you like me to send a friendly reminder directly to their WhatsApp?`,
-                                "Powered by Kredibly",
+                                "",
                                 [
                                     { id: `send_chase_now:${sale._id}`, title: "✅ Send Reminder" },
                                     { id: `copy_draft_only:${sale._id}`, title: "📝 Copy Draft" }
@@ -3085,7 +3085,7 @@ Upgrade here: ${APP_URL}/pricing`);
                                 from,
                                 "Missing Customer Number",
                                 `I found an active invoice for *${sale.customerName}* (Owes ₦${bal.toLocaleString()}), but I don't have their WhatsApp number.\n\nWould you like to add their number to send a direct reminder, or just copy the draft?`,
-                                "Powered by Kredibly",
+                                "",
                                 [
                                     { id: `add_chase_phone:${sale._id}`, title: "📱 Add Phone" },
                                     { id: `copy_draft_only:${sale._id}`, title: "📝 Copy Draft" }
