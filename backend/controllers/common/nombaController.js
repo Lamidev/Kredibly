@@ -317,14 +317,12 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                             });
                         }
 
-                        // 🔔 WHATSAPP SETTLEMENT CONFIRMATION
+                        // WHATSAPP SETTLEMENT CONFIRMATION
                         if (business.whatsappNumber) {
-                            const reassurance = "🏦 *Your bank account has been credited!* ⚡";
-                            
-                            let alertMsg = `💰 *Settlement Alert, ${business.displayName}!* \n\nI've successfully swept *₦${sweepAmount.toLocaleString()}* from the *${sale.customerName}* payment to your *${settlement.bankDetails.accountName}* account. \n\n${reassurance}`;
+                            let alertMsg = `*Settlement Alert, ${business.displayName}!*\n\nI've swept *₦${sweepAmount.toLocaleString()}* from the *${sale.customerName}* payment to your *${settlement.bankDetails.accountName}* bank account.`;
                             
                             if (business.planStatus === 'inactive' || business.planStatus === 'cancelled') {
-                                alertMsg += `\n\n⚠️ *Boss, even while I'm 'Off-Duty', I'm still securing your cash!* Subscribe now to get your full AI reports and debt tracking back. \n🔗 https://usekredibly.com/login?redirect=/settings`;
+                                alertMsg += `\n\n*Note:* Even while your plan is paused, your settlements still go through. Subscribe now to get your full AI reports back.\nhttps://usekredibly.com/login?redirect=/settings`;
                             }
                             
                             await sendWhatsAppAlert(business.whatsappNumber, business.displayName, alertMsg);
@@ -338,7 +336,7 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
 
                         if (business.whatsappNumber) {
                             const { sendReply } = require('../whatsapp/whatsappController');
-                            await sendReply(business.whatsappNumber, `⚠️ *Settlement Issue, ${business.displayName}!* \n\nI tried to sweep *₦${sweepAmount.toLocaleString()}* to your bank, but it failed. \n\n*Reason:* ${sweepErr.message}\n\nDon't worry, the funds are safe in your Kredibly wallet. I'll try again shortly or you can check your dashboard! 🛡️`);
+                            await sendReply(business.whatsappNumber, `*Settlement Issue, ${business.displayName}!*\n\nI tried to sweep *₦${sweepAmount.toLocaleString()}* to your bank but it failed.\n\nReason: ${sweepErr.message}\n\nThe funds are safe in your Kredibly wallet. I'll retry shortly or check your dashboard.`);
                         }
                     }
                 }, 20000);

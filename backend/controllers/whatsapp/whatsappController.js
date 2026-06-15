@@ -1331,22 +1331,14 @@ Upgrade here: ${APP_URL}/pricing`);
                     }
 
                     if (customerPhone) {
-                        // Confirm to merchant
-                        await sendReply(from, `Invoice *${newSale.invoiceNumber}* created for *${customerName}* — *₦${totalAmount.toLocaleString()}*. The PDF is being generated and will be sent to you shortly.`);
+                        // Confirm to merchant immediately
+                        await sendReply(from, `Invoice *${newSale.invoiceNumber}* created for *${customerName}* — *₦${totalAmount.toLocaleString()}*. Sending to ${customerName} now...`);
                         
-                        // Deliver asynchronously so merchant gets immediate feedback
+                        // Deliver asynchronously — merchant gets summary text + PDF copy inside this call
                         deliverInvoiceToCustomer(newSale._id, profile._id, { customerPhone })
                             .then(async (result) => {
-                                if (result.success && result.pdfUrl) {
-                                    // Send PDF document copy to the merchant
-                                    await sendDocument(
-                                        cleanFrom,
-                                        result.pdfUrl,
-                                        `invoice-${newSale.invoiceNumber}.pdf`,
-                                        `Invoice #${newSale.invoiceNumber} has been sent to ${customerName} (+${customerPhone}), you will receive a notification when the payment is confirmed.`
-                                    );
-                                } else {
-                                    await sendReply(from, `⚠️ I had trouble delivering the invoice to ${customerName}'s WhatsApp. Check the number and try sending manually from the dashboard.`);
+                                if (!result.success) {
+                                    await sendReply(from, `I had trouble delivering the invoice to ${customerName}'s WhatsApp. Check the number and try sending manually from the dashboard.`);
                                 }
                             })
                             .catch(e => console.error("Async delivery error:", e));
