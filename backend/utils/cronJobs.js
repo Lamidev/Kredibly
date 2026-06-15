@@ -202,7 +202,7 @@ const scheduleRemindersWorker = () => {
                         const businessName = acquired.businessId?.displayName || "Your Merchant";
                         const seqLabel = acquired.reminderSequence === 1 ? "Friendly Reminder" 
                             : acquired.reminderSequence === 2 ? "Second Reminder" 
-                            : "Final Reminder ⚠️";
+                            : "Final Reminder";
 
                         const paymentLink = `${APP_URL}/i/${sale.invoiceNumber}`;
 
@@ -213,10 +213,10 @@ const scheduleRemindersWorker = () => {
                                     acquired.recipientPhone,
                                     `${seqLabel} — Invoice #${sale.invoiceNumber}`,
                                     `Hi ${sale.customerName}! Just a gentle reminder that you have an outstanding invoice from *${businessName}* for *₦${bal.toLocaleString()}*.\n\nPlease make payment at your earliest convenience.`,
-                                    "Powered by Kredibly",
+                                    "",
                                     [
-                                        { id: `pay_now:${sale._id}`, title: "💳 Pay Now" },
-                                        { id: `req_ext:${sale._id}`, title: "⏳ Request Extension" }
+                                        { id: `pay_now:${sale._id}`, title: "Pay Now" },
+                                        { id: `req_ext:${sale._id}`, title: "Request Extension" }
                                     ]
                                 );
                             } else {

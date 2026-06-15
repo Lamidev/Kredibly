@@ -245,10 +245,16 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
         const bal = sale.totalAmount - (sale.payments || []).reduce((s, p) => s + p.amount, 0);
         const paymentLink = `${APP_URL}/i/${sale.invoiceNumber}`;
         const businessName = business.displayName || "Your Merchant";
+        const hasDueDate = !!sale.dueDate;
+        const dueDateFormatted = hasDueDate
+            ? new Date(sale.dueDate).toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short", year: "numeric" })
+            : null;
+        const hasPartialPayment = (sale.payments || []).length > 0 && bal > 0 && bal < sale.totalAmount;
+        const isFullyUnpaid = bal >= sale.totalAmount;
 
         // Step 2: Send PDF document (if successfully generated)
         if (pdfUrl) {
-            const docCaption = `📄 *Invoice from ${businessName}*\nAmount: ₦${sale.totalAmount.toLocaleString()}`;
+            const docCaption = `Invoice from ${businessName} — ₦${sale.totalAmount.toLocaleString()}`;
             await sendDocument(
                 cleanCustomerPhone,
                 pdfUrl,
@@ -259,25 +265,35 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
             await new Promise(r => setTimeout(r, 1500));
         }
 
-        // Step 3: Send interactive invoice message with action buttons
-        const dueText = sale.dueDate
-            ? `Due: ${new Date(sale.dueDate).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}`
-            : "Due: On Receipt";
-
+        // Step 3: Build context-aware customer message
         const itemsText = sale.items && sale.items.length > 0
-            ? sale.items.map(i => `• ${i.name} ×${i.quantity || 1} — ₦${((i.unitPrice || 0) * (i.quantity || 1)).toLocaleString()}`).join("\n")
-            : `• ${sale.description || "Purchase"} — ₦${sale.totalAmount.toLocaleString()}`;
+            ? sale.items.map(i => `${i.name} × ${i.quantity || 1} — ₦${((i.unitPrice || 0) * (i.quantity || 1)).toLocaleString()}`).join("\n")
+            : `${sale.description || "Purchase"} — ₦${sale.totalAmount.toLocaleString()}`;
 
-        const correctBodyText = `Hello ${sale.customerName}! 👋\n\nYou have a new invoice from *${businessName}*.\n\n${itemsText}\n\n💰 *Total: ₦${sale.totalAmount.toLocaleString()}*\n${dueText}\n\nTap a button below to take action:`;
+        // Build the summary lines context-aware
+        const summaryLines = [
+            `Hello ${sale.customerName}!`,
+            ``,
+            `You have ${hasPartialPayment ? "an outstanding balance" : "a new invoice"} from *${businessName}*.`,
+            ``,
+            itemsText,
+            ``,
+            `Invoice Total: ₦${sale.totalAmount.toLocaleString()}`,
+            hasPartialPayment ? `Already Paid: ₦${(sale.totalAmount - bal).toLocaleString()}` : null,
+            hasPartialPayment || isFullyUnpaid ? `Amount Due: *₦${bal.toLocaleString()}*` : null,
+            hasDueDate ? `Payment Due: ${dueDateFormatted}` : `Payment Due: On receipt`,
+            ``,
+            `Tap a button below to take action:`
+        ].filter(v => v !== null).join("\n");
 
         await sendInteractiveButtons(
             cleanCustomerPhone,
             `Invoice #${sale.invoiceNumber}`,
-            correctBodyText,
-            "Powered by Kredibly",
+            summaryLines,
+            "",
             [
-                { id: `pay_now:${sale._id}`, title: "💳 Pay Now" },
-                { id: `req_ext:${sale._id}`, title: "⏳ Request Extension" }
+                { id: `pay_now:${sale._id}`, title: "Pay Now" },
+                { id: `req_ext:${sale._id}`, title: "Request Extension" }
             ]
         );
 
@@ -291,13 +307,22 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
         // Step 5: Schedule customer payment reminders
         await scheduleCustomerReminders(sale, business, cleanCustomerPhone);
 
-        // Step 6: Notify merchant
-        const merchantMsg = `✅ *Invoice Delivered!*\n\nYour invoice *#${sale.invoiceNumber}* for *${sale.customerName}* (₦${sale.totalAmount.toLocaleString()}) has been sent to them on WhatsApp.\n\nI'll follow up automatically if they don't pay. 🛡️`;
+        // Step 6: Build context-aware merchant delivery confirmation
+        const merchantSummaryLines = [
+            `Invoice sent to *${sale.customerName}* (+${cleanCustomerPhone}).`,
+            ``,
+            `Invoice #${sale.invoiceNumber}`,
+            `Total: ₦${sale.totalAmount.toLocaleString()}`,
+            hasPartialPayment ? `Already paid: ₦${(sale.totalAmount - bal).toLocaleString()}` : null,
+            `Balance due: ₦${bal.toLocaleString()}`,
+            hasDueDate ? `Due date: ${dueDateFormatted}` : `Due: On receipt`,
+            ``,
+            `I'll send them automatic reminders${hasDueDate ? ` and a final nudge on the due date` : ""}. You'll be notified if they respond.`
+        ].filter(v => v !== null).join("\n");
 
-        // Try free-form first (if merchant session is open)
         const merchantPhone = business.whatsappNumber;
         if (merchantPhone) {
-            await sendText(merchantPhone, merchantMsg);
+            await sendText(merchantPhone, merchantSummaryLines);
         }
 
         await Notification.create({
@@ -421,14 +446,14 @@ const handleCustomerPayNow = async (saleId, customerPhone) => {
         const bal = sale.totalAmount - (sale.payments || []).reduce((s, p) => s + p.amount, 0);
 
         if (bal <= 0) {
-            await sendText(customerPhone, `✅ Great news! This invoice *#${sale.invoiceNumber}* has already been fully paid. Thank you! 🎉`);
+            await sendText(customerPhone, `Great news! This invoice *#${sale.invoiceNumber}* has already been fully paid. Thank you!`);
             return;
         }
 
         const paymentLink = `${APP_URL}/i/${sale.invoiceNumber}`;
         await sendText(
             customerPhone,
-            `💳 *Pay Invoice #${sale.invoiceNumber}*\n\nHi ${sale.customerName}! Here is your secure payment link:\n\n🔗 ${paymentLink}\n\nAmount Due: *₦${bal.toLocaleString()}*\n\nPayment is 100% secure and powered by Kredibly. 🛡️`
+            `*Pay Invoice #${sale.invoiceNumber}*\n\nHi ${sale.customerName}! Here is your secure payment link:\n\n${paymentLink}\n\nAmount Due: *₦${bal.toLocaleString()}*\n\nPayment is 100% secure.`
         );
     } catch (err) {
         console.error("❌ handleCustomerPayNow Error:", err.message);
@@ -499,7 +524,7 @@ const handleCustomerExtensionDuration = async (saleId, days, customerPhone, cust
         // Acknowledge to customer
         await sendText(
             customerPhone,
-            `✅ Got it, ${customerName}! I've sent your request for a *${daysNum}-day extension* to ${business?.displayName || "your merchant"}. They'll respond shortly. 🙏`
+            `Got it, ${customerName}! I've sent your request for a *${daysNum}-day extension* to ${business?.displayName || "your merchant"}. They will respond shortly.`
         );
 
         // Notify merchant with [Approve] [Reject] interactive buttons
@@ -582,7 +607,7 @@ const handleMerchantApproveExtension = async (saleId, sessionData) => {
         // Notify customer (with fallback)
         await sendCustomerMessageWithFallback(
             customerPhone,
-            `🎉 Great news, ${customerName}! Your payment extension has been *approved*.\n\n📅 New Due Date: *${newDueDateStr}*\n\nPlease make sure to settle Invoice *#${invoiceNumber}* by then. 🙏`,
+            `Great news, ${customerName}! Your payment extension has been approved.\n\nNew Due Date: *${newDueDateStr}*\n\nPlease settle Invoice *#${invoiceNumber}* by then. Thank you.`,
             customerName,
             invoiceNumber
         );
@@ -643,11 +668,11 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
         let msg;
         if (balance <= 0) {
             lifecycleStatus = "PAID";
-            msg = `✅ *Payment Confirmed!*\n\nThank you, ${sale.customerName}! Your payment of *₦${amountPaid.toLocaleString()}* for Invoice *#${sale.invoiceNumber}* has been received by ${businessName}.\n\n🎉 Your invoice is now *FULLY PAID*. Have a great day! 💚`;
+            msg = `*Payment Confirmed!*\n\nThank you, ${sale.customerName}! Your payment of *₦${amountPaid.toLocaleString()}* for Invoice *#${sale.invoiceNumber}* has been received by ${businessName}.\n\nYour invoice is now *FULLY PAID*. Have a great day!`;
             // Cancel pending customer reminders
             await cancelCustomerReminders(saleId);
         } else {
-            msg = `✅ *Partial Payment Received!*\n\nThank you, ${sale.customerName}! Your payment of *₦${amountPaid.toLocaleString()}* for Invoice *#${sale.invoiceNumber}* has been received.\n\n⏳ Remaining Balance: *₦${balance.toLocaleString()}*\n\nPlease settle the balance at your earliest convenience:\n🔗 ${APP_URL}/i/${sale.invoiceNumber}`;
+            msg = `*Partial Payment Received!*\n\nThank you, ${sale.customerName}! Your payment of *₦${amountPaid.toLocaleString()}* for Invoice *#${sale.invoiceNumber}* has been received.\n\nRemaining Balance: *₦${balance.toLocaleString()}*\n\nPlease settle the balance at your earliest convenience:\n${APP_URL}/i/${sale.invoiceNumber}`;
         }
 
         // Update database status first so PDF generation reads it
@@ -665,8 +690,8 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
         // Step 3: Send the updated PDF document to the customer
         if (sale.pdfUrl) {
             const docCaption = balance <= 0
-                ? `📄 *Official Receipt from ${businessName}*\nStatus: Fully Settled`
-                : `📄 *Updated Invoice from ${businessName}*\nNew Balance: ₦${balance.toLocaleString()}`;
+                ? `*Official Receipt from ${businessName}*\nStatus: Fully Settled`
+                : `*Updated Invoice from ${businessName}*\nNew Balance: ₦${balance.toLocaleString()}`;
             
             await sendDocument(
                 cleanCustomerPhone,
@@ -767,7 +792,7 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
             if (/pay|payment|transfer|link|invoice/i.test(lowerText)) {
                 await sendText(
                     cleanFrom,
-                    `💳 Here is your payment link for Invoice *#${activeSale.invoiceNumber}*:\n\n🔗 ${paymentLink}\n\nBalance Due: *₦${bal.toLocaleString()}*`
+                    `Here is your payment link for Invoice *#${activeSale.invoiceNumber}*:\n\n${paymentLink}\n\nBalance Due: *₦${bal.toLocaleString()}*`
                 );
                 return true;
             }
@@ -778,10 +803,10 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
                 cleanFrom,
                 `Invoice #${activeSale.invoiceNumber}`,
                 `Hi ${activeSale.customerName}! You have an unpaid invoice from *${businessName}* for *₦${bal.toLocaleString()}*.\n\nHow can I help you?`,
-                "Powered by Kredibly",
+                "",
                 [
-                    { id: `pay_now:${activeSale._id}`, title: "💳 Pay Now" },
-                    { id: `req_ext:${activeSale._id}`, title: "⏳ Request Extension" }
+                    { id: `pay_now:${activeSale._id}`, title: "Pay Now" },
+                    { id: `req_ext:${activeSale._id}`, title: "Request Extension" }
                 ]
             );
             return true;
@@ -820,16 +845,16 @@ const sendChaseToCustomer = async (saleId, businessId, customText = null) => {
             ? `Due: ${new Date(sale.dueDate).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}`
             : "Due: On Receipt";
 
-        const correctBodyText = customText || `Hi ${sale.customerName}! 👋\n\nThis is a friendly reminder from *${businessName}* regarding your outstanding balance of *₦${bal.toLocaleString()}* for Invoice *#${sale.invoiceNumber}*.\n\n${dueText}\n\nTap a button below to take action:`;
+        const correctBodyText = customText || `Hi ${sale.customerName}!\n\nThis is a friendly reminder from *${businessName}* regarding your outstanding balance of *₦${bal.toLocaleString()}* for Invoice *#${sale.invoiceNumber}*.\n\n${dueText}\n\nTap a button below to take action:`;
 
         const success = await sendInteractiveButtons(
             cleanCustomerPhone,
             `Invoice Reminder #${sale.invoiceNumber}`,
             correctBodyText,
-            "Powered by Kredibly",
+            "",
             [
-                { id: `pay_now:${sale._id}`, title: "💳 Pay Now" },
-                { id: `req_ext:${sale._id}`, title: "⏳ Request Extension" }
+                { id: `pay_now:${sale._id}`, title: "Pay Now" },
+                { id: `req_ext:${sale._id}`, title: "Request Extension" }
             ]
         );
 
