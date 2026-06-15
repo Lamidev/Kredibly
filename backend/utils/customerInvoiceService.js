@@ -255,12 +255,13 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
         // Step 2: Send PDF document (if successfully generated)
         if (pdfUrl) {
             const docCaption = `Invoice from ${businessName} — ₦${sale.totalAmount.toLocaleString()}`;
-            await sendDocument(
+            const docSent = await sendDocument(
                 cleanCustomerPhone,
                 pdfUrl,
                 `Invoice-${sale.invoiceNumber}.pdf`,
                 docCaption
             );
+            console.log(`📄 PDF send to customer ${cleanCustomerPhone}: ${docSent ? '✅ sent' : '❌ failed'}`);
             // Small delay so PDF arrives first
             await new Promise(r => setTimeout(r, 1500));
         }
@@ -286,7 +287,7 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
             `Tap a button below to take action:`
         ].filter(v => v !== null).join("\n");
 
-        await sendInteractiveButtons(
+        const btnSent = await sendInteractiveButtons(
             cleanCustomerPhone,
             `Invoice #${sale.invoiceNumber}`,
             summaryLines,
@@ -296,6 +297,12 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
                 { id: `req_ext:${sale._id}`, title: "Request Extension" }
             ]
         );
+        console.log(`🔘 Interactive buttons to customer ${cleanCustomerPhone}: ${btnSent ? '✅ sent' : '❌ failed'}`);
+        if (!btnSent) {
+            // Fallback: send plain text with payment link
+            const paymentLink = `${APP_URL}/i/${sale.invoiceNumber}`;
+            await sendText(cleanCustomerPhone, `${summaryLines}\n\nPay here: ${paymentLink}`);
+        }
 
         // Step 4: Update sale lifecycle
         await Sale.findByIdAndUpdate(saleId, {
@@ -322,7 +329,20 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
 
         const merchantPhone = business.whatsappNumber;
         if (merchantPhone) {
-            await sendText(merchantPhone, merchantSummaryLines);
+            const merchantMsgSent = await sendText(merchantPhone, merchantSummaryLines);
+            console.log(`📩 Merchant delivery notification to ${merchantPhone}: ${merchantMsgSent ? '✅ sent' : '❌ failed'}`);
+
+            // Send the PDF to the merchant right after the summary text
+            if (pdfUrl) {
+                await new Promise(r => setTimeout(r, 800)); // small gap so text arrives first
+                const merchantPdfSent = await sendDocument(
+                    merchantPhone,
+                    pdfUrl,
+                    `Invoice-${sale.invoiceNumber}.pdf`,
+                    `Your copy of Invoice #${sale.invoiceNumber} for ${sale.customerName}`
+                );
+                console.log(`📄 PDF copy to merchant ${merchantPhone}: ${merchantPdfSent ? '✅ sent' : '❌ failed'}`);
+            }
         }
 
         await Notification.create({
