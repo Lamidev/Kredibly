@@ -199,6 +199,14 @@ exports.handleSquadWebhook = async (req, res) => {
                 statusText,
                 business.displayName || 'Chief'
             ).catch(e => console.error("Squad WA Fail:", e.message));
+
+            // 🧠 KREDDY AI: Notify customer via WhatsApp too
+            try {
+                const { notifyCustomerPaymentReceived } = require('../../utils/customerInvoiceService');
+                await notifyCustomerPaymentReceived(sale._id, paidAmount);
+            } catch (custNotifyErr) {
+                console.error("Customer payment notify error:", custNotifyErr.message);
+            }
         }
 
         // ⚡ 6. REAL-TIME DASHBOARD UPDATE (Sockets)

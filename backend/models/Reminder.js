@@ -56,6 +56,21 @@ const ReminderSchema = new mongoose.Schema({
     isHeadsUpSent: {
         type: Boolean,
         default: false
+    },
+    // Kreddy AI: Distinguish merchant reminders from customer payment reminders
+    recipientType: {
+        type: String,
+        enum: ["merchant", "customer"],
+        default: "merchant"
+    },
+    // For customer reminders: their phone number (whatsappNumber stores merchant number)
+    recipientPhone: {
+        type: String
+    },
+    // Reminder sequence number (1=first, 2=second, etc.) for customer reminders
+    reminderSequence: {
+        type: Number,
+        default: 1
     }
 }, { timestamps: true });
 

@@ -791,3 +791,81 @@ exports.getAnalytics = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// Approve customer payment extension from Web Dashboard
+exports.approveExtension = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const sale = await Sale.findById(id).populate("businessId");
+        if (!sale) return res.status(404).json({ message: "Sale record not found" });
+
+        // Ensure user owns this sale
+        const business = await BusinessProfile.findOne({ ownerId: req.user._id });
+        if (!business || sale.businessId._id.toString() !== business._id.toString()) {
+            return res.status(403).json({ message: "Not authorized" });
+        }
+
+        if (sale.lifecycleStatus !== "EXTENSION_REQUESTED") {
+            return res.status(400).json({ message: "No pending extension request" });
+        }
+
+        const days = sale.requestedExtensionDays || 7;
+        const newDueDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+
+        // We can reuse the helper from customerInvoiceService
+        const { handleMerchantApproveExtension } = require("../../utils/customerInvoiceService");
+        const sessionData = {
+            customerPhone: sale.deliveredToPhone || sale.customerPhone,
+            customerName: sale.customerName,
+            invoiceNumber: sale.invoiceNumber,
+            requestedDays: days,
+            newDueDate: newDueDate.toISOString(),
+            businessId: business._id.toString()
+        };
+
+        const result = await handleMerchantApproveExtension(sale._id, sessionData);
+        if (result.success) {
+            return res.status(200).json({ success: true, message: "Extension approved successfully" });
+        } else {
+            return res.status(500).json({ message: "Failed to approve extension" });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Reject customer payment extension from Web Dashboard
+exports.rejectExtension = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const sale = await Sale.findById(id).populate("businessId");
+        if (!sale) return res.status(404).json({ message: "Sale record not found" });
+
+        // Ensure user owns this sale
+        const business = await BusinessProfile.findOne({ ownerId: req.user._id });
+        if (!business || sale.businessId._id.toString() !== business._id.toString()) {
+            return res.status(403).json({ message: "Not authorized" });
+        }
+
+        if (sale.lifecycleStatus !== "EXTENSION_REQUESTED") {
+            return res.status(400).json({ message: "No pending extension request" });
+        }
+
+        const { handleMerchantRejectExtension } = require("../../utils/customerInvoiceService");
+        const sessionData = {
+            customerPhone: sale.deliveredToPhone || sale.customerPhone,
+            customerName: sale.customerName,
+            invoiceNumber: sale.invoiceNumber,
+            businessId: business._id.toString()
+        };
+
+        const result = await handleMerchantRejectExtension(sale._id, sessionData);
+        if (result.success) {
+            return res.status(200).json({ success: true, message: "Extension rejected successfully" });
+        } else {
+            return res.status(500).json({ message: "Failed to reject extension" });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

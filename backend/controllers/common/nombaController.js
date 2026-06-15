@@ -375,7 +375,7 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
             }
 
             const { sendWhatsAppPaymentAlert } = require('../whatsapp/whatsappController');
-            sendWhatsAppPaymentAlert(
+            await sendWhatsAppPaymentAlert(
                 business.whatsappNumber,
                 creditAmount,
                 sale.invoiceNumber,
@@ -384,6 +384,14 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 business.displayName || 'Chief',
                 ""
             ).catch(err => console.error('❌ WhatsApp Payment Alert Failed:', err.message));
+
+            // 🧠 KREDDY AI: Notify customer via WhatsApp too
+            try {
+                const { notifyCustomerPaymentReceived } = require('../../utils/customerInvoiceService');
+                await notifyCustomerPaymentReceived(sale._id, creditAmount);
+            } catch (custNotifyErr) {
+                console.error("Customer payment notify error:", custNotifyErr.message);
+            }
         }
 
         console.log(`✅ Nomba Payment Processed: Invoice ${sale.invoiceNumber} | Credited: ₦${creditAmount} | Actual Transfer: ₦${amount} | Status: ${newStatus}`);

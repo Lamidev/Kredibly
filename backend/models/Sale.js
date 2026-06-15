@@ -28,6 +28,14 @@ const SaleSchema = new mongoose.Schema({
         type: String,
         required: [true, "Description is required"]
     },
+    // Structured line items (from conversational invoice creation)
+    items: [
+        {
+            name: { type: String, required: true },
+            quantity: { type: Number, default: 1 },
+            unitPrice: { type: Number, required: true }
+        }
+    ],
     totalAmount: {
         type: Number,
         required: [true, "Total amount is required"]
@@ -84,7 +92,33 @@ const SaleSchema = new mongoose.Schema({
         enum: ["billing", "record"],
         default: "billing",
         index: true
-    }
+    },
+    // Kreddy AI Conversational Invoice Delivery Lifecycle
+    lifecycleStatus: {
+        type: String,
+        enum: [
+            "PENDING_DELIVERY",   // Created, not yet sent to customer
+            "DELIVERED",          // Invoice sent to customer via WhatsApp
+            "VIEWED",             // Customer clicked the invoice link
+            "EXTENSION_REQUESTED",// Customer requested more time
+            "EXTENSION_GRANTED",  // Merchant approved extension
+            "EXTENSION_REJECTED", // Merchant rejected extension
+            "PARTIALLY_PAID",     // Customer made a partial payment
+            "PAID",               // Fully paid
+            "CANCELLED"           // Merchant cancelled
+        ],
+        default: "PENDING_DELIVERY",
+        index: true
+    },
+    // Customer phone the invoice was actually sent to via WhatsApp
+    deliveredToPhone: { type: String },
+    customerDeliveredAt: { type: Date },  // When we sent it to customer
+    customerRemindersSent: { type: Number, default: 0 }, // # of auto-reminders sent
+    lastCustomerReminderAt: { type: Date },
+    extensionRequestedAt: { type: Date },
+    requestedExtensionDays: { type: Number }, // How many days customer asked for
+    extensionApprovedAt: { type: Date },
+    pdfUrl: { type: String }  // Cloudinary URL of generated PDF
 }, {
     timestamps: true,
     toJSON: { virtuals: true },

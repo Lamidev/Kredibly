@@ -20,6 +20,38 @@ const formatDate = (dateStr) => {
     });
 };
 
+const getStatusBadge = (sale) => {
+    if (sale.invoiceType === 'record') {
+        return {
+            text: 'Settled Record',
+            bg: 'rgba(76, 29, 149, 0.08)',
+            color: 'var(--primary)'
+        };
+    }
+    
+    const lifecycle = sale.lifecycleStatus || 'PENDING_DELIVERY';
+    
+    switch (lifecycle) {
+        case 'PAID':
+            return { text: 'Paid', bg: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)' };
+        case 'PARTIALLY_PAID':
+            return { text: 'Partial Paid', bg: 'rgba(59, 130, 246, 0.1)', color: '#2563EB' };
+        case 'EXTENSION_REQUESTED':
+            return { text: 'Extension Req', bg: 'rgba(239, 68, 68, 0.1)', color: '#EF4444' };
+        case 'EXTENSION_GRANTED':
+            return { text: 'Ext Approved', bg: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)' };
+        case 'EXTENSION_REJECTED':
+            return { text: 'Ext Rejected', bg: 'rgba(239, 68, 68, 0.1)', color: '#EF4444' };
+        case 'DELIVERED':
+            return { text: 'Delivered', bg: 'rgba(13, 148, 136, 0.08)', color: '#0D9488' };
+        case 'VIEWED':
+            return { text: 'Viewed', bg: 'rgba(124, 58, 237, 0.08)', color: '#7C3AED' };
+        case 'PENDING_DELIVERY':
+        default:
+            return { text: 'Pending', bg: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning)' };
+    }
+};
+
 const SalesList = ({ initialFilter }) => {
     const { sales, fetchSales, loading, deleteSale, stats } = useSales();
     const { profile } = useAuth();
@@ -259,7 +291,7 @@ const SalesList = ({ initialFilter }) => {
                                                     <span 
                                                         title={lastSeenText}
                                                         style={{ 
-                                                            display: 'flex', 
+                                                            display: 'inline-flex', 
                                                             alignItems: 'center', 
                                                             gap: '4px', 
                                                             fontSize: '10px', 
@@ -267,7 +299,8 @@ const SalesList = ({ initialFilter }) => {
                                                             fontWeight: 800, 
                                                             background: '#F3E8FF', 
                                                             padding: '2px 6px', 
-                                                            borderRadius: '4px' 
+                                                            borderRadius: '4px',
+                                                            whiteSpace: 'nowrap'
                                                         }}
                                                     >
                                                         VIEWED {sale.viewCount > 1 ? `(${sale.viewCount})` : ""}
@@ -288,17 +321,24 @@ const SalesList = ({ initialFilter }) => {
 
                                 {/* Status */}
                                 <div>
-                                    <span style={{
-                                        padding: '6px 14px',
-                                        borderRadius: '10px',
-                                        fontSize: '0.7rem',
-                                        fontWeight: 900,
-                                        textTransform: 'uppercase',
-                                        background: sale.status === 'paid' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                                        color: sale.status === 'paid' ? 'var(--success)' : 'var(--warning)'
-                                    }}>
-                                        {sale.invoiceType === 'record' ? 'Settled Record' : sale.status}
-                                    </span>
+                                    {(() => {
+                                        const badge = getStatusBadge(sale);
+                                        return (
+                                            <span style={{
+                                                padding: '6px 14px',
+                                                borderRadius: '10px',
+                                                fontSize: '0.7rem',
+                                                fontWeight: 900,
+                                                textTransform: 'uppercase',
+                                                background: badge.bg,
+                                                color: badge.color,
+                                                whiteSpace: 'nowrap',
+                                                display: 'inline-block'
+                                            }}>
+                                                {badge.text}
+                                            </span>
+                                        );
+                                    })()}
                                 </div>
 
                                 {/* Amount */}
@@ -366,7 +406,9 @@ const SalesList = ({ initialFilter }) => {
                                                             fontWeight: 800, 
                                                             background: '#F3E8FF', 
                                                             padding: '2px 4px', 
-                                                            borderRadius: '4px' 
+                                                            borderRadius: '4px',
+                                                            whiteSpace: 'nowrap',
+                                                            display: 'inline-block'
                                                         }}>
                                                             VIEWED {sale.viewCount > 1 ? `(${sale.viewCount})` : ""}
                                                         </span>
@@ -378,9 +420,25 @@ const SalesList = ({ initialFilter }) => {
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
                                         <p style={{ fontWeight: 900, fontSize: '1.05rem', color: 'var(--text)', margin: 0 }}>₦{sale.totalAmount.toLocaleString()}</p>
-                                        <span style={{ fontSize: '0.65rem', fontWeight: 900, color: sale.status === 'paid' ? 'var(--success)' : 'var(--warning)', textTransform: 'uppercase' }}>
-                                            {sale.invoiceType === 'record' ? 'Settled Record' : sale.status}
-                                        </span>
+                                        {(() => {
+                                            const badge = getStatusBadge(sale);
+                                            return (
+                                                <span style={{ 
+                                                    fontSize: '0.65rem', 
+                                                    fontWeight: 900, 
+                                                    color: badge.color, 
+                                                    background: badge.bg, 
+                                                    padding: '2px 6px',
+                                                    borderRadius: '4px',
+                                                    textTransform: 'uppercase',
+                                                    display: 'inline-block',
+                                                    marginTop: '4px',
+                                                    whiteSpace: 'nowrap'
+                                                }}>
+                                                    {badge.text}
+                                                </span>
+                                            );
+                                        })()}
                                     </div>
                                 </motion.div>
                             ))}
