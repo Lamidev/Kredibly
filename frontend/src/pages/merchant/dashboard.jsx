@@ -543,7 +543,7 @@ const Dashboard = () => {
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingTop: '12px', borderTop: '1px solid #F1F5F9', marginTop: 'auto' }}>
                                         <div style={{ display: 'flex', gap: '8px' }}>
                                             {(sale.viewCount > 0) && (
-                                                <span style={{ fontSize: '9px', fontWeight: 900, color: 'var(--primary)', background: '#F5F3FF', padding: '4px 10px', borderRadius: '100px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <span style={{ fontSize: '9px', fontWeight: 900, color: 'var(--primary)', background: '#F5F3FF', padding: '4px 10px', borderRadius: '100px', display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                                                     <Sparkles size={10} fill="var(--primary)" /> VIEWED {sale.viewCount > 1 ? `(${sale.viewCount})` : ""}
                                                 </span>
                                             )}

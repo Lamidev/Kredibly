@@ -14,6 +14,16 @@ const { logUsage } = require("../../utils/usageTracker");
 const { initializePayment } = require("../../utils/paystack");
 const { getPlanPrice } = require("../../config/pricing");
 const { generateWittyIntro } = require("../../utils/aiService");
+const {
+    handleCustomerInbound,
+    handleMerchantApproveExtension,
+    handleMerchantRejectExtension,
+    deliverInvoiceToCustomer,
+    sendChaseToCustomer,
+    isCustomerPhone,
+    sendInteractiveButtons,
+    sendDocument
+} = require("../../utils/customerInvoiceService");
 // Note: sendWhatsAppMessage is exported below, but for internal use, we use it directly.
 
 
@@ -357,21 +367,21 @@ const extractInfoRobust = (text, context = {}) => {
     if (result.intent === "update_record") {
         if (result.data.dueDate) {
             result.data.reply = tone === "friendly" 
-                ? `I catch am! 🗓️ Setting a reminder for *${result.data.customerName}* for today. I go update the ledger? (Reply Yes/No)`
+                ? `I've scheduled a reminder! 🗓️ Setting a reminder for *${result.data.customerName}* for today. Shall I update the ledger? (Reply Yes/No)`
                 : `Understood, ${bossTitle}. I have scheduled a collection reminder for ${result.data.customerName} for today. Proceed?`;
         } else {
             result.data.reply = tone === "friendly"
-                ? `Oshey! 🥳 I've spotted the *₦${result.data.paidAmount?.toLocaleString()}* for *${result.data.customerName}*. Making I update the record? (Reply Yes/No)`
+                ? `Awesome! 🥳 I see the payment of *₦${result.data.paidAmount?.toLocaleString()}* from *${result.data.customerName}*. Shall I update the record? (Reply Yes/No)`
                 : `Payment detected. I've noted ₦${result.data.paidAmount?.toLocaleString()} from ${result.data.customerName}. Should I finalize?`;
         }
     } else if (result.intent === "create_sale" && result.data.totalAmount > 0) {
         if (result.data.item === "Item" || !result.data.item) result.data.item = "Purchase"; 
         const label = result.data.invoiceType === 'record' ? 'Record (Already Paid)' : 'Invoice (Request Payment)';
         result.data.reply = tone === "friendly" 
-            ? `I catch the work! 🛡️ Recording *${result.data.item}* for *${result.data.customerName}* as a *${label}*. \nTotal: *₦${result.data.totalAmount.toLocaleString()}* \nPaid: *₦${result.data.paidAmount.toLocaleString()}* \nCorrect? (Reply 'Yes' to confirm)`
+            ? `I'm on it! 🛡️ Recording *${result.data.item}* for *${result.data.customerName}* as a *${label}*. \nTotal: *₦${result.data.totalAmount.toLocaleString()}* \nPaid: *₦${result.data.paidAmount.toLocaleString()}* \nCorrect? (Reply 'Yes' to confirm)`
             : `Infrastructure Update: Recording *${result.data.item}* for ${result.data.customerName} [${label}]. \nValue: ₦${result.data.totalAmount.toLocaleString()} \nCleared: ₦${result.data.paidAmount.toLocaleString()} \nConfirm?`;
     } else if (result.intent === "check_debt") {
-        result.data.reply = `Omo, debtors plenty for street! 😅 Give me one second make I check the ledger...`;
+        result.data.reply = `Let me check the ledger for you right now... 😅 One moment.`;
     } else if (result.intent === "general_chat") {
         if (context.currentSession?.data?.customerName) {
             result.data.reply = tone === "friendly"
@@ -931,12 +941,37 @@ const handleIncoming = async (req, res) => {
         const merchantFirstName = registeredName || profileName || tierTitle;
         const bossTitle = profile?.assistantSettings?.preferredName || merchantFirstName;
 
-        if (!profile) {
-            // Pre-launch Phase: Force Registration for all unknown numbers
-            const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
-            const welcomeMsg = `*Welcome to Kredibly!* 🚀\n\nI am *Kreddy*, your new Digital Chief of Staff. I handle your sales records, debtors, and automated invoices directly from this WhatsApp chat!\n\n_I don't recognize your number as a registered merchant yet._ 🧐\n\nTap the link below to create your free account in 30 seconds, and let's get you set up: 👇\n\n🔗 *${APP_URL}/signup*`;
-            await sendReply(from, welcomeMsg);
-            return;
+        // 🧠 KREDDY AI: Check if this is a customer-facing message (even if they have a merchant profile)
+        let isForCustomerFlow = false;
+        if (msgType === "interactive") {
+            const buttonId = message?.interactive?.button_reply?.id || "";
+            if (buttonId.startsWith("pay_now:") || buttonId.startsWith("req_ext:") || 
+                buttonId.startsWith("ext_3days:") || buttonId.startsWith("ext_1week:") || buttonId.startsWith("ext_2weeks:")) {
+                isForCustomerFlow = true;
+            }
+        } else {
+            // Check if they are in the middle of a customer extension request session
+            const tempSession = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
+            if (tempSession?.type === 'customer_extension_duration') {
+                isForCustomerFlow = true;
+            }
+        }
+
+        if (!profile || isForCustomerFlow) {
+            // 🧠 KREDDY AI: Check if this is a CUSTOMER who received an invoice
+            const isKnownCustomer = await isCustomerPhone(cleanFrom);
+            if (isKnownCustomer) {
+                const handled = await handleCustomerInbound(from, msgType, message, text);
+                if (handled) return;
+            }
+
+            if (!profile) {
+                // Pre-launch Phase: Force Registration for all unknown numbers
+                const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
+                const welcomeMsg = `*Welcome to Kredibly!* 🚀\n\nI am *Kreddy*, your new Digital Chief of Staff. I handle your sales records, debtors, and automated invoices directly from this WhatsApp chat!\n\n_I don't recognize your number as a registered merchant yet._ 🧐\n\nTap the link below to create your free account in 30 seconds, and let's get you set up: 👇\n\n🔗 *${APP_URL}/signup*`;
+                await sendReply(from, welcomeMsg);
+                return;
+            }
         }
 
         // 🛡️ COST SAVING: Track the 24-hour window
@@ -1052,7 +1087,7 @@ Upgrade here: ${APP_URL}/pricing`);
             }
         }
 
-        const lowerText = text ? text.toLowerCase().trim() : "";
+        let lowerText = text ? text.toLowerCase().trim() : "";
 
         // Check for OPEN Support Ticket (Context Awareness)
         const openTicket = await SupportTicket.findOne({
@@ -1060,7 +1095,94 @@ Upgrade here: ${APP_URL}/pricing`);
             status: { $in: ['open', 'replied'] }
         }).sort({ updatedAt: -1 });
 
-        if (msgType !== "text" && msgType !== "audio" && msgType !== "voice" && msgType !== "image") {
+        // 🧠 KREDDY AI: Handle interactive button replies (from merchant extension approve/reject)
+        if (msgType === "interactive") {
+            const buttonReply = message?.interactive?.button_reply;
+            if (buttonReply) {
+                const { id: buttonId } = buttonReply;
+                if (buttonId === "invoice_yes" || buttonId === "invoice_no") {
+                    text = buttonId;
+                    lowerText = buttonId.toLowerCase().trim();
+                } else if (buttonId.startsWith("send_chase_now:")) {
+                    const saleId = buttonId.split(":")[1];
+                    const sale = await Sale.findById(saleId);
+                    if (!sale) {
+                        await sendReply(from, `I couldn't find the invoice details anymore. 🤔`);
+                        return;
+                    }
+                    await sendReply(from, `Sending payment reminder to *${sale.customerName}* (+${sale.customerPhone})...`);
+                    const result = await sendChaseToCustomer(saleId, profile._id);
+                    if (result.success) {
+                        await sendReply(from, `✅ Done! The reminder has been sent to *${sale.customerName}*. I'll monitor for their response and keep you updated! 🛡️`);
+                    } else {
+                        const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
+                        const link = `${APP_URL}/i/${sale.invoiceNumber}`;
+                        const draft = `Hello ${sale.customerName}! 👋\n\nThis is a friendly reminder to settle your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\n🔗 *Tap here to view and pay securely:*\n${link}\n\n_Powered by Kredibly_ 🛡️`;
+                        await sendReply(from, `⚠️ I had trouble sending the reminder to their WhatsApp automatically. Here is the draft to send manually instead:\n\n${draft}`);
+                    }
+                    return;
+                } else if (buttonId.startsWith("copy_draft_only:")) {
+                    const saleId = buttonId.split(":")[1];
+                    const sale = await Sale.findById(saleId);
+                    if (!sale) {
+                        await sendReply(from, `I couldn't find the invoice details anymore. 🤔`);
+                        return;
+                    }
+                    const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
+                    const link = `${APP_URL}/i/${sale.invoiceNumber}`;
+                    const draft = `Hello ${sale.customerName}! 👋\n\nThis is a friendly reminder to settle your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\n🔗 *Tap here to view and pay securely:*\n${link}\n\n_Powered by Kredibly_ 🛡️`;
+                    
+                    await sendReply(from, `📝 *Draft for ${sale.customerName}* (Copy the message below):`);
+                    await sendReply(from, draft);
+                    return;
+                } else if (buttonId.startsWith("add_chase_phone:")) {
+                    const saleId = buttonId.split(":")[1];
+                    await WhatsAppSession.findOneAndUpdate(
+                        { whatsappNumber: cleanFrom },
+                        {
+                            type: 'collect_chase_phone',
+                            data: { saleId },
+                            expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+                        },
+                        { upsert: true }
+                    );
+                    await sendReply(from, `What's the customer's WhatsApp number for this reminder? 📱`);
+                    return;
+                } else if (buttonId.startsWith("ext_approve:")) {
+                    const saleId = buttonId.split(":")[1];
+                    const extSession = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom, type: "merchant_extension_approval" });
+                    if (extSession) {
+                        await WhatsAppSession.deleteOne({ _id: extSession._id });
+                        const result = await handleMerchantApproveExtension(saleId, extSession.data);
+                        if (result.success) {
+                            const newDate = new Date(extSession.data.newDueDate);
+                            const dateStr = newDate.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short" });
+                            await sendReply(from, `✅ *Extension Approved!*\n\nI've updated the due date for *${extSession.data.customerName}* to *${dateStr}* and notified them. Reminders rescheduled automatically. 🛡️`);
+                        }
+                    } else {
+                        await sendReply(from, `I couldn't find the extension request to approve. It may have expired. 🤔`);
+                    }
+                    return;
+                }
+                // Merchant rejects customer extension
+                if (buttonId.startsWith("ext_reject:")) {
+                    const saleId = buttonId.split(":")[1];
+                    const extSession = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom, type: "merchant_extension_approval" });
+                    if (extSession) {
+                        await WhatsAppSession.deleteOne({ _id: extSession._id });
+                        const result = await handleMerchantRejectExtension(saleId, extSession.data);
+                        if (result.success) {
+                            await sendReply(from, `❌ *Extension Rejected.*\n\n*${extSession.data.customerName}* has been notified that the extension was not approved. Their original payment deadline stands. 🛡️`);
+                        }
+                    } else {
+                        await sendReply(from, `I couldn't find the extension request to reject. It may have expired. 🤔`);
+                    }
+                    return;
+                }
+            }
+        }
+
+        if (msgType !== "text" && msgType !== "audio" && msgType !== "voice" && msgType !== "image" && msgType !== "interactive") {
             return await sendReply(from, "I catch the message, but I only understand text, voice notes, and images (for Chairmen) right now! 🛡️");
         }
 
@@ -1129,20 +1251,34 @@ Upgrade here: ${APP_URL}/pricing`);
                 } else if (session.type === 'draft_disambiguation') {
                     const sale = await Sale.findById(selected.id);
                     if (sale) {
-                        const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
-                        const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-                        const link = `${APP_URL}/i/${sale.invoiceNumber}`;
-                        let draft = "";
-
-                        if (session.data && session.data.isReminder) {
-                            draft = `Hi ${sale.customerName}, this is a friendly reminder to settle your balance of ₦${bal.toLocaleString()} with ${profile.displayName}. You can view your invoice and pay here: ${link}`;
-                        } else {
-                            draft = `Hi ${sale.customerName}, here is your secure invoice and payment link from ${profile.displayName} for ₦${bal.toLocaleString()}: ${link}`;
-                        }
-                        
                         await WhatsAppSession.deleteOne({ _id: session._id });
-                        await sendReply(from, `📝 *Draft for ${sale.customerName}* (Copy the message below):`);
-                        return await sendReply(from, draft);
+                        const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
+                        const customerPhone = sale.customerPhone || sale.deliveredToPhone;
+
+                        if (customerPhone) {
+                            await sendInteractiveButtons(
+                                from,
+                                "Invoice Reminder",
+                                `I found an active invoice for *${sale.customerName}* (Owes ₦${bal.toLocaleString()}) with phone *+${customerPhone}*.\n\nWould you like me to send a friendly reminder directly to their WhatsApp?`,
+                                "Powered by Kredibly",
+                                [
+                                    { id: `send_chase_now:${sale._id}`, title: "✅ Send Reminder" },
+                                    { id: `copy_draft_only:${sale._id}`, title: "📝 Copy Draft" }
+                                ]
+                            );
+                        } else {
+                            await sendInteractiveButtons(
+                                from,
+                                "Missing Customer Number",
+                                `I found an active invoice for *${sale.customerName}* (Owes ₦${bal.toLocaleString()}), but I don't have their WhatsApp number.\n\nWould you like to add their number to send a direct reminder, or just copy the draft?`,
+                                "Powered by Kredibly",
+                                [
+                                    { id: `add_chase_phone:${sale._id}`, title: "📱 Add Phone" },
+                                    { id: `copy_draft_only:${sale._id}`, title: "📝 Copy Draft" }
+                                ]
+                            );
+                        }
+                        return;
                     }
                 }
             }
@@ -1150,6 +1286,206 @@ Upgrade here: ${APP_URL}/pricing`);
             // Handle "Yes" for Smart Logic (Fail-safe for faster UX)
             const isConfirmation = ['yes', 'y', 'confirm', 'correct', 'true', 'sure', 'do it', 'go ahead', 'sharp'].includes(lowerText);
             const isRejection = ['no', 'n', 'wrong', 'stop', 'cancel', 'reject'].includes(lowerText);
+
+            // ─────────────────────────────────────────────────────────────────
+            // KREDDY AI: invoice_approval session — merchant confirms invoice
+            // ─────────────────────────────────────────────────────────────────
+            if (session.type === 'invoice_approval') {
+                if (isConfirmation || text.toLowerCase().trim() === 'yes' || text.toLowerCase().trim() === 'invoice_yes') {
+                    await WhatsAppSession.deleteOne({ _id: session._id });
+                    const { customerName, totalAmount, paidAmount, items, item, dueDate, invoiceType, customerPhone, businessId } = session.data;
+
+                    const newSale = new Sale({
+                        businessId: profile._id,
+                        customerName: customerName || "Customer",
+                        description: items && items.length > 0 ? items.map(i => `${i.name} x${i.quantity}`).join(", ") : (item || "Purchase"),
+                        items: items || [],
+                        totalAmount,
+                        payments: (paidAmount && paidAmount > 0) ? [{ amount: paidAmount, method: "WhatsApp" }] : [],
+                        dueDate: dueDate ? new Date(dueDate) : undefined,
+                        recordedBy: cleanFrom,
+                        invoiceType: invoiceType || "billing",
+                        customerPhone: customerPhone || undefined,
+                        lifecycleStatus: "PENDING_DELIVERY"
+                    });
+                    await newSale.save();
+
+                    await Notification.create({
+                        businessId: profile._id,
+                        title: "Invoice Created via Kreddy ✅",
+                        message: `₦${totalAmount.toLocaleString()} invoice created for ${customerName}.`,
+                        type: "sale",
+                        saleId: newSale._id
+                    });
+                    await logActivity({
+                        businessId: profile._id,
+                        action: "SALE_CREATED_WHATSAPP",
+                        entityType: "SALE",
+                        entityId: newSale._id,
+                        details: `Invoice #${newSale.invoiceNumber} created for ${customerName} via Kreddy`
+                    });
+
+                    // Notify staff's Oga if applicable
+                    if (isStaff && profile.whatsappNumber) {
+                        await sendReply(profile.whatsappNumber, `📢 *Staff Activity:* ${cleanFrom} created Invoice #${newSale.invoiceNumber} for ${customerName} (₦${totalAmount.toLocaleString()}).`);
+                    }
+
+                    if (customerPhone) {
+                        // Confirm to merchant
+                        await sendReply(from, `Invoice *${newSale.invoiceNumber}* created for *${customerName}* — *₦${totalAmount.toLocaleString()}*. The PDF is being generated and will be sent to you shortly.`);
+                        
+                        // Deliver asynchronously so merchant gets immediate feedback
+                        deliverInvoiceToCustomer(newSale._id, profile._id, { customerPhone })
+                            .then(async (result) => {
+                                if (result.success && result.pdfUrl) {
+                                    // Send PDF document copy to the merchant
+                                    await sendDocument(
+                                        cleanFrom,
+                                        result.pdfUrl,
+                                        `invoice-${newSale.invoiceNumber}.pdf`,
+                                        `Invoice #${newSale.invoiceNumber} has been sent to ${customerName} (+${customerPhone}), you will receive a notification when the payment is confirmed.`
+                                    );
+                                } else {
+                                    await sendReply(from, `⚠️ I had trouble delivering the invoice to ${customerName}'s WhatsApp. Check the number and try sending manually from the dashboard.`);
+                                }
+                            })
+                            .catch(e => console.error("Async delivery error:", e));
+                    }
+                    return;
+                } else if (isRejection || text.toLowerCase().trim() === 'invoice_no') {
+                    await WhatsAppSession.deleteOne({ _id: session._id });
+                    await sendReply(from, `No problem! Invoice cancelled. 🫡 Just tell me again what you want to record when you're ready.`);
+                    return;
+                } else {
+                    // Check if they're providing a customer phone number mid-session
+                    const phoneMatch = text.replace(/\D/g, '');
+                    if (phoneMatch.length >= 10 && session.data && !session.data.customerPhone) {
+                        // They've provided a phone number
+                        let cleanPhone = phoneMatch;
+                        if (cleanPhone.startsWith('0') && cleanPhone.length === 11) cleanPhone = '234' + cleanPhone.slice(1);
+                        await WhatsAppSession.findOneAndUpdate(
+                            { _id: session._id },
+                            { 'data.customerPhone': cleanPhone }
+                        );
+                        await sendReply(from, `Got it! I'll deliver the invoice to *+${cleanPhone}*. Type *Yes* to confirm and send, or *No* to cancel.`);
+                        return;
+                    }
+                }
+            }
+
+            // ─────────────────────────────────────────────────────────────────
+            // KREDDY AI: collect_customer_phone — waiting for phone number
+            // ─────────────────────────────────────────────────────────────────
+            if (session.type === 'collect_customer_phone') {
+                const phoneMatch = text.replace(/[^0-9]/g, '');
+                const { pendingSaleData } = session.data;
+
+                if (phoneMatch.length >= 10) {
+                    let cleanPhone = phoneMatch;
+                    if (cleanPhone.startsWith('0') && cleanPhone.length === 11) cleanPhone = '234' + cleanPhone.slice(1);
+                    await WhatsAppSession.deleteOne({ _id: session._id });
+
+                    const resolvedName = pendingSaleData.customerName || "Customer";
+                    
+                    // Format items list for summary text
+                    const itemsDisplay = pendingSaleData.items && pendingSaleData.items.length > 0
+                        ? pendingSaleData.items.map((i, idx) => `${idx + 1}. ${i.name} × ${i.quantity || 1} — ₦${(i.unitPrice || 0).toLocaleString()} each\n(₦${((i.unitPrice || 0) * (i.quantity || 1)).toLocaleString()})`).join("\n")
+                        : `${pendingSaleData.item && pendingSaleData.item !== "Item" ? pendingSaleData.item : "Purchase"} — ₦${pendingSaleData.totalAmount.toLocaleString()}`;
+
+                    const bal = pendingSaleData.totalAmount - (pendingSaleData.paidAmount || 0);
+
+                    // Formatted summary msg matching screenshots
+                    const summaryMsg = [
+                        `Here's the invoice summary:`,
+                        ``,
+                        `Customer: ${resolvedName}`,
+                        `Phone: +${cleanPhone}`,
+                        ``,
+                        itemsDisplay,
+                        ``,
+                        pendingSaleData.paidAmount > 0 ? `Subtotal: ₦${pendingSaleData.totalAmount.toLocaleString()}` : null,
+                        pendingSaleData.paidAmount > 0 ? `Paid: ₦${pendingSaleData.paidAmount.toLocaleString()}` : null,
+                        `Total: ₦${pendingSaleData.totalAmount.toLocaleString()}`,
+                        bal > 0 && pendingSaleData.paidAmount > 0 ? `Balance: ₦${bal.toLocaleString()}` : null,
+                        ``,
+                        `Shall I go ahead and generate this invoice and send it to the customer?`
+                    ].filter(Boolean).join("\n");
+
+                    // Save data for confirmation approval
+                    await WhatsAppSession.findOneAndUpdate(
+                        { whatsappNumber: cleanFrom },
+                        {
+                            type: "invoice_approval",
+                            data: {
+                                customerName: resolvedName,
+                                totalAmount: pendingSaleData.totalAmount,
+                                paidAmount: pendingSaleData.paidAmount || 0,
+                                items: pendingSaleData.items || [],
+                                item: pendingSaleData.item || "Purchase",
+                                dueDate: pendingSaleData.dueDate || null,
+                                invoiceType: pendingSaleData.invoiceType || "billing",
+                                customerPhone: cleanPhone
+                            },
+                            expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+                        },
+                        { upsert: true }
+                    );
+
+                    // Send summary text with interactive Yes/No buttons
+                    await sendInteractiveButtons(
+                        from,
+                        "Invoice Summary",
+                        summaryMsg,
+                        "Powered by Kredibly",
+                        [
+                            { id: "invoice_yes", title: "Yes" },
+                            { id: "invoice_no", title: "No" }
+                        ]
+                    );
+                    return;
+                } else {
+                    await sendReply(from, `Please provide a valid WhatsApp phone number to continue (e.g. 08012345678). 📱`);
+                    return;
+                }
+            }
+
+            // ─────────────────────────────────────────────────────────────────
+            // KREDDY AI: collect_chase_phone — waiting for customer number for chase
+            // ─────────────────────────────────────────────────────────────────
+            if (session.type === 'collect_chase_phone') {
+                const phoneMatch = text.replace(/[^0-9]/g, '');
+                const { saleId } = session.data;
+
+                if (phoneMatch.length >= 10) {
+                    let cleanPhone = phoneMatch;
+                    if (cleanPhone.startsWith('0') && cleanPhone.length === 11) cleanPhone = '234' + cleanPhone.slice(1);
+                    await WhatsAppSession.deleteOne({ _id: session._id });
+
+                    const sale = await Sale.findById(saleId);
+                    if (sale) {
+                        sale.customerPhone = cleanPhone;
+                        await sale.save();
+
+                        await sendReply(from, `Got the number! 📱 Sending the payment reminder directly to *${sale.customerName}* (+${cleanPhone}) now...`);
+                        
+                        const result = await sendChaseToCustomer(sale._id, profile._id);
+                        if (result.success) {
+                            await sendReply(from, `✅ Done! The reminder has been sent to *${sale.customerName}*. I'll monitor for their response and keep you updated! 🛡️`);
+                        } else {
+                            const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
+                            const link = `${APP_URL}/i/${sale.invoiceNumber}`;
+                            const draft = `Hello ${sale.customerName}! 👋\n\nThis is a friendly reminder to settle your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\n🔗 *Tap here to view and pay securely:*\n${link}\n\n_Powered by Kredibly_ 🛡️`;
+                            await sendReply(from, `⚠️ I had trouble sending the reminder to their WhatsApp automatically. Here is the draft to send manually instead:\n\n${draft}`);
+                        }
+                    } else {
+                        await sendReply(from, `I couldn't find the invoice details anymore. 🤔`);
+                    }
+                    return;
+                } else {
+                    await sendReply(from, `Please provide a valid WhatsApp phone number to continue (e.g. 08012345678). 📱`);
+                    return;
+                }
+            }
 
             if (isConfirmation && (session.type === 'collect_sale_info' || session.type === 'alias_confirmation' || session.type === 'alarm_confirmation')) {
                 // Common deletion
@@ -1728,9 +2064,9 @@ Upgrade here: ${APP_URL}/pricing`);
                         currentSession: session || null 
                     });
 
-                    // Add hint if Gemini explicitly told us it's rate-limited
+                    // Fallback to regex silently (no display prefix)
                     if (isExplicitFallback && aiResponse.data) {
-                        aiResponse.data.reply = `(AI is sleeping 💤) ` + aiResponse.data.reply;
+                        // Do not prepend (AI is sleeping 💤)
                     }
                 } else {
                     console.log(`🤖 AI Result: Intent=${aiResponse.intent}, Confidence=${aiResponse.confidence}`);
@@ -1922,80 +2258,107 @@ Upgrade here: ${APP_URL}/pricing`);
 
             }
 
-            // 2. CREATE SALE
+            // 2. CREATE SALE — Kreddy AI Conversational Invoice Flow
             if (!isProcessed && aiResponseItem && aiResponseItem.intent === "create_sale" && aiResponseItem.data.totalAmount) {
-                const { customerName, totalAmount, paidAmount, item, dueDate } = aiResponseItem.data;
-                const newSale = new Sale({
-                    businessId: profile._id,
-                    customerName: customerName || (session?.data?.customerName) || "Customer",
-                    description: item && item !== "Item" ? item : "Purchase recorded via WhatsApp",
-                    totalAmount: totalAmount,
-                    payments: (paidAmount && paidAmount > 0) ? [{ amount: paidAmount, method: "WhatsApp" }] : [],
-                    dueDate: dueDate && !isNaN(new Date(dueDate).getTime()) ? new Date(dueDate) : undefined,
-                    recordedBy: cleanFrom
-                });
-                await newSale.save();
+                const { customerName, totalAmount, paidAmount, item, dueDate, invoiceType } = aiResponseItem.data;
+                const aiItems = aiResponseItem.data.items || [];
+                const resolvedName = customerName || session?.data?.customerName || "Customer";
 
-                await WhatsAppSession.findOneAndUpdate(
-                    { whatsappNumber: cleanFrom },
-                    {
-                        type: 'active_context',
-                        data: { customerName: newSale.customerName, lastSaleId: newSale._id, description: newSale.description },
-                        expiresAt: new Date(Date.now() + 10 * 60 * 1000)
-                    },
-                    { upsert: true }
-                );
+                // Check for customer WhatsApp number — strictly required
+                let customerPhone = aiResponseItem.data.customerPhone || null;
+                if (!customerPhone) {
+                    await WhatsAppSession.findOneAndUpdate(
+                        { whatsappNumber: cleanFrom },
+                        {
+                            type: 'collect_customer_phone',
+                            data: {
+                                pendingSaleData: {
+                                    customerName: resolvedName,
+                                    totalAmount,
+                                    paidAmount: paidAmount || 0,
+                                    items: aiItems,
+                                    item: item || "Purchase",
+                                    dueDate: dueDate || null,
+                                    invoiceType: invoiceType || "billing"
+                                }
+                            },
+                            expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+                        },
+                        { upsert: true }
+                    );
+                    await sendReply(from, `What's the customer's WhatsApp number for this invoice? 📱`);
+                    if (isStaff && profile.whatsappNumber) {
+                        await sendReply(profile.whatsappNumber, `📢 *Staff Activity:* ${cleanFrom} is creating an invoice for ${resolvedName} (₦${totalAmount.toLocaleString()}).`);
+                    }
+                    isProcessed = true;
+                } else {
+                    // Normalize the customer phone number
+                    let cleanPhone = String(customerPhone).replace(/\D/g, '');
+                    if (cleanPhone.startsWith('0') && cleanPhone.length === 11) {
+                        cleanPhone = '234' + cleanPhone.slice(1);
+                    }
 
-                await logActivity({
-                    businessId: profile._id,
-                    action: "WHATSAPP_SALE_CREATED",
-                    entityType: "SALE",
-                    entityId: newSale._id,
-                    details: `Recorded sale of ₦${totalAmount.toLocaleString()} to ${newSale.customerName} via WhatsApp`
-                });
+                    // Build summary with phone number
+                    const itemsDisplay = aiItems.length > 0
+                        ? aiItems.map(i => `  • ${i.name} ×${i.quantity || 1} — ₦${((i.unitPrice || 0) * (i.quantity || 1)).toLocaleString()}`).join("\n")
+                        : `  • ${item && item !== "Item" ? item : "Purchase"} — ₦${totalAmount.toLocaleString()}`;
 
-                const bal = totalAmount - (paidAmount || 0);
-                const notificationTitle = totalAmount >= 50000 ? "🔥 Big Sale Recorded!" : "New Sale via WhatsApp 🚀";
-                
-                await Notification.create({
-                    businessId: profile._id,
-                    title: notificationTitle,
-                    message: `₦${totalAmount.toLocaleString()} logged for ${newSale.customerName}.`,
-                    type: "sale",
-                    saleId: newSale._id
-                });
+                    const bal = totalAmount - (paidAmount || 0);
+                    const typeLabel = (invoiceType === "record") ? "📦 Record (Already Paid)" : "📄 Invoice (Payment Request)";
 
-                let reply = aiResponseItem.data.reply || "Record Saved!";
-                
-                // Add Invoice Number if not already mentioned by AI
-                if (!reply.includes(newSale.invoiceNumber)) {
-                    reply = `📄 *Invoice #${newSale.invoiceNumber}*\n\n${reply}`;
+                    const summaryMsg = [
+                        `${aiResponseItem.data.reply || "Got it, Chief! Here's the invoice summary:"}`,
+                        ``,
+                        `👤 *Customer:* ${resolvedName}`,
+                        `📱 *Phone:* +${cleanPhone}`,
+                        ``,
+                        itemsDisplay,
+                        ``,
+                        `💰 *Total:* ₦${totalAmount.toLocaleString()}`,
+                        paidAmount > 0 ? `✅ *Paid:* ₦${paidAmount.toLocaleString()}` : null,
+                        bal > 0 ? `⏳ *Balance:* ₦${bal.toLocaleString()}` : null,
+                        `🏷️ *Type:* ${typeLabel}`,
+                        ``,
+                        `Shall I create this invoice and send it to the customer?`
+                    ].filter(Boolean).join("\n");
+
+                    // Save to session for approval
+                    await WhatsAppSession.findOneAndUpdate(
+                        { whatsappNumber: cleanFrom },
+                        {
+                            type: "invoice_approval",
+                            data: {
+                                customerName: resolvedName,
+                                totalAmount,
+                                paidAmount: paidAmount || 0,
+                                items: aiItems,
+                                item: item || "Purchase",
+                                dueDate: dueDate || null,
+                                invoiceType: invoiceType || "billing",
+                                customerPhone: cleanPhone
+                            },
+                            expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+                        },
+                        { upsert: true }
+                    );
+
+                    // Send summary with interactive Yes/No buttons
+                    await sendInteractiveButtons(
+                        from,
+                        "Invoice Summary",
+                        summaryMsg,
+                        "Powered by Kredibly",
+                        [
+                            { id: "invoice_yes", title: "Yes" },
+                            { id: "invoice_no", title: "No" }
+                        ]
+                    );
+
+                    if (isStaff && profile.whatsappNumber) {
+                        await sendReply(profile.whatsappNumber, `📢 *Staff Activity:* ${cleanFrom} is creating an invoice for ${resolvedName} (₦${totalAmount.toLocaleString()}).`);
+                    }
+                    isProcessed = true;
                 }
-
-                if (bal > 0 && !reply.includes(bal.toLocaleString())) {
-                    reply += `\n\n⏳ *Balance:* ₦${bal.toLocaleString()}`;
-                } else if (bal <= 0 && !reply.includes("Paid") && !reply.includes("paid")) {
-                    reply += `\n\n✅ *Fully Paid!*`;
-                }
-
-                // 📢 HUSTLER NUDGE
-                if (plan === "hustler" || !plan) {
-                    reply += `\n\n_P.S. Upgrade to Oga so I can keep sending your reports here even when you are away! 🛡️_`;
-                }
-                
-                await sendReply(from, reply);
-                
-                // Immediately provide a copy-paste draft for the merchant
-                const draftLink = `${APP_URL}/i/${newSale.invoiceNumber}`;
-                const draftMsg = `Hi ${newSale.customerName}, here is your secure receipt/invoice from ${profile.displayName} for ₦${totalAmount.toLocaleString()}: ${draftLink}`;
-                
-                await sendReply(from, `📝 *Forward this to ${newSale.customerName}* (Copy the message below):`);
-                await sendReply(from, draftMsg);
-
-                if (isStaff && profile.whatsappNumber) {
-                    await sendReply(profile.whatsappNumber, `📢 *Staff Activity Report* \n\nA new sale was just recorded by your staff (*${cleanFrom}*):\n\n👤 Customer: ${newSale.customerName}\n💰 Amount: ₦${totalAmount.toLocaleString()}\n📑 Invoice: #${newSale.invoiceNumber}`);
-                }
-                isProcessed = true;
             }
 
             // 3. OTHER INTENTS
@@ -2703,19 +3066,32 @@ Upgrade here: ${APP_URL}/pricing`);
                         await sendReply(from, disambigMsg);
                     } else {
                         const sale = matches[0];
-                        const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
                         const bal = sale.totalAmount - sale.payments.reduce((s,p)=>s+p.amount, 0);
-                        const link = `${APP_URL}/i/${sale.invoiceNumber}`;
-                        
-                        let targetMsg = "";
-                        if (aiResponseItem.intent.includes("reminder")) {
-                            targetMsg = `Hi ${sale.customerName}, this is a friendly reminder to settle your balance of ₦${bal.toLocaleString()} with ${profile.displayName}. You can view your invoice and pay here: ${link}`;
+                        const customerPhone = sale.customerPhone || sale.deliveredToPhone;
+
+                        if (customerPhone) {
+                            await sendInteractiveButtons(
+                                from,
+                                "Invoice Reminder",
+                                `I found an active invoice for *${sale.customerName}* (Owes ₦${bal.toLocaleString()}) with phone *+${customerPhone}*.\n\nWould you like me to send a friendly reminder directly to their WhatsApp?`,
+                                "Powered by Kredibly",
+                                [
+                                    { id: `send_chase_now:${sale._id}`, title: "✅ Send Reminder" },
+                                    { id: `copy_draft_only:${sale._id}`, title: "📝 Copy Draft" }
+                                ]
+                            );
                         } else {
-                            targetMsg = `Hi ${sale.customerName}, here is your secure invoice and payment link from ${profile.displayName} for ₦${bal.toLocaleString()}: ${link}`;
+                            await sendInteractiveButtons(
+                                from,
+                                "Missing Customer Number",
+                                `I found an active invoice for *${sale.customerName}* (Owes ₦${bal.toLocaleString()}), but I don't have their WhatsApp number.\n\nWould you like to add their number to send a direct reminder, or just copy the draft?`,
+                                "Powered by Kredibly",
+                                [
+                                    { id: `add_chase_phone:${sale._id}`, title: "📱 Add Phone" },
+                                    { id: `copy_draft_only:${sale._id}`, title: "📝 Copy Draft" }
+                                ]
+                            );
                         }
-                        
-                        await sendReply(from, `📝 *Draft ready for ${sale.customerName}* (Copy the message below to forward it):`);
-                        await sendReply(from, targetMsg);
                     }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "reply_ticket") {

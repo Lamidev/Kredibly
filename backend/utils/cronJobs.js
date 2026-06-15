@@ -181,6 +181,75 @@ const scheduleRemindersWorker = () => {
                 const planTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
                 const title = acquired.businessId.assistantSettings?.preferredName || acquired.businessId.displayName || planTitle;
 
+                // ─── CUSTOMER REMINDER (Kreddy AI Invoice Delivery) ────────────
+                if (acquired.recipientType === "customer" && acquired.recipientPhone) {
+                    const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
+                    const { sendInteractiveButtons, sendCustomerMessageWithFallback } = require("../utils/customerInvoiceService");
+                    let customerSuccess = false;
+
+                    if (acquired.saleId) {
+                        const sale = acquired.saleId; // already populated
+                        const bal = sale.totalAmount - (sale.payments?.reduce((s, p) => s + p.amount, 0) || 0);
+                        
+                        // Skip if already paid
+                        if (bal <= 0) {
+                            acquired.status = "delivered";
+                            acquired.deliveredAt = new Date();
+                            await acquired.save();
+                            continue;
+                        }
+
+                        const businessName = acquired.businessId?.displayName || "Your Merchant";
+                        const seqLabel = acquired.reminderSequence === 1 ? "Friendly Reminder" 
+                            : acquired.reminderSequence === 2 ? "Second Reminder" 
+                            : "Final Reminder ⚠️";
+
+                        const paymentLink = `${APP_URL}/i/${sale.invoiceNumber}`;
+
+                        try {
+                            // For first reminder, resend interactive buttons
+                            if (acquired.reminderSequence === 1) {
+                                await sendInteractiveButtons(
+                                    acquired.recipientPhone,
+                                    `${seqLabel} — Invoice #${sale.invoiceNumber}`,
+                                    `Hi ${sale.customerName}! Just a gentle reminder that you have an outstanding invoice from *${businessName}* for *₦${bal.toLocaleString()}*.\n\nPlease make payment at your earliest convenience.`,
+                                    "Powered by Kredibly",
+                                    [
+                                        { id: `pay_now:${sale._id}`, title: "💳 Pay Now" },
+                                        { id: `req_ext:${sale._id}`, title: "⏳ Request Extension" }
+                                    ]
+                                );
+                            } else {
+                                // Later reminders: plain text with link (with template fallback)
+                                const urgency = acquired.reminderSequence >= 3 ? "This is urgent — " : "";
+                                await sendCustomerMessageWithFallback(
+                                    acquired.recipientPhone,
+                                    `${urgency}Hi ${sale.customerName}, ${businessName} is requesting payment of *₦${bal.toLocaleString()}* for Invoice *#${sale.invoiceNumber}*.`,
+                                    sale.customerName,
+                                    sale.invoiceNumber
+                                );
+                            }
+                            customerSuccess = true;
+                        } catch (custErr) {
+                            console.error("Customer reminder send error:", custErr.message);
+                        }
+
+                        // Update customer reminder count on sale
+                        const Sale = require("../models/Sale");
+                        await Sale.findByIdAndUpdate(sale._id, {
+                            $inc: { customerRemindersSent: 1 },
+                            lastCustomerReminderAt: new Date()
+                        });
+                    }
+
+                    acquired.status = customerSuccess ? "delivered" : "failed";
+                    acquired.deliveredAt = customerSuccess ? new Date() : undefined;
+                    acquired.error = customerSuccess ? null : "Customer reminder delivery failed";
+                    await acquired.save();
+                    continue; // Skip merchant notification logic below
+                }
+                // ─── END CUSTOMER REMINDER ─────────────────────────────────────
+
                 const typeIcons = { debt: "⏳", task: "📝", meeting: "🤝", personal: "💡" };
                 const icon = typeIcons[reminder.type] || "🔔";
 
@@ -600,7 +669,7 @@ const startBackgroundJobRunner = () => {
                             const profile = await BusinessProfile.findById(job.businessId);
                             result = profile
                                 ? await sendIndividualPlanAlert({
-                                    type: null, // Let planAlertService calculate based on expiry date
+                                    type: null,
                                     profileId: job.businessId,
                                     whatsappNumber: profile.whatsappNumber
                                 })
@@ -611,6 +680,22 @@ const startBackgroundJobRunner = () => {
                             break;
                         case "ESCROW_PAYOUT":
                             result = await processIndividualEscrowPayout(job.data?.escrowId);
+                            break;
+                        case "INVOICE_DELIVERY":
+                            // Kreddy AI: Async invoice delivery to customer
+                            try {
+                                const { deliverInvoiceToCustomer } = require('../utils/customerInvoiceService');
+                                const deliveryResult = await deliverInvoiceToCustomer(
+                                    job.data?.saleId,
+                                    job.businessId,
+                                    { customerPhone: job.data?.customerPhone }
+                                );
+                                result = deliveryResult.success
+                                    ? { status: 'completed' }
+                                    : { status: 'failed', error: deliveryResult.error };
+                            } catch (e) {
+                                result = { status: 'failed', error: e.message };
+                            }
                             break;
                         // Add more types here as we grow
                     }

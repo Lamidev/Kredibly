@@ -20,6 +20,8 @@ router.post("/:id/track-view", saleController.trackView);
 router.post("/:id/confirm", saleController.confirmSale); // Publicly accessible
 router.post("/:id/share-email", protect, saleController.shareSaleByEmail);
 router.post("/:id/remind", protect, saleController.sendReminder);
+router.post("/:id/approve-extension", protect, saleController.approveExtension);
+router.post("/:id/reject-extension", protect, saleController.rejectExtension);
 router.delete("/:id", protect, saleController.deleteSale);
 
 module.exports = router;

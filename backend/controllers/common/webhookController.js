@@ -241,6 +241,14 @@ exports.handlePaystackWebhook = async (req, res) => {
                             customText, 
                             business.displayName || 'Chief'
                         ).catch(e => console.error("WA Fail:", e.message));
+
+                        // 🧠 KREDDY AI: Notify customer via WhatsApp too
+                        try {
+                            const { notifyCustomerPaymentReceived } = require('../../utils/customerInvoiceService');
+                            await notifyCustomerPaymentReceived(sale._id, actualCreditAmount);
+                        } catch (custNotifyErr) {
+                            console.error("Customer payment notify error:", custNotifyErr.message);
+                        }
                     }
 
                     // ⚡ REAL-TIME DASHBOARD UPDATE (Sockets)

@@ -55,6 +55,7 @@ const InvoicePage = () => {
     const [loading, setLoading] = useState(true);
     const [confirming, setConfirming] = useState(false);
     const [reminding, setReminding] = useState(false);
+    const [actionLoading, setActionLoading] = useState(false);
 
     // Modals
     const [showEditModal, setShowEditModal] = useState(false);
@@ -190,6 +191,40 @@ const InvoicePage = () => {
             toast.error("Failed to initiate reminder");
         } finally {
             setReminding(false);
+        }
+    };
+
+    const handleApproveExtension = async () => {
+        setActionLoading(true);
+        try {
+            const res = await axios.post(`${API_URL}/sales/${sale._id}/approve-extension`, {}, { withCredentials: true });
+            if (res.data.success) {
+                toast.success("Extension Approved Successfully!");
+                fetchSale();
+            } else {
+                toast.error("Failed to approve extension");
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to approve extension");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleRejectExtension = async () => {
+        setActionLoading(true);
+        try {
+            const res = await axios.post(`${API_URL}/sales/${sale._id}/reject-extension`, {}, { withCredentials: true });
+            if (res.data.success) {
+                toast.success("Extension Request Rejected!");
+                fetchSale();
+            } else {
+                toast.error("Failed to reject extension");
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to reject extension");
+        } finally {
+            setActionLoading(false);
         }
     };
 
@@ -559,6 +594,90 @@ const InvoicePage = () => {
 
                 {/* Left Column: Core Data */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                    
+                    {/* Extension Request Alert Banner */}
+                    {isOwner && sale.lifecycleStatus === 'EXTENSION_REQUESTED' && (
+                        <div style={{
+                            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.03) 100%)',
+                            border: '1px solid rgba(245, 158, 11, 0.3)',
+                            borderRadius: '24px',
+                            padding: '24px 32px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: '24px',
+                            marginBottom: '8px'
+                        }} className="mobile-stack">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                <div style={{
+                                    width: '48px',
+                                    height: '48px',
+                                    borderRadius: '16px',
+                                    background: 'rgba(245, 158, 11, 0.15)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#D97706',
+                                    flexShrink: 0
+                                }}>
+                                    <AlertCircle size={24} />
+                                </div>
+                                <div style={{ textAlign: 'left' }}>
+                                    <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 900, color: '#92400E' }}>
+                                        Extension Requested
+                                    </h4>
+                                    <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#B45309', lineHeight: 1.5 }}>
+                                        The customer is requesting a <strong>{sale.requestedExtensionDays || 7}-day</strong> extension.
+                                        If approved, the new due date will be <strong>{new Date(Date.now() + (sale.requestedExtensionDays || 7) * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</strong>.
+                                    </p>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px', flexShrink: 0 }} className="mobile-full-width">
+                                <button
+                                    onClick={handleRejectExtension}
+                                    disabled={actionLoading}
+                                    className="btn-secondary"
+                                    style={{
+                                        padding: '12px 20px',
+                                        borderRadius: '12px',
+                                        fontWeight: 800,
+                                        fontSize: '13px',
+                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                        color: '#EF4444',
+                                        background: 'rgba(239, 68, 68, 0.05)',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
+                                    }}
+                                >
+                                    Reject
+                                </button>
+                                <button
+                                    onClick={handleApproveExtension}
+                                    disabled={actionLoading}
+                                    className="btn-primary"
+                                    style={{
+                                        padding: '12px 24px',
+                                        borderRadius: '12px',
+                                        fontWeight: 800,
+                                        fontSize: '13px',
+                                        background: '#D97706',
+                                        borderColor: '#D97706',
+                                        color: 'white',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        boxShadow: '0 4px 12px rgba(217, 119, 6, 0.2)'
+                                    }}
+                                >
+                                    {actionLoading ? <Loader2 size={16} className="animate-spin spin-animation" /> : <Check size={16} />}
+                                    Approve Extension
+                                </button>
+                            </div>
+                        </div>
+                    )}
                     
                     {/* High-Impact Info Cards */}
                     {/* High-Impact Info Cards */}
