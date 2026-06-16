@@ -186,11 +186,12 @@ const uploadPDFToCloudinary = (pdfBuffer, invoiceNumber) => {
         const publicId = `kredibly/invoices/${invoiceNumber.replace(/[^a-zA-Z0-9-]/g, "_")}`;
         const stream = cloudinary.uploader.upload_stream(
             {
-                resource_type: "raw",
+                resource_type: "auto",
                 public_id: publicId,
                 format: "pdf",
                 overwrite: true,
-                type: "upload"
+                type: "upload",
+                access_type: "anonymous"   // ensure Meta WhatsApp can fetch the PDF
             },
             (error, result) => {
                 if (error) return reject(error);
