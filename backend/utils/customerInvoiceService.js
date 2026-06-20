@@ -65,16 +65,43 @@ const sendText = async (to, text) => {
  * Sends a message to a customer with automatic template fallback if the 24-hour window is closed.
  */
 const sendCustomerMessageWithFallback = async (to, text, customerName, invoiceNumber = null) => {
+    if (invoiceNumber) {
+        // ALWAYS use template message for invoice links to avoid naked links
+        const templateName = 'kreddy_system_alert';
+        const cleanMsg = String(text)
+            .replace(/[\r\n\t]+/g, ' ')
+            .replace(/\s\s+/g, ' ')
+            .trim()
+            .substring(0, 1024);
+
+        const components = [
+            {
+                type: "body",
+                parameters: [
+                    { type: "text", text: String(customerName || "Customer").substring(0, 60) },
+                    { type: "text", text: cleanMsg }
+                ]
+            },
+            {
+                type: "button",
+                sub_type: "url",
+                index: "0",
+                parameters: [
+                    { type: "text", text: `i/${invoiceNumber}` }
+                ]
+            }
+        ];
+        return await sendTemplateMsg(to, templateName, components);
+    }
+
+    // For other messages (e.g. no invoice link), send text and fallback to simple alert template if needed
     const success = await sendText(to, text);
     if (success) return true;
 
-    console.log(`⚠️ Free-form message failed to deliver to customer ${to}. Attempting template fallback (kreddy_system_alert)...`);
-    
-    const templateName = invoiceNumber ? 'kreddy_system_alert' : 'kreddy_simple_alert';
-    
-    // Format text nicely for template (remove carriage returns, keep single spaces)
+    console.log(`⚠️ Free-form message failed to deliver to customer ${to}. Attempting template fallback (kreddy_simple_alert)...`);
+    const templateName = 'kreddy_simple_alert';
     const cleanMsg = String(text)
-        .replace(/[\r\t]/g, ' ')
+        .replace(/[\r\n\t]+/g, ' ')
         .replace(/\s\s+/g, ' ')
         .trim()
         .substring(0, 1024);
@@ -88,18 +115,6 @@ const sendCustomerMessageWithFallback = async (to, text, customerName, invoiceNu
             ]
         }
     ];
-
-    if (invoiceNumber) {
-        components.push({
-            type: "button",
-            sub_type: "url",
-            index: "0",
-            parameters: [
-                { type: "text", text: `i/${invoiceNumber}` }
-            ]
-        });
-    }
-
     return await sendTemplateMsg(to, templateName, components);
 };
 
@@ -287,21 +302,37 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
             `Tap a button below to take action:`
         ].filter(v => v !== null).join("\n");
 
-        const btnSent = await sendInteractiveButtons(
-            cleanCustomerPhone,
-            `Invoice #${sale.invoiceNumber}`,
-            summaryLines,
-            "",
-            [
-                { id: `pay_now:${sale._id}`, title: "Pay Now" },
-                { id: `req_ext:${sale._id}`, title: "Request Extension" }
-            ]
-        );
-        console.log(`🔘 Interactive buttons to customer ${cleanCustomerPhone}: ${btnSent ? '✅ sent' : '❌ failed'}`);
-        if (!btnSent) {
-            // Fallback: send plain text with payment link
-            const paymentLink = `${APP_URL}/i/${sale.invoiceNumber}`;
-            await sendText(cleanCustomerPhone, `${summaryLines}\n\nPay here: ${paymentLink}`);
+        let btnSent = false;
+        if (bal > 0) {
+            btnSent = await sendInteractiveButtons(
+                cleanCustomerPhone,
+                `Invoice #${sale.invoiceNumber}`,
+                summaryLines,
+                "",
+                [
+                    { id: `pay_now:${sale._id}`, title: "Pay Now" },
+                    { id: `req_ext:${sale._id}`, title: "Request Extension" }
+                ]
+            );
+            console.log(`🔘 Interactive buttons to customer ${cleanCustomerPhone}: ${btnSent ? '✅ sent' : '❌ failed'}`);
+            if (!btnSent) {
+                // Fallback: send template message since free-form/interactive failed (e.g. 24h window closed)
+                console.log(`⚠️ Interactive buttons failed for customer ${cleanCustomerPhone}. Sending template message fallback...`);
+                await sendCustomerMessageWithFallback(
+                    cleanCustomerPhone,
+                    summaryLines,
+                    sale.customerName,
+                    sale.invoiceNumber
+                );
+            }
+        } else {
+            console.log(`ℹ️ Invoice fully settled (balance: 0). Skipping action buttons for customer.`);
+            await sendCustomerMessageWithFallback(
+                cleanCustomerPhone,
+                `Hello ${sale.customerName}! Your payment has been received and confirmed. Please find your invoice receipt attached.`,
+                sale.customerName,
+                sale.invoiceNumber
+            );
         }
 
         // Step 4: Update sale lifecycle
@@ -347,7 +378,7 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
 
         await Notification.create({
             businessId: business._id,
-            title: "Invoice Delivered ✅",
+            title: "Invoice Delivered",
             message: `Invoice #${sale.invoiceNumber} sent to ${sale.customerName} via WhatsApp.`,
             type: "system",
             saleId: sale._id
@@ -470,11 +501,30 @@ const handleCustomerPayNow = async (saleId, customerPhone) => {
             return;
         }
 
-        const paymentLink = `${APP_URL}/i/${sale.invoiceNumber}`;
-        await sendText(
-            customerPhone,
-            `*Pay Invoice #${sale.invoiceNumber}*\n\nHi ${sale.customerName}! Here is your secure payment link:\n\n${paymentLink}\n\nAmount Due: *₦${bal.toLocaleString()}*\n\nPayment is 100% secure.`
-        );
+        const cleanCustomerPhone = normalizePhone(customerPhone);
+        const paymentMsg = `Ready to make payment for Invoice #${sale.invoiceNumber}? Tap the button below to pay securely online. Amount Due: *₦${bal.toLocaleString()}*`;
+        
+        // Use template message with URL button (no naked links!)
+        const templateName = 'kreddy_system_alert';
+        const components = [
+            {
+                type: "body",
+                parameters: [
+                    { type: "text", text: String(sale.customerName || "Customer").substring(0, 60) },
+                    { type: "text", text: paymentMsg }
+                ]
+            },
+            {
+                type: "button",
+                sub_type: "url",
+                index: "0",
+                parameters: [
+                    { type: "text", text: `i/${sale.invoiceNumber}` }
+                ]
+            }
+        ];
+        
+        await sendTemplateMsg(cleanCustomerPhone, templateName, components);
     } catch (err) {
         console.error("❌ handleCustomerPayNow Error:", err.message);
     }
@@ -575,18 +625,18 @@ const handleCustomerExtensionDuration = async (saleId, days, customerPhone, cust
 
         await sendInteractiveButtons(
             merchantPhone,
-            "⏳ Extension Request",
+            "Extension Request",
             `*${sale.customerName}* is requesting a *${daysNum}-day payment extension* for Invoice *#${sale.invoiceNumber}* (₦${sale.totalAmount.toLocaleString()}).\n\nNew Due Date would be: *${newDueDateStr}*\n\nDo you approve?`,
             "Reply to notify the customer instantly",
             [
-                { id: `ext_approve:${saleId}`, title: "✅ Approve" },
-                { id: `ext_reject:${saleId}`, title: "❌ Reject" }
+                { id: `ext_approve:${saleId}`, title: "Approve" },
+                { id: `ext_reject:${saleId}`, title: "Reject" }
             ]
         );
 
         await Notification.create({
             businessId: business._id,
-            title: "Extension Request 🔔",
+            title: "Extension Request",
             message: `${sale.customerName} requested a ${daysNum}-day extension for Invoice #${sale.invoiceNumber}.`,
             type: "system",
             saleId: sale._id
@@ -692,7 +742,7 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
             // Cancel pending customer reminders
             await cancelCustomerReminders(saleId);
         } else {
-            msg = `*Partial Payment Received!*\n\nThank you, ${sale.customerName}! Your payment of *₦${amountPaid.toLocaleString()}* for Invoice *#${sale.invoiceNumber}* has been received.\n\nRemaining Balance: *₦${balance.toLocaleString()}*\n\nPlease settle the balance at your earliest convenience:\n${APP_URL}/i/${sale.invoiceNumber}`;
+            msg = `*Partial Payment Received!*\n\nThank you, ${sale.customerName}! Your payment of *₦${amountPaid.toLocaleString()}* for Invoice *#${sale.invoiceNumber}* has been received.\n\nRemaining Balance: *₦${balance.toLocaleString()}*\n\nPlease settle the balance at your earliest convenience by tapping the button below.`;
         }
 
         // Update database status first so PDF generation reads it

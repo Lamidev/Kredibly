@@ -87,7 +87,7 @@ exports.resolveTicket = async (req, res) => {
         if (ticket.businessId) {
             await Notification.create({
                 businessId: ticket.businessId,
-                title: "Ticket Resolved ✅",
+                title: "Ticket Resolved",
                 message: "Your support ticket has been marked as resolved by the admin. We hope we solved your issue!",
                 type: "system"
             });
@@ -95,7 +95,7 @@ exports.resolveTicket = async (req, res) => {
             // Notify User via WhatsApp (Kreddy)
             const biz = await BusinessProfile.findById(ticket.businessId);
             if (biz && biz.whatsappNumber) {
-                const text = `🎉 Hi ${biz.displayName}, your support ticket regarding "${ticket.message.substring(0, 30)}..." has been resolved! \n\nIf you need anything else, just ask Kreddy. Happy selling! 🚀`;
+                const text = `Hi ${biz.displayName}, your support ticket regarding "${ticket.message.substring(0, 30)}..." has been resolved! \n\nIf you need anything else, just ask Kreddy. Happy selling!`;
                 await whatsappController.sendWhatsAppMessage(biz.whatsappNumber, text);
             }
         }
@@ -132,7 +132,7 @@ exports.replyToTicket = async (req, res) => {
             if (ticket.businessId) {
                 await Notification.create({
                     businessId: ticket.businessId,
-                    title: "Support Update 📩",
+                    title: "Support Update",
                     message: "The admin has replied to your support ticket. Check the Support Hub for details.",
                     type: "system"
                 });
@@ -162,11 +162,11 @@ exports.replyToTicket = async (req, res) => {
                              const nameToUse = biz.assistantSettings?.preferredName || biz.displayName;
                              
                              let text = "";
-                             if (plan === 'chairman') {
-                                 text = `🦁 *Chairman ${nameToUse}, Urgent Support Update!* \n\nI have a priority response from the team regarding your ticket: \n\n" *${message}* "\n\nLog in to your dashboard to view the full response and reply! 💎`;
-                             } else {
-                                 text = `🚀 *High power, Oga ${nameToUse}!* \n\nThe team has sent a sharp response to your issue: \n\n" *${message}* "\n\nPlease check your dashboard Support Hub to view the message and reply. 🛡️`;
-                             }
+                              if (plan === 'chairman') {
+                                  text = `*Chairman ${nameToUse}, Urgent Support Update!* \n\nI have a priority response from the team regarding your ticket: \n\n" *${message}* "\n\nLog in to your dashboard to view the full response and reply.`;
+                              } else {
+                                  text = `*High power, Oga ${nameToUse}!* \n\nThe team has sent a sharp response to your issue: \n\n" *${message}* "\n\nPlease check your dashboard Support Hub to view the message and reply.`;
+                              }
                              
                              await whatsappController.sendWhatsAppMessage(biz.whatsappNumber, text);
                          }
@@ -208,7 +208,7 @@ exports.markSeen = async (req, res) => {
             if (ticket.businessId) {
                 await Notification.deleteMany({
                     businessId: ticket.businessId,
-                    title: "Support Update 📩"
+                    title: "Support Update"
                 });
             }
         }

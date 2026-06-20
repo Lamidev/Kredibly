@@ -191,7 +191,7 @@ exports.addPayment = async (req, res) => {
         // Create In-App Notification
         await Notification.create({
             businessId: businessId,
-            title: "Payment Received 💰",
+            title: "Payment Received",
             message: `₦${Number(amount).toLocaleString()} recorded for ${sale.customerName || 'Customer'}.`,
             type: "payment",
             saleId: sale._id
@@ -206,9 +206,9 @@ exports.addPayment = async (req, res) => {
             let msg = `I've just recorded a payment of *₦${Number(amount).toLocaleString()}* for *${sale.customerName}*.\n\n`;
             
             if (balance <= 0) {
-                msg += `✅ *Fully Paid!* This debt is now cleared from the ledger. Well done!`;
+                msg += `*Fully Paid!* This debt is now cleared from the ledger. Well done!`;
             } else {
-                msg += `⏳ *Balance Expected:* ₦${balance.toLocaleString()}\n*Action:* I've updated the invoice status to ${sale.status.toUpperCase()}.`;
+                msg += `*Balance Expected:* ₦${balance.toLocaleString()}\n*Action:* I've updated the invoice status to ${sale.status.toUpperCase()}.`;
             }
 
             await sendWhatsAppAlert(sale.businessId.whatsappNumber, "Chief", msg, sale.invoiceNumber).catch(e => {
@@ -224,7 +224,7 @@ exports.addPayment = async (req, res) => {
                     const emailSubject = `Payment Received: ₦${Number(amount).toLocaleString()} from ${sale.customerName}`;
                     const emailHtml = `
                         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                            <h2 style="color: #0F172A;">Payment Received 💰</h2>
+                            <h2 style="color: #0F172A;">Payment Received</h2>
                             <p>Great news! A payment has been recorded on your ledger.</p>
                             
                             <div style="background: #F8FAFC; padding: 24px; border-radius: 12px; margin: 24px 0;">
@@ -304,7 +304,7 @@ exports.confirmSale = async (req, res) => {
             if (business) {
                 await Notification.create({
                     businessId: business._id,
-                    title: "Invoice Verified ✅",
+                    title: "Invoice Verified",
                     message: `${customer || 'A customer'} has just confirmed receipt of Invoice #${invoiceNum}.`,
                     type: "confirmation",
                     saleId: sale._id
@@ -314,7 +314,7 @@ exports.confirmSale = async (req, res) => {
             // Notify Business Owner on WhatsApp
             if (business && business.whatsappNumber) {
 
-                const adminMsg = `${customer || 'A customer'} has just confirmed receipt of *Invoice #${invoiceNum}*.\n\nYour digital record is now verified! ✅`;
+                const adminMsg = `${customer || 'A customer'} has just confirmed receipt of *Invoice #${invoiceNum}*.\n\nYour digital record is now verified.`;
                 await sendWhatsAppAlert(business.whatsappNumber, "Verification Alert", adminMsg, invoiceNum);
             } else {
             }
@@ -373,7 +373,7 @@ exports.trackView = async (req, res) => {
                     action: "INVOICE_VIEWED",
                     entityType: "SALE",
                     entityId: sale._id,
-                    details: `${sale.customerName || 'A customer'} viewed Invoice #${sale.invoiceNumber}${countSuffix} 👁️`
+                    details: `${sale.customerName || 'A customer'} viewed Invoice #${sale.invoiceNumber}${countSuffix}`
                 });
             }
 
@@ -381,7 +381,7 @@ exports.trackView = async (req, res) => {
             if (isFirstView) {
                 await Notification.create({
                     businessId: sale.businessId._id,
-                    title: "Invoice Viewed 👁️",
+                    title: "Invoice Viewed",
                     message: `${sale.customerName || 'A customer'} just opened Invoice #${sale.invoiceNumber}.`,
                     type: "system",
                     saleId: sale._id
@@ -513,7 +513,7 @@ exports.updateSale = async (req, res) => {
         if (business) {
             await Notification.create({
                 businessId: business._id,
-                title: "Invoice Updated 📝",
+                title: "Invoice Updated",
                 message: `You updated the details for Invoice #${sale.invoiceNumber} (${sale.customerName}).`,
                 type: "system",
                 saleId: sale._id
