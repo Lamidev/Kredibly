@@ -218,7 +218,7 @@ exports.handlePaystackWebhook = async (req, res) => {
 
                     await Notification.create({
                         businessId: business._id,
-                        title: 'Payment Received 💰',
+                        title: 'Payment Received',
                         message: `₦${actualCreditAmount.toLocaleString()} received for Invoice #${invoiceNumber} from ${sale.customerName}.`,
                         type: 'sale',
                         saleId: sale._id
@@ -229,8 +229,8 @@ exports.handlePaystackWebhook = async (req, res) => {
                         const balance = sale.totalAmount - totalPaid;
                         
                         let customText = "";
-                        if (balance <= 0) customText = `✅ Fully Paid! This debt is now cleared.`;
-                        else customText = `⏳ Balance Remaining: ₦${balance.toLocaleString()}`;
+                        if (balance <= 0) customText = `Fully Paid! This debt is now cleared.`;
+                        else customText = `Balance Remaining: ₦${balance.toLocaleString()}`;
                         
                         const { sendWhatsAppPaymentAlert } = require('../whatsapp/whatsappController');
                         await sendWhatsAppPaymentAlert(

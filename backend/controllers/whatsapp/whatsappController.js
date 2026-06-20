@@ -64,50 +64,50 @@ const BACKEND_URL = process.env.BACKEND_URL || "https://api.usekredibly.com";
 const HUMANIZE = {
     greetings: {
         hustler: [
-            "Boss {name}! 🫡 How can I help your hustle today?",
-            "Good to see you, {name}! 🚀 Ready to record some wins?",
+            "Boss {name}! How can I help your hustle today?",
+            "Good to see you, {name}! Ready to record some wins?",
             "Kreddy is online, {name}. What's the latest update?"
         ],
         oga: [
-            "Good day, Oga {name}! 💼 Your smart assistant is ready. What are we tracking today?",
-            "Oga {name}! 🚀 High power! Kreddy is online and locked in for your business.",
-            "Welcome back, Oga {name}! 🛡️ Need to track a payment or record a sale?"
+            "Good day, Oga {name}! Your smart assistant is ready. What are we tracking today?",
+            "Oga {name}! High power! Kreddy is online and locked in for your business.",
+            "Welcome back, Oga {name}! Need to track a payment or record a sale?"
         ],
         chairman: [
-            "Good morning, Chairman {name}! 👑 Your empire is growing. I'm standing by for your instructions.",
-            "Chairman {name}! 💎 Respect! Your business is moving fast. How can I help you lead today?",
-            "Greetings, Chairman {name}! 🦁 Your records are safe and the ledger is ready for more wins."
+            "Good morning, Chairman {name}! Your empire is growing. I'm standing by for your instructions.",
+            "Chairman {name}! Respect! Your business is moving fast. How can I help you lead today?",
+            "Greetings, Chairman {name}! Your records are safe and the ledger is ready for more wins."
         ]
     },
     debtors: [
-        "Omo, debtors plenty for street! 😅",
-        "Chai, people owe you o! Let's get your money back. 🛡️",
-        "Oga, the debt list is long but we'll collect every kobo! 💰",
-        "See as your money hang for outside... Don't worry, Kreddy is here. 🧐",
-        "Wait, let me pull the list. These people must pay! 😤"
+        "Omo, debtors plenty for street!",
+        "Chai, people owe you o! Let's get your money back.",
+        "Oga, the debt list is long but we'll collect every kobo!",
+        "See as your money hang for outside... Don't worry, Kreddy is here.",
+        "Wait, let me pull the list. These people must pay!"
     ],
     history: [
-        "Let's see what you've been cooking! Here's your full record history: 📊",
-        "Tracking your progress... You're doing well! Here is everything recorded: 🚀",
-        "Your business story is looking good! Check your full history: 🧾",
-        "Searching the archives... Found your records! See them below: 📦"
+        "Let's see what you've been cooking! Here's your full record history:",
+        "Tracking your progress... You're doing well! Here is everything recorded:",
+        "Your business story is looking good! Check your full history:",
+        "Searching the archives... Found your records! See them below:"
     ],
     success: [
-        "Nice one! 🎈 I've logged that for you.",
-        "Got it, Chief! ✅ Record is safe and sound.",
-        "Record saved! 🚀 Keep that momentum going.",
-        "Done! 🛡️ I've updated your ledger."
+        "Nice one! I've logged that for you.",
+        "Got it, Chief! Record is safe and sound.",
+        "Record saved! Keep that momentum going.",
+        "Done! I've updated your ledger."
     ],
     celebration: [
-        "🔥 *Woah, that's a big one! Congrats!* 🥂",
-        "🚀 *Absolute win! Your business is moving fast!*",
-        "💎 *That's what I like to see! Profit secured!*",
-        "🌟 *Big energy! Keep scaling!*",
-        "Chairman move! 🚀",
-        "Bag secured! 💰",
-        "Level up! 📈",
-        "You're doing well! 🎩",
-        "Odogwu! 👑"
+        "*Woah, that's a big one! Congrats!*",
+        "*Absolute win! Your business is moving fast!*",
+        "*That's what I like to see! Profit secured!*",
+        "*Big energy! Keep scaling!*",
+        "Chairman move!",
+        "Bag secured!",
+        "Level up!",
+        "You're doing well!",
+        "Odogwu!"
     ]
 };
 
@@ -885,7 +885,36 @@ const downloadWhatsAppMedia = async (mediaId) => {
 };
 
 
+/**
+ * SPOKEN PHONE NUMBER PARSER
+ * Converts spoken digit words (e.g. "zero eight zero one two") into digit characters.
+ * Falls back gracefully when the text is already numeric.
+ */
+const SPOKEN_DIGIT_MAP = {
+    zero: '0', oh: '0', o: '0',
+    one: '1', two: '2', three: '3', four: '4', five: '5',
+    six: '6', seven: '7', eight: '8', nine: '9'
+};
 
+const parseSpokenPhoneNumber = (text) => {
+    if (!text) return '';
+    // First try direct digit extraction
+    const directDigits = text.replace(/[^0-9]/g, '');
+    if (directDigits.length >= 10) return directDigits;
+
+    // Try word-by-word conversion
+    const words = text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/);
+    let converted = '';
+    for (const word of words) {
+        if (SPOKEN_DIGIT_MAP[word] !== undefined) {
+            converted += SPOKEN_DIGIT_MAP[word];
+        } else if (/^\d+$/.test(word)) {
+            converted += word;
+        }
+        // Non-digit words are skipped (e.g. "and", "my", "number")
+    }
+    return converted;
+};
 
 const handleIncoming = async (req, res) => {
     let from = null; // 🛡️ Initialize for catch block safety
@@ -968,7 +997,7 @@ const handleIncoming = async (req, res) => {
             if (!profile) {
                 // Pre-launch Phase: Force Registration for all unknown numbers
                 const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
-                const welcomeMsg = `*Welcome to Kredibly!* 🚀\n\nI am *Kreddy*, your new Digital Chief of Staff. I handle your sales records, debtors, and automated invoices directly from this WhatsApp chat!\n\n_I don't recognize your number as a registered merchant yet._ 🧐\n\nTap the link below to create your free account in 30 seconds, and let's get you set up: 👇\n\n🔗 *${APP_URL}/signup*`;
+                const welcomeMsg = `*Welcome to Kredibly!* 🚀\n\nI'm *Kreddy*, your Digital Chief of Staff. I handle sales records, debtors, and automated invoices right here in WhatsApp.\n\nI don't have you registered as a merchant yet. Create your free account in 30 seconds:\n\n${APP_URL}/signup`;
                 await sendReply(from, welcomeMsg);
                 return;
             }
@@ -1046,7 +1075,7 @@ const handleIncoming = async (req, res) => {
                 await profile.save();
             }
 
-            const introMsg = `🫡 *Connection Successful, ${bossTitleToUse}!* \n\nI am Kreddy, and I am officially clocked in as your Digital Chief of Staff. \n\nI'll call you *${bossTitleToUse}* for now, but you can change this anytime—just say _"Kreddy, call me Boss"_ or any name you prefer! 👑\n\nHere is what you can ask me to do right now:\n\n🎤 *Send a Voice Note:* _"Sarah just bought a bag for 15k, she paid 5k, remind me on Friday to collect the balance."_\n\n📸 *Send a Picture:* Send a pic of a receipt and tell me to log it.\n\n💡 *Ask a Question:* _"What do I have planned for today?"_\n\nTalk to me like a real person. Let's make some money! 💰`;
+            const introMsg = `*Connected, ${bossTitleToUse}.* 🫡\n\nI'm Kreddy — your Digital Chief of Staff. I'll call you *${bossTitleToUse}* for now, but say _"Kreddy, call me [name]"_ anytime to change it.\n\nHere's what I can do:\n\n🎤 *Voice Note:* _"Sarah bought a bag for 15k, she paid 5k, remind me Friday for the balance."_\n\n📸 *Picture:* Send a receipt photo and I'll log it for you.\n\n💬 *Ask anything:* _"What do I have planned today?"_\n\nTalk to me like a real person — let's get to work. 💰`;
             await sendReply(from, introMsg);
             
             // If they just said a basic greeting, stop here. Otherwise, keep processing the payload.
@@ -1100,7 +1129,7 @@ Upgrade here: ${APP_URL}/pricing`);
             const buttonReply = message?.interactive?.button_reply;
             if (buttonReply) {
                 const { id: buttonId } = buttonReply;
-                if (buttonId === "invoice_yes" || buttonId === "invoice_no") {
+                if (buttonId === "invoice_yes" || buttonId === "invoice_no" || buttonId === "invoice_edit") {
                     text = buttonId;
                     lowerText = buttonId.toLowerCase().trim();
                 } else if (buttonId.startsWith("send_chase_now:")) {
@@ -1226,12 +1255,12 @@ Upgrade here: ${APP_URL}/pricing`);
                         const paidAmount = session.data.paidAmount || 0;
                         await Notification.create({
                             businessId: profile._id,
-                            title: "Quick Payment ✅",
+                            title: "Quick Payment",
                             message: `₦${paidAmount.toLocaleString()} recorded for ${sale.customerName}.`,
                             type: "system",
                             saleId: sale._id
                         });
-                        return await sendReply(from, `✅ *Payment Recorded!* \n\n👤 Customer: ${sale.customerName}\n💰 New Balance: *₦${balance.toLocaleString()}*`);
+                        return await sendReply(from, `*Payment Recorded!* \n\nCustomer: ${sale.customerName}\nBalance: *₦${balance.toLocaleString()}*`);
                     }
                 } else if (session.type === 'rename_disambiguation') {
                     const sale = await Sale.findById(selected.id);
@@ -1312,7 +1341,7 @@ Upgrade here: ${APP_URL}/pricing`);
 
                     await Notification.create({
                         businessId: profile._id,
-                        title: "Invoice Created via Kreddy ✅",
+                        title: "Invoice Created via Kreddy",
                         message: `₦${totalAmount.toLocaleString()} invoice created for ${customerName}.`,
                         type: "sale",
                         saleId: newSale._id
@@ -1346,22 +1375,159 @@ Upgrade here: ${APP_URL}/pricing`);
                     return;
                 } else if (isRejection || text.toLowerCase().trim() === 'invoice_no') {
                     await WhatsAppSession.deleteOne({ _id: session._id });
-                    await sendReply(from, `No problem! Invoice cancelled. 🫡 Just tell me again what you want to record when you're ready.`);
+                    await sendReply(from, `No problem — invoice cancelled. Just tell me again when you're ready.`);
+                    return;
+                } else if (text.toLowerCase().trim() === 'invoice_edit') {
+                    const sd = session.data;
+                    const effectivePaid = sd.paidAmount || 0;
+                    const effectiveTotal = sd.totalAmount || 0;
+                    const effectiveBal = effectiveTotal - effectivePaid;
+                    const resolvedName = sd.customerName || "Customer";
+                    const cleanPhone = sd.customerPhone || "";
+                    
+                    const itemsDisplay = sd.items && sd.items.length > 0
+                        ? sd.items.map((i, idx) => `${idx + 1}. ${i.name} × ${i.quantity || 1} — ₦${((i.unitPrice || 0) * (i.quantity || 1)).toLocaleString()}`).join('\n')
+                        : `${sd.item && sd.item !== "Item" ? sd.item : "Purchase"} — ₦${effectiveTotal.toLocaleString()}`;
+
+                    const currentInfo = [
+                        `✏️ *Current Invoice Details:*`,
+                        `- *Customer:* ${resolvedName}`,
+                        cleanPhone ? `- *Phone:* +${cleanPhone}` : null,
+                        `- *Item/Description:* ${itemsDisplay}`,
+                        `- *Total:* ₦${effectiveTotal.toLocaleString()}`,
+                        effectivePaid > 0 ? `- *Paid:* ₦${effectivePaid.toLocaleString()}` : null,
+                        effectiveBal > 0 && effectivePaid > 0 ? `- *Balance:* ₦${effectiveBal.toLocaleString()}` : null,
+                        ``,
+                        `What would you like to edit? Just type your correction, for example:`,
+                        `✍️ *change name to Bukola*`,
+                        `✍️ *price is 85k*`,
+                        `✍️ *paid is 50k*`,
+                        `✍️ *change item to Nike Prado x2*`,
+                        `✍️ *phone is 08082366322*`
+                    ].filter(v => v !== null).join("\n");
+
+                    await sendReply(from, currentInfo);
                     return;
                 } else {
+                    // ─────────────────────────────────────────────────────────
+                    // INLINE EDIT COMMANDS during invoice_approval
+                    // Supported patterns:
+                    //   "change name to X"  |  "customer name is X"
+                    //   "price is X"        |  "total is X"  |  "change price to X"
+                    //   "paid is X"         |  "she paid X"  |  "change paid to X"
+                    //   "change item to X"  |  "item is X"   |  "description is X"
+                    //   "phone is X"        |  "number is X" |  "change phone to X"
+                    // ─────────────────────────────────────────────────────────
+                    const lowerInput = text.toLowerCase().trim();
+                    let editField = null;
+                    let editValue = null;
+
+                    const nameMatch = lowerInput.match(/^(?:change\s+(?:the\s+)?(?:customer\s+)?name\s+to|customer\s+(?:name\s+)?is|name\s+is)\s+(.+)$/i);
+                    const priceMatch = lowerInput.match(/^(?:change\s+(?:the\s+)?(?:total\s+|price\s+)?(?:to|is)|(?:total|price|amount)\s+is|it\s+(?:cost|costs)|correct\s+price\s+is)\s+([\d,\.k m]+)$/i);
+                    const paidMatch = lowerInput.match(/^(?:change\s+(?:the\s+)?paid\s+(?:to|amount\s+to)|paid\s+is|she\s+paid|he\s+paid|they\s+paid|deposit\s+is)\s+([\d,\.k m]+)$/i);
+                    const itemMatch = lowerInput.match(/^(?:change\s+(?:the\s+)?(?:item|description)\s+to|item\s+is|description\s+is|product\s+is)\s+(.+)$/i);
+                    const phoneEditMatch = lowerInput.match(/^(?:change\s+(?:the\s+)?(?:phone|number|whatsapp)\s+(?:to|number\s+to)|phone\s+is|number\s+is|their\s+(?:number|phone)\s+is)\s+(.+)$/i);
+
+                    const parseAmountFromText = (raw) => {
+                        if (!raw) return null;
+                        const s = raw.toLowerCase().replace(/,/g, '').trim();
+                        const numM = s.match(/^([\d\.]+)\s*(k|m|million|thousand)?$/);
+                        if (!numM) return null;
+                        let val = parseFloat(numM[1]);
+                        const suffix = numM[2] || '';
+                        if (suffix === 'k' || suffix === 'thousand') val *= 1000;
+                        else if (suffix === 'm' || suffix === 'million') val *= 1000000;
+                        return Math.round(val);
+                    };
+
+                    if (nameMatch) {
+                        editField = 'customerName';
+                        editValue = nameMatch[1].trim().replace(/\b\w/g, c => c.toUpperCase());
+                    } else if (priceMatch) {
+                        editField = 'totalAmount';
+                        editValue = parseAmountFromText(priceMatch[1]);
+                    } else if (paidMatch) {
+                        editField = 'paidAmount';
+                        editValue = parseAmountFromText(paidMatch[1]);
+                    } else if (itemMatch) {
+                        editField = 'item';
+                        editValue = itemMatch[1].trim();
+                    } else if (phoneEditMatch) {
+                        const spokenPhone = parseSpokenPhoneNumber(phoneEditMatch[1]);
+                        if (spokenPhone.length >= 10) {
+                            editField = 'customerPhone';
+                            let cp = spokenPhone;
+                            if (cp.startsWith('0') && cp.length === 11) cp = '234' + cp.slice(1);
+                            editValue = cp;
+                        }
+                    }
+
+                    if (editField && editValue !== null) {
+                        // Update the session
+                        const update = {};
+                        update[`data.${editField}`] = editValue;
+                        const updatedSession = await WhatsAppSession.findOneAndUpdate(
+                            { _id: session._id },
+                            { $set: update },
+                            { new: true }
+                        );
+
+                        const sd = updatedSession.data;
+                        const effectivePaid = sd.paidAmount || 0;
+                        const effectiveTotal = sd.totalAmount || 0;
+                        const effectiveBal = effectiveTotal - effectivePaid;
+
+                        // Rebuild item display
+                        const updatedItemDisplay = sd.items && sd.items.length > 0
+                            ? sd.items.map((i, idx) => `${idx + 1}. ${i.name} × ${i.quantity || 1} — ₦${((i.unitPrice || 0) * (i.quantity || 1)).toLocaleString()}`).join('\n')
+                            : `${sd.item && sd.item !== 'Item' ? sd.item : 'Purchase'} — ₦${effectiveTotal.toLocaleString()}`;
+
+                        const updatedSummary = [
+                            `Updated invoice summary:`,
+                            ``,
+                            `Customer: ${sd.customerName}`,
+                            sd.customerPhone ? `Phone: +${sd.customerPhone}` : null,
+                            ``,
+                            updatedItemDisplay,
+                            ``,
+                            effectivePaid > 0 ? `Subtotal: ₦${effectiveTotal.toLocaleString()}` : null,
+                            effectivePaid > 0 ? `Paid: ₦${effectivePaid.toLocaleString()}` : null,
+                            `Total: ₦${effectiveTotal.toLocaleString()}`,
+                            effectiveBal > 0 && effectivePaid > 0 ? `Balance due: ₦${effectiveBal.toLocaleString()}` : null,
+                            ``,
+                            `Shall I go ahead and generate this invoice and send it to the customer?`
+                        ].filter(v => v !== null).join('\n');
+
+                        await sendInteractiveButtons(
+                            from,
+                            'Invoice Summary',
+                            updatedSummary,
+                            '',
+                            [
+                                { id: 'invoice_yes', title: 'Yes' },
+                                { id: 'invoice_no', title: 'No' },
+                                { id: 'invoice_edit', title: '✏️ Edit' }
+                            ]
+                        );
+                        return;
+                    }
+
                     // Check if they're providing a customer phone number mid-session
-                    const phoneMatch = text.replace(/\D/g, '');
-                    if (phoneMatch.length >= 10 && session.data && !session.data.customerPhone) {
-                        // They've provided a phone number
-                        let cleanPhone = phoneMatch;
+                    const spokenPhone = parseSpokenPhoneNumber(text);
+                    if (spokenPhone.length >= 10 && session.data && !session.data.customerPhone) {
+                        let cleanPhone = spokenPhone;
                         if (cleanPhone.startsWith('0') && cleanPhone.length === 11) cleanPhone = '234' + cleanPhone.slice(1);
                         await WhatsAppSession.findOneAndUpdate(
                             { _id: session._id },
                             { 'data.customerPhone': cleanPhone }
                         );
-                        await sendReply(from, `Got it! I'll deliver the invoice to *+${cleanPhone}*. Type *Yes* to confirm and send, or *No* to cancel.`);
+                        await sendReply(from, `Got it — I'll deliver the invoice to *+${cleanPhone}*. Reply *Yes* to confirm and send, or *No* to cancel.`);
                         return;
                     }
+
+                    // If no edit command was parsed and it's not a phone number, guide them
+                    await sendReply(from, `I didn't quite catch that edit. Please reply *Yes* to confirm and send, *No* to cancel, or type a change like *change name to Bukola* or *price is 85k*.`);
+                    return;
                 }
             }
 
@@ -1369,7 +1535,7 @@ Upgrade here: ${APP_URL}/pricing`);
             // KREDDY AI: collect_customer_phone — waiting for phone number
             // ─────────────────────────────────────────────────────────────────
             if (session.type === 'collect_customer_phone') {
-                const phoneMatch = text.replace(/[^0-9]/g, '');
+                const phoneMatch = parseSpokenPhoneNumber(text);
                 const { pendingSaleData } = session.data;
 
                 if (phoneMatch.length >= 10) {
@@ -1423,7 +1589,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         { upsert: true }
                     );
 
-                    // Send summary text with interactive Yes/No buttons
+                    // Send summary text with interactive buttons
                     await sendInteractiveButtons(
                         from,
                         "Invoice Summary",
@@ -1431,7 +1597,8 @@ Upgrade here: ${APP_URL}/pricing`);
                         "",
                         [
                             { id: "invoice_yes", title: "Yes" },
-                            { id: "invoice_no", title: "No" }
+                            { id: "invoice_no", title: "No" },
+                            { id: "invoice_edit", title: "✏️ Edit" }
                         ]
                     );
                     return;
@@ -1445,7 +1612,7 @@ Upgrade here: ${APP_URL}/pricing`);
             // KREDDY AI: collect_chase_phone — waiting for customer number for chase
             // ─────────────────────────────────────────────────────────────────
             if (session.type === 'collect_chase_phone') {
-                const phoneMatch = text.replace(/[^0-9]/g, '');
+                const phoneMatch = parseSpokenPhoneNumber(text);
                 const { saleId } = session.data;
 
                 if (phoneMatch.length >= 10) {
@@ -1517,12 +1684,12 @@ Upgrade here: ${APP_URL}/pricing`);
                         } catch (err) {}
 
                         // Notification & Activity Log
-                        await Notification.create({ businessId: profile._id, title: 'Payment Confirmed! ✅', message: `₦${paidAmount.toLocaleString()} screenshot confirmed for ${customerName}.`, type: 'sale', saleId: sale._id });
+                        await Notification.create({ businessId: profile._id, title: 'Payment Confirmed', message: `₦${paidAmount.toLocaleString()} screenshot confirmed for ${customerName}.`, type: 'sale', saleId: sale._id });
                         await logActivity({ businessId: profile._id, action: "PAYMENT_MATCHED", entityType: "SALE", entityId: sale._id, details: `Confirmed ₦${paidAmount} for ${customerName} via WhatsApp` });
 
-                        return await sendReply(from, `✅ *Done!* I've recorded that ₦${paidAmount.toLocaleString()} for *${customerName}*. \n\nI'll remember that *"${sourceName}"* belongs to them! 🛡️💎`);
+                        return await sendReply(from, `*Done!* I've recorded that ₦${paidAmount.toLocaleString()} for *${customerName}*. \n\nI'll remember that *"${sourceName}"* belongs to them.`);
                     } else {
-                        return await sendReply(from, `🤔 I couldn't find that invoice anymore — it may have been deleted. Check your dashboard! 🛡️`);
+                        return await sendReply(from, `I couldn't find that invoice anymore — it may have been deleted. Check your dashboard.`);
                     }
                 } else if (session.type === 'alarm_confirmation') {
                     const { saleId, customerName } = session.data;
@@ -1531,7 +1698,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                         const paymentLink = `${FRONTEND_URL}/i/${sale.publicSlug || sale.invoiceNumber}`;
                         const nudgeDraft = `Hi ${customerName}, this is a friendly nudge from ${profile.displayName} regarding your balance of ₦${bal.toLocaleString()}. You can pay here: ${paymentLink}`;
-                        return await sendReply(from, `📝 *Draft Reminder ready!* \n\n_"${nudgeDraft}"_`);
+                        return await sendReply(from, `*Draft Reminder ready:* \n\n"${nudgeDraft}"`);
                     }
                 } else if (session.type === 'collect_sale_info') {
                     const { customerName, totalAmount, paidAmount, item, intent, dueDate, invoiceType } = session.data;
@@ -1553,7 +1720,7 @@ Upgrade here: ${APP_URL}/pricing`);
                     // Notify Dashboard
                     await Notification.create({
                         businessId: profile._id,
-                        title: "Smart Sale ✅",
+                        title: "Smart Sale",
                         message: `₦${totalAmount.toLocaleString()} recorded for ${customerName}.`,
                         type: "sale",
                         saleId: newSale._id
@@ -1782,7 +1949,7 @@ Upgrade here: ${APP_URL}/pricing`);
                             // 🔔 SYNC WITH DASHBOARD
                             await Notification.create({
                                 businessId: profile._id,
-                                title: 'Payment Tagged! 🏷️',
+                                title: 'Payment Tagged!',
                                 message: `₦${paidAmount.toLocaleString()} tagged to ${selectedSale.customerName}.`,
                                 type: 'sale',
                                 saleId: selectedSale._id
@@ -2106,7 +2273,7 @@ Upgrade here: ${APP_URL}/pricing`);
                                 if (sourceName) {
                                     await CustomerAlias.findOneAndUpdate({ businessId: profile._id, sourceName }, { targetName: customerName, lastUsedAt: new Date() }, { upsert: true });
                                 }
-                                await Notification.create({ businessId: profile._id, title: 'Payment Confirmed! ✅', message: `₦${paidAmount.toLocaleString()} screenshot confirmed for ${customerName}.`, type: 'sale', saleId: sale._id });
+                                await Notification.create({ businessId: profile._id, title: 'Payment Confirmed', message: `₦${paidAmount.toLocaleString()} screenshot confirmed for ${customerName}.`, type: 'sale', saleId: sale._id });
                                 await logActivity({ businessId: profile._id, action: "PAYMENT_MATCHED", entityType: "SALE", entityId: sale._id, details: `AI-Confirmed ₦${paidAmount} for ${customerName}` });
                                 
                                 // Socket Update
@@ -2114,7 +2281,7 @@ Upgrade here: ${APP_URL}/pricing`);
                                 const io = getIO();
                                 if (io) io.to(profile._id.toString().toLowerCase()).emit('sale_updated', { saleId: sale._id, invoiceNumber: sale.invoiceNumber, amount: paidAmount, status: sale.status });
 
-                                await sendReply(from, aiResponseItem.data?.reply || `✅ *Done!* Recorded for *${customerName}*. I've also learned that *"${sourceName}"* belongs to them! 🛡️💎`);
+                                await sendReply(from, aiResponseItem.data?.reply || `*Done!* Recorded for *${customerName}*. I've also learned that *"${sourceName}"* belongs to them.`);
                                 await WhatsAppSession.deleteOne({ _id: session._id });
                                 isProcessed = true;
                             }
@@ -2334,7 +2501,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         { upsert: true }
                     );
 
-                    // Send summary with interactive Yes/No buttons
+                    // Send summary with interactive buttons
                     await sendInteractiveButtons(
                         from,
                         "Invoice Summary",
@@ -2342,7 +2509,8 @@ Upgrade here: ${APP_URL}/pricing`);
                         "",
                         [
                             { id: "invoice_yes", title: "Yes" },
-                            { id: "invoice_no", title: "No" }
+                            { id: "invoice_no", title: "No" },
+                            { id: "invoice_edit", title: "✏️ Edit" }
                         ]
                     );
 
@@ -3109,12 +3277,12 @@ Upgrade here: ${APP_URL}/pricing`);
 
                         await Notification.create({
                             businessId: profile._id,
-                            title: "Support Ticket Logged 🛡️",
+                            title: "Support Ticket Logged",
                             message: `Ticket #${newTicket._id.toString().slice(-6)} is now open.`,
                             type: "system"
                         });
 
-                        await sendReply(from, "🛡️ *Support Ticket Opened*\n\nI'll have the team look into this for you! 🚀 (Ticket #" + newTicket._id.toString().slice(-6) + ")");
+                        await sendReply(from, "*Support Ticket Opened*\n\nI'll have the team look into this for you! (Ticket #" + newTicket._id.toString().slice(-6) + ")");
                     }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "delete_reminder") {
@@ -3188,12 +3356,12 @@ Upgrade here: ${APP_URL}/pricing`);
 
                     await Notification.create({
                         businessId: profile._id,
-                        title: "Support Ticket Logged 🛡️",
+                        title: "Support Ticket Logged",
                         message: `Ticket #${newTicket._id.toString().slice(-6)} opened via WhatsApp.`,
                         type: "system"
                     });
 
-                    await sendReply(from, `🛡️ *Support Ticket Opened*\n\nI've logged this as an official ticket (#${newTicket._id.toString().slice(-6)}) for the team to look into immediately. You can track its status on your Dashboard! 🚀`);
+                    await sendReply(from, `*Support Ticket Opened*\n\nI've logged this as an official ticket (#${newTicket._id.toString().slice(-6)}) for the team to look into immediately. You can track its status on your Dashboard!`);
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "feedback") {
                     // 🚨 CLARIFICATION GUARD: If feedback contains core biz keywords, ask for confirmation
@@ -3201,7 +3369,7 @@ Upgrade here: ${APP_URL}/pricing`);
                     const hasCoreKeywords = coreKeywords.some(k => text.toLowerCase().includes(k));
 
                     if (hasCoreKeywords && (aiResponseItem.confidence || 1.0) < 0.95) {
-                         await sendReply(from, `🛡️ *Quick Question, ${bossTitle}:* \n\nI catch your message, but I'm not sure if you're giving me a **Suggestion for the App** or asking me to **Manage a Task/Debt**. \n\nWhich one is it? 🧐`);
+                         await sendReply(from, `*Quick Question, ${bossTitle}:* \n\nI caught your message, but I'm not sure if you're giving me a **Suggestion for the App** or asking me to **Manage a Task/Debt**. \n\nWhich one is it?`);
                          await WhatsAppSession.findOneAndUpdate(
                              { whatsappNumber: cleanFrom },
                              {
@@ -3228,7 +3396,7 @@ Upgrade here: ${APP_URL}/pricing`);
 
                     await Notification.create({
                         businessId: profile._id,
-                        title: "Priority Feedback 📢",
+                        title: "Priority Feedback",
                         message: `Merchant ${profile.displayName} shared an idea: ${feedbackMsgText.substring(0, 50)}...`,
                         type: "system"
                     });
@@ -3241,7 +3409,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         details: feedbackMsgText
                     });
 
-                    await sendReply(from, `Got it, ${bossTitle}! 🫡 I've shared your idea directly with our Dev Team at the backend. We love hearing from you! 🚀🛡️`);
+                    await sendReply(from, `Got it, ${bossTitle}! I've shared your idea directly with our Dev Team. We love hearing from you!`);
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "delete_feedback") {
                     // 🗑️ Handle "Cancel/Delete my suggestion"
@@ -3249,9 +3417,9 @@ Upgrade here: ${APP_URL}/pricing`);
                     
                     if (lastFeedback && (new Date() - lastFeedback.createdAt) < 60 * 60 * 1000) { // Only delete if in last 60 mins
                         await lastFeedback.deleteOne();
-                        await sendReply(from, `No problem, ${bossTitle}! 🛡️ I've removed that suggestion from our internal roadmap. Your feedback loop is clean! ⚖️`);
+                        await sendReply(from, `No problem, ${bossTitle}! I've removed that suggestion from our internal roadmap. Your feedback loop is clean!`);
                     } else {
-                        await sendReply(from, `${bossTitle}, I couldn't find a very recent suggestion to delete. If you want to change something on the roadmap, just let me know exactly what! 🫡`);
+                        await sendReply(from, `${bossTitle}, I couldn't find a very recent suggestion to delete. If you want to change something on the roadmap, just let me know exactly what.`);
                     }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "delete_sale") {
@@ -3268,7 +3436,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         }).sort({ createdAt: -1 });
 
                         if (matches.length === 0) {
-                            await sendReply(from, `🔍 I couldn't find a record for *${searchRef}* to delete.`);
+                            await sendReply(from, `I couldn't find a record for *${searchRef}* to delete.`);
                         } else if (matches.length === 1) {
                             const saleToDelete = matches[0];
                             
@@ -3287,13 +3455,13 @@ Upgrade here: ${APP_URL}/pricing`);
                                 details: `Merchant deleted invoice #${saleToDelete.invoiceNumber} for ${saleToDelete.customerName} via Kreddy.`
                             });
 
-                            await sendReply(from, `🛡️ *Record Deleted!* \n\nI've removed the invoice for *${saleToDelete.customerName}* and cancelled all scheduled reminders for it. Your dashboard is updated! ⚖️`);
+                            await sendReply(from, `*Record Deleted!* \n\nI've removed the invoice for *${saleToDelete.customerName}* and cancelled all scheduled reminders for it. Your dashboard is updated.`);
                         } else {
-                            let msg = `🤔 I found *${matches.length}* matches for "${searchRef}". Which one should I delete?\n\n`;
+                            let msg = `I found *${matches.length}* matches for "${searchRef}". Which one should I delete?\n\n`;
                             matches.slice(0, 5).forEach(m => {
                                 msg += `• *#${m.invoiceNumber}* (${m.customerName})\n`;
                             });
-                            msg += `\nPlease type the exact Invoice ID! 🛡️`;
+                            msg += `\nPlease type the exact Invoice ID.`;
                             await sendReply(from, msg);
                         }
                     }
@@ -3303,7 +3471,7 @@ Upgrade here: ${APP_URL}/pricing`);
                     if (session) {
                         await WhatsAppSession.deleteOne({ _id: session._id });
                     }
-                    let msg = aiResponseItem.data.reply || "I'm here, Chief! What's happening? 🚀";
+                    let msg = aiResponseItem.data.reply || "I'm here, Chief! What's happening?";
                     
                     // Auto-Split if message contains a Draft marker
                     if (msg.includes("📝 Draft for") || msg.includes("📝 *Draft ready")) {
@@ -3317,10 +3485,10 @@ Upgrade here: ${APP_URL}/pricing`);
                     isProcessed = true;
                 } else {
                     // FALLBACK — Only trigger if truly unknown
-                    let fallbackMsg = aiResponseItem?.data?.reply || `I'm listening, ${bossTitle}! 🫡 `;
+                    let fallbackMsg = aiResponseItem?.data?.reply || `I'm listening, ${bossTitle}.`;
                     
                     if (!isProcessed) {
-                        fallbackMsg += "\n\nTip: You can ask me to record sales, set reminders, or even suggest features for the dashboard! 💡";
+                        fallbackMsg += "\n\nTip: You can ask me to record sales, set reminders, or even suggest features for the dashboard.";
                     }
                     
                     // Auto-Split if message contains a Draft marker
@@ -3342,7 +3510,7 @@ Upgrade here: ${APP_URL}/pricing`);
         console.error("🔴 Stack:", err?.stack || "No stack trace");
         if (from) {
             try {
-                await sendReply(from, "Ouch! My brain had a small glitch. 😵‍ Give me a moment to recover and try again! 🛡️");
+                await sendReply(from, "Ouch! My brain had a small glitch. Give me a moment to recover and try again.");
             } catch (replyErr) {
                 console.error("🔴 Failed to send error reply:", replyErr?.message);
             }

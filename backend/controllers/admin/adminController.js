@@ -400,7 +400,7 @@ exports.manualVerifyMerchant = async (req, res) => {
         // 4. Notify Merchant
         await Notification.create({
             businessId: business._id,
-            title: 'Account Verified! ✅',
+            title: 'Account Verified!',
             message: `Your identity has been verified manually. Your held funds (₦${releasedAmount.toLocaleString()}) have been released to your bank account.`,
             type: 'system'
         });
