@@ -215,7 +215,7 @@ const scheduleRemindersWorker = () => {
                                     `Hi ${sale.customerName}! Just a gentle reminder that you have an outstanding invoice from *${businessName}* for *₦${bal.toLocaleString()}*.\n\nPlease make payment at your earliest convenience.`,
                                     "",
                                     [
-                                        { id: `pay_now:${sale._id}`, title: "Pay Now" },
+                                        { id: `pay_now:${sale._id}`, title: "Pay with Transfer" },
                                         { id: `req_ext:${sale._id}`, title: "Request Extension" }
                                     ]
                                 );
