@@ -931,8 +931,12 @@ const handleIncoming = async (req, res) => {
 
         from = message.from;
         const messageId = message.id;
-        const msgType = message.type;
-        let text = message.text?.body?.trim() || message.image?.caption?.trim() || message.document?.caption?.trim() || "";
+        let msgType = message.type;
+        let text = message.text?.body?.trim() || 
+                   message.image?.caption?.trim() || 
+                   message.document?.caption?.trim() || 
+                   message.button?.text?.trim() || 
+                   "";
         const whatsappProfileName = value?.contacts?.[0]?.profile?.name || "";
         
         console.log(`📩 Message from ${whatsappProfileName} (${from}): "${text}"`);
@@ -995,10 +999,33 @@ const handleIncoming = async (req, res) => {
             }
 
             if (!profile) {
-                // Pre-launch Phase: Force Registration for all unknown numbers
-                const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
-                const welcomeMsg = `*Welcome to Kredibly!* 🚀\n\nI'm *Kreddy*, your Digital Chief of Staff. I handle sales records, debtors, and automated invoices right here in WhatsApp.\n\nI don't have you registered as a merchant yet. Create your free account in 30 seconds:\n\n${APP_URL}/signup`;
-                await sendReply(from, welcomeMsg);
+                // Pre-launch Phase: Force Registration for all unknown numbers using Meta template with button redirect
+                const welcomeText = `Welcome to Kredibly! I'm Kreddy, your Digital Chief of Staff. I handle sales records, debtors, and automated invoices right here in WhatsApp. I don't have you registered yet. Create your free account in 30 seconds.`;
+                const cleanMsg = welcomeText
+                    .replace(/[\r\n\t]+/g, ' ')
+                    .replace(/\s\s+/g, ' ')
+                    .trim()
+                    .substring(0, 1024);
+
+                const components = [
+                    {
+                        type: "body",
+                        parameters: [
+                            { type: "text", text: String(whatsappProfileName || "Partner").substring(0, 60) },
+                            { type: "text", text: cleanMsg }
+                        ]
+                    },
+                    {
+                        type: "button",
+                        sub_type: "url",
+                        index: "0",
+                        parameters: [
+                            { type: "text", text: "signup" }
+                        ]
+                    }
+                ];
+
+                await sendTemplateMessage(from, "kreddy_system_alert", components);
                 return;
             }
         }
@@ -1175,7 +1202,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         },
                         { upsert: true }
                     );
-                    await sendReply(from, `What's the customer's WhatsApp number for this reminder? 📱`);
+                    await sendReply(from, `What's the customer's WhatsApp number for this reminder?`);
                     return;
                 } else if (buttonId.startsWith("ext_approve:")) {
                     const saleId = buttonId.split(":")[1];
@@ -1211,13 +1238,71 @@ Upgrade here: ${APP_URL}/pricing`);
             }
         }
 
-        if (msgType !== "text" && msgType !== "audio" && msgType !== "voice" && msgType !== "image" && msgType !== "interactive") {
+        if (msgType !== "text" && msgType !== "audio" && msgType !== "voice" && msgType !== "image" && msgType !== "interactive" && msgType !== "button") {
             return await sendReply(from, "I catch the message, but I only understand text, voice notes, and images (for Chairmen) right now! 🛡️");
         }
 
         // PERSISTENT SESSION HANDLING
         let session = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
+
+        // If a session is active and the merchant sends a voice note, transcribe it first
+        if (session && (msgType === "audio" || msgType === "voice")) {
+            if (resolvedPlan !== "chairman" && resolvedPlan !== "oga") {
+                await sendReply(from, "Boss! 🛡️ Voice notes are an exclusive feature for the *Oga* and *Chairman* plans. Upgrade now to unlock Voice Sync! 🦁");
+                return;
+            }
+            
+            const mediaId = message.audio?.id || message.voice?.id;
+            if (mediaId) {
+                const planDefaultTitle = resolvedPlan === "chairman" ? "Chairman" : "Oga";
+                const bossTitle = profile?.assistantSettings?.preferredName || profile?.displayName || planDefaultTitle;
+                
+                await sendReply(from, `${bossTitle}, I catch the voice note! 💎 Analyzing it now... 🎧`);
+                const media = await downloadWhatsAppMedia(mediaId);
+                if (media) {
+                    const voiceRes = await processAudioWithAI(media.buffer, media.mimeType, {
+                        merchantName: bossTitle,
+                        plan: resolvedPlan,
+                        entityType: profile?.entityType || "business"
+                    });
+                    
+                    if (voiceRes) {
+                        const firstRes = Array.isArray(voiceRes) ? voiceRes[0] : voiceRes;
+                        const transcription = firstRes?.data?.transcription || firstRes?.data?.reply || "";
+                        if (transcription) {
+                            text = transcription;
+                            lowerText = transcription.toLowerCase().trim();
+                            msgType = "text"; // Treat as text to trigger session handling
+                            console.log(`🎤 Session Voice note transcribed: "${text}"`);
+                        }
+                    }
+                }
+            }
+        }
+
         if (session) {
+            // 🚀 Extension Request template buttons / reply interceptor
+            if (session.type === 'merchant_extension_approval') {
+                const lowerText = text ? text.toLowerCase().trim() : "";
+                if (lowerText === 'approve' || lowerText === 'accept' || lowerText === 'yes' || lowerText === 'y') {
+                    await WhatsAppSession.deleteOne({ _id: session._id });
+                    const result = await handleMerchantApproveExtension(session.data.saleId, session.data);
+                    if (result.success) {
+                        const newDate = new Date(session.data.newDueDate);
+                        const dateStr = newDate.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short" });
+                        await sendReply(from, `✅ *Extension Approved!*\n\nI've updated the due date for *${session.data.customerName}* to *${dateStr}* and notified them. Reminders rescheduled automatically. 🛡️`);
+                    }
+                    return;
+                } else if (lowerText === 'reject' || lowerText === 'no' || lowerText === 'n') {
+                    await WhatsAppSession.deleteOne({ _id: session._id });
+                    const result = await handleMerchantRejectExtension(session.data.saleId, session.data);
+                    if (result.success) {
+                        await sendReply(from, `❌ *Extension Rejected.*\n\n*${session.data.customerName}* has been notified that the extension was not approved. Their original payment deadline stands. 🛡️`);
+                    }
+                    return;
+                }
+            }
+
             // 🌅 WAKE-UP FLOW: Intercept pending morning summary session
             if (session.type === 'pending_summary') {
                 const lowerText = text ? text.toLowerCase().trim() : "";
@@ -1361,7 +1446,7 @@ Upgrade here: ${APP_URL}/pricing`);
 
                     if (customerPhone) {
                         // Confirm to merchant immediately
-                        await sendReply(from, `Invoice *${newSale.invoiceNumber}* created for *${customerName}* — *₦${totalAmount.toLocaleString()}*. Sending to ${customerName} now...`);
+                        await sendReply(from, `Invoice ${newSale.invoiceNumber} created for ${customerName} — ₦${totalAmount.toLocaleString()}. The PDF is being generated and will be sent to you shortly.`);
                         
                         // Deliver asynchronously — merchant gets summary text + PDF copy inside this call
                         deliverInvoiceToCustomer(newSale._id, profile._id, { customerPhone })
@@ -1390,7 +1475,8 @@ Upgrade here: ${APP_URL}/pricing`);
                         : `${sd.item && sd.item !== "Item" ? sd.item : "Purchase"} — ₦${effectiveTotal.toLocaleString()}`;
 
                     const currentInfo = [
-                        `✏️ *Current Invoice Details:*`,
+                        `*Current Invoice Details:*`,
+                        ``,
                         `- *Customer:* ${resolvedName}`,
                         cleanPhone ? `- *Phone:* +${cleanPhone}` : null,
                         `- *Item/Description:* ${itemsDisplay}`,
@@ -1506,7 +1592,7 @@ Upgrade here: ${APP_URL}/pricing`);
                             [
                                 { id: 'invoice_yes', title: 'Yes' },
                                 { id: 'invoice_no', title: 'No' },
-                                { id: 'invoice_edit', title: '✏️ Edit' }
+                                { id: 'invoice_edit', title: 'Edit' }
                             ]
                         );
                         return;
@@ -1598,7 +1684,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         [
                             { id: "invoice_yes", title: "Yes" },
                             { id: "invoice_no", title: "No" },
-                            { id: "invoice_edit", title: "✏️ Edit" }
+                            { id: "invoice_edit", title: "Edit" }
                         ]
                     );
                     return;
@@ -2445,7 +2531,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         },
                         { upsert: true }
                     );
-                    await sendReply(from, `What's the customer's WhatsApp number for this invoice? 📱`);
+                    await sendReply(from, `What's the customer's WhatsApp number for this invoice?`);
                     if (isStaff && profile.whatsappNumber) {
                         await sendReply(profile.whatsappNumber, `📢 *Staff Activity:* ${cleanFrom} is creating an invoice for ${resolvedName} (₦${totalAmount.toLocaleString()}).`);
                     }
@@ -2510,7 +2596,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         [
                             { id: "invoice_yes", title: "Yes" },
                             { id: "invoice_no", title: "No" },
-                            { id: "invoice_edit", title: "✏️ Edit" }
+                            { id: "invoice_edit", title: "Edit" }
                         ]
                     );
 

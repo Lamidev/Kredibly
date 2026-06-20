@@ -224,6 +224,84 @@ const sendTemplateMsg = async (to, templateName, components = []) => {
     }
 };
 
+/**
+ * Send the official kreddy_customer_invoice template with a document (PDF) header
+ * and body variables matching the Xara customer invoice template.
+ */
+const sendInvoiceTemplateToCustomer = async (to, sale, business, pdfUrl) => {
+    const { phoneId, accessToken } = getWACredentials();
+    if (!accessToken || !phoneId) return false;
+    const cleanTo = normalizePhone(to);
+
+    const itemsText = sale.items && sale.items.length > 0
+        ? sale.items.map(i => `${i.name} x${i.quantity}`).join(", ")
+        : (sale.description || "Purchase");
+
+    const formattedAmount = `₦${sale.totalAmount.toLocaleString()}`;
+    const invoiceRef = `#${sale.invoiceNumber}`;
+    const businessName = business.displayName || "Our Merchant";
+
+    const components = [
+        {
+            type: "body",
+            parameters: [
+                { type: "text", text: String(sale.customerName || "Customer").substring(0, 60) },
+                { type: "text", text: String(businessName).substring(0, 60) },
+                { type: "text", text: String(itemsText).substring(0, 1024) },
+                { type: "text", text: formattedAmount },
+                { type: "text", text: invoiceRef }
+            ]
+        }
+    ];
+
+    if (pdfUrl) {
+        components.push({
+            type: "header",
+            parameters: [
+                {
+                    type: "document",
+                    document: {
+                        link: pdfUrl,
+                        filename: `Invoice-${sale.invoiceNumber}.pdf`
+                    }
+                }
+            ]
+        });
+    }
+
+    // Add button parameter for the dynamic URL (Visit Website / Pay with Transfer)
+    components.push({
+        type: "button",
+        sub_type: "url",
+        index: "0",
+        parameters: [
+            { type: "text", text: sale.invoiceNumber }
+        ]
+    });
+
+    try {
+        console.log(`Sending customer invoice template (kreddy_customer_invoice) to ${cleanTo}...`);
+        const res = await axios.post(
+            `https://graph.facebook.com/v21.0/${phoneId}/messages`,
+            {
+                messaging_product: "whatsapp",
+                to: cleanTo,
+                type: "template",
+                template: {
+                    name: "kreddy_customer_invoice",
+                    language: { code: "en" },
+                    components
+                }
+            },
+            { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 15000 }
+        );
+        return true;
+    } catch (err) {
+        console.error("❌ sendInvoiceTemplateToCustomer Error:", err.response?.data || err.message);
+        return false;
+    }
+};
+
 // ─── Core Invoice Delivery ─────────────────────────────────────────────────────
 
 /**
@@ -267,63 +345,74 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
         const hasPartialPayment = (sale.payments || []).length > 0 && bal > 0 && bal < sale.totalAmount;
         const isFullyUnpaid = bal >= sale.totalAmount;
 
-        // Step 2: Send PDF document (if successfully generated)
-        if (pdfUrl) {
-            const docCaption = `Invoice from ${businessName} — ₦${sale.totalAmount.toLocaleString()}`;
-            const docSent = await sendDocument(
-                cleanCustomerPhone,
-                pdfUrl,
-                `Invoice-${sale.invoiceNumber}.pdf`,
-                docCaption
-            );
-            console.log(`📄 PDF send to customer ${cleanCustomerPhone}: ${docSent ? '✅ sent' : '❌ failed'}`);
-            // Small delay so PDF arrives first
-            await new Promise(r => setTimeout(r, 1500));
-        }
-
-        // Step 3: Build context-aware customer message
-        const itemsText = sale.items && sale.items.length > 0
-            ? sale.items.map(i => `${i.name} × ${i.quantity || 1} — ₦${((i.unitPrice || 0) * (i.quantity || 1)).toLocaleString()}`).join("\n")
-            : `${sale.description || "Purchase"} — ₦${sale.totalAmount.toLocaleString()}`;
-
-        // Build the summary lines context-aware
-        const summaryLines = [
-            `Hello ${sale.customerName}!`,
-            ``,
-            `You have ${hasPartialPayment ? "an outstanding balance" : "a new invoice"} from *${businessName}*.`,
-            ``,
-            itemsText,
-            ``,
-            `Invoice Total: ₦${sale.totalAmount.toLocaleString()}`,
-            hasPartialPayment ? `Already Paid: ₦${(sale.totalAmount - bal).toLocaleString()}` : null,
-            hasPartialPayment || isFullyUnpaid ? `Amount Due: *₦${bal.toLocaleString()}*` : null,
-            hasDueDate ? `Payment Due: ${dueDateFormatted}` : `Payment Due: On receipt`,
-            ``,
-            `Tap a button below to take action:`
-        ].filter(v => v !== null).join("\n");
-
+        // Step 2 & 3: Send PDF and Invoice details to customer (handling 24h session window rules)
+        let pdfSent = false;
         let btnSent = false;
+
+        const itemsListStr = sale.items && sale.items.length > 0
+            ? sale.items.map(i => `${i.name} x${i.quantity}`).join(", ")
+            : (sale.description || "Purchase");
+
+        const formattedAmount = `₦${sale.totalAmount.toLocaleString()}`;
+        const refStr = `#${sale.invoiceNumber}`;
+
+        const summaryLines = [
+            `Hi ${sale.customerName},`,
+            ``,
+            `*${businessName}* sent you an invoice for *${itemsListStr}*.`,
+            ``,
+            `*Amount:* ${formattedAmount}`,
+            `*Ref:* ${refStr}`,
+            ``,
+            `Tap "Pay Invoice Now" to complete payment.`
+        ].join("\n");
+
         if (bal > 0) {
-            btnSent = await sendInteractiveButtons(
-                cleanCustomerPhone,
-                `Invoice #${sale.invoiceNumber}`,
-                summaryLines,
-                "",
-                [
-                    { id: `pay_now:${sale._id}`, title: "Pay Now" },
-                    { id: `req_ext:${sale._id}`, title: "Request Extension" }
-                ]
-            );
-            console.log(`🔘 Interactive buttons to customer ${cleanCustomerPhone}: ${btnSent ? '✅ sent' : '❌ failed'}`);
-            if (!btnSent) {
-                // Fallback: send template message since free-form/interactive failed (e.g. 24h window closed)
-                console.log(`⚠️ Interactive buttons failed for customer ${cleanCustomerPhone}. Sending template message fallback...`);
-                await sendCustomerMessageWithFallback(
+            // First try sending PDF document (works if 24h session window is open)
+            if (pdfUrl) {
+                const docCaption = `Invoice from ${businessName} — ₦${sale.totalAmount.toLocaleString()}`;
+                pdfSent = await sendDocument(
                     cleanCustomerPhone,
-                    summaryLines,
-                    sale.customerName,
-                    sale.invoiceNumber
+                    pdfUrl,
+                    `Invoice-${sale.invoiceNumber}.pdf`,
+                    docCaption
                 );
+                console.log(`📄 PDF send to customer ${cleanCustomerPhone}: ${pdfSent ? '✅ sent' : '❌ failed'}`);
+                if (pdfSent) {
+                    await new Promise(r => setTimeout(r, 1500));
+                }
+            }
+
+            // Next try sending interactive buttons (works if 24h session window is open)
+            if (pdfSent) {
+                btnSent = await sendInteractiveButtons(
+                    cleanCustomerPhone,
+                    `Invoice #${sale.invoiceNumber}`,
+                    summaryLines,
+                    "",
+                    [
+                        { id: `pay_now:${sale._id}`, title: "Pay with Transfer" },
+                        { id: `req_ext:${sale._id}`, title: "Request Extension" }
+                    ]
+                );
+                console.log(`🔘 Interactive buttons to customer ${cleanCustomerPhone}: ${btnSent ? '✅ sent' : '❌ failed'}`);
+            }
+
+            // If either failed (meaning 24h session window is closed), trigger template delivery
+            if (!pdfSent || !btnSent) {
+                console.log(`⚠️ Free-form delivery failed for customer ${cleanCustomerPhone}. Attempting template delivery...`);
+                // 1. Try sending the official document template
+                const tplSent = await sendInvoiceTemplateToCustomer(cleanCustomerPhone, sale, business, pdfUrl);
+                if (!tplSent) {
+                    // 2. Fallback to general alert template
+                    console.log(`⚠️ Document template failed. Falling back to kreddy_system_alert...`);
+                    await sendCustomerMessageWithFallback(
+                        cleanCustomerPhone,
+                        summaryLines,
+                        sale.customerName,
+                        sale.invoiceNumber
+                    );
+                }
             }
         } else {
             console.log(`ℹ️ Invoice fully settled (balance: 0). Skipping action buttons for customer.`);
@@ -345,35 +434,25 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
         // Step 5: Schedule customer payment reminders
         await scheduleCustomerReminders(sale, business, cleanCustomerPhone);
 
-        // Step 6: Build context-aware merchant delivery confirmation
-        const merchantSummaryLines = [
-            `Invoice sent to *${sale.customerName}* (+${cleanCustomerPhone}).`,
-            ``,
-            `Invoice #${sale.invoiceNumber}`,
-            `Total: ₦${sale.totalAmount.toLocaleString()}`,
-            hasPartialPayment ? `Already paid: ₦${(sale.totalAmount - bal).toLocaleString()}` : null,
-            `Balance due: ₦${bal.toLocaleString()}`,
-            hasDueDate ? `Due date: ${dueDateFormatted}` : `Due: On receipt`,
-            ``,
-            `I'll send them automatic reminders${hasDueDate ? ` and a final nudge on the due date` : ""}. You'll be notified if they respond.`
-        ].filter(v => v !== null).join("\n");
-
+        // Step 6: Notify the merchant matching the target flow order and copy
         const merchantPhone = business.whatsappNumber;
         if (merchantPhone) {
-            const merchantMsgSent = await sendText(merchantPhone, merchantSummaryLines);
-            console.log(`📩 Merchant delivery notification to ${merchantPhone}: ${merchantMsgSent ? '✅ sent' : '❌ failed'}`);
-
-            // Send the PDF to the merchant right after the summary text
+            // First, send the PDF copy to the merchant
             if (pdfUrl) {
-                await new Promise(r => setTimeout(r, 800)); // small gap so text arrives first
                 const merchantPdfSent = await sendDocument(
                     merchantPhone,
                     pdfUrl,
-                    `Invoice-${sale.invoiceNumber}.pdf`,
+                    `invoice-${sale.invoiceNumber}.pdf`,
                     `Your copy of Invoice #${sale.invoiceNumber} for ${sale.customerName}`
                 );
                 console.log(`📄 PDF copy to merchant ${merchantPhone}: ${merchantPdfSent ? '✅ sent' : '❌ failed'}`);
+                await new Promise(r => setTimeout(r, 800)); // small gap
             }
+
+            // Second, send confirmation text to the merchant
+            const merchantConfirmationText = `Invoice #${sale.invoiceNumber} has been sent to ${sale.customerName} (+${cleanCustomerPhone}), you will receive a notification when the payment is confirmed.`;
+            const merchantMsgSent = await sendText(merchantPhone, merchantConfirmationText);
+            console.log(`📩 Merchant delivery notification to ${merchantPhone}: ${merchantMsgSent ? '✅ sent' : '❌ failed'}`);
         }
 
         await Notification.create({
@@ -591,10 +670,11 @@ const handleCustomerExtensionDuration = async (saleId, days, customerPhone, cust
             requestedExtensionDays: daysNum
         });
 
-        // Acknowledge to customer
+        // Acknowledge to customer using merchant business display name
+        const bizName = business?.displayName || "the merchant";
         await sendText(
             customerPhone,
-            `Got it, ${customerName}! I've sent your request for a *${daysNum}-day extension* to ${business?.displayName || "your merchant"}. They will respond shortly.`
+            `Got it, ${customerName}! I've sent your request for a *${daysNum}-day extension* to *${bizName}*. They will respond shortly.`
         );
 
         // Notify merchant with [Approve] [Reject] interactive buttons
@@ -623,7 +703,7 @@ const handleCustomerExtensionDuration = async (saleId, days, customerPhone, cust
             { upsert: true, new: true }
         );
 
-        await sendInteractiveButtons(
+        const success = await sendInteractiveButtons(
             merchantPhone,
             "Extension Request",
             `*${sale.customerName}* is requesting a *${daysNum}-day payment extension* for Invoice *#${sale.invoiceNumber}* (₦${sale.totalAmount.toLocaleString()}).\n\nNew Due Date would be: *${newDueDateStr}*\n\nDo you approve?`,
@@ -633,6 +713,34 @@ const handleCustomerExtensionDuration = async (saleId, days, customerPhone, cust
                 { id: `ext_reject:${saleId}`, title: "Reject" }
             ]
         );
+
+        if (!success) {
+            console.log(`⚠️ Merchant 24h window closed for extension request. Sending template alert with buttons to ${merchantPhone}...`);
+            const { sendWhatsAppTemplate } = require("../controllers/whatsapp/whatsappController");
+            
+            const plan = business?.plan || "hustler";
+            const defaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+            const finalTitle = business?.assistantSettings?.preferredName || business?.displayName || defaultTitle;
+            
+            const alertText = `*${sale.customerName}* requested a *${daysNum}-day* payment extension for Invoice *#${sale.invoiceNumber}* (₦${sale.totalAmount.toLocaleString()}). New Due Date: *${newDueDateStr}*.`;
+            const cleanMsg = alertText
+                .replace(/[\r\n\t]+/g, ' ')
+                .replace(/\s\s+/g, ' ')
+                .trim()
+                .substring(0, 1024);
+
+            const components = [
+                {
+                    type: "body",
+                    parameters: [
+                        { type: "text", text: String(finalTitle).substring(0, 60) },
+                        { type: "text", text: cleanMsg }
+                    ]
+                }
+            ];
+
+            await sendWhatsAppTemplate(merchantPhone, "kreddy_merchant_decision", components);
+        }
 
         await Notification.create({
             businessId: business._id,
@@ -867,6 +975,12 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
                 return true;
             }
 
+            // If they click the template quick-reply "Request Extension" or ask for more time
+            if (/extend|extension|more time/i.test(lowerText)) {
+                await handleCustomerRequestExtension(activeSale._id, cleanFrom);
+                return true;
+            }
+
             // Generic response with action buttons
             const businessName = activeSale.businessId?.displayName || "Your merchant";
             await sendInteractiveButtons(
@@ -875,7 +989,7 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
                 `Hi ${activeSale.customerName}! You have an unpaid invoice from *${businessName}* for *₦${bal.toLocaleString()}*.\n\nHow can I help you?`,
                 "",
                 [
-                    { id: `pay_now:${activeSale._id}`, title: "Pay Now" },
+                    { id: `pay_now:${activeSale._id}`, title: "Pay with Transfer" },
                     { id: `req_ext:${activeSale._id}`, title: "Request Extension" }
                 ]
             );
@@ -923,7 +1037,7 @@ const sendChaseToCustomer = async (saleId, businessId, customText = null) => {
             correctBodyText,
             "",
             [
-                { id: `pay_now:${sale._id}`, title: "Pay Now" },
+                { id: `pay_now:${sale._id}`, title: "Pay with Transfer" },
                 { id: `req_ext:${sale._id}`, title: "Request Extension" }
             ]
         );

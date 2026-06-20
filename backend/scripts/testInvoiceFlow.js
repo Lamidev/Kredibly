@@ -32,10 +32,71 @@ function makeQueryMock(result) {
             return chain;
         },
         select: () => chain,
-        populate: () => chain,
+        populate: (path) => {
+            if (path === "businessId" && result && result.businessId) {
+                const biz = db["BusinessProfile"]?.find(b => String(b._id) === String(result.businessId));
+                if (biz) {
+                    result.businessId = biz;
+                }
+            }
+            return chain;
+        },
         exec: () => promise
     };
     return chain;
+}
+
+function matchesQuery(item, query) {
+    if (!query) return true;
+    for (let key in query) {
+        let queryVal = query[key];
+        
+        if (key === '$or' && Array.isArray(queryVal)) {
+            const matchesSome = queryVal.some(sub => matchesQuery(item, sub));
+            if (!matchesSome) return false;
+            continue;
+        }
+
+        let itemVal = item[key];
+        if (key.includes('.')) {
+            const parts = key.split('.');
+            let current = item;
+            for (let p of parts) {
+                current = current ? current[p] : undefined;
+            }
+            itemVal = current;
+        }
+
+        if (queryVal && typeof queryVal === 'object') {
+            if (queryVal._id && String(itemVal) !== String(queryVal._id)) return false;
+            if (queryVal.$ne && itemVal === queryVal.$ne) return false;
+            if (queryVal.$in && Array.isArray(queryVal.$in)) {
+                if (Array.isArray(itemVal)) {
+                    const hasIntersection = itemVal.some(val => queryVal.$in.includes(val));
+                    if (!hasIntersection) return false;
+                } else {
+                    if (!queryVal.$in.includes(itemVal)) return false;
+                }
+                continue;
+            }
+            if (queryVal.$gte) {
+                const val = new Date(itemVal);
+                const gteVal = new Date(queryVal.$gte);
+                if (val < gteVal) return false;
+            }
+            if (queryVal.$exists !== undefined) {
+                const exists = itemVal !== undefined;
+                if (exists !== queryVal.$exists) return false;
+            }
+        } else if (itemVal !== queryVal) {
+            if (key === 'ownerId' || key === 'businessId' || key === 'saleId' || key === '_id') {
+                if (String(itemVal) !== String(queryVal)) return false;
+            } else {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 function mockModel(ModelClass, modelName) {
@@ -44,33 +105,7 @@ function mockModel(ModelClass, modelName) {
     db[modelName] = store;
 
     ModelClass.findOne = function(query) {
-        const found = store.find(item => {
-            if (!query) return true;
-            for (let key in query) {
-                let itemVal = item[key];
-                let queryVal = query[key];
-                if (key.includes('.')) {
-                    const parts = key.split('.');
-                    let current = item;
-                    for (let p of parts) {
-                        current = current ? current[p] : undefined;
-                    }
-                    itemVal = current;
-                }
-                if (queryVal && typeof queryVal === 'object') {
-                    if (queryVal._id && String(itemVal) !== String(queryVal._id)) return false;
-                    if (queryVal.$ne && itemVal === queryVal.$ne) return false;
-                    if (queryVal.$in && !queryVal.$in.includes(itemVal)) return false;
-                } else if (itemVal !== queryVal) {
-                    if (key === 'ownerId' || key === 'businessId' || key === 'saleId' || key === '_id') {
-                        if (String(itemVal) !== String(queryVal)) return false;
-                    } else {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        });
+        const found = store.find(item => matchesQuery(item, query));
         return makeQueryMock(found || null);
     };
 
@@ -81,40 +116,7 @@ function mockModel(ModelClass, modelName) {
 
     ModelClass.find = function(query) {
         if (!query || Object.keys(query).length === 0) return makeQueryMock(store);
-        const filtered = store.filter(item => {
-            for (let key in query) {
-                let itemVal = item[key];
-                let queryVal = query[key];
-                if (key.includes('.')) {
-                    const parts = key.split('.');
-                    let current = item;
-                    for (let p of parts) {
-                        current = current ? current[p] : undefined;
-                    }
-                    itemVal = current;
-                }
-                if (queryVal && typeof queryVal === 'object') {
-                    if (queryVal.$gte) {
-                        const val = new Date(itemVal);
-                        const gteVal = new Date(queryVal.$gte);
-                        if (val < gteVal) return false;
-                    }
-                    if (queryVal.$ne && itemVal === queryVal.$ne) return false;
-                    if (queryVal.$in && !queryVal.$in.includes(itemVal)) return false;
-                    if (queryVal.$exists !== undefined) {
-                        const exists = itemVal !== undefined;
-                        if (exists !== queryVal.$exists) return false;
-                    }
-                } else if (itemVal !== queryVal) {
-                    if (key === 'ownerId' || key === 'businessId' || key === 'saleId' || key === '_id') {
-                        if (String(itemVal) !== String(queryVal)) return false;
-                    } else {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        });
+        const filtered = store.filter(item => matchesQuery(item, query));
         return makeQueryMock(filtered);
     };
 
@@ -164,24 +166,14 @@ function mockModel(ModelClass, modelName) {
             return makeQueryMock({ deletedCount: count });
         }
         let initialCount = store.length;
-        const newStore = store.filter(item => {
-            for (let key in query) {
-                if (String(item[key]) === String(query[key])) return false;
-            }
-            return true;
-        });
+        const newStore = store.filter(item => !matchesQuery(item, query));
         store.length = 0;
         store.push(...newStore);
         return makeQueryMock({ deletedCount: initialCount - store.length });
     };
 
     ModelClass.deleteOne = function(query) {
-        const idx = store.findIndex(item => {
-            for (let key in query) {
-                if (String(item[key]) !== String(query[key])) return false;
-            }
-            return true;
-        });
+        const idx = store.findIndex(item => matchesQuery(item, query));
         if (idx !== -1) {
             store.splice(idx, 1);
             return makeQueryMock({ deletedCount: 1 });
@@ -191,13 +183,31 @@ function mockModel(ModelClass, modelName) {
 
     ModelClass.countDocuments = function(query) {
         if (!query || Object.keys(query).length === 0) return makeQueryMock(store.length);
-        const count = store.filter(item => {
-            for (let key in query) {
-                if (String(item[key]) !== String(query[key])) return false;
-            }
-            return true;
-        }).length;
+        const count = store.filter(item => matchesQuery(item, query)).length;
         return makeQueryMock(count);
+    };
+
+    ModelClass.insertMany = async function(arr) {
+        const instances = [];
+        if (Array.isArray(arr)) {
+            for (let doc of arr) {
+                const inst = new ModelClass(doc);
+                await inst.save();
+                instances.push(inst);
+            }
+        }
+        return instances;
+    };
+
+    ModelClass.updateMany = function(query, update) {
+        const matched = store.filter(item => matchesQuery(item, query));
+        const fields = update.$set || update;
+        matched.forEach(item => {
+            for (let key in fields) {
+                setDeep(item, key, fields[key]);
+            }
+        });
+        return makeQueryMock({ modifiedCount: matched.length });
     };
 
     ModelClass.create = async function(docs) {
@@ -219,6 +229,15 @@ function mockModel(ModelClass, modelName) {
     ModelClass.prototype.save = async function() {
         if (!this._id) {
             this._id = new mongoose.Types.ObjectId();
+        }
+        if (modelName === "Sale") {
+            if (!this.invoiceNumber) {
+                const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+                this.invoiceNumber = `KR-TEST-${rand}`;
+            }
+            if (!this.publicSlug) {
+                this.publicSlug = Math.random().toString(36).substring(2, 10);
+            }
         }
         const idx = store.findIndex(item => String(item._id) === String(this._id));
         if (idx === -1) {
@@ -289,9 +308,13 @@ pdfGenerator.generateAndUploadInvoicePDF = async (sale, business) => {
 const whatsappController = require("../controllers/whatsapp/whatsappController");
 
 const sentMessages = [];
+let simulateClosedWindow = false;
 
 // Mock Axios Post to intercept all WhatsApp API calls
 axios.post = async (url, data, config) => {
+    if (simulateClosedWindow && data && data.type === "interactive") {
+        throw new Error("WhatsApp conversational window closed");
+    }
     sentMessages.push({ url, data });
     return { data: { success: true, messages: [{ id: "wamid.mock_" + Math.random().toString(36).substring(7) }] } };
 };
@@ -420,8 +443,8 @@ async function run() {
 
     response = popLastMessageText();
     console.log(`🤖 Kreddy:\n${response}`);
-    if (!response.toLowerCase().includes("vicky baby") || !response.toLowerCase().includes("nike prado") || !response.includes("✏️ Edit")) {
-        console.error("❌ Failed Step 2: Kreddy should show invoice summary with Yes, No, and ✏️ Edit buttons.");
+    if (!response.toLowerCase().includes("vicky baby") || !response.toLowerCase().includes("nike prado") || !response.includes("Edit")) {
+        console.error("❌ Failed Step 2: Kreddy should show invoice summary with Yes, No, and Edit buttons.");
         process.exit(1);
     }
     console.log("✅ Step 2 passed (Summary generated with Edit button successfully).\n");
@@ -429,8 +452,8 @@ async function run() {
     // ─────────────────────────────────────────────────────────────────────────
     // STEP 3: Click "✏️ Edit" Button
     // ─────────────────────────────────────────────────────────────────────────
-    console.log("➡️ Step 3: Merchant clicks '✏️ Edit' button...");
-    await sendFromMerchant("✏️ Edit", "interactive", "invoice_edit");
+    console.log("➡️ Step 3: Merchant clicks 'Edit' button...");
+    await sendFromMerchant("Edit", "interactive", "invoice_edit");
     await sleep(500);
 
     response = popLastMessageText();
@@ -521,6 +544,149 @@ async function run() {
     }
 
     console.log("✅ Step 6 passed (Invoice confirmed, generated, and delivered to customer successfully).\n");
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // STEP 7: Test Welcome Onboarding Template Conversion
+    // ─────────────────────────────────────────────────────────────────────────
+    console.log("➡️ Step 7: Testing Welcome Message template conversion...");
+    const unknownPhone = "2348000000000";
+    
+    // Simulate inbound message from unknown number
+    const msgIdUnknown = "wamid.inbound_unknown_" + Math.random().toString(36).substring(7);
+    const reqUnknown = {
+        body: {
+            entry: [{
+                changes: [{
+                    value: {
+                        messages: [{
+                            from: unknownPhone,
+                            id: msgIdUnknown,
+                            type: "text",
+                            text: { body: "hello" }
+                        }],
+                        contacts: [{ profile: { name: "New Lead" } }]
+                    }
+                }]
+            }]
+        }
+    };
+    
+    await whatsappController.handleIncoming(reqUnknown, makeRes());
+    await sleep(500);
+    
+    // Verify welcome template message was sent
+    const lastMsg = sentMessages[sentMessages.length - 1];
+    console.log("🤖 Kreddy (Welcome response payload):", JSON.stringify(lastMsg?.data, null, 2));
+    if (!lastMsg || lastMsg.data.to !== unknownPhone || lastMsg.data.type !== "template" || lastMsg.data.template.name !== "kreddy_system_alert") {
+        console.error("❌ Failed Step 7: Welcome message did not use the kreddy_system_alert template.");
+        process.exit(1);
+    }
+    const hasSignupButton = lastMsg.data.template.components.some(c => c.type === "button" && c.parameters.some(p => p.text === "signup"));
+    if (!hasSignupButton) {
+        console.error("❌ Failed Step 7: Welcome template does not contain 'signup' button parameter.");
+        process.exit(1);
+    }
+    console.log("✅ Step 7 passed (Welcome message template converted successfully).\n");
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // STEP 8: Test Inactive Merchant Extension Alert Fallback
+    // ─────────────────────────────────────────────────────────────────────────
+    console.log("➡️ Step 8: Testing Inactive Merchant Extension Alert Fallback...");
+    
+    // Make the merchant profile's 24h window closed
+    profile.lastInboundAt = new Date(Date.now() - 25 * 60 * 60 * 1000); // 25 hours ago
+    await profile.save();
+    
+    // Toggle the closed window simulation flag on
+    simulateClosedWindow = true;
+    
+    // Require the extension handler
+    const { handleCustomerExtensionDuration } = require("../utils/customerInvoiceService");
+    
+    // Trigger customer extension request (7 days)
+    await handleCustomerExtensionDuration(createdSale._id, 7, customerPhone, "Vicky Baby Samwell");
+    await sleep(500);
+    
+    // Toggle it back off
+    simulateClosedWindow = false;
+    
+    // Find merchant fallback template in sentMessages
+    const merchantMsgs = sentMessages.filter(msg => msg.data.to === merchantPhone);
+    const lastMerchantMsg = merchantMsgs[merchantMsgs.length - 1];
+    console.log("🤖 Kreddy (Merchant fallback payload):", JSON.stringify(lastMerchantMsg?.data, null, 2));
+    
+    if (!lastMerchantMsg || lastMerchantMsg.data.type !== "template" || lastMerchantMsg.data.template.name !== "kreddy_merchant_decision") {
+        console.error("❌ Failed Step 8: Falling back to inactive merchant did not send the kreddy_merchant_decision template.");
+        process.exit(1);
+    }
+    
+    // Verify it doesn't contain dashboard redirect text anymore
+    const hasDashboardText = lastMerchantMsg.data.template.components.some(c => c.parameters.some(p => p.text && p.text.includes("dashboard")));
+    if (hasDashboardText) {
+        console.error("❌ Failed Step 8: Fallback message still directs the merchant to the dashboard.");
+        process.exit(1);
+    }
+    console.log("✅ Step 8 passed (Inactive merchant template extension alert sent successfully).\n");
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // STEP 9: Test Webhook handler for Template Quick-Reply Approvals
+    // ─────────────────────────────────────────────────────────────────────────
+    console.log("➡️ Step 9: Testing webhook template quick reply approval processing...");
+    
+    // Verify a merchant_extension_approval session was created in DB
+    const extSession = await WhatsAppSession.findOne({ whatsappNumber: merchantPhone, type: "merchant_extension_approval" });
+    if (!extSession) {
+        console.error("❌ Failed Step 9: Extension approval session was not created in DB.");
+        process.exit(1);
+    }
+    
+    // Simulate merchant tapping the template "Accept" button
+    // This sends "Accept" as button text/type from the merchant
+    const msgIdApprove = "wamid.inbound_approve_" + Math.random().toString(36).substring(7);
+    const reqApprove = {
+        body: {
+            entry: [{
+                changes: [{
+                    value: {
+                        messages: [{
+                            from: merchantPhone,
+                            id: msgIdApprove,
+                            type: "button",
+                            button: { text: "Accept", payload: "Accept" }
+                        }],
+                        contacts: [{ profile: { name: "Test Merchant" } }]
+                    }
+                }]
+            }]
+        }
+    };
+    
+    await whatsappController.handleIncoming(reqApprove, makeRes());
+    await sleep(500);
+    
+    // Check that session is deleted
+    const sessionPostApproval = await WhatsAppSession.findOne({ whatsappNumber: merchantPhone, type: "merchant_extension_approval" });
+    if (sessionPostApproval) {
+        console.error("❌ Failed Step 9: Session was not deleted after approval.");
+        process.exit(1);
+    }
+    
+    // Check that sale has been updated to EXTENSION_GRANTED
+    const updatedSale = await Sale.findById(createdSale._id);
+    if (updatedSale.lifecycleStatus !== "EXTENSION_GRANTED") {
+        console.error("❌ Failed Step 9: Sale status was not updated to EXTENSION_GRANTED. Current:", updatedSale.lifecycleStatus);
+        process.exit(1);
+    }
+    
+    // Verify merchant got the approval confirmation message
+    const lastMerchantReply = sentMessages[sentMessages.length - 1];
+    console.log("🤖 Kreddy (Merchant reply):", lastMerchantReply?.data?.text?.body);
+    if (!lastMerchantReply || !lastMerchantReply.data.text.body.includes("Extension Approved")) {
+        console.error("❌ Failed Step 9: Merchant did not receive approval confirmation reply.");
+        process.exit(1);
+    }
+    
+    console.log("✅ Step 9 passed (Template quick-reply webhook approval handled successfully).\n");
 
     console.log("🎉 ALL E2E FLOW TESTS PASSED SUCCESSFULLY! No crashes, correct state transitions, robust edits, and clean button delivery.");
     await mongoose.disconnect();
