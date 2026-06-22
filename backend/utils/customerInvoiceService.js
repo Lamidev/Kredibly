@@ -241,19 +241,10 @@ const sendInvoiceTemplateToCustomer = async (to, sale, business, pdfUrl) => {
     const invoiceRef = `#${sale.invoiceNumber}`;
     const businessName = business.displayName || "Our Merchant";
 
-    const components = [
-        {
-            type: "body",
-            parameters: [
-                { type: "text", text: String(sale.customerName || "Customer").substring(0, 60) },
-                { type: "text", text: String(businessName).substring(0, 60) },
-                { type: "text", text: String(itemsText).substring(0, 1024) },
-                { type: "text", text: formattedAmount },
-                { type: "text", text: invoiceRef }
-            ]
-        }
-    ];
+    // Meta requires components in strict order: header → body → button
+    const components = [];
 
+    // 1. Header (document / PDF) — must come first
     if (pdfUrl) {
         components.push({
             type: "header",
@@ -269,7 +260,19 @@ const sendInvoiceTemplateToCustomer = async (to, sale, business, pdfUrl) => {
         });
     }
 
-    // Add button parameter for the dynamic URL (Visit Website / Pay with Transfer)
+    // 2. Body — variables matching the approved template
+    components.push({
+        type: "body",
+        parameters: [
+            { type: "text", text: String(sale.customerName || "Customer").substring(0, 60) },
+            { type: "text", text: String(businessName).substring(0, 60) },
+            { type: "text", text: String(itemsText).substring(0, 1024) },
+            { type: "text", text: formattedAmount },
+            { type: "text", text: invoiceRef }
+        ]
+    });
+
+    // 3. Button — dynamic URL suffix
     components.push({
         type: "button",
         sub_type: "url",
