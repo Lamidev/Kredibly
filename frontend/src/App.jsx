@@ -22,7 +22,14 @@ import Dashboard from "./pages/merchant/dashboard";
 import CreateSale from "./pages/merchant/create-sale";
 import InvoicePage from "./pages/merchant/invoice-page";
 import SalesList from "./pages/merchant/sales-list";
-import SettingsPage from "./pages/merchant/settings-page";
+import SettingsLayout from "./pages/merchant/settings/SettingsLayout";
+import SettingsIdentityPage from "./pages/merchant/settings/SettingsIdentityPage";
+import SettingsNotificationsPage from "./pages/merchant/settings/SettingsNotificationsPage";
+import SettingsKreddyPage from "./pages/merchant/settings/SettingsKreddyPage";
+import SettingsPayoutsPage from "./pages/merchant/settings/SettingsPayoutsPage";
+import SettingsVerificationPage from "./pages/merchant/settings/SettingsVerificationPage";
+import SettingsStaffPage from "./pages/merchant/settings/SettingsStaffPage";
+import SettingsPlanPage from "./pages/merchant/settings/SettingsPlanPage";
 import ReportsPage from "./pages/merchant/reports";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminMerchants from "./pages/admin/AdminMerchants";
@@ -85,7 +92,16 @@ const App = () => {
           <Route path="/debtors" element={<SalesList initialFilter="outstanding" />} />
           <Route path="/pending-balances" element={<SalesList initialFilter="outstanding" />} />
           <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/settings" element={<SettingsLayout />}>
+            <Route index element={<Navigate to="/settings/identity" replace />} />
+            <Route path="identity" element={<SettingsIdentityPage />} />
+            <Route path="notifications" element={<SettingsNotificationsPage />} />
+            <Route path="kreddy" element={<SettingsKreddyPage />} />
+            <Route path="payouts" element={<SettingsPayoutsPage />} />
+            <Route path="verification" element={<SettingsVerificationPage />} />
+            <Route path="staff" element={<SettingsStaffPage />} />
+            <Route path="plan" element={<SettingsPlanPage />} />
+          </Route>
           <Route path="/dashboard/invoice/:id" element={<InvoicePage />} />
         </Route>
 
