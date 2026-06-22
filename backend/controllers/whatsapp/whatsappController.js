@@ -1239,7 +1239,7 @@ Upgrade here: ${APP_URL}/pricing`);
         }
 
         if (msgType !== "text" && msgType !== "audio" && msgType !== "voice" && msgType !== "image" && msgType !== "interactive" && msgType !== "button") {
-            return await sendReply(from, "I catch the message, but I only understand text, voice notes, and images (for Chairmen) right now! 🛡️");
+            return await sendReply(from, "I only understand text, voice notes, and images (for Chairman plan members) right now. Please send one of those.");
         }
 
         // PERSISTENT SESSION HANDLING
@@ -1257,7 +1257,7 @@ Upgrade here: ${APP_URL}/pricing`);
                 const planDefaultTitle = resolvedPlan === "chairman" ? "Chairman" : "Oga";
                 const bossTitle = profile?.assistantSettings?.preferredName || profile?.displayName || planDefaultTitle;
                 
-                await sendReply(from, `${bossTitle}, I catch the voice note! 💎 Analyzing it now... 🎧`);
+                await sendReply(from, `${bossTitle}, I received your voice note. Analyzing it now...`);
                 const media = await downloadWhatsAppMedia(mediaId);
                 if (media) {
                     const voiceRes = await processAudioWithAI(media.buffer, media.mimeType, {
@@ -2238,7 +2238,7 @@ Upgrade here: ${APP_URL}/pricing`);
                 const planDefaultTitle = plan === "chairman" ? "Chairman" : "Oga";
                 const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;
 
-                await sendReply(from, `${bossTitle}, I catch the image! 💎 Scanning it now... 🔍`);
+                await sendReply(from, `${bossTitle}, I received your image. Scanning it now...`);
                 const media = await downloadWhatsAppMedia(mediaId);
                 
                 if (media) {
@@ -2276,7 +2276,7 @@ Upgrade here: ${APP_URL}/pricing`);
                 }
 
                 if (!aiResponse) {
-                    return await sendReply(from, "Chairman, my brain logic failed to read that image clearly. 😵‍ Please try again or type it for now.");
+                    return await sendReply(from, "I was unable to read that image clearly. Please try again or type the details instead.");
                 }
             } else {
                 console.log(`💎 Plan: ${plan.toUpperCase()} (Using Gemini AI)`);
@@ -2620,7 +2620,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         
                         await sendReply(from, reply);
                     } else {
-                        await sendReply(from, "I catch that you want me to call you something else, but I didn't get the name clearly. 😵‍ Try say: _'Kreddy, call me Boss'_");
+                        await sendReply(from, "I noticed you want me to call you something else, but I did not get the name clearly. Please try: 'Call me Boss'");
                     }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "set_language") {
