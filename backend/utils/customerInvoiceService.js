@@ -278,7 +278,7 @@ const sendInvoiceTemplateToCustomer = async (to, sale, business, pdfUrl) => {
         sub_type: "url",
         index: "0",
         parameters: [
-            { type: "text", text: `i/${sale.invoiceNumber}` }
+            { type: "text", text: `${sale.invoiceNumber}` }
         ]
     });
 
@@ -348,10 +348,7 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
         const hasPartialPayment = (sale.payments || []).length > 0 && bal > 0 && bal < sale.totalAmount;
         const isFullyUnpaid = bal >= sale.totalAmount;
 
-        // Step 2 & 3: Send PDF and Invoice details to customer (handling 24h session window rules)
-        let pdfSent = false;
-        let btnSent = false;
-
+        // Step 2: Send Invoice to customer via template
         const itemsListStr = sale.items && sale.items.length > 0
             ? sale.items.map(i => `${i.name} x${i.quantity}`).join(", ")
             : (sale.description || "Purchase");
@@ -371,52 +368,24 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
         ].join("\n");
 
         if (bal > 0) {
-            // First try sending PDF document (works if 24h session window is open)
-            if (pdfUrl) {
-                const docCaption = `Invoice from ${businessName} — ₦${sale.totalAmount.toLocaleString()}`;
-                pdfSent = await sendDocument(
-                    cleanCustomerPhone,
-                    pdfUrl,
-                    `Invoice-${sale.invoiceNumber}.pdf`,
-                    docCaption
-                );
-                console.log(`📄 PDF send to customer ${cleanCustomerPhone}: ${pdfSent ? '✅ sent' : '❌ failed'}`);
-                if (pdfSent) {
-                    await new Promise(r => setTimeout(r, 1500));
-                }
-            }
+            // Always use the kreddy_customer_invoice template directly.
+            // Free-form messages (document/interactive) only work when a customer has an
+            // open 24h session — new customers never do. Template-first guarantees delivery.
+            console.log(`📨 Sending invoice template to customer ${cleanCustomerPhone}...`);
+            const tplSent = await sendInvoiceTemplateToCustomer(cleanCustomerPhone, sale, business, pdfUrl);
+            console.log(`📨 Template delivery to customer ${cleanCustomerPhone}: ${tplSent ? '✅ sent' : '❌ failed'}`);
 
-            // Next try sending interactive buttons (works if 24h session window is open)
-            if (pdfSent) {
-                btnSent = await sendInteractiveButtons(
+            if (!tplSent) {
+                // Fallback: general alert template with a payment link button
+                console.log(`⚠️ Invoice template failed. Falling back to kreddy_system_alert...`);
+                await sendCustomerMessageWithFallback(
                     cleanCustomerPhone,
-                    `Invoice #${sale.invoiceNumber}`,
                     summaryLines,
-                    "",
-                    [
-                        { id: `pay_now:${sale._id}`, title: "Pay with Transfer" },
-                        { id: `req_ext:${sale._id}`, title: "Request Extension" }
-                    ]
+                    sale.customerName,
+                    sale.invoiceNumber
                 );
-                console.log(`🔘 Interactive buttons to customer ${cleanCustomerPhone}: ${btnSent ? '✅ sent' : '❌ failed'}`);
             }
 
-            // If either failed (meaning 24h session window is closed), trigger template delivery
-            if (!pdfSent || !btnSent) {
-                console.log(`⚠️ Free-form delivery failed for customer ${cleanCustomerPhone}. Attempting template delivery...`);
-                // 1. Try sending the official document template
-                const tplSent = await sendInvoiceTemplateToCustomer(cleanCustomerPhone, sale, business, pdfUrl);
-                if (!tplSent) {
-                    // 2. Fallback to general alert template
-                    console.log(`⚠️ Document template failed. Falling back to kreddy_system_alert...`);
-                    await sendCustomerMessageWithFallback(
-                        cleanCustomerPhone,
-                        summaryLines,
-                        sale.customerName,
-                        sale.invoiceNumber
-                    );
-                }
-            }
         } else {
             console.log(`ℹ️ Invoice fully settled (balance: 0). Skipping action buttons for customer.`);
             await sendCustomerMessageWithFallback(
@@ -601,7 +570,7 @@ const handleCustomerPayNow = async (saleId, customerPhone) => {
                 sub_type: "url",
                 index: "0",
                 parameters: [
-                    { type: "text", text: `i/${sale.invoiceNumber}` }
+                    { type: "text", text: `${sale.invoiceNumber}` }
                 ]
             }
         ];
