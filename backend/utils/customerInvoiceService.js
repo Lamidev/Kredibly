@@ -275,7 +275,7 @@ const sendInvoiceTemplateToCustomer = async (to, sale, business, pdfUrl) => {
         sub_type: "url",
         index: "0",
         parameters: [
-            { type: "text", text: sale.invoiceNumber }
+            { type: "text", text: `i/${sale.invoiceNumber}` }
         ]
     });
 

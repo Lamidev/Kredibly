@@ -10,7 +10,6 @@ import {
     ShieldCheck,
     Settings,
     Plus,
-    Search,
     Bell,
     Menu,
     X,
@@ -19,7 +18,12 @@ import {
     MessagesSquare,
     RefreshCcw,
     AlertTriangle,
-    ArrowRight
+    ArrowRight,
+    CreditCard,
+    Shield,
+    Bot,
+    Zap,
+    UserCheck
 } from 'lucide-react';
 import { useSales } from '../../context/SaleContext';
 import { useAuth } from '../../context/AuthContext';
@@ -78,7 +82,7 @@ const PlanExpiredBanner = ({ navigate }) => {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
                 <button
-                    onClick={() => navigate('/settings')}
+                    onClick={() => navigate('/settings/plan')}
                     style={{
                         background: '#EF4444',
                         color: 'white',
@@ -200,6 +204,8 @@ const DashboardLayout = () => {
 
     const unreadCount = notifications.filter(n => !n.isRead).length;
 
+    const kycVerified = profile?.kyc?.verified === true;
+
     const navItems = [
         { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, end: true },
         { label: 'Ledger (Sales)', path: '/sales', icon: FileText, activeIfMatch: ['/sales'] },
@@ -215,6 +221,12 @@ const DashboardLayout = () => {
                 }
             }
         },
+        { label: 'Payouts', path: '/settings/payouts', icon: CreditCard, activeIfMatch: ['/settings/payouts'] },
+        { label: 'Verification', path: '/settings/verification', icon: Shield, activeIfMatch: ['/settings/verification'], badge: !kycVerified ? 'unverified' : null },
+        { label: 'Staff', path: '/settings/staff', icon: UserCheck, activeIfMatch: ['/settings/staff'] },
+        { label: 'Kreddy AI', path: '/settings/kreddy', icon: Bot, activeIfMatch: ['/settings/kreddy'] },
+        { label: 'Notifications', path: '/settings/notifications', icon: Bell, activeIfMatch: ['/settings/notifications'] },
+        { label: 'Plan', path: '/settings/plan', icon: Zap, activeIfMatch: ['/settings/plan'], planBadge: profile?.plan },
     ];
 
     return (
@@ -307,6 +319,32 @@ const DashboardLayout = () => {
                                         <item.icon size={20} strokeWidth={isMatched ? 2.5 : 2} style={{ opacity: isLocked ? 0.4 : 1 }} />
                                         <span style={{ fontWeight: 600, fontSize: 'clamp(0.9rem, 3.5vw, 1rem)', opacity: isLocked ? 0.4 : 1 }}>{item.label}</span>
                                         {isLocked && <ShieldCheck size={14} style={{ marginLeft: 'auto', color: '#94A3B8' }} />}
+                                        {item.badge === 'unverified' && (
+                                            <span style={{
+                                                marginLeft: 'auto',
+                                                width: '8px', height: '8px',
+                                                borderRadius: '50%',
+                                                background: '#EF4444',
+                                                flexShrink: 0,
+                                                boxShadow: '0 0 6px rgba(239,68,68,0.6)'
+                                            }} />
+                                        )}
+                                        {item.planBadge && (
+                                            <span style={{
+                                                marginLeft: 'auto',
+                                                fontSize: '0.65rem',
+                                                fontWeight: 800,
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.06em',
+                                                background: isMatched ? 'rgba(255,255,255,0.2)' : 'rgba(124,58,237,0.1)',
+                                                color: isMatched ? 'white' : 'var(--primary)',
+                                                padding: '2px 7px',
+                                                borderRadius: '6px',
+                                                flexShrink: 0
+                                            }}>
+                                                {item.planBadge}
+                                            </span>
+                                        )}
                                     </>
                                 );
                             }}
@@ -316,8 +354,14 @@ const DashboardLayout = () => {
 
                 <div className="sidebar-footer" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <NavLink
-                        to="/settings"
-                        className={({ isActive }) => `nav-item-premium footer-item ${isActive ? 'active' : ''}`}
+                        to="/settings/identity"
+                        className={() => {
+                            const isOnSettings = location.pathname.startsWith('/settings');
+                            return `nav-item-premium footer-item ${isOnSettings && ![
+                                '/settings/payouts','/settings/verification','/settings/staff',
+                                '/settings/kreddy','/settings/notifications','/settings/plan'
+                            ].some(p => location.pathname.startsWith(p)) ? 'active' : ''}`;
+                        }}
                         onClick={() => setIsSidebarOpen(false)}
                     >
                         <Settings size={20} /> <span style={{ fontWeight: 600, fontSize: 'clamp(0.9rem, 3.5vw, 1rem)' }}>Settings</span>
@@ -536,7 +580,7 @@ const DashboardLayout = () => {
                 onClose={() => setShowLimitModal(false)}
                 onUpgrade={() => {
                     setShowLimitModal(false);
-                    navigate('/settings');
+                    navigate('/settings/plan');
                 }}
             />
         </div>
