@@ -28,6 +28,8 @@ cloudinary.config({
 
 // ── Paths ─────────────────────────────────────────────────────────────────────
 const KREDIBLY_LOGO = path.join(__dirname, "../assets/krediblyrevamped.png");
+const FONT_REGULAR  = path.join(__dirname, "../assets/fonts/Roboto-Regular.ttf");
+const FONT_BOLD     = path.join(__dirname, "../assets/fonts/Roboto-Bold.ttf");
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -42,6 +44,36 @@ const C = {
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Format a phone number to always start with a plus prefix.
+ */
+const formatPhone = (phone) => {
+    if (!phone) return "";
+    let cleaned = String(phone).trim();
+    if (!cleaned.startsWith("+") && cleaned.length > 0) {
+        cleaned = "+" + cleaned;
+    }
+    return cleaned;
+};
+
+/**
+ * Parse a description string to extract a potential quantity and clean item name.
+ */
+const parseDescription = (desc, totalAmount) => {
+    if (!desc) return { name: "Services", quantity: 1, unitPrice: totalAmount };
+    const match = desc.match(/^(\d+)\s*(?:pairs?\s+of|pcs?|pcs?\s+of|x|packs?\s+of|bags?\s+of|boxes?\s+of)?\s*(.+)$/i);
+    if (match) {
+        const quantity = parseInt(match[1], 10);
+        let name = match[2].trim();
+        if (name) {
+            name = name.charAt(0).toUpperCase() + name.slice(1);
+        }
+        const unitPrice = quantity > 0 ? totalAmount / quantity : totalAmount;
+        return { name, quantity, unitPrice };
+    }
+    return { name: desc, quantity: 1, unitPrice: totalAmount };
+};
 
 /**
  * Download a remote image and return it as a Buffer.
@@ -93,6 +125,10 @@ const generateInvoicePDFBuffer = async (sale, business) => {
         doc.on("end",   ()  => resolve(Buffer.concat(buffers)));
         doc.on("error", reject);
 
+        // Register custom fonts
+        doc.registerFont("Roboto", FONT_REGULAR);
+        doc.registerFont("Roboto-Bold", FONT_BOLD);
+
         // ── Page geometry ─────────────────────────────────────────────────────
         const PAGE_W   = doc.page.width;   // 595.28
         const PAGE_H   = doc.page.height;  // 841.89
@@ -118,25 +154,25 @@ const generateInvoicePDFBuffer = async (sale, business) => {
                 });
             } catch (_) {
                 // Fallback to text if image fails
-                doc.fillColor(C.DARK).font("Helvetica-Bold").fontSize(16);
+                doc.fillColor(C.DARK).font("Roboto-Bold").fontSize(18);
                 doc.text(business?.displayName || "Business", MARGIN, HDR_Y + 18, { lineBreak: false });
             }
         } else {
             // No logo — render business name as styled text
-            doc.fillColor(C.DARK).font("Helvetica-Bold").fontSize(16);
+            doc.fillColor(C.DARK).font("Roboto-Bold").fontSize(18);
             doc.text(business?.displayName || "Business", MARGIN, HDR_Y + 16, { lineBreak: false });
             if (business?.displayName) {
-                doc.fillColor(C.GRAY).font("Helvetica").fontSize(8);
+                doc.fillColor(C.GRAY).font("Roboto").fontSize(10);
                 doc.text("Business", MARGIN, HDR_Y + 38, { lineBreak: false });
             }
         }
 
         // "INVOICE" heading — right side
-        doc.fillColor(C.PURPLE).font("Helvetica-Bold").fontSize(30);
-        doc.text("INVOICE", MARGIN, HDR_Y + 8, { width: INNER_W, align: "right", lineBreak: false });
+        doc.fillColor(C.PURPLE).font("Roboto-Bold").fontSize(34);
+        doc.text("INVOICE", MARGIN, HDR_Y + 4, { width: INNER_W, align: "right", lineBreak: false });
 
         // Invoice number below heading
-        doc.fillColor(C.GRAY).font("Helvetica").fontSize(10);
+        doc.fillColor(C.GRAY).font("Roboto").fontSize(12);
         doc.text(`#${sale.invoiceNumber || ""}`, MARGIN, HDR_Y + 46, { width: INNER_W, align: "right", lineBreak: false });
 
         // ── RULE ─────────────────────────────────────────────────────────────
@@ -148,28 +184,28 @@ const generateInvoicePDFBuffer = async (sale, business) => {
 
         // ── Column 1: FROM ────────────────────────────────────────────────────
         const COL1_X = MARGIN;
-        doc.fillColor(C.GRAY).font("Helvetica-Bold").fontSize(7);
+        doc.fillColor(C.GRAY).font("Roboto-Bold").fontSize(8);
         doc.text("FROM", COL1_X, META_Y, { lineBreak: false });
 
-        doc.fillColor(C.DARK).font("Helvetica-Bold").fontSize(11);
+        doc.fillColor(C.DARK).font("Roboto-Bold").fontSize(13);
         doc.text(business?.displayName || "Business", COL1_X, META_Y + 12, { lineBreak: false, width: 155 });
 
         if (business?.phoneNumber || business?.whatsappNumber) {
-            doc.fillColor(C.GRAY).font("Helvetica").fontSize(8.5);
-            doc.text(business.phoneNumber || business.whatsappNumber, COL1_X, META_Y + 27, { lineBreak: false, width: 155 });
+            doc.fillColor(C.GRAY).font("Roboto").fontSize(10);
+            doc.text(formatPhone(business.phoneNumber || business.whatsappNumber), COL1_X, META_Y + 28, { lineBreak: false, width: 155 });
         }
 
         // ── Column 2: BILLED TO ───────────────────────────────────────────────
         const COL2_X = MARGIN + 175;
-        doc.fillColor(C.GRAY).font("Helvetica-Bold").fontSize(7);
+        doc.fillColor(C.GRAY).font("Roboto-Bold").fontSize(8);
         doc.text("BILLED TO", COL2_X, META_Y, { lineBreak: false });
 
-        doc.fillColor(C.DARK).font("Helvetica-Bold").fontSize(11);
+        doc.fillColor(C.DARK).font("Roboto-Bold").fontSize(13);
         doc.text(sale.customerName || "Customer", COL2_X, META_Y + 12, { lineBreak: false, width: 155 });
 
         if (sale.customerPhone) {
-            doc.fillColor(C.GRAY).font("Helvetica").fontSize(8.5);
-            doc.text(String(sale.customerPhone), COL2_X, META_Y + 27, { lineBreak: false, width: 155 });
+            doc.fillColor(C.GRAY).font("Roboto").fontSize(10);
+            doc.text(formatPhone(sale.customerPhone), COL2_X, META_Y + 28, { lineBreak: false, width: 155 });
         }
 
         // ── Column 3: DATES ───────────────────────────────────────────────────
@@ -181,16 +217,16 @@ const generateInvoicePDFBuffer = async (sale, business) => {
             ? new Date(sale.dueDate).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })
             : "On Receipt";
 
-        doc.fillColor(C.GRAY).font("Helvetica-Bold").fontSize(7);
+        doc.fillColor(C.GRAY).font("Roboto-Bold").fontSize(8);
         doc.text("INVOICE DATE", COL3_X, META_Y, { lineBreak: false });
 
-        doc.fillColor(C.DARK).font("Helvetica-Bold").fontSize(10);
+        doc.fillColor(C.DARK).font("Roboto-Bold").fontSize(11);
         doc.text(issueDate, COL3_X, META_Y + 12, { lineBreak: false });
 
-        doc.fillColor(C.GRAY).font("Helvetica-Bold").fontSize(7);
+        doc.fillColor(C.GRAY).font("Roboto-Bold").fontSize(8);
         doc.text("DUE DATE", COL3_X, META_Y + 32, { lineBreak: false });
 
-        doc.fillColor(C.PURPLE).font("Helvetica-Bold").fontSize(10);
+        doc.fillColor(C.PURPLE).font("Roboto-Bold").fontSize(11);
         doc.text(dueDate, COL3_X, META_Y + 44, { lineBreak: false });
 
         // ── RULE ─────────────────────────────────────────────────────────────
@@ -200,14 +236,12 @@ const generateInvoicePDFBuffer = async (sale, business) => {
         // ── ITEMS TABLE ───────────────────────────────────────────────────────
         //
         //  Columns (left-edge x, width):
-        //   DESC:  x=48,  w=255
-        //   QTY:   x=316, w=45   (center-align text)
-        //   UNIT:  x=370, w=90   (right-align text)
-        //   TOTAL: x=470, w=77   (right-align text) → right edge = 547 = PAGE_W - MARGIN
+        //   DESC:  x=48,  w=330
+        //   QTY:   x=390, w=60   (center-align text)
+        //   TOTAL: x=468, w=79   (right-align text) → right edge = 547 = PAGE_W - MARGIN
 
-        const T_DESC_X  = MARGIN;         const T_DESC_W  = 255;
-        const T_QTY_X   = 315;            const T_QTY_W   = 46;
-        const T_UNIT_X  = 372;            const T_UNIT_W  = 85;
+        const T_DESC_X  = MARGIN;         const T_DESC_W  = 330;
+        const T_QTY_X   = 390;            const T_QTY_W   = 60;
         const T_TOTAL_X = 468;            const T_TOTAL_W = PAGE_W - MARGIN - 468; // ~79
 
         const TBL_Y = RULE2_Y + 12;
@@ -216,47 +250,49 @@ const generateInvoicePDFBuffer = async (sale, business) => {
         doc.rect(MARGIN, TBL_Y, INNER_W, 22).fill(C.GRAY_LIGHT);
 
         // Column headers — each is a SEPARATE call (no chaining) to respect absolute coords
-        doc.fillColor(C.GRAY).font("Helvetica-Bold").fontSize(7.5);
+        doc.fillColor(C.GRAY).font("Roboto-Bold").fontSize(9);
         doc.text("ITEM / DESCRIPTION",  T_DESC_X,          TBL_Y + 7, { width: T_DESC_W,  lineBreak: false });
 
-        doc.fillColor(C.GRAY).font("Helvetica-Bold").fontSize(7.5);
+        doc.fillColor(C.GRAY).font("Roboto-Bold").fontSize(9);
         doc.text("QTY",                 T_QTY_X,           TBL_Y + 7, { width: T_QTY_W,  align: "center", lineBreak: false });
 
-        doc.fillColor(C.GRAY).font("Helvetica-Bold").fontSize(7.5);
-        doc.text("UNIT PRICE",          T_UNIT_X,          TBL_Y + 7, { width: T_UNIT_W, align: "right",  lineBreak: false });
-
-        doc.fillColor(C.GRAY).font("Helvetica-Bold").fontSize(7.5);
+        doc.fillColor(C.GRAY).font("Roboto-Bold").fontSize(9);
         doc.text("AMOUNT",              T_TOTAL_X,         TBL_Y + 7, { width: T_TOTAL_W, align: "right", lineBreak: false });
 
         // Build item rows (fallback to single row when items[] is empty)
-        const items = sale.items && sale.items.length > 0
+        let items = sale.items && sale.items.length > 0
             ? sale.items
-            : [{ name: sale.description || "Services", quantity: 1, unitPrice: sale.totalAmount }];
+            : [];
+
+        if (items.length === 0) {
+            const parsed = parseDescription(sale.description, sale.totalAmount);
+            items = [parsed];
+        }
 
         let rowY = TBL_Y + 28;
-        const ROW_H = 26;
+        const ROW_H = 32;
 
         items.forEach((item, idx) => {
-            const qty       = item.quantity  || 1;
-            const unitPrice = item.unitPrice || 0;
-            const lineTotal = qty * unitPrice;
+            const qty = item.quantity || 1;
+            // Use totalAmount directly to avoid floating-point rounding errors
+            // For single items, use totalAmount; for multi-item, use stored unitPrice * qty
+            const lineTotal = items.length === 1
+                ? sale.totalAmount
+                : Math.round((item.unitPrice || 0) * qty);
 
             // Subtle alternating stripe
             if (idx % 2 === 1) {
                 doc.rect(MARGIN, rowY - 4, INNER_W, ROW_H).fill("#FAFAFA");
             }
 
-            doc.fillColor(C.DARK).font("Helvetica").fontSize(9);
-            doc.text(item.name || item.description || "Item", T_DESC_X, rowY, { width: T_DESC_W, lineBreak: false });
+            doc.fillColor(C.DARK).font("Roboto-Bold").fontSize(11);
+            doc.text(item.name || item.description || "Item", T_DESC_X, rowY + 2, { width: T_DESC_W, lineBreak: false });
 
-            doc.fillColor(C.DARK).font("Helvetica").fontSize(9);
-            doc.text(String(qty), T_QTY_X, rowY, { width: T_QTY_W, align: "center", lineBreak: false });
+            doc.fillColor(C.DARK).font("Roboto-Bold").fontSize(11);
+            doc.text(String(qty), T_QTY_X, rowY + 2, { width: T_QTY_W, align: "center", lineBreak: false });
 
-            doc.fillColor(C.DARK).font("Helvetica").fontSize(9);
-            doc.text(`₦${unitPrice.toLocaleString()}`, T_UNIT_X, rowY, { width: T_UNIT_W, align: "right", lineBreak: false });
-
-            doc.fillColor(C.DARK).font("Helvetica-Bold").fontSize(9);
-            doc.text(`₦${lineTotal.toLocaleString()}`, T_TOTAL_X, rowY, { width: T_TOTAL_W, align: "right", lineBreak: false });
+            doc.fillColor(C.DARK).font("Roboto-Bold").fontSize(11);
+            doc.text(`NGN ${lineTotal.toLocaleString()}`, T_TOTAL_X, rowY + 2, { width: T_TOTAL_W, align: "right", lineBreak: false });
 
             rowY += ROW_H;
         });
@@ -277,70 +313,78 @@ const generateInvoicePDFBuffer = async (sale, business) => {
         const TOT_VALUE_W = PAGE_W - MARGIN - TOT_VALUE_X; // ~85 pt
 
         /** Draw one totals row at current rowY, then advance. */
-        const totalsRow = (label, value, labelColor, valueColor, fontSize = 9, bold = false) => {
-            doc.fillColor(labelColor).font("Helvetica").fontSize(fontSize);
+        const totalsRow = (label, value, labelColor, valueColor, fontSize = 11, bold = false) => {
+            doc.fillColor(labelColor).font("Roboto").fontSize(fontSize);
             doc.text(label, TOT_LABEL_X, rowY, { width: TOT_LABEL_W, align: "right", lineBreak: false });
 
-            doc.fillColor(valueColor).font(bold ? "Helvetica-Bold" : "Helvetica").fontSize(fontSize);
+            doc.fillColor(valueColor).font(bold ? "Roboto-Bold" : "Roboto").fontSize(fontSize);
             doc.text(value, TOT_VALUE_X, rowY, { width: TOT_VALUE_W, align: "right", lineBreak: false });
 
-            rowY += fontSize + 9;
+            rowY += fontSize + 10;
         };
 
         // Subtotal
-        totalsRow("Subtotal:", `₦${sale.totalAmount.toLocaleString()}`, C.GRAY, C.DARK, 9, true);
+        totalsRow("Subtotal:", `NGN ${sale.totalAmount.toLocaleString()}`, C.GRAY, C.DARK, 11, true);
 
         // Amount Paid (only when a payment exists)
         if (paidAmount > 0) {
-            totalsRow("Amount Paid:", `- ₦${paidAmount.toLocaleString()}`, C.GRAY, C.GREEN, 9, true);
+            totalsRow("Amount Paid:", `- NGN ${paidAmount.toLocaleString()}`, C.GRAY, C.GREEN, 11, true);
         }
 
-        rowY += 6;
+        rowY += 10;
 
-        // Balance Due banner
-        const BANNER_H    = 34;
-        const BANNER_X    = TOT_LABEL_X - 12;
-        const BANNER_W    = PAGE_W - MARGIN - BANNER_X;
-        const bannerColor = balance <= 0 ? C.GREEN : C.PURPLE;
+        // ── Balance Due — no box, clean text styling ───────────────────────────
+        const balanceLabel = balance <= 0 ? "FULLY PAID" : "BALANCE DUE:";
+        const balanceValue = balance <= 0 ? "✓ PAID" : `NGN ${balance.toLocaleString()}`;
+        const balanceColor = balance <= 0 ? C.GREEN : C.PURPLE;
 
-        doc.rect(BANNER_X, rowY, BANNER_W, BANNER_H).fill(bannerColor);
+        // Thin accent rule
+        doc.moveTo(TOT_LABEL_X - 12, rowY)
+           .lineTo(PAGE_W - MARGIN, rowY)
+           .strokeColor(balanceColor)
+           .lineWidth(1.5)
+           .stroke();
+        rowY += 10;
 
-        const bannerLabel = balance <= 0 ? "FULLY PAID  ✓" : "BALANCE DUE:";
-        doc.fillColor(C.WHITE).font("Helvetica-Bold").fontSize(9);
-        doc.text(bannerLabel, BANNER_X + 10, rowY + 11, { width: TOT_LABEL_W, align: "right", lineBreak: false });
+        doc.fillColor(balanceColor).font("Roboto-Bold").fontSize(11);
+        doc.text(balanceLabel, TOT_LABEL_X, rowY, { width: TOT_LABEL_W, align: "right", lineBreak: false });
 
-        if (balance > 0) {
-            doc.fillColor(C.WHITE).font("Helvetica-Bold").fontSize(13);
-            doc.text(`₦${balance.toLocaleString()}`, TOT_VALUE_X, rowY + 9, { width: TOT_VALUE_W, align: "right", lineBreak: false });
-        }
+        doc.fillColor(balanceColor).font("Roboto-Bold").fontSize(16);
+        doc.text(balanceValue, TOT_VALUE_X, rowY - 3, { width: TOT_VALUE_W, align: "right", lineBreak: false });
 
-        rowY += BANNER_H + 32;
+        rowY += 28;
 
         // ── FOOTER ────────────────────────────────────────────────────────────
-        const FOOTER_Y = PAGE_H - 46;
+        // Sit footer snugly 24pt below the last content row — keeps invoice on one page
+        const FOOTER_Y = rowY + 24;
 
-        rule(doc, MARGIN, PAGE_W, FOOTER_Y - 12, C.GRAY_MID, 0.5);
+        rule(doc, MARGIN, PAGE_W, FOOTER_Y - 10, C.GRAY_MID, 0.5);
 
-        // Kredibly logo — centered, small
-        const KRED_LOGO_H = 18;
-        const KRED_LOGO_W = 72;  // roughly 4:1 ratio of the wordmark
-        const KRED_X      = (PAGE_W - KRED_LOGO_W) / 2;
+        // Center the "Powered by [Logo]" block — larger branding
+        const POWERED_BY_TEXT = "Powered by";
+        doc.font("Roboto-Bold").fontSize(13);
+        const textWidth = doc.widthOfString(POWERED_BY_TEXT);
+        const LOGO_W = 110;
+        const LOGO_H = 28;
+        const GAP = 9;
+        const TOTAL_BLOCK_W = textWidth + GAP + LOGO_W;
+        const BLOCK_X = (PAGE_W - TOTAL_BLOCK_W) / 2;
 
+        // Draw "Powered by" text
+        doc.fillColor(C.GRAY).font("Roboto-Bold").fontSize(13);
+        doc.text(POWERED_BY_TEXT, BLOCK_X, FOOTER_Y + 6, { lineBreak: false });
+
+        // Draw Logo next to it
         try {
-            doc.image(KREDIBLY_LOGO, KRED_X, FOOTER_Y, {
-                fit:    [KRED_LOGO_W, KRED_LOGO_H],
+            doc.image(KREDIBLY_LOGO, BLOCK_X + textWidth + GAP, FOOTER_Y, {
+                fit:    [LOGO_W, LOGO_H],
                 valign: "center"
             });
         } catch (_) {
-            // If logo file not found, just text
-            doc.fillColor(C.PURPLE).font("Helvetica-Bold").fontSize(8);
-            doc.text("Kredibly", MARGIN, FOOTER_Y, { width: INNER_W, align: "center", lineBreak: false });
+            // Fallback text if logo file not found
+            doc.fillColor(C.PURPLE).font("Roboto-Bold").fontSize(13);
+            doc.text("Kredibly", BLOCK_X + textWidth + GAP, FOOTER_Y + 6, { lineBreak: false });
         }
-
-        doc.fillColor(C.GRAY).font("Helvetica").fontSize(7);
-        doc.text("Powered by Kredibly · usekredibly.com", MARGIN, FOOTER_Y + KRED_LOGO_H + 3, {
-            width: INNER_W, align: "center", lineBreak: false
-        });
 
         doc.end();
     });

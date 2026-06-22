@@ -120,6 +120,13 @@ REQUIRED JSON OUTPUT:
     "totalAmount": 0,
     "paidAmount": 0,
     "item": "Description",
+    "items": [
+      {
+        "name": "Item name/description (e.g. 'Nike Prado')",
+        "quantity": 1,
+        "unitPrice": 0
+      }
+    ],
     "reminderDate": "ISO Timestamp in UTC",
     "dueDate": "ISO Timestamp in UTC (For sales)",
     "reminderType": "debt" | "task" | "meeting" | "personal",
@@ -169,6 +176,13 @@ REQUIRED JSON OUTPUT:
     "totalAmount": 0,
     "paidAmount": 0,
     "item": "Description",
+    "items": [
+      {
+        "name": "Item name/description (e.g. 'Nike Prado')",
+        "quantity": 1,
+        "unitPrice": 0
+      }
+    ],
     "reminderDate": "ISO Timestamp in UTC",
     "dueDate": "ISO Timestamp in UTC (For sales)",
     "targetDate": "yesterday" | "today" | "ISO Date String",
