@@ -13,7 +13,7 @@ const { processMessageWithAI, processAudioWithAI, processImageWithAI } = require
 const { logUsage } = require("../../utils/usageTracker");
 const { initializePayment } = require("../../utils/paystack");
 const { getPlanPrice } = require("../../config/pricing");
-const { generateWittyIntro } = require("../../utils/aiService");
+const { generateWittyIntro, generateVoiceNoteAck } = require("../../utils/aiService");
 const {
     handleCustomerInbound,
     handleMerchantApproveExtension,
@@ -64,50 +64,49 @@ const BACKEND_URL = process.env.BACKEND_URL || "https://api.usekredibly.com";
 const HUMANIZE = {
     greetings: {
         hustler: [
-            "Boss {name}! How can I help your hustle today?",
-            "Good to see you, {name}! Ready to record some wins?",
-            "Kreddy is online, {name}. What's the latest update?"
+            "{name}, good to have you here! Ready to record some wins?",
+            "Kreddy is online, {name}. What's the latest update?",
+            "Hey {name}! Let's keep that ledger moving."
         ],
         oga: [
-            "Good day, Oga {name}! Your smart assistant is ready. What are we tracking today?",
-            "Oga {name}! High power! Kreddy is online and locked in for your business.",
-            "Welcome back, Oga {name}! Need to track a payment or record a sale?"
+            "Good day, {name}! Your smart assistant is ready. What are we tracking today?",
+            "Welcome back, {name}! Kreddy is locked in for your business.",
+            "{name}, you're all set. Need to track a payment or record a sale?"
         ],
         chairman: [
-            "Good morning, Chairman {name}! Your empire is growing. I'm standing by for your instructions.",
-            "Chairman {name}! Respect! Your business is moving fast. How can I help you lead today?",
-            "Greetings, Chairman {name}! Your records are safe and the ledger is ready for more wins."
+            "Good morning, {name}! Everything is in order. What do you need from me today?",
+            "{name}, your records are safe and the ledger is ready. What's the move?",
+            "Greetings, {name}! I'm standing by for your instructions."
         ]
     },
     debtors: [
-        "Omo, debtors plenty for street!",
-        "Chai, people owe you o! Let's get your money back.",
-        "Oga, the debt list is long but we'll collect every kobo!",
-        "See as your money hang for outside... Don't worry, Kreddy is here.",
-        "Wait, let me pull the list. These people must pay!"
+        "Here are the outstanding balances — let's get your money back.",
+        "A few people still owe you. Let's go through them.",
+        "The debt list is ready. Every kobo will be accounted for.",
+        "Here's what's outstanding — time to follow up.",
+        "Pulling up your receivables now."
     ],
     history: [
-        "Let's see what you've been cooking! Here's your full record history:",
-        "Tracking your progress... You're doing well! Here is everything recorded:",
-        "Your business story is looking good! Check your full history:",
-        "Searching the archives... Found your records! See them below:"
+        "Let's see what you've been building! Here's your full record history:",
+        "Tracking your progress — you're doing well. Here is everything recorded:",
+        "Your business story is looking strong. Check your full history:",
+        "Found your records. See them below:"
     ],
     success: [
-        "Nice one! I've logged that for you.",
-        "Got it, Chief! Record is safe and sound.",
-        "Record saved! Keep that momentum going.",
-        "Done! I've updated your ledger."
+        "Done. I've logged that for you.",
+        "Got it — record is safe and sound.",
+        "Record saved. Keep that momentum going.",
+        "All set. I've updated your ledger."
     ],
     celebration: [
-        "*Woah, that's a big one! Congrats!*",
-        "*Absolute win! Your business is moving fast!*",
-        "*That's what I like to see! Profit secured!*",
-        "*Big energy! Keep scaling!*",
-        "Chairman move!",
-        "Bag secured!",
-        "Level up!",
-        "You're doing well!",
-        "Odogwu!"
+        "*That's a big one! Well done.*",
+        "*Solid work! Your business is moving fast.*",
+        "*That's exactly what I like to see. Profit secured.*",
+        "*Great energy — keep scaling.*",
+        "*Strong move.*",
+        "*Revenue secured.*",
+        "*You're on a roll.*",
+        "*Excellent work.*"
     ]
 };
 
@@ -188,7 +187,7 @@ const extractInfoRobust = (text, context = {}) => {
     // CHECK SCHEDULE: "what are my plans", "my schedule", "what's on today", "do I have anything"
     if (lower.includes("my plan") || lower.includes("my schedule") || lower.includes("what's on") || lower.includes("do i have") || lower.includes("my tasks") || lower.includes("my reminders") || lower.includes("what do i have")) {
         result.intent = "check_schedule";
-        const planT = (context.plan || "hustler") === "chairman" ? "Chairman" : ((context.plan || "hustler") === "oga" ? "Oga" : "Boss");
+        const planT = (context.plan || "hustler") === "chairman" ? "Chairman" : ((context.plan || "hustler") === "oga" ? "Oga" : "Partner");
         const nameToUse = context.preferredName || planT;
         result.data.reply = `Let me check your schedule, ${nameToUse}! 📋`;
         return result;
@@ -361,7 +360,7 @@ const extractInfoRobust = (text, context = {}) => {
     const plan = context.plan || "hustler";
     
     // Character Mapping: use preferredName if set, else plan-based title
-    const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+    const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Partner");
     const bossTitle = context.preferredName || context.displayName || planDefaultTitle;
 
     if (result.intent === "update_record") {
@@ -686,7 +685,7 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
         
         // 🧠 SMART TITLING: Use preferredName or business name if profile found
         const plan = profile?.plan || "hustler";
-        const defaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+        const defaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Partner");
         const finalTitle = profile?.assistantSettings?.preferredName || profile?.displayName || bossTitle || defaultTitle;
 
         const now = new Date();
@@ -965,7 +964,7 @@ const handleIncoming = async (req, res) => {
         // 🧠 SMART NAMING LOGIC: Determine how Kreddy should address this user
         // Priority: Preferred Name > Registered Name > WhatsApp Profile Name > Plan Tier > "Boss"
         const resolvedPlan = profile?.plan || "hustler";
-        const tierTitle = resolvedPlan === "chairman" ? "Chairman" : (resolvedPlan === "oga" ? "Oga" : "Boss");
+        const tierTitle = resolvedPlan === "chairman" ? "Chairman" : (resolvedPlan === "oga" ? "Oga" : "Partner");
         
         // Extract first name from various sources
         const registeredName = profile?.ownerId?.name ? profile.ownerId.name.split(' ')[0] : null;
@@ -1092,7 +1091,7 @@ const handleIncoming = async (req, res) => {
         }
 
         if (isFirstTime) {
-            const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+            const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Partner");
             const bossTitleToUse = profile.assistantSettings?.preferredName || profile.displayName || whatsappProfileName || planDefaultTitle;
             
             // Initial save of preferred name if found
@@ -1135,11 +1134,7 @@ const handleIncoming = async (req, res) => {
             });
 
             if (invoiceCount >= 10) {
-                return await sendReply(from, `Wow, Chief! 📈 You've reached your free limit of 10 sales/invoices for this month! 
-
-To record unlimited sales, add staff, and unlock Voice Notes, abeg upgrade to the *Oga Plan* now. No time to check time! 🚀 
-
-Upgrade here: ${APP_URL}/pricing`);
+                return await sendReply(from, `You've reached your free limit of 10 sales/invoices for this month.\n\nTo record unlimited sales, add staff, and unlock Voice Notes, upgrade to the *Oga Plan* now.\n\nUpgrade here: ${APP_URL}/pricing`);
             }
         }
 
@@ -1254,10 +1249,10 @@ Upgrade here: ${APP_URL}/pricing`);
             
             const mediaId = message.audio?.id || message.voice?.id;
             if (mediaId) {
-                const planDefaultTitle = resolvedPlan === "chairman" ? "Chairman" : "Oga";
-                const bossTitle = profile?.assistantSettings?.preferredName || profile?.displayName || planDefaultTitle;
+                const bossTitle = profile?.assistantSettings?.preferredName || profile?.displayName || "Partner";
                 
-                await sendReply(from, `${bossTitle}, I received your voice note. Analyzing it now...`);
+                const voiceAck = await generateVoiceNoteAck(bossTitle);
+                await sendReply(from, voiceAck);
                 const media = await downloadWhatsAppMedia(mediaId);
                 if (media) {
                     const voiceRes = await processAudioWithAI(media.buffer, media.mimeType, {
@@ -1842,7 +1837,7 @@ Upgrade here: ${APP_URL}/pricing`);
                     }
 
                     const bal = totalAmount - (paidAmount || 0);
-                    const successMsg = getRandom(HUMANIZE.success, {}, plan);
+                    const successMsg = await generateWittyIntro("create_sale", { bossTitle });
                     
                     const paymentLink = `${FRONTEND_URL}/i/${newSale.publicSlug || newSale.invoiceNumber}`;
                     const template = newSale.invoiceType === 'record' 
@@ -1851,7 +1846,7 @@ Upgrade here: ${APP_URL}/pricing`);
 
                     await sendReply(from, `${successMsg} \n\nI've logged Invoice *#${newSale.invoiceNumber}* for *${customerName}*.\n💰 Status: ${newSale.invoiceType === 'record' ? '*FULLY PAID (Receipt)*' : '*PENDING (Invoice)*'}\n⏳ Balance: ₦${bal.toLocaleString()}\n\n📝 *Draft Message for Customer* (Copy & Send): \n\n_"${template}"_`);
                     
-                    return await sendReply(from, `🛡️ *Note:* I didn't send this to them directly to avoid spam. You hold the power, Boss!`);
+                    return await sendReply(from, `*Note:* I didn't send this directly to avoid spam — the draft is yours to forward when you're ready.`);
                 } else if (intent === 'update_record') {
                     // 🧠 ROBUST SEARCH: Find the best match for the customer
                     let cleanName = customerName.replace(/^(for|to|from|of)\s+/i, '').trim();
@@ -1884,11 +1879,12 @@ Upgrade here: ${APP_URL}/pricing`);
                             await sendReply(profile.whatsappNumber, ogaMessage);
                         }
 
+                        const wittyIntro = await generateWittyIntro("payment_received", { bossTitle, extra: `₦${paidAmount.toLocaleString()} from ${sale.customerName}` });
                         const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-                        let finalMsg = `✅ *Record Updated!* \n\nI've updated the ledger for *${sale.customerName}*.`;
+                        let finalMsg = `${wittyIntro}\n\n*Ledger updated for ${sale.customerName}:*`;
                         if (paidAmount > 0) finalMsg += `\n💰 Payment: ₦${paidAmount.toLocaleString()}`;
                         if (dueDate) finalMsg += `\n🗓️ Reminder: ${new Date(dueDate).toLocaleDateString()}`;
-                        finalMsg += `\n⏳ New Balance: *₦${bal.toLocaleString()}*`;
+                        finalMsg += `\n*New Balance:* ₦${bal.toLocaleString()}`;
                         
                         return await sendReply(from, finalMsg);
                     }
@@ -1959,7 +1955,7 @@ Upgrade here: ${APP_URL}/pricing`);
                         return;
                     } else if (isTask) {
                         await WhatsAppSession.deleteOne({ _id: session._id });
-                        await sendReply(from, `*Understood!* \n\nI catch that it's a core task. Please just say it again or send a new voice note so I can process it with 100% focus!`);
+                        await sendReply(from, `*Understood.* Please say it again or send a new voice note so I can process it with full focus.`);
                         return;
                     }
                 } else if (session.type === 'alarm_confirmation') {
@@ -2087,7 +2083,7 @@ Upgrade here: ${APP_URL}/pricing`);
         const isThanks = /thanks|thank you|merci|jazak|nice/i.test(lowerText);
         
         if (isGreeting && lowerText.split(' ').length <= 3 && !profile.welcomeSent) {
-            const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+            const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Partner");
             const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;
             
             const wittyGreeting = await generateWittyIntro("greeting", { bossTitle });
@@ -2104,7 +2100,7 @@ Upgrade here: ${APP_URL}/pricing`);
             // Already welcomed? Just let the AI handle it or give a very short "How can I help?"
             // We skip this block so it falls through to the AI for a natural response.
         } else if (isThanks) {
-            const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
+            const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Partner");
             const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;
             
             await sendReply(from, `You're very welcome, ${bossTitle}! 🫡 Always happy to keep your records straight. Let me know if you need anything else!`);
@@ -2114,7 +2110,7 @@ Upgrade here: ${APP_URL}/pricing`);
             const currentUsage = profile.monthlyUsage?.messages || 0;
 
             if (currentUsage >= msgLimit) {
-                const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || (plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss"));
+                const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || "Partner";
                 const upgradePlan = plan === "hustler" ? "Oga" : "Chairman";
                 const upgradeLink = `https://usekredibly.com/settings`;
                 
@@ -2172,7 +2168,7 @@ Upgrade here: ${APP_URL}/pricing`);
 
             if (msgType === "audio" || msgType === "voice") {
                 if (plan !== "chairman" && plan !== "oga") {
-                    return await sendReply(from, "Boss! 🛡️ Voice notes are an exclusive feature for the *Oga* and *Chairman* plans. Upgrade now to unlock Voice Sync! 🦁");
+                    return await sendReply(from, "Voice note processing is an exclusive feature for the *Oga* and *Chairman* plans. Upgrade your plan to unlock Voice Sync.");
                 }
                 
                 const mediaId = message.audio?.id || message.voice?.id;
@@ -2181,7 +2177,8 @@ Upgrade here: ${APP_URL}/pricing`);
                 const planDefaultTitle = plan === "chairman" ? "Chairman" : "Oga";
                 const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;
 
-                await sendReply(from, `${bossTitle}, I catch the voice note! 💎 Analyzing it now... 🎧`);
+                const voiceAck = await generateVoiceNoteAck(bossTitle);
+                await sendReply(from, voiceAck);
                 const media = await downloadWhatsAppMedia(mediaId);
                 
                 if (media) {
@@ -2217,11 +2214,11 @@ Upgrade here: ${APP_URL}/pricing`);
                 }
 
                 if (!aiResponse) {
-                    return await sendReply(from, `${bossTitle}, my brain logic failed to hear that clearly. 😵‍ Please try again or type it for now.`);
+                    return await sendReply(from, `${bossTitle}, I wasn't able to process that voice note clearly. Please try again or type it out for now.`);
                 }
             } else if (msgType === "image") {
                 if (plan !== "chairman") {
-                    return await sendReply(from, "Boss! 📸 Paper invoice scanning is an exclusive feature for the *Chairman Plan*. \n\nUpgrade now so you can just snap pictures of store invoices and let me do the work! 🦁");
+                    return await sendReply(from, "Paper invoice scanning is an exclusive feature for the *Chairman Plan*. Upgrade to start snapping invoices and let me handle the rest.");
                 }
                 
                 const mediaId = message.image?.id;
@@ -2230,7 +2227,8 @@ Upgrade here: ${APP_URL}/pricing`);
                 const planDefaultTitle = plan === "chairman" ? "Chairman" : "Oga";
                 const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;
 
-                await sendReply(from, `${bossTitle}, I received your image. Scanning it now...`);
+                const imageAck = await generateWittyIntro("image_scan", { bossTitle });
+                await sendReply(from, imageAck);
                 const media = await downloadWhatsAppMedia(mediaId);
                 
                 if (media) {
@@ -2637,11 +2635,12 @@ Upgrade here: ${APP_URL}/pricing`);
                         });
 
                         if (count === 0) {
-                            return await sendReply(from, `🎉 Amazing, ${bossTitle}! Nobody owes you any money right now. Your ledger is 100% clean!`);
+                            const zeroDebtMsg = await generateWittyIntro("zero_debt", { bossTitle });
+                            return await sendReply(from, zeroDebtMsg);
                         }
 
                         const wittyIntro = await generateWittyIntro("check_debt", { bossTitle, extra: `Found ${count} debtors` });
-                        let msg = `${wittyIntro}\n\n⏳ *Outstanding Balances:*\n\n${debtLines}`;
+                        let msg = `${wittyIntro}\n\n*Outstanding Balances:*\n\n${debtLines}`;
                         await sendReply(from, msg);
                     } else {
                         const matches = await Sale.find({ 
@@ -2707,7 +2706,7 @@ Upgrade here: ${APP_URL}/pricing`);
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "confirm_record") {
                     const ref = aiResponseItem.data.invoiceNumber || aiResponseItem.invoiceNumber;
-                    if (!ref) { await sendReply(from, "Boss, I catch that you want to verify a record, but I need the Invoice Number (like KR-XXXX)."); }
+                    if (!ref) { await sendReply(from, `To verify a record, I need the Invoice Number (like KR-XXXX-XXXX). Please share it and I'll pull it up for you.`); }
                     else {
                         let invoiceId = ref.toUpperCase().trim();
                         if (!invoiceId.startsWith("KR-")) invoiceId = "KR-" + invoiceId;
@@ -2760,9 +2759,9 @@ Upgrade here: ${APP_URL}/pricing`);
                     
                     if (profile.hasUsedTrial) {
                         const upgradeUrl = `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/pricing`;
-                        await sendReply(from, `💎 *${bossTitle}, want to Level Up?* \n\nYour free trial is over, but you can still upgrade to **OGA** or **CHAIRMAN** here: ${upgradeUrl}\n\nLet's get your business to the next level! 🚀`);
+                        await sendReply(from, `${bossTitle}, your free trial is over — but you can still upgrade to *Oga* or *Chairman* here: ${upgradeUrl}`);
                     } else {
-                        const trialMsg = `💎 *${bossTitle}, want to unlock my full brain?* \n\nYou can now try our **CHAIRMAN** powers for **7 Days FREE**! 🚀\n\n🎁 *Launch Special:* 50% OFF for your first few months. \n\n*Choose how to activate:* \n1️⃣ **CARD (Recommended):** ₦50 verification. Enables auto-billing on Day 8. \n2️⃣ **TRANSFER:** ₦500 deposit. Held as wallet credit for your first month. \n\nJust say _"Activate Chairman Trial"_ to start! 🛡️`;
+                        const trialMsg = `${bossTitle}, you can try the *Chairman Plan* for *7 Days FREE* right now.\n\n*50% OFF* for your first few months as a launch offer.\n\n*Choose how to activate:*\n1. *Card (Recommended):* ₦50 verification. Auto-billing starts on Day 8.\n2. *Transfer:* ₦500 deposit — counts towards your first month.\n\nJust say _"Activate Chairman Trial"_ to begin.`;
                         await sendReply(from, trialMsg);
                     }
                     isProcessed = true;
@@ -2775,15 +2774,15 @@ Upgrade here: ${APP_URL}/pricing`);
                     
                     if (!reminderDateStr || !taskDescription) {
                         console.warn(`⚠️ Partial Reminder Captured: Date=${reminderDateStr}, Task=${taskDescription}`);
-                        await sendReply(from, "I catch the task, but I'm not entirely sure *when* you want me to remind you. Try say: _'Remind me to call Kola by 4pm'_");
+                        await sendReply(from, `I have the task, but I'm not sure *when* you want the reminder. Try: _'Remind me to call Kola by 4pm'_`);
                     } else {
                         const triggerDate = new Date(reminderDateStr);
                         if (isNaN(triggerDate.getTime())) {
-                            await sendReply(from, "I catch the task, but the time isn't clear to me. 😵‍ Please try again with a clear time.");
+                            await sendReply(from, `I have the task, but the time isn't clear enough for me to schedule it. Please try again with a specific time.`);
                         } else if (triggerDate <= new Date()) {
                             await sendReply(from, "I hear you, but you can't set a reminder for the past! 😅 Give me a future time.");
                         } else if ((triggerDate.getTime() - new Date().getTime()) < 5 * 60 * 1000) {
-                            await sendReply(from, "Boss, give me at least 5 minutes notice! 😂 Try a time slightly further ahead.");
+                            await sendReply(from, `That time is too close for me to prepare a proper alert. Give me at least 5 minutes from now and I'll have it ready.`);
                         } else {
                             let canSet = true;
                             const usedReminders = (profile.monthlyUsage?.reminders) || 0;
@@ -2791,12 +2790,12 @@ Upgrade here: ${APP_URL}/pricing`);
                             if (plan === "oga") {
                                 if (usedReminders >= 60) {
                                     canSet = false;
-                                    await sendReply(from, "Oga! 🧠 Your brain is moving fast! But you've reached your limit of 60 Task Reminders for this month. \n\nUpgrade to the *Chairman Plan* for unlimited reminders and AI planning! 🚀");
+                                    await sendReply(from, `${bossTitle}, you've reached your monthly limit of 60 Task Reminders.\n\nUpgrade to the *Chairman Plan* for unlimited reminders and full AI planning.`);
                                 }
                             } else if (plan === "hustler" || !plan) {
                                 if (usedReminders >= 5) {
                                     canSet = false;
-                                    await sendReply(from, `Chief ${bossTitle}! 📈 You've used your 5 free Task Reminders for this month. 👏 \n\nUpgrade to the *Oga Plan* for just ₦5,000 to get 60 reminders and unlock Voice Notes! 🚀`);
+                                    await sendReply(from, `${bossTitle}, you've used all 5 of your free Task Reminders for this month.\n\nUpgrade to the *Oga Plan* for 60 reminders, Voice Notes, and a lot more.`);
                                 }
                             }
 
@@ -2819,69 +2818,36 @@ Upgrade here: ${APP_URL}/pricing`);
 
                                 const recLabel = recurrence !== 'none' ? ` (${recurrence} repeat)` : "";
 
-                                // SMART NOTIFICATION LOGIC: Dual-Reminders for Meetings
-                                if (reminderType === "meeting" || reminderType === "personal") {
-                                    const eventTimeStr = triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
-                                    
-                                    // 1. The On-Time Reminder
-                                    await Reminder.create({
-                                        businessId: profile._id,
-                                        whatsappNumber: cleanFrom,
-                                        description: `🚀 *START NOW:* ${taskDescription}`,
-                                        triggerDate: new Date(triggerDate),
-                                        type: reminderType,
-                                        recurrence: recurrence,
-                                        saleId: linkedSaleId
-                                    });
+                                // Tasks, Meetings, Debts: Exact Match at scheduled triggerDate (No 15m heads-up)
+                                await Reminder.create({
+                                    businessId: profile._id,
+                                    whatsappNumber: cleanFrom,
+                                    description: (reminderType === "meeting" || reminderType === "personal") ? `🚀 *START NOW:* ${taskDescription}` : taskDescription,
+                                    triggerDate: triggerDate,
+                                    type: reminderType,
+                                    recurrence: recurrence,
+                                    saleId: linkedSaleId
+                                });
 
-                                    // 2. The 15-Minute Heads-Up
-                                    const nudgeDate = new Date(triggerDate.getTime() - 15 * 60 * 1000);
-                                    if (nudgeDate > new Date()) {
-                                        await Reminder.create({
-                                            businessId: profile._id,
-                                            whatsappNumber: cleanFrom,
-                                            description: `🔔 *HEADS UP (15m):* ${taskDescription}`,
-                                            triggerDate: nudgeDate,
-                                            type: reminderType,
-                                            recurrence: recurrence,
-                                            saleId: linkedSaleId
-                                        });
-                                        const nudgeTime = nudgeDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', hour12: true });
-                                        await sendReply(from, `🫡 *Locked in!* \n\nI'll remind you to *"${taskDescription}"* at *${eventTimeStr}*${recLabel}. I'll also give you a heads-up 15 mins early (at *${nudgeTime}*). 🚀 \n\n${(plan === "hustler" || !plan) ? "_Tip: Upgrade to Oga for instant WhatsApp alerts everywhere! 🛡️_" : ""}`);
-                                    } else {
-                                        await sendReply(from, `✅ *Task Saved!* \n\nI will remind you to *"${taskDescription}"* at exactly *${eventTimeStr}*${recLabel}. (Too close for a 15m heads-up!) 🫡 \n\n${(plan === "hustler" || !plan) ? "_Tip: Upgrade to Oga for instant WhatsApp alerts everywhere! 🛡️_" : ""}`);
+                                // Sync the sale's dueDate if it's a debt reminder
+                                if (reminderType === "debt" && linkedSaleId) {
+                                    const sale = await Sale.findById(linkedSaleId);
+                                    if (sale && (!sale.dueDate || sale.dueDate < triggerDate)) {
+                                        sale.dueDate = triggerDate;
+                                        await sale.save();
                                     }
-                                } else {
-                                    // Tasks and Debts: Exact Match
-                                    await Reminder.create({
-                                        businessId: profile._id,
-                                        whatsappNumber: cleanFrom,
-                                        description: taskDescription,
-                                        triggerDate: triggerDate,
-                                        type: reminderType,
-                                        recurrence: recurrence,
-                                        saleId: linkedSaleId
-                                    });
-
-                                    // NEW: If it's a debt reminder linked to a sale, sync the sale's dueDate
-                                    if (reminderType === "debt" && linkedSaleId) {
-                                        const sale = await Sale.findById(linkedSaleId);
-                                        if (sale && (!sale.dueDate || sale.dueDate < triggerDate)) {
-                                            sale.dueDate = triggerDate;
-                                            await sale.save();
-                                        }
-                                    }
-
-                                    const FriendlyDate = triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
-                                    
-                                    let successMsg = `✅ *Task Saved!* \n\nI will remind you to *"${taskDescription}"* at exactly *${FriendlyDate}*${recLabel}. 🫡`;
-                                    
-                                    if (plan === "hustler" || !plan) {
-                                        successMsg += `\n\n🛡️ *Plan Note:* Since you're on the Hustler plan, I'll send this reminder to your **Email** at the set time. Upgrade to Oga for instant WhatsApp alerts! 🚀`;
-                                    }
-
-                                    await sendReply(from, successMsg);
                                 }
+
+                                const FriendlyDate = triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                                
+                                const wittyIntro = await generateWittyIntro("create_reminder", { bossTitle });
+                                let successMsg = `${wittyIntro}\n\nI've scheduled a reminder for *"${taskDescription}"* at exactly *${FriendlyDate}*${recLabel}.`;
+                                
+                                if (plan === "hustler" || !plan) {
+                                    successMsg += `\n\n*Plan Note:* Since you're on the Hustler plan, I'll send this reminder to your *Email* at the set time. Upgrade to Oga for instant WhatsApp alerts.`;
+                                }
+
+                                await sendReply(from, successMsg);
                             }
                         }
                     }
@@ -3138,7 +3104,7 @@ Upgrade here: ${APP_URL}/pricing`);
                     });
 
                     // 3. Resolve boss title
-                    const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || (plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss"));
+                    const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || "Partner";
 
                     let performanceMsg = `📊 *${dateLabel} Performance, ${bossTitle}!*\n\n`;
                     performanceMsg += `💰 Cash Collected: *₦${totalCashIn.toLocaleString()}*\n`;
@@ -3224,13 +3190,13 @@ Upgrade here: ${APP_URL}/pricing`);
                 } else if (aiResponseItem && aiResponseItem.intent === "add_staff") {
                     
                     if (plan === "hustler" || !plan) {
-                        await sendReply(from, `${bossTitle}! 🛑 Adding staff via WhatsApp is a premium feature. \n\nUpgrade to the *Oga Plan* to add 1 staff member, or the *Chairman Plan* for up to 3 staff! 🚀`);
+                        await sendReply(from, `${bossTitle}, adding staff via WhatsApp is a premium feature.\n\nUpgrade to the *Oga Plan* to add 1 staff member, or the *Chairman Plan* for up to 3 staff.`);
                     } else {
                         const newPhoneRaw = aiResponseItem.data.phoneNumber || "";
                         const newPhone = newPhoneRaw.replace(/\D/g, "");
                         
                         if (!newPhone || newPhone.length < 10) {
-                            await sendReply(from, `I couldn't catch the exact phone number for the new staff, ${bossTitle}. Please tell me their number clearly, like "Add 08123456789".`);
+                            await sendReply(from, `I need a valid phone number to add them. Please share it clearly, like "Add 08123456789".`);
                         } else {
                             if (!profile.staffNumbers) profile.staffNumbers = [];
                             
@@ -3238,9 +3204,9 @@ Upgrade here: ${APP_URL}/pricing`);
                             
                             if (profile.staffNumbers.length >= staffLimit) {
                                 if (plan === "oga") {
-                                    await sendReply(from, `${bossTitle}! You've reached your limit of 1 staff member on the Oga plan. Upgrade to the *Chairman Plan* to add up to 3 staff! 🚀`);
+                                    await sendReply(from, `${bossTitle}, you've reached your limit of 1 staff member on the Oga plan. Upgrade to the *Chairman Plan* to add up to 3 staff.`);
                                 } else {
-                                    await sendReply(from, `You've reached your maximum of 3 staff members on the Chairman plan, ${bossTitle}!`);
+                                    await sendReply(from, `${bossTitle}, you've reached the maximum of 3 staff members on the Chairman plan.`);
                                 }
                             } else {
                                 let formattedNewPhone = newPhone;
