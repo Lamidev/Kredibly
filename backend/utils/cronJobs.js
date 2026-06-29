@@ -275,7 +275,7 @@ const scheduleRemindersWorker = () => {
 
 
                 const eventTimeStr = acquired.triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
-                let msg = `You asked me to remind you:\n"${acquired.description}"\n\nTime: ${eventTimeStr}`;
+                let msg = `*Reminder:* ${acquired.description}\nTime: ${eventTimeStr}`;
 
                 if (acquired.saleId) {
                     const sale = acquired.saleId;
@@ -288,7 +288,7 @@ const scheduleRemindersWorker = () => {
                         continue;
                     }
 
-                    msg = `You asked me to remind you to collect from *${sale.customerName}*:\n"${acquired.description}"\n\nBalance: ₦${bal.toLocaleString()}\nLink: ${APP_URL}/i/${sale.invoiceNumber}`;
+                    msg = `*Payment Reminder:* Collect ₦${bal.toLocaleString()} from *${sale.customerName}* for ${acquired.description || 'Invoice'}.`;
                 }
 
                 console.log(`⏰ Processing Reminder [${acquired._id}] for ${title} (${acquired.whatsappNumber})...`);
@@ -324,8 +324,8 @@ const scheduleRemindersWorker = () => {
                             success = await sendWhatsAppMessage(acquired.whatsappNumber, msg).catch(e => false);
                         }
                     } else {
-                        // 🟢 Debt/Invoice Reminder — Plain text (inside 24h window)
-                        success = await sendWhatsAppMessage(acquired.whatsappNumber, msg).catch(e => false);
+                        // 🟢 Debt/Invoice Reminder — Template with Clean Button (uses template to avoid naked link)
+                        success = await sendWhatsAppAlert(acquired.whatsappNumber, title, msg, sale.invoiceNumber).catch(e => false);
                     }
                 } else {
                     // 🟠 WhatsApp Template (Window Closed) — Deliver paid template alert for all users

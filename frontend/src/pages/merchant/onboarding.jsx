@@ -285,8 +285,22 @@ const Onboarding = () => {
     const filteredBanks = banks.filter(b => b.name.toLowerCase().includes(searchBank.toLowerCase())).slice(0, 8);
 
     return (
-        <div className="auth-pattern" style={{ minHeight: '100vh', width: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+        <div className="auth-pattern" style={{ 
+            minHeight: '100vh', 
+            width: '100%', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            position: 'relative',
+            overflowX: 'hidden'
+        }}>
+            {/* Dynamic Background Overlays */}
             <div className="pattern-dots" style={{ opacity: 0.05 }} />
+            <div style={{ 
+                position: 'absolute', 
+                inset: 0, 
+                background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0) 0%, rgba(248, 250, 252, 0.4) 100%)',
+                pointerEvents: 'none'
+            }} />
 
             {/* Logo header — same style as AuthLayout */}
             <div
@@ -339,7 +353,7 @@ const Onboarding = () => {
                                         </div>
                                         
                                         <div style={{ background: 'white', padding: '14px 16px', borderRadius: '0 16px 16px 16px', fontSize: '0.88rem', maxWidth: '90%', boxShadow: '0 1px 2px rgba(0,0,0,0.1)', color: '#334155', lineHeight: 1.5 }}
-                                            dangerouslySetInnerHTML={{ __html: parseWhatsAppMarkdown(`Hello *${displayName || 'Boss'}*! 🚀\n\nI'm *Kreddy*, your new Digital Chief of Staff. I've successfully launched your workspace and I'm ready to help you secure your revenue! 🛡️\n\n*Quick Tip:* You can tell me to call you any name you want (like "Chief" or your first name). Just say *"Kreddy, call me [Name]"* and I'll remember it! 🤝\n\n*What's the plan for today?*\n📊 EMPIRE STATUS: Type *S*\n⏳ DEBTS: Type *D*\n💡 HELP: Type *HELP*`) }}
+                                            dangerouslySetInnerHTML={{ __html: parseWhatsAppMarkdown(`Hello *${displayName || 'Boss'}*,\n\nI'm *Kreddy* — your Digital Chief of Staff.\n\nI've successfully launched your workspace for *${displayName || 'your business'}* and I'm ready to get to work.\n\nHere is what I can do for you:\n\n🎤 *Voice Note:* _"Sarah bought a bag for 15k, she paid 5k, remind me Friday for the balance."_\n\n📸 *Picture:* Send a receipt photo and I will log it for you.\n\n💬 *Ask anything:* _"What is my revenue today?"_ or _"Who owes me money?"_\n\nTalk to me like a real person — let's get to work.`) }}
                                         />
                                     </div>
 
@@ -572,6 +586,13 @@ const Onboarding = () => {
             </div>
 
             <style>{`
+                .auth-pattern {
+                    background-image: url('/Krediblypattern-sm.jpg');
+                    background-size: cover;
+                    background-position: center;
+                    background-attachment: fixed;
+                    background-color: var(--background);
+                }
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
                 @media (max-width: 640px) {
                     .auth-logo-header { padding: 24px 20px 8px !important; }
