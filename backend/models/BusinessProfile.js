@@ -128,14 +128,10 @@ const BusinessProfileSchema = new mongoose.Schema({
         type: Boolean,
         default: false // Whether they pay a commission on recovered debt
     },
-    // Beta Test / Waitlist Demo Tracking
+    // Beta Tester flag — used by adminController to exclude test merchants from production stats
     isBetaTester: {
         type: Boolean,
         default: false
-    },
-    demoMessagesUsed: {
-        type: Number,
-        default: 0
     },
     successFeePercentage: {
         type: Number,

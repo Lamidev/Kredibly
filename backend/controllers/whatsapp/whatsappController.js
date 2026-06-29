@@ -981,6 +981,13 @@ const handleIncoming = async (req, res) => {
                 buttonId.startsWith("ext_3days:") || buttonId.startsWith("ext_1week:") || buttonId.startsWith("ext_2weeks:")) {
                 isForCustomerFlow = true;
             }
+        } else if (msgType === "button") {
+            const btnPayload = message?.button?.payload || "";
+            const btnText = (message?.button?.text || "").toLowerCase().trim();
+            if (btnPayload.startsWith("pay_now:") || btnPayload.startsWith("req_ext:") ||
+                btnText === "request extension" || btnText === "pay with transfer" || btnText === "pay now") {
+                isForCustomerFlow = true;
+            }
         } else {
             // Check if they are in the middle of a customer extension request session
             const tempSession = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
@@ -1039,9 +1046,32 @@ const handleIncoming = async (req, res) => {
         // 🛡️ PLAN STATUS LOCK: If the plan is inactive, Kreddy goes "On Leave"
         const isControlKeyword = /help|subscribe|pay|plan|contact/i.test(text.toLowerCase());
         if ((profile.planStatus === 'inactive' || profile.planStatus === 'cancelled') && !isControlKeyword) {
-            const upgradeLink = `https://usekredibly.com/login?redirect=/settings`;
-            const inactiveMsg = `⚠️ *I'm currently on Leave, ${bossTitle}!* \n\nMy automated services (summaries, voice recording, and debt tracking) are paused because your workspace is inactive. \n\nReactivate your plan now to get your Digital Chief of Staff back on duty! 🛡️🚀\n\n🔗 *Login & Reactivate:* ${upgradeLink}`;
-            await sendReply(from, inactiveMsg);
+            const inactiveMsg = `⚠️ *I'm currently on Leave, ${bossTitle}!* \n\nMy automated services (reminders, voice sync, and debt tracking) are paused because your workspace is inactive. \n\nReactivate your plan now to get your Digital Chief of Staff back on duty! 🛡️🚀`;
+            const cleanMsg = inactiveMsg
+                .replace(/[\r\n\t]+/g, ' ')
+                .replace(/\s\s+/g, ' ')
+                .trim()
+                .substring(0, 1024);
+
+            const components = [
+                {
+                    type: "body",
+                    parameters: [
+                        { type: "text", text: String(bossTitle).substring(0, 60) },
+                        { type: "text", text: cleanMsg }
+                    ]
+                },
+                {
+                    type: "button",
+                    sub_type: "url",
+                    index: "0",
+                    parameters: [
+                        { type: "text", text: "login?redirect=/settings" }
+                    ]
+                }
+            ];
+
+            await sendTemplateMessage(from, "kreddy_system_alert", components);
             return;
         }
 
@@ -1059,12 +1089,6 @@ const handleIncoming = async (req, res) => {
             return;
         }
 
-
-        const isTrialing = profile.planStatus === 'trialing';
-        const isTrialExpired = false; 
-        
-        console.log(`👤 User: ${cleanFrom} | Plan: ${plan.toUpperCase()} | Demo Used: ${profile.demoMessagesUsed}/30`);
-        
         // Usage Reset Logic (Monthly)
         if (!profile.monthlyUsage) {
             profile.monthlyUsage = { reminders: 0, voiceNotes: 0, images: 0, lastReset: new Date() };
@@ -1227,6 +1251,79 @@ const handleIncoming = async (req, res) => {
                         }
                     } else {
                         await sendReply(from, `I couldn't find the extension request to reject. It may have expired. 🤔`);
+                    }
+                    return;
+                }
+
+                // ⚡ Task reminders: handles mark done / snooze buttons clicked by the merchant
+                if (buttonId.startsWith("t_done:")) {
+                    const remId = buttonId.split(":")[1];
+                    const reminder = await Reminder.findById(remId);
+                    if (reminder) {
+                        // ── ONE-TIME GUARD: Block duplicate click ──────────────────────
+                        if (reminder.status === "delivered") {
+                            await sendReply(from, `This task has already been marked done, ${bossTitle}! 🥳`);
+                            return;
+                        }
+                        reminder.status = "delivered";
+                        reminder.deliveredAt = new Date();
+                        reminder.error = null;
+                        await reminder.save();
+                        await sendReply(from, `✅ *Task Completed!* \n\nI've marked the task *"${reminder.description}"* as done. Great job! 🥳`);
+                    } else {
+                        await sendReply(from, `I couldn't find that reminder anymore, ${bossTitle}. 🤔`);
+                    }
+                    return;
+                }
+
+                if (buttonId.startsWith("t_snooze30m:")) {
+                    const remId = buttonId.split(":")[1];
+                    const reminder = await Reminder.findById(remId);
+                    if (reminder) {
+                        // ── ONE-TIME GUARD: Block duplicate click ──────────────────────
+                        if (reminder.status === "delivered") {
+                            await sendReply(from, `This task has already been completed, so it cannot be snoozed, ${bossTitle}! 🌟`);
+                            return;
+                        }
+                        if (reminder.triggerDate > new Date()) {
+                            await sendReply(from, `This reminder has already been snoozed, ${bossTitle}! 😴`);
+                            return;
+                        }
+                        const newTriggerDate = new Date(Date.now() + 30 * 60000);
+                        reminder.triggerDate = newTriggerDate;
+                        reminder.status = "pending";
+                        reminder.snoozeCount += 1;
+                        await reminder.save();
+                        const friendly = newTriggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                        await sendReply(from, `Understood, ${bossTitle}! 😴 I've snoozed *"${reminder.description}"* until *${friendly}*. Talk soon!`);
+                    } else {
+                        await sendReply(from, `I couldn't find that reminder anymore, ${bossTitle}. 🤔`);
+                    }
+                    return;
+                }
+
+                if (buttonId.startsWith("t_snooze1h:")) {
+                    const remId = buttonId.split(":")[1];
+                    const reminder = await Reminder.findById(remId);
+                    if (reminder) {
+                        // ── ONE-TIME GUARD: Block duplicate click ──────────────────────
+                        if (reminder.status === "delivered") {
+                            await sendReply(from, `This task has already been completed, so it cannot be snoozed, ${bossTitle}! 🌟`);
+                            return;
+                        }
+                        if (reminder.triggerDate > new Date()) {
+                            await sendReply(from, `This reminder has already been snoozed, ${bossTitle}! 😴`);
+                            return;
+                        }
+                        const newTriggerDate = new Date(Date.now() + 60 * 60000);
+                        reminder.triggerDate = newTriggerDate;
+                        reminder.status = "pending";
+                        reminder.snoozeCount += 1;
+                        await reminder.save();
+                        const friendly = newTriggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                        await sendReply(from, `Understood, ${bossTitle}! 😴 I've snoozed *"${reminder.description}"* until *${friendly}*. Talk soon!`);
+                    } else {
+                        await sendReply(from, `I couldn't find that reminder anymore, ${bossTitle}. 🤔`);
                     }
                     return;
                 }

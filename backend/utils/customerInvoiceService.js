@@ -282,6 +282,20 @@ const sendInvoiceTemplateToCustomer = async (to, sale, business, pdfUrl) => {
         ]
     });
 
+    // 4. Button 1 — Quick Reply (Request Extension)
+    const canRequestExt = (sale.extensionsCount || 0) < 2
+        && sale.lifecycleStatus !== "EXTENSION_REQUESTED";
+    if (canRequestExt) {
+        components.push({
+            type: "button",
+            sub_type: "quick_reply",
+            index: "1",
+            parameters: [
+                { type: "payload", payload: `req_ext:${sale._id}` }
+            ]
+        });
+    }
+
     try {
         console.log(`Sending customer invoice template (kreddy_customer_invoice) to ${cleanTo}...`);
         const res = await axios.post(
@@ -648,12 +662,38 @@ const handleCustomerRequestExtension = async (saleId, customerPhone) => {
         const sale = await Sale.findById(saleId).populate("businessId");
         if (!sale) return;
 
+        // ── ONE-TIME GUARD: Block if already paid ──────────────────────────────
+        if (sale.status === "paid" || sale.lifecycleStatus === "PAID") {
+            await sendCustomerMessageWithFallback(
+                customerPhone,
+                `Hi ${sale.customerName}, Invoice #${sale.invoiceNumber} has already been fully paid. No extension needed! Thank you.`,
+                sale.customerName,
+                sale.invoiceNumber
+            );
+            return;
+        }
+
+        // ── ONE-TIME GUARD: Reject duplicate clicks ────────────────────────────
+        // Block if already in a pending extension request (lifecycle) — prevents
+        // the customer from hammering the button multiple times.
+        if (sale.lifecycleStatus === "EXTENSION_REQUESTED") {
+            await sendCustomerMessageWithFallback(
+                customerPhone,
+                `Hi ${sale.customerName}, your extension request for Invoice #${sale.invoiceNumber} is already pending. Your merchant will respond shortly.`,
+                sale.customerName,
+                sale.invoiceNumber
+            );
+            return;
+        }
+        // ── MAX EXTENSIONS GUARD ───────────────────────────────────────────────
         if ((sale.extensionsCount || 0) >= 2) {
             const bizName = sale.businessId?.displayName || "your merchant";
             const bal = sale.totalAmount - (sale.payments || []).reduce((s, p) => s + p.amount, 0);
-            await sendText(
+            await sendCustomerMessageWithFallback(
                 customerPhone,
-                `Hi ${sale.customerName}, you have already reached the maximum of 2 extensions for Invoice #${sale.invoiceNumber}. Please complete your payment or contact ${bizName} directly to discuss.\n\nOutstanding balance: ₦${bal.toLocaleString()}`
+                `Hi ${sale.customerName}, you have already reached the maximum of 2 extensions for Invoice #${sale.invoiceNumber}. Please complete your payment or contact ${bizName} directly.\n\nBalance: ₦${bal.toLocaleString()}`,
+                sale.customerName,
+                sale.invoiceNumber
             );
             return;
         }
@@ -675,7 +715,7 @@ const handleCustomerRequestExtension = async (saleId, customerPhone) => {
             { upsert: true, new: true }
         );
 
-        await sendInteractiveButtons(
+        const sent = await sendInteractiveButtons(
             customerPhone,
             "Payment Extension",
             `Hi ${sale.customerName}, how much more time do you need to settle Invoice #${sale.invoiceNumber} (₦${sale.totalAmount.toLocaleString()})? Alternatively, you can reply with natural text like "I need 5 days".`,
@@ -686,6 +726,16 @@ const handleCustomerRequestExtension = async (saleId, customerPhone) => {
                 { id: `ext_2weeks:${saleId}`, title: "2 More Weeks" }
             ]
         );
+
+        // Fallback: window closed — send plain text prompt
+        if (!sent) {
+            await sendCustomerMessageWithFallback(
+                customerPhone,
+                `Hi ${sale.customerName}, to request a payment extension for Invoice #${sale.invoiceNumber}, simply reply with how many days you need (e.g. "I need 3 days") and I'll pass it along to the merchant.`,
+                sale.customerName,
+                sale.invoiceNumber
+            );
+        }
     } catch (err) {
         console.error("❌ handleCustomerRequestExtension Error:", err.message);
     }
@@ -977,9 +1027,23 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
         // ── Template Quick Reply: "button" type ─────────────────────────────────────
         // When a customer taps "Request Extension" or "Pay With Transfer" on the
         // kreddy_customer_invoice template (outside the 24h window), WhatsApp sends
-        // msgType === "button" with message.button.text matching the button label.
+        // msgType === "button" with message.button.payload or message.button.text.
         if (msgType === "button") {
+            const btnPayload = message?.button?.payload || "";
             const btnText = (message?.button?.text || "").toLowerCase().trim();
+
+            if (btnPayload.startsWith("req_ext:")) {
+                const saleId = btnPayload.split(":")[1];
+                await handleCustomerRequestExtension(saleId, cleanFrom);
+                return true;
+            }
+
+            if (btnPayload.startsWith("pay_now:")) {
+                const saleId = btnPayload.split(":")[1];
+                await handleCustomerPayNow(saleId, cleanFrom);
+                return true;
+            }
+
             const activeSale = await Sale.findOne({
                 deliveredToPhone: cleanFrom,
                 status: { $ne: "paid" },
@@ -993,7 +1057,7 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
                 return true;
             }
 
-            if (btnText === "pay with transfer") {
+            if (btnText === "pay with transfer" || btnText === "pay now") {
                 await handleCustomerPayNow(activeSale._id, cleanFrom);
                 return true;
             }
@@ -1160,6 +1224,106 @@ const sendChaseToCustomer = async (saleId, businessId, customText = null) => {
     }
 };
 
+
+// ─── Customer Reminder Template (always works, window open OR closed) ──────────
+/**
+ * Send a customer invoice reminder using the `kreddy_customer_invoice` template.
+ * The template has:
+ *   - Header: document PDF (optional)
+ *   - Body: {{1}}=customerName, {{2}}=businessName, {{3}}=items, {{4}}=amount, {{5}}=invoiceRef
+ *   - Button 0: URL → Pay Invoice Now  (dynamic suffix = invoiceNumber)
+ *   - Button 1: Quick Reply → "Request Extension"
+ *
+ * This ALWAYS delivers because it uses an approved template — no 24h window needed.
+ */
+const sendCustomerReminderTemplate = async (to, sale, business, sequenceLabel = "Reminder") => {
+    const { phoneId, accessToken } = getWACredentials();
+    if (!accessToken || !phoneId) return false;
+    const cleanTo = normalizePhone(to);
+
+    const itemsText = sale.items && sale.items.length > 0
+        ? sale.items.map(i => `${i.name} x${i.quantity}`).join(", ")
+        : (sale.description || "Purchase");
+
+    const bal = sale.totalAmount - (sale.payments || []).reduce((s, p) => s + p.amount, 0);
+    const formattedAmount = `₦${bal.toLocaleString()} outstanding`;
+    const invoiceRef = `#${sale.invoiceNumber}`;
+    const businessName = business.displayName || "Your Merchant";
+
+    const components = [];
+
+    // Header: PDF (optional — skip if no pdfUrl to avoid template error)
+    if (sale.pdfUrl) {
+        components.push({
+            type: "header",
+            parameters: [
+                {
+                    type: "document",
+                    document: {
+                        link: sale.pdfUrl,
+                        filename: `Invoice-${sale.invoiceNumber}.pdf`
+                    }
+                }
+            ]
+        });
+    }
+
+    // Body
+    components.push({
+        type: "body",
+        parameters: [
+            { type: "text", text: String(sale.customerName || "Customer").substring(0, 60) },
+            { type: "text", text: String(businessName).substring(0, 60) },
+            { type: "text", text: String(itemsText).substring(0, 1024) },
+            { type: "text", text: formattedAmount },
+            { type: "text", text: invoiceRef }
+        ]
+    });
+
+    // Button 0: URL → Pay Now (dynamic suffix)
+    components.push({
+        type: "button",
+        sub_type: "url",
+        index: "0",
+        parameters: [{ type: "text", text: `${sale.invoiceNumber}` }]
+    });
+
+    // Button 1: Quick Reply → Request Extension
+    // (only include if customer hasn't maxed out extensions or already requested)
+    const canRequestExt = (sale.extensionsCount || 0) < 2
+        && sale.lifecycleStatus !== "EXTENSION_REQUESTED";
+    if (canRequestExt) {
+        components.push({
+            type: "button",
+            sub_type: "quick_reply",
+            index: "1",
+            parameters: [{ type: "payload", payload: `req_ext:${sale._id}` }]
+        });
+    }
+
+    try {
+        console.log(`📨 [${sequenceLabel}] Sending kreddy_customer_invoice template to ${cleanTo}...`);
+        await axios.post(
+            `https://graph.facebook.com/v21.0/${phoneId}/messages`,
+            {
+                messaging_product: "whatsapp",
+                to: cleanTo,
+                type: "template",
+                template: {
+                    name: "kreddy_customer_invoice",
+                    language: { code: "en" },
+                    components
+                }
+            },
+            { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 15000 }
+        );
+        return true;
+    } catch (err) {
+        console.error(`❌ sendCustomerReminderTemplate Error:`, err.response?.data || err.message);
+        return false;
+    }
+};
+
 const isCustomerPhone = async (phone) => {
     const cleanPhone = normalizePhone(phone);
     const activeSale = await Sale.findOne({
@@ -1169,6 +1333,7 @@ const isCustomerPhone = async (phone) => {
     });
     return !!activeSale;
 };
+
 
 module.exports = {
     deliverInvoiceToCustomer,
@@ -1183,6 +1348,7 @@ module.exports = {
     handleMerchantApproveExtension,
     handleMerchantRejectExtension,
     isCustomerPhone,
+    sendCustomerReminderTemplate,
     sendInteractiveButtons,
     sendDocument,
     sendText,

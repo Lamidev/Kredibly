@@ -924,8 +924,8 @@ const LandingPage = () => {
                             { date: "SEPT '25", title: "Strategic Architecture", desc: "Core blueprinting of the Kredibly workspace and AI interface flow.", status: "completed" },
                             { date: "DEC '25", title: "Kreddy AI Core", desc: "Intelligence engine development. Teaching Kreddy to understand merchant slang and complex debts.", status: "completed" },
                             { date: "JAN '26", title: "Premium Platform UX", desc: "Rollout of smart telemetry, professional document generators, and cross-device syncing.", status: "done" },
-                            { date: "JAN '26: JUNE '26", title: "Pioneer Program", desc: "Onboarding our first 1,000 pioneers. Lifetime status and exclusive rewards for our founding merchants.", status: "active", isFounding: true },
-                            { date: "JULY 1ST", title: "Public Launch", desc: "Opening the ecosystem for public merchant registration and global transactions. Kredibly goes live for everyone.", status: "future" }
+                            { date: "JAN '26: JULY '26", title: "Pioneer Program", desc: "Onboarding our first 1,000 pioneers. Lifetime status and exclusive rewards for our founding merchants.", status: "active", isFounding: true },
+                            { date: "AUGUST 1ST", title: "Public Launch", desc: "Opening the ecosystem for public merchant registration and global transactions. Kredibly goes live for everyone.", status: "future" }
                         ].map((m, i) => (
                             <motion.div 
                                 key={i}

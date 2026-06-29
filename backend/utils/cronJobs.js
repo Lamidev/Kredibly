@@ -140,8 +140,7 @@ const scheduleRemindersWorker = () => {
 
                 // ─── CUSTOMER REMINDER (Kreddy AI Invoice Delivery) ────────────
                 if (acquired.recipientType === "customer" && acquired.recipientPhone) {
-                    const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
-                    const { sendInteractiveButtons, sendCustomerMessageWithFallback } = require("../utils/customerInvoiceService");
+                    const { sendInteractiveButtons, sendCustomerMessageWithFallback, sendCustomerReminderTemplate } = require("../utils/customerInvoiceService");
                     let customerSuccess = false;
 
                     if (acquired.saleId) {
@@ -157,61 +156,103 @@ const scheduleRemindersWorker = () => {
                         }
 
                         const businessName = acquired.businessId?.displayName || "Your Merchant";
-                        const seqLabel = acquired.reminderSequence === 1 ? "Friendly Reminder" 
-                            : acquired.reminderSequence === 2 ? "Second Reminder" 
+                        const seqLabel = acquired.reminderSequence === 1 ? "Friendly Reminder"
+                            : acquired.reminderSequence === 2 ? "Second Reminder"
                             : "Final Reminder";
 
-                        const paymentLink = `${APP_URL}/i/${sale.invoiceNumber}`;
-
                         try {
-                            // For first reminder, resend interactive buttons
+                            const canRequestExt = (sale.extensionsCount || 0) < 2
+                                && sale.lifecycleStatus !== "EXTENSION_REQUESTED";
+
                             if (acquired.reminderSequence === 1) {
+                                // ── Sequence 1: Try interactive buttons first ──
                                 const dueText = sale.dueDate
                                     ? new Date(sale.dueDate).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })
                                     : "On Receipt";
                                 const reminderButtons = [
                                     { id: `pay_now:${sale._id}`, title: "Pay with Transfer" }
                                 ];
-                                if ((sale.extensionsCount || 0) < 2) {
+                                if (canRequestExt) {
                                     reminderButtons.push({ id: `req_ext:${sale._id}`, title: "Request Extension" });
                                 }
-                                const success = await sendInteractiveButtons(
+
+                                const interactiveSent = await sendInteractiveButtons(
                                     acquired.recipientPhone,
                                     `Invoice Reminder #${sale.invoiceNumber}`,
                                     `Hi ${sale.customerName}, this is a reminder from ${businessName} about Invoice #${sale.invoiceNumber}.\n\nAmount outstanding: ₦${bal.toLocaleString()}\nDue: ${dueText}\n\nWhat would you like to do?`,
                                     "",
                                     reminderButtons
                                 );
-                                if (!success) {
-                                    console.log(`⚠️ Interactive buttons failed for first reminder. Falling back to template...`);
-                                    await sendCustomerMessageWithFallback(
+
+                                if (!interactiveSent) {
+                                    // Window closed — fall back to template WITH action buttons
+                                    console.log(`⚠️ [${seqLabel}] Interactive buttons failed. Sending full template with action buttons...`);
+                                    customerSuccess = await sendCustomerReminderTemplate(
                                         acquired.recipientPhone,
-                                        `Hi ${sale.customerName}, this is a reminder from ${businessName} about Invoice #${sale.invoiceNumber}. Amount outstanding: ₦${bal.toLocaleString()} (Due: ${dueText}).`,
-                                        sale.customerName,
-                                        sale.invoiceNumber
-                                    );
-                                }
-                            } else {
-                                if (acquired.reminderSequence === 2) {
-                                    await sendCustomerMessageWithFallback(
-                                        acquired.recipientPhone,
-                                        `Hi ${sale.customerName}, ${businessName} is following up on Invoice #${sale.invoiceNumber} for ₦${bal.toLocaleString()}.\n\nIf you need more time, reply "extension" and I'll let them know.`,
-                                        sale.customerName,
-                                        sale.invoiceNumber
+                                        sale,
+                                        acquired.businessId,
+                                        seqLabel
                                     );
                                 } else {
-                                    const dueLabel = (sale.dueDate && new Date(sale.dueDate).toDateString() === new Date().toDateString())
-                                        ? "is due today"
-                                        : "is outstanding";
-                                    await sendCustomerMessageWithFallback(
+                                    customerSuccess = true;
+                                }
+
+                            } else if (acquired.reminderSequence === 2) {
+                                // ── Sequence 2: Try interactive first ──
+                                const followUpButtons = [
+                                    { id: `pay_now:${sale._id}`, title: "Pay with Transfer" }
+                                ];
+                                if (canRequestExt) {
+                                    followUpButtons.push({ id: `req_ext:${sale._id}`, title: "Request Extension" });
+                                }
+
+                                const interactiveSent = await sendInteractiveButtons(
+                                    acquired.recipientPhone,
+                                    `Follow-up: Invoice #${sale.invoiceNumber}`,
+                                    `Hi ${sale.customerName}, ${businessName} is following up on Invoice #${sale.invoiceNumber} for ₦${bal.toLocaleString()}.\n\nIf you need more time, tap "Request Extension" below.`,
+                                    "",
+                                    followUpButtons
+                                );
+
+                                if (!interactiveSent) {
+                                    console.log(`⚠️ [${seqLabel}] Interactive buttons failed. Sending template with action buttons...`);
+                                    customerSuccess = await sendCustomerReminderTemplate(
                                         acquired.recipientPhone,
-                                        `Hi ${sale.customerName}, Invoice #${sale.invoiceNumber} from ${businessName} ${dueLabel}.\n\nBalance: ₦${bal.toLocaleString()}`,
-                                        sale.customerName,
-                                        sale.invoiceNumber
+                                        sale,
+                                        acquired.businessId,
+                                        seqLabel
                                     );
+                                } else {
+                                    customerSuccess = true;
+                                }
+
+                            } else {
+                                // ── Sequence 3 (Final / Due Date): Template always ──
+                                const dueLabel = (sale.dueDate && new Date(sale.dueDate).toDateString() === new Date().toDateString())
+                                    ? "is due today"
+                                    : "is outstanding";
+
+                                const interactiveSent = await sendInteractiveButtons(
+                                    acquired.recipientPhone,
+                                    `Final Notice: Invoice #${sale.invoiceNumber}`,
+                                    `Hi ${sale.customerName}, Invoice #${sale.invoiceNumber} from ${businessName} ${dueLabel}.\n\nBalance: ₦${bal.toLocaleString()}\n\nPlease settle this now.`,
+                                    "",
+                                    [{ id: `pay_now:${sale._id}`, title: "Pay with Transfer" }]
+                                );
+
+                                if (!interactiveSent) {
+                                    console.log(`⚠️ [${seqLabel}] Interactive buttons failed. Sending template...`);
+                                    customerSuccess = await sendCustomerReminderTemplate(
+                                        acquired.recipientPhone,
+                                        sale,
+                                        acquired.businessId,
+                                        seqLabel
+                                    );
+                                } else {
+                                    customerSuccess = true;
                                 }
                             }
-                            customerSuccess = true;
+
                         } catch (custErr) {
                             console.error("Customer reminder send error:", custErr.message);
                         }
@@ -231,6 +272,7 @@ const scheduleRemindersWorker = () => {
                     continue; // Skip merchant notification logic below
                 }
                 // ─── END CUSTOMER REMINDER ─────────────────────────────────────
+
 
                 const eventTimeStr = acquired.triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
                 let msg = `You asked me to remind you:\n"${acquired.description}"\n\nTime: ${eventTimeStr}`;
