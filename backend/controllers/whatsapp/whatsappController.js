@@ -691,16 +691,10 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
         const now = new Date();
         const isWindowOpen = profile?.lastInboundAt && (now - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
 
-        if (isWindowOpen) {
+        if (isWindowOpen && !invoiceNumber) {
             console.log(`💡 WhatsApp Session Open for ${normalizedTo} — Sending free session message`);
             // Format as a bold message with person's title
             let sessionText = `*${finalTitle}!* 🔔\n\n${textMessage}`;
-            
-            // If invoiceNumber provided but not in text, append it as a clear action link
-            if (invoiceNumber && !textMessage.includes(invoiceNumber)) {
-                sessionText += `\n\n🔗 *VIEW DETAILS:*\nhttps://usekredibly.com/i/${invoiceNumber}`;
-            }
-
             return await sendReply(normalizedTo, sessionText);
         }
 
@@ -708,9 +702,12 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
         console.log(`🔔 WhatsApp Session Closed for ${normalizedTo} — Sending paid template message`);
         
         const safeMessage = String(textMessage)
-            .replace(/\r/g, '') // Remove carriage returns
+            .replace(/\r?\n/g, ' • ') // 🛡️ Meta forbids newlines in template params — convert to bullet separator
+            .replace(/\t/g, ' ')       // Strip tabs too
+            .replace(/  +/g, ' ')      // Collapse multiple spaces (Meta allows max 4 consecutive)
             .trim()
             .substring(0, 1024);
+
         
         const components = [
             {
@@ -1537,9 +1534,6 @@ const handleIncoming = async (req, res) => {
                     }
 
                     if (customerPhone) {
-                        // Confirm to merchant immediately
-                        await sendReply(from, `Invoice ${newSale.invoiceNumber} created for ${customerName} — ₦${totalAmount.toLocaleString()}. The PDF is being generated and will be sent to you shortly.`);
-                        
                         // Deliver asynchronously — merchant gets summary text + PDF copy inside this call
                         deliverInvoiceToCustomer(newSale._id, profile._id, { customerPhone })
                             .then(async (result) => {
@@ -2919,7 +2913,7 @@ const handleIncoming = async (req, res) => {
                                 await Reminder.create({
                                     businessId: profile._id,
                                     whatsappNumber: cleanFrom,
-                                    description: (reminderType === "meeting" || reminderType === "personal") ? `🚀 *START NOW:* ${taskDescription}` : taskDescription,
+                                    description: taskDescription,
                                     triggerDate: triggerDate,
                                     type: reminderType,
                                     recurrence: recurrence,

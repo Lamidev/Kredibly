@@ -170,7 +170,7 @@ const sendInteractiveButtons = async (to, headerText, bodyText, footerText, butt
             type: "button",
             header: headerText ? {
                 type: "text",
-                text: headerText.substring(0, 60)
+                text: headerText.replace(/[\*_~`#]/g, "").substring(0, 60)
             } : undefined,
             body: { text: bodyText.substring(0, 1024) },
             footer: footerText ? { text: footerText.substring(0, 60) } : undefined,
@@ -423,22 +423,33 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
         // Step 6: Notify the merchant matching the target flow order and copy
         const merchantPhone = business.whatsappNumber;
         if (merchantPhone) {
-            // First, send the PDF copy to the merchant
+            const merchantCaption = [
+                `✅ *Invoice Created Successfully*`,
+                ``,
+                `*Invoice:* ${sale.invoiceNumber}`,
+                `*Customer:* ${sale.customerName}`,
+                `*Amount:* ₦${sale.totalAmount.toLocaleString()}`,
+                ``,
+                `Your invoice has been generated successfully.`,
+                ``,
+                `• A PDF copy has been sent to you.`,
+                `• The customer has received the invoice on WhatsApp.`,
+                `• You'll be notified immediately once payment is made.`
+            ].join("\n");
+
             if (pdfUrl) {
                 const merchantPdfSent = await sendDocument(
                     merchantPhone,
                     pdfUrl,
                     `invoice-${sale.invoiceNumber}.pdf`,
-                    `Your copy of Invoice #${sale.invoiceNumber} for ${sale.customerName}`
+                    merchantCaption
                 );
-                console.log(`📄 PDF copy to merchant ${merchantPhone}: ${merchantPdfSent ? '✅ sent' : '❌ failed'}`);
-                await new Promise(r => setTimeout(r, 800)); // small gap
+                console.log(`📄 PDF copy with invoice summary sent to merchant ${merchantPhone}: ${merchantPdfSent ? '✅ sent' : '❌ failed'}`);
+            } else {
+                // Fallback: if no PDF was generated for some reason, just send the text
+                const merchantMsgSent = await sendText(merchantPhone, merchantCaption);
+                console.log(`📩 Merchant text summary fallback sent to ${merchantPhone}: ${merchantMsgSent ? '✅ sent' : '❌ failed'}`);
             }
-
-            // Second, send confirmation text to the merchant
-            const merchantConfirmationText = `Invoice #${sale.invoiceNumber} has been sent to ${sale.customerName} (+${cleanCustomerPhone}), you will receive a notification when the payment is confirmed.`;
-            const merchantMsgSent = await sendText(merchantPhone, merchantConfirmationText);
-            console.log(`📩 Merchant delivery notification to ${merchantPhone}: ${merchantMsgSent ? '✅ sent' : '❌ failed'}`);
         }
 
         await Notification.create({
