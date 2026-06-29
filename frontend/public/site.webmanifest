@@ -1,7 +1,7 @@
 {
-  "name": "Kredibly | Instant Settlement & Debt Recovery",
+  "name": "Kredibly",
   "short_name": "Kredibly",
-  "description": "Send professional invoices, get paid instantly to your bank, and recover debts automatically on WhatsApp.",
+  "description": "AI-powered invoicing, receivables, payment collection, and business assistant for African businesses.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#4C1D95",

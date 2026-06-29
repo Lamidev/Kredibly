@@ -118,6 +118,7 @@ const SaleSchema = new mongoose.Schema({
     extensionRequestedAt: { type: Date },
     requestedExtensionDays: { type: Number }, // How many days customer asked for
     extensionApprovedAt: { type: Date },
+    extensionsCount: { type: Number, default: 0 },
     pdfUrl: { type: String }  // Cloudinary URL of generated PDF
 }, {
     timestamps: true,

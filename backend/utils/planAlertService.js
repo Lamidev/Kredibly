@@ -29,7 +29,7 @@ const sendIndividualPlanAlert = async (data) => {
             else return { status: "skipped", reason: `Notification not due (Days left: ${daysLeft})` };
         }
 
-        const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || (profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss"));
+        const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || "Partner";
         let msg = "";
 
         switch (alertType) {
@@ -46,7 +46,7 @@ const sendIndividualPlanAlert = async (data) => {
             case "final_lockout":
                 profile.planStatus = 'inactive';
                 await profile.save();
-                msg = `Your Digital Chief of Staff is now *On Leave*. My automated services (Summaries & Voice Recording) are paused until your plan is active. Let's get back to work! 🚀`;
+                msg = `Your Digital Chief of Staff is now *On Leave*. My automated services (Summaries & Voice Recording) are paused until your plan is active. Let's get back to work.`;
 
                 // 🔔 IN-APP NOTIFICATION: Also ring the dashboard bell so the merchant
                 // sees the lockout even if they missed the WhatsApp message.

@@ -252,4 +252,22 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    return context || {
+        user: null,
+        profile: null,
+        loading: true,
+        error: null,
+        login: async () => {},
+        registerUser: async () => {},
+        verifyEmail: async () => {},
+        logout: () => {},
+        updateProfile: async () => {},
+        checkAuth: async () => {},
+        forgotPassword: async () => {},
+        resetPassword: async () => {},
+        subscribeToPushNotifications: async () => {},
+        unsubscribeFromPushNotifications: async () => {}
+    };
+};

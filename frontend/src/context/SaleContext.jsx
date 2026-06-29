@@ -137,4 +137,20 @@ export const SaleProvider = ({ children }) => {
     );
 };
 
-export const useSales = () => useContext(SaleContext);
+export const useSales = () => {
+    const context = useContext(SaleContext);
+    return context || {
+        sales: [],
+        stats: null,
+        analytics: null,
+        loading: false,
+        fetchSales: async () => {},
+        fetchStats: async () => {},
+        fetchAnalytics: async () => {},
+        createSale: async () => {},
+        addPayment: async () => {},
+        updateSale: async () => {},
+        deleteSale: async () => {},
+        migrateInvoices: async () => {}
+    };
+};

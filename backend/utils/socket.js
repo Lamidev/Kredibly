@@ -5,7 +5,18 @@ module.exports = {
         const { Server } = require("socket.io");
         io = new Server(server, {
             cors: {
-                origin: ["http://localhost:5173", "https://usekredibly.com", "https://www.usekredibly.com"],
+                origin: (origin, callback) => {
+                    const allowedOrigins = [
+                        "http://localhost:5173",
+                        "https://usekredibly.com",
+                        "https://www.usekredibly.com"
+                    ];
+                    if (!origin || allowedOrigins.includes(origin) || origin.includes("ngrok-free.dev")) {
+                        callback(null, true);
+                    } else {
+                        callback(new Error("Not allowed by CORS"));
+                    }
+                },
                 methods: ["GET", "POST"]
             }
         });

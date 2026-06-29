@@ -28,8 +28,8 @@ const PricingPage = () => {
             features: [
                 "50 Sales Records per Month",
                 "Kreddy AI Text Intelligence",
-                "10 Auto-Reminders & Tasks / mo",
-                "Basic Debt Recovery Assistant",
+                "Interactive Pay Now Invoices",
+                "Automated Customer Reminders",
                 "Verified Ledger Seal",
                 "Digital Receipts & Invoices"
             ],
@@ -51,10 +51,10 @@ const PricingPage = () => {
                 "Everything in Hustler Plan",
                 "Unlimited Sales Records",
                 "Kreddy Voice Notes (Just speak!)",
-                "8 AM Morning Business Brief",
+                "Co-Branded Invoices & Logo",
+                "AI-Managed Extensions",
                 "Add 1 Staff Member",
-                "Co-Branded Receipts (Your Logo)",
-                "Advanced AI Recovery Assistant"
+                "Priority Payment Settlement"
             ],
             cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade to Oga" : "Become an Oga",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -72,10 +72,11 @@ const PricingPage = () => {
             period: "/ month",
             features: [
                 "Everything in Oga Plan",
-                "White-Label Receipts (Only Your Logo)",
+                "White-Label Invoices (Only Logo)",
                 "Up to 3 Staff & Offices",
                 "Paper Invoice Scanning",
-                "Priority Vault & Support"
+                "Custom Extension Limits",
+                "Priority Support & Slack Channel"
             ],
             cta: profile?.plan === "chairman" ? "Current Plan" : profile ? "Lead Your Empire" : "Claim Chairman Title",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -200,11 +201,11 @@ const PricingPage = () => {
                                         { name: "Custom Logo on Receipts", hustler: false, oga: true, chairman: true },
                                         { name: "White-Label (No Kredibly Brand)", hustler: false, oga: false, chairman: true }
                                     ]},
-                                    { category: "Recovery Engine", features: [
-                                        { name: "Basic Debt Reminders", hustler: true, oga: true, chairman: true },
-                                        { name: "Auto-Reminders & Tasks", hustler: "10 / mo", oga: "Unlimited", chairman: "Unlimited" },
-                                        { name: "Advanced AI Recovery Assistant", hustler: false, oga: true, chairman: true },
-                                        { name: "Automated Debt Tracking", hustler: true, oga: true, chairman: true }
+                                    { category: "Invoicing & Collection Loops", features: [
+                                        { name: "WhatsApp Invoices & Pay Now Links", hustler: true, oga: true, chairman: true },
+                                        { name: "Automated Customer Reminders", hustler: "10 / mo", oga: "Unlimited", chairman: "Unlimited" },
+                                        { name: "AI-Managed Extensions", hustler: false, oga: true, chairman: true },
+                                        { name: "Automatic Payment Reconciliation", hustler: true, oga: true, chairman: true }
                                     ]},
                                     { category: "Support & ROI", features: [
                                         { name: "Zero Transfer Fees on Payouts", hustler: true, oga: true, chairman: true },

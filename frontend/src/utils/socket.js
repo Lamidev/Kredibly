@@ -28,6 +28,14 @@ export const initiateSocketConnection = (businessId, invoiceId) => {
 		if (invoiceId) socket.emit("join_invoice", String(invoiceId).toLowerCase());
 	});
 
+	socket.on("connect_error", (err) => {
+		console.error("❌ Socket connection error:", err.message);
+	});
+
+	socket.on("disconnect", (reason) => {
+		console.warn("🔌 Socket disconnected. Reason:", reason);
+	});
+
 	return socket;
 };
 

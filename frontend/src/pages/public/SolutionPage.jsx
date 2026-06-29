@@ -10,31 +10,31 @@ const solutions = {
     'solopreneurs': {
         title: "For Solopreneurs",
         subtitle: "The Army of One",
-        description: "You do everything yourself—marketing, sales, delivery. Kredibly acts as your executive assistant so you can focus on your vision.",
+        description: "You do everything yourself—marketing, sales, delivery. Kredibly acts as your AI executive assistant so you can automate operations and focus on your growth.",
         icon: User,
         color: "#2563EB",
         bg: "rgba(37, 99, 235, 0.05)",
         statValue: 10,
         statSuffix: "+ Hours Saved/Week",
         points: [
-            "AI Assistant handles your daily tasks",
-            "Professional invoices that build reputation",
-            "Collect debts automatically via WhatsApp"
+            "AI Assistant handles your daily logging and updates",
+            "Professional invoices delivered directly on WhatsApp",
+            "Automated payment reminders and extensions engine"
         ]
     },
     'retail': {
         title: "Retail & E-commerce",
         subtitle: "Scale Your Operations",
-        description: "From a single Instagram shop to multiple physical locations. Kredibly helps you synchronize inventory and staff activity.",
+        description: "From a single store to multiple locations. Kredibly helps you synchronize inventory, track staff activity, and collect payments automatically.",
         icon: Store,
         color: "#10B981",
         bg: "rgba(16, 185, 129, 0.05)",
         statValue: 3,
         statSuffix: "x Faster Reconciliation",
         points: [
-            "Monitor staff sales in real-time",
-            "Inventory tracking via WhatsApp",
-            "Customer database retention"
+            "Monitor staff sales and activity in real-time",
+            "Instant bank sweeps with zero transfer fees",
+            "Direct-to-WhatsApp customer payment loops"
         ]
     }
 };

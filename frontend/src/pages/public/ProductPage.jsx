@@ -8,22 +8,22 @@ import { Sparkles, LayoutDashboard, CreditCard, CheckCircle2, ArrowRight, Mic, W
 const products = {
     'kreddy-ai': {
         title: "Kreddy AI Assistant",
-        subtitle: "Your AI Business Secretary",
-        description: "Talk to Kreddy on WhatsApp using voice notes. She handles the records, drafts your invoices, and plans your lifestyle while you focus on selling.",
+        subtitle: "Your AI Business Assistant",
+        description: "Talk to Kreddy on WhatsApp using voice notes or messages. She automatically records your sales, delivers PDF invoices, schedules customer follow-ups, and manages payment extensions.",
         icon: Sparkles,
         color: "var(--primary)",
         bg: "rgba(76, 29, 149, 0.05)",
         features: [
             "Voice-to-Record Intelligence",
-            "Automatic Invoice & Message Drafting",
-            "Lifestyle & Gym Reminders",
-            "8 AM Market Briefing on WhatsApp"
+            "Direct Invoicing & Delivery on WhatsApp",
+            "Automated Extensions & Reminders",
+            "Auto-Reconciliation & Ledger Sync"
         ]
     },
     'merchant-dashboard': {
         title: "Merchant Dashboard",
         subtitle: "The Business Command Center",
-        description: "A powerful real-time view of your entire empire. Monitor staff, track inventory, and get deep insights into your growth.",
+        description: "A powerful real-time view of your entire business. Monitor staff, track inventory, and get deep insights into your cashflow.",
         icon: LayoutDashboard,
         color: "#4F46E5",
         bg: "rgba(79, 70, 229, 0.05)",
@@ -37,14 +37,14 @@ const products = {
     'premium-invoices': {
         title: "Premium Invoices",
         subtitle: "Instant Bank Settlements",
-        description: "Stop waiting 24 hours for your money. Kredibly's secure links settle payments into your bank account the second a customer pays.",
+        description: "Stop waiting 24 hours for your money. Invoices are delivered with secure payment buttons that settle payments directly to your bank account instantly.",
         icon: CreditCard,
         color: "#F59E0B",
         bg: "rgba(245, 158, 11, 0.05)",
         features: [
-            "Instant Bank Settlements",
-            "Zero Transfer Fees (We cover ₦25)",
-            "Automated Digital Receipts",
+            "Instant Bank settlements",
+            "Zero Payout Transfer Fees",
+            "Interactive Pay Now Buttons",
             "Verified Ledger Security Seal"
         ]
     }

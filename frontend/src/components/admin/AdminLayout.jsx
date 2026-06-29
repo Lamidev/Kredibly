@@ -46,7 +46,6 @@ const AdminLayout = () => {
     { label: "Revenue & Subs", path: "/admin/revenue", icon: CreditCard },
     { label: "Support Tickets", path: "/admin/support", icon: Ticket },
     { label: "Coupons & Promo", path: "/admin/coupons", icon: ShieldCheck },
-    { label: "Founder Roadmap", path: "/admin/roadmap", icon: Lightbulb },
   ];
 
   return (

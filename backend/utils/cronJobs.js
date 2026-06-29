@@ -114,48 +114,7 @@ const scheduleRemindersWorker = () => {
     cron.schedule("* * * * *", async () => {
         try {
             // ---------------------------------------------------------
-            // PART 1: Proactive 15-Minute "Heads-up" for Upcoming Tasks
-            // ---------------------------------------------------------
-            const headsUpTime = new Date(Date.now() + 15 * 60 * 1000); 
-            const upcomingHeadsUps = await Reminder.find({
-                status: "pending",
-                isHeadsUpSent: false,
-                type: { $in: ["meeting", "personal"] },
-                triggerDate: { $lte: headsUpTime, $gt: new Date() }
-            }).populate("businessId");
-
-            for (const headsUp of upcomingHeadsUps) {
-                try {
-                    const profile = headsUp.businessId;
-                    if (!profile) {
-                        headsUp.status = "failed";
-                        headsUp.error = "Orphaned reminder: No business profile linked";
-                        await headsUp.save();
-                        continue;
-                    }
-                    const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || "Boss";
-                    const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
-                    const isProUser = profile.plan === "oga" || profile.plan === "chairman";
-
-                    const headsUpMsg = `🔔 *Quick Heads-up, ${bossTitle}!* \n\nIn 15 minutes, you have a task coming up: *"${headsUp.description}"*.\n\n_Standing by to help you crush it!_ 🛡️`;
-
-                    if (isInsideWindow) {
-                        await sendWhatsAppMessage(headsUp.whatsappNumber, headsUpMsg);
-                        console.log(`✅ [FREE-FORM] 15m Heads-up sent for ${profile.displayName}`);
-                    } else if (isProUser) {
-                        await sendWhatsAppAlert(headsUp.whatsappNumber, bossTitle, headsUpMsg);
-                        console.log(`💰 [PAID-TEMPLATE] 15m Heads-up forced for ${profile.displayName}`);
-                    }
-
-                    headsUp.isHeadsUpSent = true;
-                    await headsUp.save();
-                } catch (err) {
-                    console.error("Heads-up delivery error:", err.message);
-                }
-            }
-
-            // ---------------------------------------------------------
-            // PART 2: Actual Time Reminders
+            // TASK REMINDERS (Triggered at scheduled triggerDate)
             // ---------------------------------------------------------
             const pendingReminders = await Reminder.find({
                 status: "pending",
@@ -177,9 +136,7 @@ const scheduleRemindersWorker = () => {
                     continue;
                 }
 
-                const plan = acquired.businessId.plan || "hustler";
-                const planTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
-                const title = acquired.businessId.assistantSettings?.preferredName || acquired.businessId.displayName || planTitle;
+                const title = acquired.businessId.assistantSettings?.preferredName || acquired.businessId.displayName || "Partner";
 
                 // ─── CUSTOMER REMINDER (Kreddy AI Invoice Delivery) ────────────
                 if (acquired.recipientType === "customer" && acquired.recipientPhone) {
@@ -209,25 +166,50 @@ const scheduleRemindersWorker = () => {
                         try {
                             // For first reminder, resend interactive buttons
                             if (acquired.reminderSequence === 1) {
-                                await sendInteractiveButtons(
+                                const dueText = sale.dueDate
+                                    ? new Date(sale.dueDate).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })
+                                    : "On Receipt";
+                                const reminderButtons = [
+                                    { id: `pay_now:${sale._id}`, title: "Pay with Transfer" }
+                                ];
+                                if ((sale.extensionsCount || 0) < 2) {
+                                    reminderButtons.push({ id: `req_ext:${sale._id}`, title: "Request Extension" });
+                                }
+                                const success = await sendInteractiveButtons(
                                     acquired.recipientPhone,
-                                    `${seqLabel} — Invoice #${sale.invoiceNumber}`,
-                                    `Hi ${sale.customerName}! Just a gentle reminder that you have an outstanding invoice from *${businessName}* for *₦${bal.toLocaleString()}*.\n\nPlease make payment at your earliest convenience.`,
+                                    `Invoice Reminder #${sale.invoiceNumber}`,
+                                    `Hi ${sale.customerName}, this is a reminder from ${businessName} about Invoice #${sale.invoiceNumber}.\n\nAmount outstanding: ₦${bal.toLocaleString()}\nDue: ${dueText}\n\nWhat would you like to do?`,
                                     "",
-                                    [
-                                        { id: `pay_now:${sale._id}`, title: "Pay with Transfer" },
-                                        { id: `req_ext:${sale._id}`, title: "Request Extension" }
-                                    ]
+                                    reminderButtons
                                 );
+                                if (!success) {
+                                    console.log(`⚠️ Interactive buttons failed for first reminder. Falling back to template...`);
+                                    await sendCustomerMessageWithFallback(
+                                        acquired.recipientPhone,
+                                        `Hi ${sale.customerName}, this is a reminder from ${businessName} about Invoice #${sale.invoiceNumber}. Amount outstanding: ₦${bal.toLocaleString()} (Due: ${dueText}).`,
+                                        sale.customerName,
+                                        sale.invoiceNumber
+                                    );
+                                }
                             } else {
-                                // Later reminders: plain text with link (with template fallback)
-                                const urgency = acquired.reminderSequence >= 3 ? "This is urgent — " : "";
-                                await sendCustomerMessageWithFallback(
-                                    acquired.recipientPhone,
-                                    `${urgency}Hi ${sale.customerName}, ${businessName} is requesting payment of *₦${bal.toLocaleString()}* for Invoice *#${sale.invoiceNumber}*.`,
-                                    sale.customerName,
-                                    sale.invoiceNumber
-                                );
+                                if (acquired.reminderSequence === 2) {
+                                    await sendCustomerMessageWithFallback(
+                                        acquired.recipientPhone,
+                                        `Hi ${sale.customerName}, ${businessName} is following up on Invoice #${sale.invoiceNumber} for ₦${bal.toLocaleString()}.\n\nIf you need more time, reply "extension" and I'll let them know.`,
+                                        sale.customerName,
+                                        sale.invoiceNumber
+                                    );
+                                } else {
+                                    const dueLabel = (sale.dueDate && new Date(sale.dueDate).toDateString() === new Date().toDateString())
+                                        ? "is due today"
+                                        : "is outstanding";
+                                    await sendCustomerMessageWithFallback(
+                                        acquired.recipientPhone,
+                                        `Hi ${sale.customerName}, Invoice #${sale.invoiceNumber} from ${businessName} ${dueLabel}.\n\nBalance: ₦${bal.toLocaleString()}`,
+                                        sale.customerName,
+                                        sale.invoiceNumber
+                                    );
+                                }
                             }
                             customerSuccess = true;
                         } catch (custErr) {
@@ -250,10 +232,8 @@ const scheduleRemindersWorker = () => {
                 }
                 // ─── END CUSTOMER REMINDER ─────────────────────────────────────
 
-                const typeIcons = { debt: "⏳", task: "📝", meeting: "🤝", personal: "💡" };
-                const icon = typeIcons[reminder.type] || "🔔";
-
-                let msg = `${icon} *Kreddy Reminder!* \n\n${title}, you asked me to remind you to:\n*"${acquired.description}"*\n\n`;
+                const eventTimeStr = acquired.triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                let msg = `You asked me to remind you:\n"${acquired.description}"\n\nTime: ${eventTimeStr}`;
 
                 if (acquired.saleId) {
                     const sale = acquired.saleId;
@@ -266,11 +246,8 @@ const scheduleRemindersWorker = () => {
                         continue;
                     }
 
-                    msg += `💰 *Debt Details:* \n- Customer: ${sale.customerName}\n- Item: ${sale.description}\n- Balance: ₦${bal.toLocaleString()}\n- Issued: ${new Date(sale.createdAt).toLocaleDateString()}\n- Link: ${APP_URL}/i/${sale.invoiceNumber}\n\n`;
-                    msg += `*Forward this link to them to collect payment!* 💸\n\n`;
+                    msg = `You asked me to remind you to collect from *${sale.customerName}*:\n"${acquired.description}"\n\nBalance: ₦${bal.toLocaleString()}\nLink: ${APP_URL}/i/${sale.invoiceNumber}`;
                 }
-
-                msg += `Let's get it done! 🚀\n\n_Reply "snooze 10 mins" if you are running late!_`;
 
                 console.log(`⏰ Processing Reminder [${acquired._id}] for ${title} (${acquired.whatsappNumber})...`);
 
@@ -278,41 +255,50 @@ const scheduleRemindersWorker = () => {
                 const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
                 const isProUser = profile.plan === "oga" || profile.plan === "chairman";
 
+                // 🏷️ Is this a standalone task reminder (no linked invoice/sale)?
+                const isTaskReminder = !acquired.saleId && acquired.recipientType !== "customer";
+
                 let success = false;
                 
                 if (isInsideWindow) {
-                    // 🟢 Free Message (Inside 24h Window)
-                    success = await sendWhatsAppMessage(acquired.whatsappNumber, msg).catch(e => false);
-                } else if (isProUser) {
-                    // 🟠 Paid Template (Pro User + Window Closed) — Opens the window for the day!
-                    success = await sendWhatsAppAlert(acquired.whatsappNumber, title, msg).catch(e => false);
-                } else {
-                    // 🔴 Email Only (Free User + Window Closed)
-                    const { sendEmail } = require("./emailService");
-                    const user = await require("../models/User").findById(profile.ownerId);
-                    
-                    if (user && user.email) {
-                        await sendEmail({
-                            to: user.email,
-                            subject: `🔔 Task Reminder: ${title}`,
-                            html: `<div style="font-family: sans-serif; padding: 20px; color: #333;">
-                                    <h2>Hey ${profile.assistantSettings?.preferredName || profile.displayName || "Boss"},</h2>
-                                    <p>You set a reminder for: <b>"${acquired.description}"</b></p>
-                                    <p>Kreddy is reminding you to get it done! 🛡️</p>
-                                    <hr />
-                                    <p style="font-size: 12px; color: #777;">Tip: Reply to Kreddy on WhatsApp to get these alerts there instantly!</p>
-                                   </div>`
-                        });
-                        console.log(`📪 [EMAIL-SENT] Reminder [${acquired._id}] sent to inbox.`);
+                    if (isTaskReminder) {
+                        // ⚡ Task Reminder: Send interactive quick-action buttons at trigger time
+                        const { sendInteractiveButtons } = require("../utils/customerInvoiceService");
+                        const remId = acquired._id.toString();
+                        success = await sendInteractiveButtons(
+                            acquired.whatsappNumber,
+                            acquired.description,
+                            msg,
+                            "",
+                            [
+                                { id: `t_done:${remId}`, title: "Mark Done" },
+                                { id: `t_snooze30m:${remId}`, title: "Snooze 30 mins" },
+                                { id: `t_snooze1h:${remId}`, title: "Snooze 1 hour" }
+                            ]
+                        ).catch(e => false);
+
+                        // If interactive buttons fail, fallback to plain message
+                        if (!success) {
+                            success = await sendWhatsAppMessage(acquired.whatsappNumber, msg).catch(e => false);
+                        }
+                    } else {
+                        // 🟢 Debt/Invoice Reminder — Plain text (inside 24h window)
+                        success = await sendWhatsAppMessage(acquired.whatsappNumber, msg).catch(e => false);
                     }
-                    success = true; 
+                } else {
+                    // 🟠 WhatsApp Template (Window Closed) — Deliver paid template alert for all users
+                    success = await sendWhatsAppAlert(acquired.whatsappNumber, title, msg).catch(e => false);
                 }
 
                 if (success) {
                     console.log(`✅ Reminder [${acquired._id}] delivered to ${acquired.whatsappNumber}`);
-                    acquired.status = "delivered";
-                    acquired.deliveredAt = new Date();
-                    acquired.error = null;
+                    // ⚡ Task reminders: keep status "pending" so buttons (Mark Done / Snooze) stay actionable.
+                    // They will be marked "delivered" once the merchant taps a button.
+                    if (!isTaskReminder || !isInsideWindow) {
+                        acquired.status = "delivered";
+                        acquired.deliveredAt = new Date();
+                        acquired.error = null;
+                    }
                 } else {
                     console.error(`❌ Reminder [${acquired._id}] FAILED to deliver (check Template/Meta logs)`);
                     acquired.status = "failed";
@@ -321,39 +307,7 @@ const scheduleRemindersWorker = () => {
 
                 await acquired.save();
 
-                if (success && acquired.saleId) {
-                    const sale = acquired.saleId;
-                    const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-                    const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
-                    const tone = profile.assistantSettings?.reminderTemplate || "friendly";
-                    
-                    let draftBody = "";
-                    if (tone === "formal") {
-                        draftBody = `Hi ${sale.customerName}, this is a formal notice regarding your outstanding balance of ₦${bal.toLocaleString()} for *${sale.description}*. Please finalize payment to avoid service disruption.`;
-                    } else {
-                        draftBody = `Hi ${sale.customerName}, just a friendly nudge regarding your balance of ₦${bal.toLocaleString()} for *${sale.description}* with ${profile.displayName}. Hope you're having a great day!`;
-                    }
 
-                    const draftHeader = `📝 *Reminder Draft Ready* \n\nCopy and forward the message below to your customer:`;
-                    
-                    const copyableDraft = `${draftBody}\n\n🔗 *VIEW DETAILS:*\n${APP_URL}/i/${sale.invoiceNumber}`;
-                    
-                    setTimeout(async () => {
-                        // Re-query reminder state to verify it hasn't been snoozed/updated during the delay
-                        const currentRem = await Reminder.findById(acquired._id);
-                        if (!currentRem || currentRem.status !== "delivered") {
-                            return;
-                        }
-
-                        if (isInsideWindow) {
-                            await sendWhatsAppMessage(acquired.whatsappNumber, draftHeader).catch(e => {});
-                            await sendWhatsAppMessage(acquired.whatsappNumber, copyableDraft).catch(e => {});
-                        } else {
-                            await sendWhatsAppAlert(acquired.whatsappNumber, title, draftHeader).catch(e => {});
-                            await sendWhatsAppAlert(acquired.whatsappNumber, title, copyableDraft).catch(e => {});
-                        }
-                    }, 3000);
-                }
 
                 if (acquired.recurrence && acquired.recurrence !== "none") {
                     const nextDate = new Date(acquired.triggerDate);
@@ -619,9 +573,8 @@ const scheduleBankLockChecker = () => {
                 profile.bankDetails.bankDetailsLockUntil = null;
                 await profile.save();
 
-                const planTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
-                const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planTitle;
-                const msg = `🔓 *Security Update: Lock Lifted!*\n\n${bossTitle}, your bank detail security lock has expired. \n\n⚡ *Instant Settlements* have been resumed for your account. Every payment will now go directly to your bank account again.\n\n_Kreddy is keeping your money moving safely!_ 🛡️`;
+                const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || "Partner";
+                const msg = `*Security Update: Lock Lifted, ${bossTitle}.*\n\nYour bank detail security lock has expired. Instant Settlements have been resumed for your account. Every payment will now go directly to your bank account again.`;
                 
                 await sendWhatsAppAlert(profile.whatsappNumber, bossTitle, msg).catch(e => {});
             }

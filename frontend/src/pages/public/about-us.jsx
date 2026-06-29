@@ -28,7 +28,7 @@ const AboutUs = () => {
                     <p style={{ fontSize: '1.1rem', lineHeight: 1.8, color: '#475569', marginBottom: '32px' }}>
                         For millions of African vendors, business happens on WhatsApp. Sales are negotiated, deals are struck, and money changes hands all in chat. But this data is lost. It doesn't build a credit score. It doesn't help you get a loan.
                         <br /><br />
-                        Kredibly changes that. We built <b>Kreddy</b>, an AI assistant that lives where you sell. It turns your casual chats into verifiable financial records, professional invoices, and a credit-worthy reputation.
+                        Kredibly changes that. We built <b>Kreddy</b>, an AI assistant that lives where you sell. It handles interactive WhatsApp invoicing, automated extension requests, instant bank sweeps, and verifiable ledger tracking right where you sell.
                     </p>
                 </div>
 
