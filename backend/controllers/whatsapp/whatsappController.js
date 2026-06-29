@@ -1954,20 +1954,12 @@ Upgrade here: ${APP_URL}/pricing`);
                     const isTask = lowerText.includes('reminder') || lowerText.includes('task') || lowerText.includes('debt') || lowerText.includes('delete') || lowerText.includes('sale') || lowerText.includes('record');
 
                     if (isFeedback) {
-                        const feedbackMsgText = session.data.originalText;
-                        await Feedback.create({
-                            userId: profile.ownerId,
-                            businessId: profile._id,
-                            whatsappNumber: cleanFrom,
-                            message: feedbackMsgText,
-                            category: "Confirmed Suggestion via WhatsApp"
-                        });
                         await WhatsAppSession.deleteOne({ _id: session._id });
-                        await sendReply(from, `✅ *Feedback Logged!* \n\nGot it, ${bossTitle}. I've sent that suggestion directly to the Dev Team. Thanks for helping us build Kredibly! 🛡️🚀`);
+                        await sendReply(from, `If you have any suggestions or need assistance, please type "support" to open a help ticket and our team will get back to you.`);
                         return;
                     } else if (isTask) {
                         await WhatsAppSession.deleteOne({ _id: session._id });
-                        await sendReply(from, `🛡️ *Understood, Boss!* \n\nI catch that it's a core task. Please just say it again or send a new voice note so I can process it with 100% focus! 🫡`);
+                        await sendReply(from, `*Understood!* \n\nI catch that it's a core task. Please just say it again or send a new voice note so I can process it with 100% focus!`);
                         return;
                     }
                 } else if (session.type === 'alarm_confirmation') {
@@ -3448,65 +3440,6 @@ Upgrade here: ${APP_URL}/pricing`);
                     });
 
                     await sendReply(from, `*Support Ticket Opened*\n\nI've logged this as an official ticket (#${newTicket._id.toString().slice(-6)}) for the team to look into immediately. You can track its status on your Dashboard!`);
-                    isProcessed = true;
-                } else if (aiResponseItem && aiResponseItem.intent === "feedback") {
-                    // 🚨 CLARIFICATION GUARD: If feedback contains core biz keywords, ask for confirmation
-                    const coreKeywords = ['reminder', 'debt', 'sale', 'invoice', 'delete', 'money', 'task', 'call'];
-                    const hasCoreKeywords = coreKeywords.some(k => text.toLowerCase().includes(k));
-
-                    if (hasCoreKeywords && (aiResponseItem.confidence || 1.0) < 0.95) {
-                         await sendReply(from, `*Quick Question, ${bossTitle}:* \n\nI caught your message, but I'm not sure if you're giving me a **Suggestion for the App** or asking me to **Manage a Task/Debt**. \n\nWhich one is it?`);
-                         await WhatsAppSession.findOneAndUpdate(
-                             { whatsappNumber: cleanFrom },
-                             {
-                                 type: 'intent_clarification',
-                                 data: { originalText: text, aiChoice: aiResponseItem.intent },
-                                 expiresAt: new Date(Date.now() + 5 * 60 * 1000)
-                             },
-                             { upsert: true }
-                         );
-                         return;
-                    }
-
-                    // 🚀 FEEDBACK / BUG REPORT FORWARDER
-                    const feedbackMsgText = aiResponseItem.data.reply || text;
-
-                    // 🛠️ Save as official Feedback model entry
-                    await Feedback.create({
-                        userId: profile.ownerId,
-                        businessId: profile._id,
-                        whatsappNumber: cleanFrom,
-                        message: feedbackMsgText,
-                        category: "Roadmap Suggested via WhatsApp"
-                    });
-
-                    await Notification.create({
-                        businessId: profile._id,
-                        title: "Priority Feedback",
-                        message: `Merchant ${profile.displayName} shared an idea: ${feedbackMsgText.substring(0, 50)}...`,
-                        type: "system"
-                    });
-
-                    // Log to SuperAdmin context
-                    await logActivity({
-                        businessId: profile._id,
-                        action: "MERCHANT_FEEDBACK",
-                        entityType: "AI_SUPPORT",
-                        details: feedbackMsgText
-                    });
-
-                    await sendReply(from, `Got it, ${bossTitle}! I've shared your idea directly with our Dev Team. We love hearing from you!`);
-                    isProcessed = true;
-                } else if (aiResponseItem && aiResponseItem.intent === "delete_feedback") {
-                    // 🗑️ Handle "Cancel/Delete my suggestion"
-                    const lastFeedback = await Feedback.findOne({ businessId: profile._id }).sort({ createdAt: -1 });
-                    
-                    if (lastFeedback && (new Date() - lastFeedback.createdAt) < 60 * 60 * 1000) { // Only delete if in last 60 mins
-                        await lastFeedback.deleteOne();
-                        await sendReply(from, `No problem, ${bossTitle}! I've removed that suggestion from our internal roadmap. Your feedback loop is clean!`);
-                    } else {
-                        await sendReply(from, `${bossTitle}, I couldn't find a very recent suggestion to delete. If you want to change something on the roadmap, just let me know exactly what.`);
-                    }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "delete_sale") {
                     const searchRef = (aiResponseItem.data.invoiceNumber || aiResponseItem.data.customerName || "").trim();

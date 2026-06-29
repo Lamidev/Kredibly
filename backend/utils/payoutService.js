@@ -47,9 +47,9 @@ const processIndividualEscrowPayout = async (escrowId) => {
         await BusinessProfile.findByIdAndUpdate(profile._id, { $inc: { walletBalance: -escrow.amount } });
 
         // 5. Notify Merchant
-        const bossTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
-        const msg = `🔓 *Escrow Released, ${bossTitle}!*\n\nYour security lock has expired, and I've just pushed *₦${escrow.amount.toLocaleString()}* to your bank account (${profile.bankDetails.bankName}).\n\n_Ref: ${escrow.transferReference}_`;
-        await sendWhatsAppAlert(profile.whatsappNumber, bossTitle, msg).catch(e => console.error("Escrow Notify Fail:", e));
+        const preferredName = profile.assistantSettings?.preferredName || profile.displayName || "Partner";
+        const msg = `🔓 *Escrow Released, ${preferredName}!*\n\nYour security lock has expired, and I've just pushed *₦${escrow.amount.toLocaleString()}* to your bank account (${profile.bankDetails.bankName}).\n\n_Ref: ${escrow.transferReference}_`;
+        await sendWhatsAppAlert(profile.whatsappNumber, preferredName, msg).catch(e => console.error("Escrow Notify Fail:", e));
 
         console.log(`✅ Released Escrow ${escrow.reference} to ${profile.displayName}`);
         return { status: "completed", reference: escrow.transferReference };

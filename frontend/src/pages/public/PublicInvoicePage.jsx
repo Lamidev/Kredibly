@@ -220,7 +220,7 @@ const PublicInvoicePage = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, [id]);
 
-    // 🔄 Smart Polling Fallback: Proactively check Nomba status every 25s if webhook/socket fails
+    // 🔄 Smart Polling Fallback: Proactively check Nomba status every 6s if webhook/socket fails
     useEffect(() => {
         if (!nombaData || !sale || !id || showSuccessModal || isPaid) return;
 
@@ -232,7 +232,7 @@ const PublicInvoicePage = () => {
                 // We perform a 'silent' check (no UI overlay) to keep it smooth
                 await runPaymentVerification(true);
             }
-        }, 25000); // Check every 25s as a fail-safe
+        }, 6000); // Check every 6s as a fast fail-safe
 
         return () => {
             console.log("🛑 Stopping smart polling...");
@@ -686,7 +686,6 @@ const PublicInvoicePage = () => {
                     }).then(function(verifyRes) {
                         if (verifyRes.data.success) {
                             // 🏆 SUCCESS: Show modal FIRST to build trust immediately
-                            // 🏆 SUCCESS: Show modal FIRST to build trust immediately
                             setLastPaymentAmount(verifyRes.data.originalAmount || amountToPay);
                             setRecentPaymentDate(new Date());
                             setCustomAmount('');
@@ -850,11 +849,11 @@ const PublicInvoicePage = () => {
                                 transition={{ delay: 0.2 }}
                             >
                                 <h3 style={{ fontFamily: 'Outfit', fontSize: '28px', fontWeight: 950, color: 'white', marginBottom: '12px', letterSpacing: '-0.04em' }}>
-                                    {isAutoVerifying === 'auto' ? 'Payment Detected!' : 'Checking Transfer'}
+                                    Verifying Payment
                                 </h3>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'rgba(255, 255, 255, 0.6)', fontWeight: 600, fontSize: '15px' }}>
                                     <Loader2 size={16} className="spin-animation" />
-                                    <span>{isAutoVerifying === 'auto' ? 'Finalizing secure settlement...' : 'Verifying with banking network...'}</span>
+                                    <span>Checking secure banking network...</span>
                                 </div>
                             </motion.div>
                         </div>

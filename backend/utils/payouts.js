@@ -84,8 +84,9 @@ const releaseMerchantEscrow = async (businessId) => {
         // 📱 WhatsApp Alert: Make sure the merchant knows the money landed!
         try {
             const { sendWhatsAppAlert } = require('../controllers/whatsapp/whatsappController');
-            const msg = `Boss! ₦${sweepAmount.toLocaleString()} has just landed in your ${bankDetails.bankName} account. Keep winning! 🦁💰`;
-            await sendWhatsAppAlert(business.whatsappNumber, business.displayName, msg);
+            const preferredName = business.assistantSettings?.preferredName || business.displayName || "Partner";
+            const msg = `Hi ${preferredName}! ₦${sweepAmount.toLocaleString()} has been sent to your ${bankDetails.bankName} account.`;
+            await sendWhatsAppAlert(business.whatsappNumber, preferredName, msg);
         } catch (waErr) {
             console.error("⚠️ WhatsApp Payout Alert Fail:", waErr.message);
         }

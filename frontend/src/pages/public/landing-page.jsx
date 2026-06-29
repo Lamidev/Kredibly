@@ -31,57 +31,44 @@ import {
     Star,
     Mic
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import PublicNavbar from "../../components/public/PublicNavbar";
 import PublicFooter from "../../components/public/PublicFooter";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 import kreddyWhatsapp from "../../assets/kreddy-whatsapp.jpg";
 
-const Typewriter = ({ phrases }) => {
-    const [displayText, setDisplayText] = useState("");
-    const [isDeleting, setIsDeleting] = useState(false);
+/**
+ * PhraseFlip — replaces the old Typewriter.
+ * Each phrase slides up into view, dwells for ~2.5 s, then slides out.
+ * The full phrase is always visible immediately — no character-by-character delay.
+ * Font is kept at a size that guarantees single-line render on 360px+ screens
+ * for all supplied phrases (tested up to ~28 characters).
+ */
+const PhraseFlip = ({ phrases }) => {
     const [index, setIndex] = useState(0);
-    const [typingSpeed, setTypingSpeed] = useState(150);
 
     useEffect(() => {
-        const handleType = () => {
-            const currentPhrase = phrases[index % phrases.length];
-            
-            if (!isDeleting) {
-                if (displayText.length < currentPhrase.length) {
-                    setDisplayText(currentPhrase.substring(0, displayText.length + 1));
-                    setTypingSpeed(150);
-                } else {
-                    setIsDeleting(true);
-                    setTypingSpeed(2000); 
-                }
-            } else {
-                if (displayText.length > 0) {
-                    setDisplayText(currentPhrase.substring(0, displayText.length - 1));
-                    setTypingSpeed(50);
-                } else {
-                    setIsDeleting(false);
-                    setIndex((prev) => prev + 1);
-                    setTypingSpeed(400);
-                }
-            }
-        };
-
-        const timer = setTimeout(handleType, typingSpeed);
-        return () => clearTimeout(timer);
-    }, [displayText, isDeleting, index, phrases, typingSpeed]);
+        const timer = setInterval(() => {
+            setIndex(i => (i + 1) % phrases.length);
+        }, 2800);
+        return () => clearInterval(timer);
+    }, [phrases.length]);
 
     return (
-        <span style={{ display: 'inline-block', minWidth: '1px', whiteSpace: 'nowrap' }}>
-            <span className="premium-gradient" translate="no">{displayText}</span>
-            <span style={{ 
-                color: '#F472B6', 
-                marginLeft: '2px',
-                animation: 'blink 1s infinite',
-                fontWeight: 400
-            }}>|</span>
-        </span>
+        <AnimatePresence mode="wait">
+            <motion.span
+                key={index}
+                initial={{ opacity: 0, y: 22 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -22 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                style={{ display: 'block', fontWeight: 700, lineHeight: 1.2, paddingBottom: '0.2em', color: 'var(--primary)' }}
+                translate="no"
+            >
+                {phrases[index]}
+            </motion.span>
+        </AnimatePresence>
     );
 };
 
@@ -157,8 +144,8 @@ const LandingPage = () => {
             features: [
                 "50 Sales Records per Month",
                 "Kreddy AI Text Intelligence",
-                "10 Auto-Reminders & Tasks / mo",
-                "Basic Debt Recovery Assistant",
+                "Interactive Pay Now Invoices",
+                "Automated Customer Reminders",
                 "Verified Ledger Seal",
                 "Digital Receipts & Invoices"
             ],
@@ -180,10 +167,10 @@ const LandingPage = () => {
                 "Everything in Hustler Plan",
                 "Unlimited Sales Records",
                 "Kreddy Voice Notes (Just speak!)",
-                "8 AM Morning Business Brief",
+                "Co-Branded Invoices & Logo",
+                "AI-Managed Extensions",
                 "Add 1 Staff Member",
-                "Co-Branded Receipts (Your Logo)",
-                "Advanced AI Recovery Assistant"
+                "Priority Payment Settlement"
             ],
             cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade to Oga" : "Become an Oga",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -200,10 +187,11 @@ const LandingPage = () => {
             period: "/ month",
             features: [
                 "Everything in Oga Plan",
-                "White-Label Receipts (Only Your Logo)",
+                "White-Label Invoices (Only Logo)",
                 "Up to 3 Staff & Offices",
                 "Paper Invoice Scanning",
-                "Priority Vault & Support"
+                "Custom Extension Limits",
+                "Priority Support & Slack Channel"
             ],
             cta: profile?.plan === "chairman" ? "Current Plan" : profile ? "Lead Your Empire" : "Claim Chairman Title",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -224,7 +212,7 @@ const LandingPage = () => {
     };
 
     useEffect(() => {
-        document.title = "Kredibly .  The AI Business OS for Nigerian Merchants";
+        document.title = "Kredibly | AI Business Assistant for Invoicing, Payments & Receivables";
         
         // Handle scrolling from other pages
         if (location.state?.scrollTo) {
@@ -340,21 +328,20 @@ const LandingPage = () => {
                         <div style={{ 
                             color: 'var(--primary)', 
                             position: 'relative', 
-                            minHeight: '1.2em',
+                            minHeight: '1.6em',
                             display: 'flex', 
                             alignItems: 'center', 
                             justifyContent: 'center',
                             width: '100%',
-                            fontSize: 'clamp(2.4rem, 9vw, 5.5rem)',
+                            fontSize: 'clamp(1.1rem, 5.5vw, 4.2rem)',
                             fontFamily: 'var(--font-heading)',
                             overflow: 'hidden',
-                            whiteSpace: 'nowrap'
                         }}>
-                             <Typewriter phrases={[
-                                "Instantly.",
-                                "Seamlessly.",
-                                "On autopilot.",
-                                "With Kreddy AI"
+                             <PhraseFlip phrases={[
+                                "Without lifting a finger.",
+                                "While you focus on selling.",
+                                "Straight to your bank.",
+                                // "With Kreddy AI."
                             ]} />
                         </div>
                     </h1>
@@ -368,15 +355,12 @@ const LandingPage = () => {
                         marginInline: 'auto',
                         fontWeight: 400
                     }}>
-                        The most powerful workspace for the modern Nigerian merchant. Use <b>Kreddy AI</b> to record sales, let our <b>AI Recovery Engine</b> chase down debts on autopilot, and enjoy <b>Instant Bank Sweeps</b> with zero transfer fees. Your money lands exactly where it belongs: in your bank account, immediately.
+                        The ultimate AI-powered assistant for modern commerce. Speak to <b>Kreddy AI</b> to log sales, deliver professional invoices instantly on WhatsApp, handle automated due-date extensions, and sweep money straight to your bank account with zero fees.
                     </p>
                     <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
                         <Link to="/auth/register" className="btn-primary btn-magnetic" style={{ padding: '20px 40px', fontSize: '1.1rem', borderRadius: '18px' }}>
                             Get Started <ArrowRight size={20} />
                         </Link>
-                        <div className="glass-premium" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 24px', borderRadius: '18px', color: '#64748B', fontSize: '0.9rem', fontWeight: 400 }}>
-                            <ShieldCheck size={20} color="var(--success)" /> Direct-to-Bank Verified
-                        </div>
                     </div>
                 </motion.div>
             </motion.div>
@@ -390,7 +374,7 @@ const LandingPage = () => {
                         <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
                             <h4 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '12px' }}>Financial Trust Infrastructure</h4>
                             <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', fontWeight: 400 }}>
-                                Your business is verified. Every Kredibly receipt carries a professional seal proving your records are secure and untamperable.
+                                Your business is verified. Every Kredibly receipt and invoice carries a professional seal proving your records are secure and untamperable.
                             </p>
                         </div>
                         <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.05 }}><ShieldCheck size={200} color="var(--primary)" /></div>
@@ -398,16 +382,16 @@ const LandingPage = () => {
 
                     <div className="bento-item bento-2" style={{ background: 'linear-gradient(135deg, #0F172A, #1E1B4B)', color: 'white' }}>
                         <div style={{ position: 'relative', zIndex: 2 }}>
-                            <h4 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '12px' }}>Intelligent Business Partner</h4>
-                            <p style={{ opacity: 0.8, fontSize: '1.1rem', lineHeight: 1.5, fontWeight: 400 }}>Too busy to type? Speak to Kreddy. She drafts your professional invoices and follow-ups for you to send personally.</p>
+                            <h4 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '12px' }}>Interactive Payment Loops</h4>
+                            <p style={{ opacity: 0.8, fontSize: '1.1rem', lineHeight: 1.5, fontWeight: 400 }}>Kreddy sends structured PDF invoices with Pay Now buttons. Customers can pay instantly or request extensions on WhatsApp.</p>
                         </div>
                         <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.15 }}><Sparkles size={200} /></div>
                     </div>
 
                     <div className="bento-item bento-3" style={{ background: 'white', position: 'relative', overflow: 'hidden' }}>
                         <div style={{ position: 'relative', zIndex: 2 }}>
-                            <h4 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '12px' }}>Automated Ledger Intelligence</h4>
-                            <p style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 400 }}>Send paper invoices or store receipts to Kreddy. She reads the details and logs the sales instantly.</p>
+                            <h4 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '12px' }}>Conversational Sales Logger</h4>
+                            <p style={{ fontSize: '0.95rem', color: '#475569', fontWeight: 400 }}>Speak or text to Kreddy. She matches names, records sales, tracks outstanding balances, and schedules automated nudges.</p>
                         </div>
                         <div style={{ position: 'absolute', bottom: '-40px', right: '-40px', opacity: 0.05 }}><Lock size={200} color="#7C3AED" /></div>
                     </div>
@@ -593,11 +577,11 @@ const LandingPage = () => {
                         <div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '56px' }}>
                                 {[
-                                    { icon: Mic, title: "Speak, don't type.", desc: "Send Kreddy a voice note. She handles the math, records the sale, and drafts the professional responses for you." },
-                                    { icon: Smartphone, title: "You Send, She Drafts.", desc: "Keep the personal touch. Kreddy prepares the perfect messages, and you send them personally to your customers." },
-                                    { icon: Zap, title: "Instant Bank Settlements", desc: "Your money hits your bank account the second a customer pays. No 24-hour waiting games." },
-                                    { icon: BadgeCheck, title: "Zero Bank Charges", desc: "ZERO TRANSFER FEES. We cover your bank charges on all your payouts. Keep 100% of your earnings." },
-                                    { icon: Clock, title: "8 AM Business Briefing", desc: "Wake up to a morning briefing on WhatsApp. Who owes you, who paid, and what your day looks like." }
+                                    { icon: Mic, title: "Speak, don't type.", desc: "Send Kreddy a voice note. She automatically records the sale, does the math, drafts the invoice, and schedules the due-date tracking." },
+                                    { icon: Smartphone, title: "Direct WhatsApp Delivery", desc: "No copy-pasting required. Customers receive invoices directly in their WhatsApp chat with clean interactive action buttons." },
+                                    { icon: Calendar, title: "Automated Extensions", desc: "Tired of awkward debt chasing? Customers can request due-date extensions directly on their invoice. Kreddy handles the limits and notifies you." },
+                                    { icon: Zap, title: "Instant Bank Sweeps", desc: "As soon as a customer pays via bank transfer, the money is swept directly into your bank account. No holding periods, no manual withdrawals." },
+                                    { icon: BadgeCheck, title: "Zero Bank Charges", desc: "ZERO TRANSFER FEES. We cover all payout bank fees. A ₦15,000 payment from your customer is exactly ₦15,000 in your pocket." }
                                 ].map((item, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '28px' }}>
                                         <div style={{ minWidth: '64px', height: '64px', borderRadius: '20px', background: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><item.icon color="var(--primary)" size={28} /></div>
@@ -904,17 +888,17 @@ const LandingPage = () => {
                                 <div style={{ height: '1px', background: '#E2E8F0' }} />
                                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                                     <div style={{ color: '#10B981' }}><Check size={20} /></div>
-                                    <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', flex: 1 }}>Instant Payouts (Money lands instantly)</p>
+                                    <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', flex: 1 }}>Instant Payouts (Money swept instantly)</p>
                                 </div>
                                 <div style={{ height: '1px', background: '#E2E8F0' }} />
                                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                                     <div style={{ color: '#10B981' }}><Check size={20} /></div>
-                                    <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', flex: 1 }}>AI Slip Matching (Ledger auto-updates)</p>
+                                    <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', flex: 1 }}>Direct WhatsApp PDF Delivery & Pay Now links</p>
                                 </div>
                                 <div style={{ height: '1px', background: '#E2E8F0' }} />
                                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                                     <div style={{ color: '#10B981' }}><Check size={20} /></div>
-                                    <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', flex: 1 }}>Automated Debt Recovery AI</p>
+                                    <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', flex: 1 }}>Automated Follow-ups & Due Date Extensions</p>
                                 </div>
                             </div>
                         </div>
@@ -1014,23 +998,23 @@ const LandingPage = () => {
                     <div style={{ background: '#F8FAFC', padding: '40px', borderRadius: '32px', border: '1px solid #E2E8F0' }}>
                         <FAQItem 
                             question="How does Kreddy AI actually work?" 
-                            answer="Kreddy is your intelligent business companion on WhatsApp. When you send a voice note like 'Kreddy, I just sold a bag to Sarah for 50k', she uses natural language processing to extract the customer name, amount, and item. She then automatically creates a professional invoice, records it in your ledger, and even drafts the WhatsApp message for you to send to Sarah."
+                            answer="Kreddy is your intelligent business companion on WhatsApp. When you send a voice note or message like 'Kreddy, log sale of cake to Tola for 15,000, due on Friday', she uses NLP to parse the details, logs it in your secure ledger, builds a professional PDF invoice, and delivers it directly to your customer on WhatsApp."
                         />
                         <FAQItem 
-                            question="Is my money safe with Kredibly?" 
-                            answer="Absolutely. Kredibly is built on top of regulated banking infrastructure. We never hold your funds for 24 hours like traditional gateways. The moment your customer pays, the money is routed through our instant-settlement pipeline directly to your verified bank account."
+                            question="How do my customers pay their invoices?" 
+                            answer="Every PDF invoice Kreddy delivers on WhatsApp has a 'Pay Now' action button. Customers can click it to complete a secure, direct bank transfer. The moment they pay, Kreddy automatically reconciles the transaction, updates your ledger, and notifies you."
                         />
                         <FAQItem 
-                            question="How do I get my money out?" 
-                            answer="You don't have to! Unlike other platforms where you have to 'request withdrawal', Kredibly features Instant Bank Sweeps. This means every successful payment is automatically swept into your primary bank account within seconds of the transaction."
+                            question="What happens if a customer needs more time to pay?" 
+                            answer="Customers can tap 'Request Extension' directly on their WhatsApp invoice. Kreddy will prompt them to specify how much time they need (with options like 3 days, 1 week, or a custom reply). She then routes the request to you for approval. To protect your business, customers are limited to a maximum of 2 extensions per invoice."
                         />
                         <FAQItem 
-                            question="What are the charges?" 
-                            answer="We believe in transparency. We charge a simple, flat monthly subscription fee based on your plan (Hustler, Oga, or Chairman). In return, we provide ZERO TRANSFER FEES on your payouts. We subsidize the bank charges so you keep exactly what you earned."
+                            question="How do instant sweeps and zero bank charges work?" 
+                            answer="Unlike traditional payment gateways that hold your money for 24-48 hours, Kredibly sweeps every successful payment directly to your bank account instantly. Better yet, we subsidize all payout transfer fees completely—so if a customer pays ₦15,000, you get exactly ₦15,000 in your account."
                         />
                         <FAQItem 
                             question="Can I use Kredibly without a smartphone?" 
-                            answer="Yes. While our dashboard is best viewed on a smartphone or computer, the core Kreddy AI interface lives on WhatsApp. As long as you have any device that can run WhatsApp (even a feature phone with WhatsApp support), you can record sales, check balances, and manage your business."
+                            answer="Yes. While our merchant dashboard is best viewed on a smartphone or computer, the core Kreddy AI interface lives on WhatsApp. As long as you have any device that can run WhatsApp (even a feature phone), you can manage records, log sales, and check balances."
                         />
                     </div>
                 </div>

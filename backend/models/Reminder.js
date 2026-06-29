@@ -36,7 +36,7 @@ const ReminderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["pending", "delivered", "snoozed", "cancelled"],
+        enum: ["pending", "processing", "delivered", "snoozed", "cancelled", "failed"],
         default: "pending",
         index: true
     },

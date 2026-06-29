@@ -2,6 +2,7 @@ const Sale = require("../models/Sale");
 const Reminder = require("../models/Reminder");
 const BusinessProfile = require("../models/BusinessProfile");
 const { sendWhatsAppAlert, sendWhatsAppMessage } = require("../controllers/whatsapp/whatsappController");
+const { sendInteractiveButtons } = require("./customerInvoiceService");
 
 /**
  * Sends a nudge message (DEBT_NUDGE) based on the provided context.
@@ -18,15 +19,14 @@ const sendIndividualDebtNudge = async (data) => {
 
             const profile = reminder.businessId;
             const sale = reminder.saleId;
-            const planFTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss");
-            const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planFTitle;
+            const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || "Partner";
             const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
 
-            const msg = `🤔 *Did They Pay, ${bossTitle}?*\n\nYesterday, you had a reminder to collect from *${sale.customerName}* for *${sale.description}*.\n\nMy records show they still owe *₦${bal.toLocaleString()}*. \n\nDid they pay offline? If yes, just say: _"${sale.customerName} paid"_. \n\nIf not, would you like me to snooze this reminder for later, or send them another message?`;
-            
+            const msg = `${sale.customerName} still shows an outstanding balance of ₦${bal.toLocaleString()} from yesterday's reminder on Invoice #${sale.invoiceNumber}.\n\nDid they pay?`;
+
             const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
-            
-            // 🛡️ Save session state to capture Yes/No replies
+
+            // Save session state regardless of channel so text replies also work
             const cleanFrom = String(whatsappNumber).replace(/\D/g, '');
             const WhatsAppSession = require("../models/WhatsAppSession");
             await WhatsAppSession.findOneAndUpdate(
@@ -40,16 +40,31 @@ const sendIndividualDebtNudge = async (data) => {
             );
 
             if (isInsideWindow) {
-                await sendWhatsAppMessage(whatsappNumber, msg);
+                // Send interactive quick-action buttons for fastest possible merchant response
+                const sent = await sendInteractiveButtons(
+                    whatsappNumber,
+                    `Collection Check — ${sale.customerName}`,
+                    msg,
+                    "Tap a button or type a reply",
+                    [
+                        { id: `m_paid:${sale._id}`, title: "Yes, Paid" },
+                        { id: `m_remind:${sale._id}`, title: "Remind Customer" },
+                        { id: `m_snooze:${sale._id}`, title: "Snooze 24h" }
+                    ]
+                );
+                // Fallback to plain text if interactive fails
+                if (!sent) {
+                    await sendWhatsAppMessage(whatsappNumber, `${msg}\n\nIf yes, say "${sale.customerName} paid" and I'll update the record.`);
+                }
             } else if (profile.plan === "oga" || profile.plan === "chairman") {
-                await sendWhatsAppAlert(whatsappNumber, bossTitle, msg, sale.invoiceNumber);
+                await sendWhatsAppAlert(whatsappNumber, bossTitle, `${msg}\n\nIf yes, say "${sale.customerName} paid" and I'll update the record.`, sale.invoiceNumber);
             } else {
                 const { sendEmail } = require("./emailService");
                 const user = await require("../models/User").findById(profile.ownerId);
                 if (user && user.email) {
                     await sendEmail({
                         to: user.email,
-                        subject: `🤔 Debt Follow-up: ${sale.customerName}`,
+                        subject: `Debt Follow-up: ${sale.customerName}`,
                         html: `<div style="font-family: sans-serif; padding: 20px; color: #333;">
                                 <h2>Hey ${bossTitle},</h2>
                                 <p>Yesterday, you had a reminder to collect from <b>${sale.customerName}</b>.</p>
@@ -67,15 +82,13 @@ const sendIndividualDebtNudge = async (data) => {
             if (!sale || sale.status === "paid") return { status: "skipped" };
 
             const profile = sale.businessId;
-            const planETitle = profile.plan === "chairman" ? "Chairman" : "Oga";
-            const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planETitle;
+            const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || "Partner";
             const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-            
-            const msg = `🚩 *Overdue Alert, ${bossTitle}!*\n\n*${sale.customerName}* was supposed to pay *₦${bal.toLocaleString()}* for *${sale.description}* yesterday, but the record is still unpaid.\n\nShould I draft a follow-up link for you to forward to them? \n\n_Type: "Send link to ${sale.customerName}"_`;
-            
+
+            const msg = `Invoice #${sale.invoiceNumber} for ${sale.customerName} (₦${bal.toLocaleString()}) was due yesterday and is now overdue.\n\nWhat would you like to do?`;
+
             const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
 
-            // 🛡️ Save session state to capture Yes/No confirmations
             const cleanFrom = String(whatsappNumber).replace(/\D/g, '');
             const WhatsAppSession = require("../models/WhatsAppSession");
             await WhatsAppSession.findOneAndUpdate(
@@ -89,7 +102,19 @@ const sendIndividualDebtNudge = async (data) => {
             );
 
             if (isInsideWindow) {
-                await sendWhatsAppMessage(whatsappNumber, msg);
+                const sent = await sendInteractiveButtons(
+                    whatsappNumber,
+                    `Overdue — Invoice #${sale.invoiceNumber}`,
+                    msg,
+                    "",
+                    [
+                        { id: `m_remind:${sale._id}`, title: "Remind Customer" },
+                        { id: `m_snooze:${sale._id}`, title: "Snooze 24h" }
+                    ]
+                );
+                if (!sent) {
+                    await sendWhatsAppMessage(whatsappNumber, msg);
+                }
             } else if (profile.plan === "oga" || profile.plan === "chairman") {
                 await sendWhatsAppAlert(whatsappNumber, bossTitle, msg, sale.invoiceNumber);
             } else {
@@ -98,9 +123,9 @@ const sendIndividualDebtNudge = async (data) => {
                 if (user && user.email) {
                     await sendEmail({
                         to: user.email,
-                        subject: `🚩 Overdue Alert: ${sale.customerName}`,
+                        subject: `Overdue Alert: ${sale.customerName}`,
                         html: `<div style="font-family: sans-serif; padding: 20px; color: #333;">
-                                <h2>🚩 Overdue Alert, ${bossTitle}!</h2>
+                                <h2>Overdue Alert, ${bossTitle}!</h2>
                                 <p><b>${sale.customerName}</b> was supposed to pay ₦${bal.toLocaleString()} yesterday, but the record is still unpaid.</p>
                                 <p>Log into your dashboard to take action!</p>
                                </div>`
@@ -115,8 +140,8 @@ const sendIndividualDebtNudge = async (data) => {
             if (!sales.length) return { status: "skipped" };
 
             const profile = sales[0].businessId;
-            const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || (profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss"));
-            
+            const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || "Partner";
+
             // Calculate specific timing
             const now = new Date();
             const startOfToday = new Date(now); startOfToday.setHours(0, 0, 0, 0);
@@ -133,15 +158,15 @@ const sendIndividualDebtNudge = async (data) => {
 
             const timingText = (hasToday && hasTomorrow) ? "today and tomorrow" : (hasToday ? "today" : "tomorrow");
             const totalBal = sales.reduce((sum, s) => sum + (s.totalAmount - s.payments.reduce((pSum, p) => pSum + p.amount, 0)), 0);
-            
+
             // Build Detailed List
             const saleList = sales.map(s => {
                 const bal = s.totalAmount - s.payments.reduce((pSum, p) => pSum + p.amount, 0);
                 const day = (s.dueDate >= startOfToday && s.dueDate <= endOfToday) ? "Today" : "Tomorrow";
-                return `• *${s.customerName}*: ₦${bal.toLocaleString()} (${s.invoiceNumber}) - _${s.description}_ [${day}]`;
+                return `• ${s.customerName}: ₦${bal.toLocaleString()} (${s.invoiceNumber}) — ${day}`;
             }).join('\n');
 
-            let msg = `🌞 *Good Morning ${bossTitle}!* \n\nYou have *${sales.length}* ${sales.length === 1 ? 'sale' : 'sales'} expected to be paid *${timingText}*, totaling *₦${totalBal.toLocaleString()}*.\n\n⏳ *Upcoming Collections:*\n${saleList}\n\nI'm monitoring them for you! 🛡️`;
+            let msg = `${sales.length} invoice(s) are expected to be paid ${timingText}:\n\n${saleList}\n\nTotal expected: ₦${totalBal.toLocaleString()}`;
 
             const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
 
@@ -155,14 +180,13 @@ const sendIndividualDebtNudge = async (data) => {
                 if (user && user.email) {
                     await sendEmail({
                         to: user.email,
-                        subject: `📊 Upcoming Receivables Summary`,
+                        subject: `Upcoming Receivables Summary`,
                         html: `<div style="font-family: sans-serif; padding: 20px; color: #333;">
                                 <h2>${bossTitle}, here is your upcoming summary:</h2>
                                 <p>You have <b>${sales.length}</b> sales expected to be paid <b>${timingText}</b>, totaling <b>₦${totalBal.toLocaleString()}</b>.</p>
                                 <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0;">
                                     ${saleList.replace(/\n/g, '<br>')}
                                 </div>
-                                <p>I'm monitoring them for you! 🛡️</p>
                                </div>`
                     });
                 }

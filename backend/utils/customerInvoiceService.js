@@ -457,62 +457,120 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
  * Schedule automated customer payment reminder sequence.
  * Reminders: 24h after delivery, 48h after delivery, on due date (if set).
  */
-const scheduleCustomerReminders = async (sale, business, customerPhone) => {
+const scheduleCustomerReminders = async (sale, business, customerPhone, anchorDate = new Date()) => {
     try {
-        const now = new Date();
         const saleId = sale._id;
         const businessId = business._id;
         const merchantPhone = business.whatsappNumber;
+        const baseDate = new Date(anchorDate);
 
         const remindersToCreate = [];
 
-        // Reminder 1: 24 hours after delivery
-        remindersToCreate.push({
-            businessId,
-            whatsappNumber: merchantPhone, // business context
-            recipientType: "customer",
-            recipientPhone: customerPhone,
-            description: `Customer payment reminder for Invoice #${sale.invoiceNumber} — ${sale.customerName}`,
-            type: "debt",
-            triggerDate: new Date(now.getTime() + 24 * 60 * 60 * 1000),
-            saleId,
-            reminderSequence: 1
-        });
-
-        // Reminder 2: 48 hours after delivery
-        remindersToCreate.push({
-            businessId,
-            whatsappNumber: merchantPhone,
-            recipientType: "customer",
-            recipientPhone: customerPhone,
-            description: `Customer payment reminder for Invoice #${sale.invoiceNumber} — ${sale.customerName}`,
-            type: "debt",
-            triggerDate: new Date(now.getTime() + 48 * 60 * 60 * 1000),
-            saleId,
-            reminderSequence: 2
-        });
-
-        // Reminder 3: on/near due date (if set and in future)
         if (sale.dueDate) {
-            const dueReminderDate = new Date(sale.dueDate);
-            dueReminderDate.setHours(9, 0, 0, 0); // 9 AM on due date
-            if (dueReminderDate > new Date(now.getTime() + 2 * 60 * 60 * 1000)) {
+            const dueDate = new Date(sale.dueDate);
+            const diffTime = dueDate.getTime() - baseDate.getTime();
+            const diffDays = Math.ceil(diffTime / (24 * 60 * 60 * 1000));
+
+            if (diffDays > 7) {
+                // Reminder 1: 3 days before due date
+                const r1Date = new Date(dueDate.getTime() - 3 * 24 * 60 * 60 * 1000);
+                r1Date.setHours(9, 0, 0, 0);
+                if (r1Date > baseDate) {
+                    remindersToCreate.push({
+                        businessId,
+                        whatsappNumber: merchantPhone,
+                        recipientType: "customer",
+                        recipientPhone: customerPhone,
+                        description: `Friendly reminder: Invoice #${sale.invoiceNumber} is due soon`,
+                        type: "debt",
+                        triggerDate: r1Date,
+                        saleId,
+                        reminderSequence: 1
+                    });
+                }
+
+                // Reminder 2: 1 day before due date
+                const r2Date = new Date(dueDate.getTime() - 1 * 24 * 60 * 60 * 1000);
+                r2Date.setHours(9, 0, 0, 0);
+                if (r2Date > baseDate) {
+                    remindersToCreate.push({
+                        businessId,
+                        whatsappNumber: merchantPhone,
+                        recipientType: "customer",
+                        recipientPhone: customerPhone,
+                        description: `Follow-up: Invoice #${sale.invoiceNumber} is due tomorrow`,
+                        type: "debt",
+                        triggerDate: r2Date,
+                        saleId,
+                        reminderSequence: 2
+                    });
+                }
+            } else if (diffDays >= 3 && diffDays <= 7) {
+                // Reminder 1: 2 days before due date
+                const r1Date = new Date(dueDate.getTime() - 2 * 24 * 60 * 60 * 1000);
+                r1Date.setHours(9, 0, 0, 0);
+                if (r1Date > baseDate) {
+                    remindersToCreate.push({
+                        businessId,
+                        whatsappNumber: merchantPhone,
+                        recipientType: "customer",
+                        recipientPhone: customerPhone,
+                        description: `Friendly reminder: Invoice #${sale.invoiceNumber} is due soon`,
+                        type: "debt",
+                        triggerDate: r1Date,
+                        saleId,
+                        reminderSequence: 1
+                    });
+                }
+            }
+
+            // Reminder 3: on due date
+            const dueReminderDate = new Date(dueDate);
+            dueReminderDate.setHours(9, 0, 0, 0);
+            if (dueReminderDate > baseDate) {
                 remindersToCreate.push({
                     businessId,
                     whatsappNumber: merchantPhone,
                     recipientType: "customer",
                     recipientPhone: customerPhone,
-                    description: `DUE TODAY: Customer payment reminder for Invoice #${sale.invoiceNumber} — ${sale.customerName}`,
+                    description: `Invoice #${sale.invoiceNumber} is due today`,
                     type: "debt",
                     triggerDate: dueReminderDate,
                     saleId,
                     reminderSequence: 3
                 });
             }
+        } else {
+            // No due date (e.g. pay on receipt), use standard 24h/48h sequence:
+            remindersToCreate.push({
+                businessId,
+                whatsappNumber: merchantPhone,
+                recipientType: "customer",
+                recipientPhone: customerPhone,
+                description: `Payment reminder: Invoice #${sale.invoiceNumber}`,
+                type: "debt",
+                triggerDate: new Date(baseDate.getTime() + 24 * 60 * 60 * 1000),
+                saleId,
+                reminderSequence: 1
+            });
+
+            remindersToCreate.push({
+                businessId,
+                whatsappNumber: merchantPhone,
+                recipientType: "customer",
+                recipientPhone: customerPhone,
+                description: `Payment follow-up: Invoice #${sale.invoiceNumber}`,
+                type: "debt",
+                triggerDate: new Date(baseDate.getTime() + 48 * 60 * 60 * 1000),
+                saleId,
+                reminderSequence: 2
+            });
         }
 
-        await Reminder.insertMany(remindersToCreate);
-        console.log(`📅 Scheduled ${remindersToCreate.length} customer reminders for Invoice #${sale.invoiceNumber}`);
+        if (remindersToCreate.length > 0) {
+            await Reminder.insertMany(remindersToCreate);
+            console.log(`📅 Scheduled ${remindersToCreate.length} customer reminders for Invoice #${sale.invoiceNumber}`);
+        }
     } catch (err) {
         console.error("❌ scheduleCustomerReminders Error:", err.message);
     }
@@ -553,7 +611,7 @@ const handleCustomerPayNow = async (saleId, customerPhone) => {
         }
 
         const cleanCustomerPhone = normalizePhone(customerPhone);
-        const paymentMsg = `Ready to make payment for Invoice #${sale.invoiceNumber}? Tap the button below to pay securely online. Amount Due: *₦${bal.toLocaleString()}*`;
+        const paymentMsg = `Ready to pay Invoice #${sale.invoiceNumber}? Tap the button below to settle outstanding balance of ₦${bal.toLocaleString()} securely online.`;
         
         // Use template message with URL button (no naked links!)
         const templateName = 'kreddy_system_alert';
@@ -590,6 +648,16 @@ const handleCustomerRequestExtension = async (saleId, customerPhone) => {
         const sale = await Sale.findById(saleId).populate("businessId");
         if (!sale) return;
 
+        if ((sale.extensionsCount || 0) >= 2) {
+            const bizName = sale.businessId?.displayName || "your merchant";
+            const bal = sale.totalAmount - (sale.payments || []).reduce((s, p) => s + p.amount, 0);
+            await sendText(
+                customerPhone,
+                `Hi ${sale.customerName}, you have already reached the maximum of 2 extensions for Invoice #${sale.invoiceNumber}. Please complete your payment or contact ${bizName} directly to discuss.\n\nOutstanding balance: ₦${bal.toLocaleString()}`
+            );
+            return;
+        }
+
         // Save session so we know what invoice extension is being requested
         await WhatsAppSession.findOneAndUpdate(
             { whatsappNumber: normalizePhone(customerPhone) },
@@ -610,7 +678,7 @@ const handleCustomerRequestExtension = async (saleId, customerPhone) => {
         await sendInteractiveButtons(
             customerPhone,
             "Payment Extension",
-            `Hi ${sale.customerName}! How much more time do you need to settle Invoice *#${sale.invoiceNumber}* (₦${sale.totalAmount.toLocaleString()})?`,
+            `Hi ${sale.customerName}, how much more time do you need to settle Invoice #${sale.invoiceNumber} (₦${sale.totalAmount.toLocaleString()})? Alternatively, you can reply with natural text like "I need 5 days".`,
             "Your merchant will be notified immediately",
             [
                 { id: `ext_3days:${saleId}`, title: "3 More Days" },
@@ -678,7 +746,7 @@ const handleCustomerExtensionDuration = async (saleId, days, customerPhone, cust
         const success = await sendInteractiveButtons(
             merchantPhone,
             "Extension Request",
-            `*${sale.customerName}* is requesting a *${daysNum}-day payment extension* for Invoice *#${sale.invoiceNumber}* (₦${sale.totalAmount.toLocaleString()}).\n\nNew Due Date would be: *${newDueDateStr}*\n\nDo you approve?`,
+            `${sale.customerName} is requesting a ${daysNum}-day payment extension for Invoice #${sale.invoiceNumber} (₦${sale.totalAmount.toLocaleString()}).\n\nNew due date: ${newDueDateStr}\n\nDo you approve?`,
             "Reply to notify the customer instantly",
             [
                 { id: `ext_approve:${saleId}`, title: "Approve" },
@@ -690,9 +758,7 @@ const handleCustomerExtensionDuration = async (saleId, days, customerPhone, cust
             console.log(`⚠️ Merchant 24h window closed for extension request. Sending template alert with buttons to ${merchantPhone}...`);
             const { sendWhatsAppTemplate } = require("../controllers/whatsapp/whatsappController");
             
-            const plan = business?.plan || "hustler";
-            const defaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Boss");
-            const finalTitle = business?.assistantSettings?.preferredName || business?.displayName || defaultTitle;
+            const finalTitle = business?.assistantSettings?.preferredName || business?.displayName || "Partner";
             
             const alertText = `*${sale.customerName}* requested a *${daysNum}-day* payment extension for Invoice *#${sale.invoiceNumber}* (₦${sale.totalAmount.toLocaleString()}). New Due Date: *${newDueDateStr}*.`;
             const cleanMsg = alertText
@@ -740,7 +806,8 @@ const handleMerchantApproveExtension = async (saleId, sessionData) => {
         await Sale.findByIdAndUpdate(saleId, {
             lifecycleStatus: "EXTENSION_GRANTED",
             dueDate: newDate,
-            extensionApprovedAt: new Date()
+            extensionApprovedAt: new Date(),
+            $inc: { extensionsCount: 1 }
         });
 
         // Cancel old customer reminders and reschedule
@@ -753,11 +820,9 @@ const handleMerchantApproveExtension = async (saleId, sessionData) => {
         }
 
         const newDueDateStr = newDate.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
-
-        // Notify customer (with fallback)
         await sendCustomerMessageWithFallback(
             customerPhone,
-            `Great news, ${customerName}! Your payment extension has been approved.\n\nNew Due Date: *${newDueDateStr}*\n\nPlease settle Invoice *#${invoiceNumber}* by then. Thank you.`,
+            `Hi ${customerName}, your payment extension request for Invoice #${invoiceNumber} has been approved. Please make sure to clear the invoice on or before the new due date: ${newDueDateStr}.`,
             customerName,
             invoiceNumber
         );
@@ -786,7 +851,7 @@ const handleMerchantRejectExtension = async (saleId, sessionData) => {
         // Notify customer (with fallback)
         await sendCustomerMessageWithFallback(
             customerPhone,
-            `Hi ${customerName}, unfortunately your payment extension request for Invoice *#${invoiceNumber}* was *not approved* by ${businessName}.\n\nPlease make payment as soon as possible.`,
+            `Hi ${customerName}, unfortunately your payment extension request for Invoice #${invoiceNumber} was not approved by ${businessName}.\n\nPlease make payment as soon as possible.`,
             customerName,
             invoiceNumber
         );
@@ -818,11 +883,11 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
         let msg;
         if (balance <= 0) {
             lifecycleStatus = "PAID";
-            msg = `*Payment Confirmed!*\n\nThank you, ${sale.customerName}! Your payment of *₦${amountPaid.toLocaleString()}* for Invoice *#${sale.invoiceNumber}* has been received by ${businessName}.\n\nYour invoice is now *FULLY PAID*. Have a great day!`;
+            msg = `Payment confirmed. Thank you, ${sale.customerName}. Your payment of ₦${amountPaid.toLocaleString()} for Invoice #${sale.invoiceNumber} has been received. The invoice is now fully paid.`;
             // Cancel pending customer reminders
             await cancelCustomerReminders(saleId);
         } else {
-            msg = `*Partial Payment Received!*\n\nThank you, ${sale.customerName}! Your payment of *₦${amountPaid.toLocaleString()}* for Invoice *#${sale.invoiceNumber}* has been received.\n\nRemaining Balance: *₦${balance.toLocaleString()}*\n\nPlease settle the balance at your earliest convenience by tapping the button below.`;
+            msg = `Partial payment received. Thank you, ${sale.customerName}. Your payment of ₦${amountPaid.toLocaleString()} for Invoice #${sale.invoiceNumber} has been received.\n\nOutstanding balance: ₦${balance.toLocaleString()}`;
         }
 
         // Update database status first so PDF generation reads it
@@ -909,6 +974,33 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
             return false;
         }
 
+        // ── Template Quick Reply: "button" type ─────────────────────────────────────
+        // When a customer taps "Request Extension" or "Pay With Transfer" on the
+        // kreddy_customer_invoice template (outside the 24h window), WhatsApp sends
+        // msgType === "button" with message.button.text matching the button label.
+        if (msgType === "button") {
+            const btnText = (message?.button?.text || "").toLowerCase().trim();
+            const activeSale = await Sale.findOne({
+                deliveredToPhone: cleanFrom,
+                status: { $ne: "paid" },
+                lifecycleStatus: { $in: ["DELIVERED", "VIEWED", "EXTENSION_REQUESTED", "EXTENSION_GRANTED", "EXTENSION_REJECTED", "PARTIALLY_PAID"] }
+            }).sort({ customerDeliveredAt: -1 });
+
+            if (!activeSale) return false;
+
+            if (btnText === "request extension") {
+                await handleCustomerRequestExtension(activeSale._id, cleanFrom);
+                return true;
+            }
+
+            if (btnText === "pay with transfer") {
+                await handleCustomerPayNow(activeSale._id, cleanFrom);
+                return true;
+            }
+
+            return false;
+        }
+
         // Check for text-based session (customer_extension_duration)
         const session = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
         if (session?.type === "customer_extension_duration") {
@@ -931,18 +1023,19 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
         const activeSale = await Sale.findOne({
             deliveredToPhone: cleanFrom,
             status: { $ne: "paid" },
-            lifecycleStatus: { $in: ["DELIVERED", "VIEWED", "EXTENSION_REQUESTED", "EXTENSION_REJECTED", "PARTIALLY_PAID"] }
+            lifecycleStatus: { $in: ["DELIVERED", "VIEWED", "EXTENSION_REQUESTED", "EXTENSION_GRANTED", "EXTENSION_REJECTED", "PARTIALLY_PAID"] }
         }).sort({ customerDeliveredAt: -1 }).populate("businessId");
 
         if (activeSale) {
             const bal = activeSale.totalAmount - (activeSale.payments || []).reduce((s, p) => s + p.amount, 0);
-            const paymentLink = `${APP_URL}/i/${activeSale.invoiceNumber}`;
 
-            // If they say something about paying, send them the link
+            // If they say something about paying, send them the payment button (no raw links in V2)
             if (/pay|payment|transfer|link|invoice/i.test(lowerText)) {
-                await sendText(
+                await sendCustomerMessageWithFallback(
                     cleanFrom,
-                    `Here is your payment link for Invoice *#${activeSale.invoiceNumber}*:\n\n${paymentLink}\n\nBalance Due: *₦${bal.toLocaleString()}*`
+                    `Hi ${activeSale.customerName}, here are the payment details for Invoice #${activeSale.invoiceNumber}. Balance due: \u20a6${bal.toLocaleString()}.`,
+                    activeSale.customerName,
+                    activeSale.invoiceNumber
                 );
                 return true;
             }
@@ -955,15 +1048,19 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
 
             // Generic response with action buttons
             const businessName = activeSale.businessId?.displayName || "Your merchant";
+            const buttons = [
+                { id: `pay_now:${activeSale._id}`, title: "Pay with Transfer" }
+            ];
+            if ((activeSale.extensionsCount || 0) < 2) {
+                buttons.push({ id: `req_ext:${activeSale._id}`, title: "Request Extension" });
+            }
+
             await sendInteractiveButtons(
                 cleanFrom,
                 `Invoice #${activeSale.invoiceNumber}`,
-                `Hi ${activeSale.customerName}! You have an unpaid invoice from *${businessName}* for *₦${bal.toLocaleString()}*.\n\nHow can I help you?`,
+                `Hi ${activeSale.customerName}, you have an unpaid invoice from ${businessName} for ₦${bal.toLocaleString()}.\n\nHow would you like to proceed?`,
                 "",
-                [
-                    { id: `pay_now:${activeSale._id}`, title: "Pay with Transfer" },
-                    { id: `req_ext:${activeSale._id}`, title: "Request Extension" }
-                ]
+                buttons
             );
             return true;
         }
@@ -1001,18 +1098,34 @@ const sendChaseToCustomer = async (saleId, businessId, customText = null) => {
             ? `Due: ${new Date(sale.dueDate).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}`
             : "Due: On Receipt";
 
-        const correctBodyText = customText || `Hi ${sale.customerName}!\n\nThis is a friendly reminder from *${businessName}* regarding your outstanding balance of *₦${bal.toLocaleString()}* for Invoice *#${sale.invoiceNumber}*.\n\n${dueText}\n\nTap a button below to take action:`;
+        const correctBodyText = customText || `Hi ${sale.customerName}, this is a reminder from ${businessName} about Invoice #${sale.invoiceNumber}.\n\nAmount outstanding: ₦${bal.toLocaleString()}\nDue: ${dueText.replace("Due: ", "")}\n\nWhat would you like to do?`;
 
-        const success = await sendInteractiveButtons(
+        const buttons = [
+            { id: `pay_now:${sale._id}`, title: "Pay with Transfer" }
+        ];
+        if ((sale.extensionsCount || 0) < 2) {
+            buttons.push({ id: `req_ext:${sale._id}`, title: "Request Extension" });
+        }
+
+        let success = await sendInteractiveButtons(
             cleanCustomerPhone,
             `Invoice Reminder #${sale.invoiceNumber}`,
             correctBodyText,
             "",
-            [
-                { id: `pay_now:${sale._id}`, title: "Pay with Transfer" },
-                { id: `req_ext:${sale._id}`, title: "Request Extension" }
-            ]
+            buttons
         );
+
+        if (!success) {
+            console.log(`⚠️ Interactive buttons failed for chase. Falling back to template...`);
+            // Strip any newlines for template strictness
+            const templateText = correctBodyText.replace(/[\r\n\t]+/g, ' ').replace(/\s\s+/g, ' ');
+            success = await sendCustomerMessageWithFallback(
+                cleanCustomerPhone,
+                templateText,
+                sale.customerName,
+                sale.invoiceNumber
+            );
+        }
 
         if (success) {
             await Sale.findByIdAndUpdate(saleId, {
@@ -1027,6 +1140,15 @@ const sendChaseToCustomer = async (saleId, businessId, customText = null) => {
                 entityId: sale._id,
                 details: `On-demand reminder sent to customer ${cleanCustomerPhone} for Invoice #${sale.invoiceNumber}`
             });
+
+            // Notify merchant on WhatsApp that the reminder has been sent directly
+            const merchantPhone = business.whatsappNumber;
+            if (merchantPhone) {
+                await sendText(
+                    merchantPhone,
+                    `I've sent a payment reminder directly to *${sale.customerName}* for Invoice *#${sale.invoiceNumber}*.`
+                );
+            }
 
             return { success: true };
         } else {
@@ -1043,7 +1165,7 @@ const isCustomerPhone = async (phone) => {
     const activeSale = await Sale.findOne({
         deliveredToPhone: cleanPhone,
         status: { $ne: "paid" },
-        lifecycleStatus: { $in: ["DELIVERED", "VIEWED", "EXTENSION_REQUESTED", "EXTENSION_REJECTED", "PARTIALLY_PAID"] }
+        lifecycleStatus: { $in: ["DELIVERED", "VIEWED", "EXTENSION_REQUESTED", "EXTENSION_GRANTED", "EXTENSION_REJECTED", "PARTIALLY_PAID"] }
     });
     return !!activeSale;
 };

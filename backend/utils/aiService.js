@@ -44,8 +44,8 @@ PERSONALITY & CONVERSATIONAL BRAIN:
 - IDENTITY RULE (CRITICAL):
    * ALWAYS address the merchant by their "Preferred Name" if provided.
    * IF NO Preferred Name, use the merchant's WhatsApp profile name provided in the context.
-   * ONLY if no personal names are known, use the title associated with their Plan (Chairman, Oga, or Boss).
-   * NEVER address them generic titles like "Chairman" if you know their actual name.
+   * ONLY if no personal names are known, use "Partner".
+   * NEVER address them by generic plan titles like "Chairman", "Oga", or "Boss".
 - FORBIDDEN "BOT-SPEAK":
    * Do NOT say: "Processing your request," "Successfully logged," "Record updated," "I have recorded the sale."
    * Instead say: "Done! I've put that into the ledger for you," "Got it! Sarah's record is updated," "Sharp! That ₦5k is now safe in our books."
@@ -54,7 +54,7 @@ PERSONALITY & CONVERSATIONAL BRAIN:
    * If it is between 1 and 7:
      * Make your greeting warm and show you noticed they were away (e.g. "Hey! Didn't see you for a few days, hope everything is good?").
    * If it is greater than 7:
-     * Welcome them back with a warm, personal greeting (e.g. "Welcome back, Boss! Trust business has been booming?").
+     * Welcome them back with a warm, personal greeting (e.g. "Welcome back! Trust business has been booming?").
      * If they just said a greeting or general chat, keep the reply warm and conversational. The system will append their debt/reminders automatically, so do NOT mention specific debts or reminders in your reply text.
      * If they gave a directive (like creating a sale, setting a reminder, etc.), you MUST prefix your reply with this warm welcome back greeting before confirming the action.
 - You are a business partner and executive assistant, not just a bot. Your "Brain" must reason through the user's intent and speak naturally.
@@ -96,13 +96,11 @@ INTENTS:
 17. "delete_reminder": When the user wants to remove, cancel, or delete a scheduled reminder (task, meeting, debt follow-up).
 18. "general_chat": Greetings, math, business advice, casual talk, or when requesting clarification from the user.
 19. "set_preferred_name": When the user asks to be called a specific name (e.g., "From now call me Papa").
-20. "feedback": New feature ideas, roadmap suggestions, or constructive UX feedback. 
-21. "delete_feedback": When the user says "cancel my idea", "delete my suggestion", or "I changed my mind about that feedback".
-22. "list_sales": When the user asks for "all sales", "show me everything", "history", "what I sold today", or "everything recorded". 
-23. "check_performance": When the user asks "how much did I make today?", "any payments today?", "daily summary", "what is my today revenue?".
-24. "confirm_session": User is confirming the action in the Active Session.
-25. "reject_session": User is rejecting the action in the Active Session.
-26. "set_language": If a user asks to change language, reply that Kreddy only communicates in standard English and that no language changes are needed.
+20. "list_sales": When the user asks for "all sales", "show me everything", "history", "what I sold today", or "everything recorded". 
+21. "check_performance": When the user asks "how much did I make today?", "any payments today?", "daily summary", "what is my today revenue?".
+22. "confirm_session": User is confirming the action in the Active Session.
+23. "reject_session": User is rejecting the action in the Active Session.
+24. "set_language": If a user asks to change language, reply that Kreddy only communicates in standard English and that no language changes are needed.
 
 CONFIRMATION & SESSION HANDLING (CRITICAL):
 - If there is an "Active Session" in the context (e.g., Kreddy just asked a Yes/No question or suggested a match), prioritize responding to that session.
@@ -457,13 +455,14 @@ const processImageWithAI = async (imageBuffer, mimeType, context = {}) => {
  * MODE B Assistant: Generate a proactive "Growth Coach" nudge for inactive users.
  */
 const generateMorningNudge = async (context = {}) => {
-    if (!process.env.KREDDY_API_KEY) return `Good morning, ${context.bossTitle}! Ready for another productive day? Let us track some sales!`;
+    const activeName = context.bossTitle || "Partner";
+    if (!process.env.KREDDY_API_KEY) return `Good morning, ${activeName}! Ready for another productive day? Let us track some sales!`;
 
     try {
         const model = genAI.getGenerativeModel({ model: MODELS.FLASH });
         const prompt = `
         You are Kreddy, a professional business assistant and growth coach.
-        Merchant Name: ${context.bossTitle}
+        Merchant Name: ${activeName}
         Plan: ${context.plan}
         Outstanding Debts: ${context.debtContext}
         Last Activity: ${context.lastSummaryDate || "Never"}
@@ -478,14 +477,14 @@ const generateMorningNudge = async (context = {}) => {
         5. Keep it under 60 words. You may use one or two relevant emojis.
         6. Tone: Professional, motivating, and warm.
         
-        Example: "Good morning, ${context.bossTitle}! A fresh day to grow your business. I am here to help you track every sale and follow up on outstanding debts. Just type or record what you sold today! 🚀"
+        Example: "Good morning, ${activeName}! A fresh day to grow your business. I am here to help you track every sale and follow up on outstanding debts. Just type or record what you sold today!"
         `;
 
         const result = await model.generateContent(prompt);
         return result.response.text().trim();
     } catch (error) {
         console.error("Coach Nudge AI Error:", error);
-        return `Good morning, ${context.bossTitle}! Every day is a new chance to grow your business. Log a sale today and keep your records on track!`;
+        return `Good morning, ${activeName}! Every day is a new chance to grow your business. Log a sale today and keep your records on track!`;
     }
 };
 
@@ -493,7 +492,8 @@ const generateMorningNudge = async (context = {}) => {
  * DYNAMIC VIBE ENGINE: Generate a short, contextual intro for a WhatsApp message.
  */
 const generateWittyIntro = async (intent, context = {}) => {
-    if (!process.env.KREDDY_API_KEY) return "Got it, Chief! 🫡";
+    const activeName = context.bossTitle || "Partner";
+    if (!process.env.KREDDY_API_KEY) return `Got it, ${activeName}! 🫡`;
 
     try {
         const model = genAI.getGenerativeModel({ model: MODELS.FLASH });
@@ -503,7 +503,7 @@ const generateWittyIntro = async (intent, context = {}) => {
 
         const prompt = `
         You are Kreddy, a professional business assistant.
-        Merchant: ${context.bossTitle || "Boss"}
+        Merchant: ${activeName}
         Time: ${timeOfDay}
         Intent: ${intent}
         Context Details: ${context.extra || "General"}
@@ -518,14 +518,14 @@ const generateWittyIntro = async (intent, context = {}) => {
         6. DO NOT use generic phrases like "I am an AI".
         
         Example for 'check_debt': "Let's check those outstanding balances for you right away."
-        Example for 'create_sale': "Great work, ${context.bossTitle}! Adding this sale to your records now."
+        Example for 'create_sale': "Great work, ${activeName}! Adding this sale to your records now."
         Example for 'list_sales': "Pulling up your sales history — let's see what you've done!"
         `;
 
         const result = await model.generateContent(prompt);
         return result.response.text().trim();
     } catch (error) {
-        return "Acknowledged, Chief! 🫡";
+        return `Acknowledged, ${activeName}!`;
     }
 };
 

@@ -351,6 +351,9 @@ exports.trackView = async (req, res) => {
         if (isFirstView) {
             sale.viewed = true;
             sale.viewedAt = now;
+            if (sale.lifecycleStatus === "DELIVERED") {
+                sale.lifecycleStatus = "VIEWED";
+            }
         }
         
         // Always increment count and update timestamp
@@ -576,8 +579,6 @@ exports.sendReminder = async (req, res) => {
         }
 
         // Generate the payment link
-        const frontendUrl = process.env.FRONTEND_URL || 'https://usekredibly.com';
-        const paymentLink = `${frontendUrl}/i/${sale.invoiceNumber}`;
         const balance = sale.totalAmount - sale.payments.reduce((sum, p) => sum + p.amount, 0);
 
         // Template logic
@@ -585,43 +586,28 @@ exports.sendReminder = async (req, res) => {
         const tone = business.assistantSettings?.reminderTemplate || "friendly";
 
         if (tone === "formal") {
-            message = `*OFFICIAL PAYMENT NOTICE*\n\n` +
-                      `This is a formal reminder regarding your outstanding balance.\n\n` +
-                      `*Invoice:* #${sale.invoiceNumber}\n` +
-                      `*Balance Due:* ₦${balance.toLocaleString()}\n\n` +
-                      `Ignore if payment has already been made.`;
+            message = `Hi ${sale.customerName}, this is a reminder from ${business.displayName || "us"} about Invoice #${sale.invoiceNumber}.\n\nAmount outstanding: ₦${balance.toLocaleString()}\nDue: ${sale.dueDate ? new Date(sale.dueDate).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) : "On Receipt"}\n\nWhat would you like to do?`;
         } else {
-            message = `Friendly nudge regarding your invoice (#${sale.invoiceNumber}).\n\n` +
-                      `There's a remaining balance of *₦${balance.toLocaleString()}*.\n\n` +
-                      `Thank you!`;
+            message = `Hi ${sale.customerName}, this is a reminder from ${business.displayName || "us"} about Invoice #${sale.invoiceNumber}.\n\nAmount outstanding: ₦${balance.toLocaleString()}\nDue: ${sale.dueDate ? new Date(sale.dueDate).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) : "On Receipt"}\n\nWhat would you like to do?`;
         }
 
-        // Send the Draft to the MERCHANT (not the customer)
-        const { sendWhatsAppAlert } = require("../whatsapp/whatsappController");
-        
-        const draftHeader = `📝 *REMINDER DRAFT READY*\n\nSend this to *${sale.customerName || "your customer"}*:\n---\n`;
-        const fullDraft = `${draftHeader}${message}\n\n🔗 ${paymentLink}`;
+        const { sendChaseToCustomer } = require("../../utils/customerInvoiceService");
+        const result = await sendChaseToCustomer(sale._id, business._id, message);
 
-        await sendWhatsAppAlert(business.whatsappNumber, business.displayName, fullDraft);
+        if (result.success) {
+            sale.reminderSentAt = new Date();
+            sale.lastLinkSentAt = new Date();
+            await sale.save();
+            
+            if (business.monthlyUsage) {
+                business.monthlyUsage.reminders = (business.monthlyUsage.reminders || 0) + 1;
+                await business.save();
+            }
 
-        sale.reminderSentAt = new Date();
-        sale.lastLinkSentAt = new Date();
-        await sale.save();
-        
-        if (business.monthlyUsage) {
-            business.monthlyUsage.reminders = (business.monthlyUsage.reminders || 0) + 1;
-            await business.save();
+            res.status(200).json({ success: true, message: "Kreddy has sent a reminder directly to your customer! 🤝" });
+        } else {
+            res.status(500).json({ message: result.error || "Failed to send reminder to customer" });
         }
-
-        await logActivity({
-            businessId: business._id,
-            action: "REMINDER_DRAFTED",
-            entityType: "SALE",
-            entityId: sale._id,
-            details: `Kreddy prepared a ${tone} reminder draft for ${sale.customerName}`
-        });
-
-        res.status(200).json({ success: true, message: "Draft sent to your WhatsApp! You can now forward it to your customer. 🤝" });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
