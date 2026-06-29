@@ -490,10 +490,12 @@ const generateMorningNudge = async (context = {}) => {
 
 /**
  * DYNAMIC VIBE ENGINE: Generate a short, contextual intro for a WhatsApp message.
+ * Supports intents: check_debt, create_sale, list_sales, greeting, payment_received,
+ *                   zero_debt, image_scan, create_reminder, snooze_reminder
  */
 const generateWittyIntro = async (intent, context = {}) => {
     const activeName = context.bossTitle || "Partner";
-    if (!process.env.KREDDY_API_KEY) return `Got it, ${activeName}! 🫡`;
+    if (!process.env.KREDDY_API_KEY) return `Acknowledged, ${activeName}.`;
 
     try {
         const model = genAI.getGenerativeModel({ model: MODELS.FLASH });
@@ -502,31 +504,99 @@ const generateWittyIntro = async (intent, context = {}) => {
         const timeOfDay = hour < 12 ? "Morning" : (hour < 17 ? "Afternoon" : "Evening");
 
         const prompt = `
-        You are Kreddy, a professional business assistant.
+        You are Kreddy, an AI Business Account Manager for Nigerian merchants.
         Merchant: ${activeName}
-        Time: ${timeOfDay}
+        Time of Day: ${timeOfDay}
         Intent: ${intent}
         Context Details: ${context.extra || "General"}
 
-        Task: Write a ONE-SENTENCE (max 15 words) contextual intro/reaction to this intent.
-        Rules:
-        1. Use STRICTLY standard English only. NO Pidgin, Creole, or slang (e.g., NO "Oshey", "Na", "Sharp", "Chai", "Oga", "wahala").
-        2. Be professional yet warm and encouraging.
-        3. DO NOT be repetitive.
-        4. Match the time of day.
-        5. Focus on the user's win or the business priority.
-        6. DO NOT use generic phrases like "I am an AI".
-        
-        Example for 'check_debt': "Let's check those outstanding balances for you right away."
-        Example for 'create_sale': "Great work, ${activeName}! Adding this sale to your records now."
-        Example for 'list_sales': "Pulling up your sales history — let's see what you've done!"
+        Task: Write ONE SHORT sentence (max 15 words) as a natural, varied reaction to this intent.
+
+        Rules (NON-NEGOTIABLE):
+        1. STRICTLY standard English only. ZERO Pidgin, slang, or Creole.
+        2. NO emojis whatsoever.
+        3. Sound warm, professional, and human — like a smart business partner.
+        4. NEVER repeat the same phrase twice. Vary sentence structure every time.
+        5. Address the merchant by name (${activeName}) occasionally but not always.
+        6. NO generic phrases like "I am an AI" or "Processing your request".
+
+        Intent examples to guide you:
+        - 'check_debt': "Here are the outstanding balances." / "Let's go through what's owed."
+        - 'create_sale': "Sale recorded, ${activeName}." / "Got it — added to the ledger."
+        - 'list_sales': "Pulling up your sales history now." / "Here's everything recorded so far."
+        - 'greeting': "Good to have you back, ${activeName}." / "All systems ready — what do we need?"
+        - 'payment_received': "Payment noted — ledger updated." / "That's logged, ${activeName}. Well done."
+        - 'zero_debt': "Your ledger is completely clean right now." / "No outstanding balances — that's a great position."
+        - 'image_scan': "Image received — reading it now." / "Got the image, ${activeName}. Give me a moment."
+        - 'create_reminder': "Reminder set." / "Locked in for you, ${activeName}."
+        - 'snooze_reminder': "Reminder pushed back." / "Snoozed — I'll check in again later."
+
+        Output ONLY the single sentence. Nothing else.
         `;
 
         const result = await model.generateContent(prompt);
         return result.response.text().trim();
     } catch (error) {
-        return `Acknowledged, ${activeName}!`;
+        // Intent-appropriate fallbacks
+        const fallbacks = {
+            check_debt: `Here are the outstanding balances, ${activeName}.`,
+            create_sale: `Sale recorded, ${activeName}.`,
+            list_sales: `Here is your sales history, ${activeName}.`,
+            greeting: `Good to have you, ${activeName}.`,
+            payment_received: `Payment noted — ledger updated.`,
+            zero_debt: `Your ledger is completely clean right now, ${activeName}.`,
+            image_scan: `Image received — reading it now.`,
+            create_reminder: `Reminder set, ${activeName}.`,
+            snooze_reminder: `Snoozed — I'll check in again later.`
+        };
+        return fallbacks[intent] || `Acknowledged, ${activeName}.`;
     }
 };
 
-module.exports = { processMessageWithAI, processAudioWithAI, processImageWithAI, generateMorningNudge, generateWittyIntro };
+/**
+ * VOICE NOTE ACK ENGINE: Generate a varied, natural acknowledgment when a voice note is received.
+ * Never repeats the same line. No emojis. No Pidgin. Just a smart, human-sounding response.
+ */
+const generateVoiceNoteAck = async (merchantName) => {
+    const name = merchantName || "Partner";
+    if (!process.env.KREDDY_API_KEY) return `Give me a moment, ${name} — listening now.`;
+
+    try {
+        const model = genAI.getGenerativeModel({ model: MODELS.FLASH });
+
+        const prompt = `
+        You are Kreddy, an AI Business Account Manager for a Nigerian merchant named ${name}.
+        The merchant just sent you a voice note. Generate a SHORT (max 10 words) acknowledgment that:
+        1. Sounds natural and human — like a sharp, attentive business partner.
+        2. Varies every time — NEVER repeat "I catch the voice note" or "Analyzing it now".
+        3. Uses STRICTLY standard English only. NO Pidgin, NO slang, NO "catch", NO "I dey".
+        4. NO emojis whatsoever.
+        5. Must feel warm but professional — not robotic.
+        6. Can optionally address them by name: ${name}.
+
+        Examples of good responses:
+        - "On it, ${name} — give me a second."
+        - "Heard that. Processing now."
+        - "Got your voice note, ${name}. One moment."
+        - "Listening now — will have your answer shortly."
+        - "Voice note received. Working on it."
+        - "Sure, give me a sec."
+
+        Output ONLY the acknowledgment sentence. Nothing else.
+        `;
+
+        const result = await model.generateContent(prompt);
+        return result.response.text().trim();
+    } catch (error) {
+        const fallbacks = [
+            `Got it, ${name}. Give me a moment.`,
+            `On it — processing your voice note now.`,
+            `Heard that, ${name}. One second.`,
+            `Voice note received. Working on it.`,
+            `Sure, give me a sec, ${name}.`
+        ];
+        return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    }
+};
+
+module.exports = { processMessageWithAI, processAudioWithAI, processImageWithAI, generateMorningNudge, generateWittyIntro, generateVoiceNoteAck };
