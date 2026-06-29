@@ -1,4 +1,4 @@
-const LAUNCH_DATE = new Date('2026-07-01T00:00:00Z'); // Official Launch Day
+const LAUNCH_DATE = new Date('2026-08-01T00:00:00Z'); // Official Launch Day
 
 const PRICING_PLANS = {
     hustler: {

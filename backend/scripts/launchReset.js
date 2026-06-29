@@ -4,7 +4,7 @@ const BusinessProfile = require('../models/BusinessProfile');
 const Notification = require('../models/Notification');
 
 /**
- * THE LAUNCH DAY RESET (July 1st Automation)
+ * THE LAUNCH DAY RESET (August 1st Automation)
  * This script reverts all businesses on the "Pre-Launch Free Oga" plan 
  * back to the "Hustler" plan, unless they have made a payment.
  */
