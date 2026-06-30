@@ -572,7 +572,7 @@ const sendTemplateMessage = async (to, templateName, components = [], retryCount
                                 ...param,
                                 text: param.text
                                     .replace(/[\r\t]/g, ' ') // Keep \n, but remove tabs/carriage returns
-                                    .replace(/\s\s+/g, ' ')    // Collapse multiple spaces
+                                    .replace(/[^\S\r\n]{2,}/g, ' ') // Collapse multiple horizontal spaces
                                     .trim()
                             };
                         }
@@ -702,9 +702,9 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
         console.log(`🔔 WhatsApp Session Closed for ${normalizedTo} — Sending paid template message`);
         
         const safeMessage = String(textMessage)
-            .replace(/\r?\n/g, ' • ') // 🛡️ Meta forbids newlines in template params — convert to bullet separator
+            .replace(/\r/g, '')        // Keep \n, but remove carriage returns
             .replace(/\t/g, ' ')       // Strip tabs too
-            .replace(/  +/g, ' ')      // Collapse multiple spaces (Meta allows max 4 consecutive)
+            .replace(/[^\S\r\n]{2,}/g, ' ') // Collapse multiple horizontal spaces (Meta allows max 4 consecutive)
             .trim()
             .substring(0, 1024);
 
