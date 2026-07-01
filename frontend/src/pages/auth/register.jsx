@@ -132,11 +132,28 @@ const Register = () => {
         </button>
       </form>
 
-      <div style={{ textAlign: 'center', marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--border)' }}>
+      <div style={{ textAlign: 'center', marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', fontWeight: 400 }}>
           Already have an account? {" "}
           <Link to="/auth/login" style={{ color: '#000000', fontWeight: 600, textDecoration: 'none' }}>Login instead</Link>
         </p>
+        <Link
+          to="/"
+          style={{
+            fontSize: '0.85rem',
+            color: '#64748B',
+            textDecoration: 'none',
+            fontWeight: 500,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            transition: 'color 0.2s'
+          }}
+          onMouseEnter={e => e.currentTarget.style.color = '#0F172A'}
+          onMouseLeave={e => e.currentTarget.style.color = '#64748B'}
+        >
+          ← Back to home
+        </Link>
       </div>
     </div>
   );

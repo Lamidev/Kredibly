@@ -357,10 +357,42 @@ const LandingPage = () => {
                     }}>
                         The ultimate AI-powered assistant for modern commerce. Speak to <b>Kreddy AI</b> to log sales, deliver professional invoices instantly on WhatsApp, handle automated due-date extensions, and sweep money straight to your bank account with zero fees.
                     </p>
-                    <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center' }}>
                         <Link to="/auth/register" className="btn-primary btn-magnetic" style={{ padding: '20px 40px', fontSize: '1.1rem', borderRadius: '18px' }}>
                             Get Started <ArrowRight size={20} />
                         </Link>
+                        <button
+                            onClick={() => scrollToSection('how-it-works')}
+                            style={{
+                                padding: '20px 40px',
+                                fontSize: '1.1rem',
+                                borderRadius: '18px',
+                                background: 'transparent',
+                                border: '1.5px solid rgba(76, 29, 149, 0.25)',
+                                color: '#0F172A',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                transition: 'all 0.2s ease',
+                                fontFamily: 'inherit',
+                                letterSpacing: '-0.01em'
+                            }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.borderColor = 'var(--primary)';
+                                e.currentTarget.style.color = 'var(--primary)';
+                                e.currentTarget.style.background = 'rgba(76, 29, 149, 0.04)';
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.borderColor = 'rgba(76, 29, 149, 0.25)';
+                                e.currentTarget.style.color = '#0F172A';
+                                e.currentTarget.style.background = 'transparent';
+                            }}
+                        >
+                            <MessageCircle size={18} />
+                            Meet Kreddy
+                        </button>
                     </div>
                 </motion.div>
             </motion.div>

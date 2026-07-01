@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 import {
@@ -353,7 +353,7 @@ const Onboarding = () => {
                                         </div>
                                         
                                         <div style={{ background: 'white', padding: '14px 16px', borderRadius: '0 16px 16px 16px', fontSize: '0.88rem', maxWidth: '90%', boxShadow: '0 1px 2px rgba(0,0,0,0.1)', color: '#334155', lineHeight: 1.5 }}
-                                            dangerouslySetInnerHTML={{ __html: parseWhatsAppMarkdown(`Hello *${displayName || 'Boss'}*,\n\nI'm *Kreddy* — your Digital Chief of Staff.\n\nI've successfully launched your workspace for *${displayName || 'your business'}* and I'm ready to get to work.\n\nHere is what I can do for you:\n\n🎤 *Voice Note:* _"Sarah bought a bag for 15k, she paid 5k, remind me Friday for the balance."_\n\n📸 *Picture:* Send a receipt photo and I will log it for you.\n\n💬 *Ask anything:* _"What is my revenue today?"_ or _"Who owes me money?"_\n\nTalk to me like a real person — let's get to work.`) }}
+                                            dangerouslySetInnerHTML={{ __html: parseWhatsAppMarkdown(`Hello *${displayName || 'Boss'}*,\n\nI'm *Kreddy*, your Digital Chief of Staff.\n\nI've successfully launched your workspace for *${displayName || 'your business'}* and I'm ready to get to work.\n\nHere is what I can do for you:\n\n*Voice Note:*\n_"Sarah bought a bag for 15k, she paid 5k, remind me Friday for the balance."_\n\n*Picture:*\nSend me a paper invoice and I'll record it.\n\n*Ask me:*\n_"What is my revenue today?"_\n_"Who owes me money?"_\n\nTalk to me naturally.\n\nLet's get to work.`) }}
                                         />
                                     </div>
 
@@ -570,14 +570,22 @@ const Onboarding = () => {
                                         className="btn-primary" 
                                         style={{ width: '100%', height: '64px', fontSize: '1.2rem', boxShadow: '0 15px 30px rgba(76, 29, 149, 0.4)' }}
                                     >
-                                        {loading ? <Loader2 className="spin" size={24} style={{ animation: 'spin 1s linear infinite' }} /> : "Launch My Workspace 🚀"}
+                                        {loading ? <Loader2 className="spin" size={24} style={{ animation: 'spin 1s linear infinite' }} /> : "Launch My Workspace"}
                                     </button>
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
 
-                    <div style={{ marginTop: '32px', textAlign: 'center' }}>
+                    <div style={{ marginTop: '32px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
+                        {!showWelcomePreview && (
+                            <p style={{ fontSize: '0.875rem', color: '#64748B', fontWeight: 400 }}>
+                                Not ready?{" "}
+                                <Link to="/auth/login" style={{ color: '#0F172A', fontWeight: 600, textDecoration: 'none', borderBottom: '1px solid #CBD5E1', paddingBottom: '1px' }}>
+                                    Back to Login
+                                </Link>
+                            </p>
+                        )}
                         <p style={{ fontSize: '0.75rem', fontWeight: 500, color: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                             <ShieldCheck size={16} color="#0F172A" /> DATA ENCRYPTED & BANK-GRADE SECURE
                         </p>
