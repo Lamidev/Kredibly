@@ -21,10 +21,19 @@ const triggerWelcomeMessage = async (profile) => {
         const bossTitle = profile.displayName || (profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss"));
         const personalizedName = profile.assistantSettings?.preferredName || bossTitle;
 
-        const welcomeText = `Hello *${personalizedName}*,\n\nI'm *Kreddy*, your Digital Chief of Staff.\n\nI've successfully launched your workspace for *${profile.displayName}* and I'm ready to get to work.\n\nHere is what I can do for you:\n\n*Voice Note:*\n_"Sarah bought a bag for 15k, she paid 5k, remind me Friday for the balance."_\n\n*Picture:*\nSend me a paper invoice and I'll record it.\n\n*Ask me:*\n_"What is my revenue today?"_\n_"Who owes me money?"_\n\nTalk to me naturally.\n\nLet's get to work.`;
+        const { sendWhatsAppTemplate } = require("../whatsapp/whatsappController");
+        const components = [
+            {
+                type: "body",
+                parameters: [
+                    { type: "text", text: String(personalizedName).substring(0, 60) },
+                    { type: "text", text: String(profile.displayName).substring(0, 60) }
+                ]
+            }
+        ];
 
-        // Send to Merchant
-        await sendWhatsAppAlert(profile.whatsappNumber, personalizedName, welcomeText);
+        // Send to Merchant using official Meta template
+        await sendWhatsAppTemplate(profile.whatsappNumber, "kreddy_welcome_new_users", components);
 
         // Send to Staff
         if (profile.staffNumbers && profile.staffNumbers.length > 0) {

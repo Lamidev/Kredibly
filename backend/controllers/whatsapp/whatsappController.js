@@ -970,6 +970,28 @@ const handleIncoming = async (req, res) => {
         const merchantFirstName = registeredName || profileName || tierTitle;
         const bossTitle = profile?.assistantSettings?.preferredName || merchantFirstName;
 
+        // 🚀 Intercept Welcome Greeting
+        const normalizedMsg = text.toLowerCase().replace(/[.,!']/g, "").trim();
+        if (profile && normalizedMsg === "hi kreddy im ready to record") {
+            if (!profile.isKreddyConnected) {
+                const welcomeText = `Hello *${bossTitle}*,\n\nI'm *Kreddy* — your Digital Chief of Staff.\n\nI've successfully launched your workspace for\n*${profile.displayName}*\nand I'm ready to get to work.\n\nHere is what I can do for you:\n\n*Voice Note:*\n_"Sarah bought a bag for 15k, she paid 5k, remind me Friday for the balance."_\n\n*Picture:*\nSend me a receipt and I'll record it.\n\n*Ask me:*\n_"What is my revenue today?"_\n_"Who owes me money?"_\n\nTalk to me naturally.\n\nLet's get to work.`;
+                
+                profile.isKreddyConnected = true;
+                profile.welcomeSent = true;
+                profile.lastInboundAt = new Date();
+                await profile.save();
+
+                await sendReply(from, welcomeText);
+            } else {
+                const welcomeBackText = `Welcome back, *${bossTitle}*! 🫡\n\nI'm online and ready to record. What's the latest update for *${profile.displayName}*?`;
+                profile.lastInboundAt = new Date();
+                await profile.save();
+
+                await sendReply(from, welcomeBackText);
+            }
+            return;
+        }
+
         // 🧠 KREDDY AI: Check if this is a customer-facing message (even if they have a merchant profile)
         let isForCustomerFlow = false;
         if (msgType === "interactive") {

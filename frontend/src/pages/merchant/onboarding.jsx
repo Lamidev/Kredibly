@@ -254,13 +254,49 @@ const Onboarding = () => {
     const ProgressHeader = () => (
         <div style={{ marginBottom: '32px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div>
-                    <h3 style={{ margin: 0, fontWeight: 700, fontSize: '1.5rem', letterSpacing: '-0.02em', color: '#0F172A' }}>
-                        {step === 1 ? 'Elite Access' : 'Quick Setup'}
-                    </h3>
-                    <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: '#0F172A', fontWeight: 400 }}>
-                        {step === 1 ? 'You are a Founding Member.' : `Step ${step - 1} of 3`}
-                    </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {step > 1 && (
+                        <button
+                            onClick={() => setStep(prev => prev - 1)}
+                            className="back-step-btn"
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '50%',
+                                border: '1.5px solid #E2E8F0',
+                                background: 'transparent',
+                                color: '#64748B',
+                                cursor: 'pointer',
+                                flexShrink: 0,
+                                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
+                            }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.background = '#F8FAFC';
+                                e.currentTarget.style.borderColor = '#94A3B8';
+                                e.currentTarget.style.color = '#0F172A';
+                                e.currentTarget.style.transform = 'translateX(-2px)';
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.borderColor = '#E2E8F0';
+                                e.currentTarget.style.color = '#64748B';
+                                e.currentTarget.style.transform = 'translateX(0)';
+                            }}
+                        >
+                            <ArrowLeft size={16} />
+                        </button>
+                    )}
+                    <div>
+                        <h3 style={{ margin: 0, fontWeight: 700, fontSize: '1.5rem', letterSpacing: '-0.02em', color: '#0F172A' }}>
+                            {step === 1 ? 'Elite Access' : 'Quick Setup'}
+                        </h3>
+                        <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: '#0F172A', fontWeight: 400 }}>
+                            {step === 1 ? 'You are a Founding Member.' : `Step ${step - 1} of 3`}
+                        </p>
+                    </div>
                 </div>
                 {step > 1 && (
                     <div style={{ background: 'rgba(76, 29, 149, 0.05)', padding: '8px 16px', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)' }}>
@@ -578,13 +614,39 @@ const Onboarding = () => {
                     </div>
 
                     <div style={{ marginTop: '32px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
-                        {!showWelcomePreview && (
-                            <p style={{ fontSize: '0.875rem', color: '#64748B', fontWeight: 400 }}>
-                                Not ready?{" "}
-                                <Link to="/auth/login" style={{ color: '#0F172A', fontWeight: 600, textDecoration: 'none', borderBottom: '1px solid #CBD5E1', paddingBottom: '1px' }}>
-                                    Back to Login
-                                </Link>
-                            </p>
+                        {!showWelcomePreview && step === 1 && (
+                            <Link
+                                to="/"
+                                className="back-home-btn"
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '10px 18px',
+                                    borderRadius: '100px',
+                                    border: '1px solid #E2E8F0',
+                                    background: 'transparent',
+                                    color: '#0F172A',
+                                    fontSize: '0.82rem',
+                                    fontWeight: 600,
+                                    textDecoration: 'none',
+                                    letterSpacing: '0.01em',
+                                    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
+                                }}
+                                onMouseEnter={e => {
+                                    e.currentTarget.style.background = '#F8FAFC';
+                                    e.currentTarget.style.borderColor = '#CBD5E1';
+                                    e.currentTarget.querySelector('.back-arrow').style.transform = 'translateX(-3px)';
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.borderColor = '#E2E8F0';
+                                    e.currentTarget.querySelector('.back-arrow').style.transform = 'translateX(0)';
+                                }}
+                            >
+                                <ArrowLeft size={14} className="back-arrow" style={{ transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }} />
+                                Back to Home
+                            </Link>
                         )}
                         <p style={{ fontSize: '0.75rem', fontWeight: 500, color: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                             <ShieldCheck size={16} color="#0F172A" /> DATA ENCRYPTED & BANK-GRADE SECURE

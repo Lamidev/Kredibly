@@ -639,7 +639,7 @@ const Dashboard = () => {
                                         Ready to record? Sync your first sale now.
                                     </p>
                                     <a 
-                                        href={KREDDY_CONFIG.getLink() + "&text=Hi%20Kreddy!%20I'm%20ready%20to%20record."}
+                                        href={KREDDY_CONFIG.getLink("hi kreddy! im ready to record")}
                                         target="_blank"
                                         rel="noreferrer"
                                         className="hover-scale"
