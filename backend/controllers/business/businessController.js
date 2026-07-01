@@ -21,7 +21,7 @@ const triggerWelcomeMessage = async (profile) => {
         const bossTitle = profile.displayName || (profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss"));
         const personalizedName = profile.assistantSettings?.preferredName || bossTitle;
 
-        const welcomeText = `Hello *${bossTitle}*,\n\nI'm *Kreddy* — your Digital Chief of Staff.\n\nI've successfully launched your workspace for *${profile.displayName}* and I'm ready to get to work.\n\nHere is what I can do for you:\n\n🎤 *Voice Note:* _"Sarah bought a bag for 15k, she paid 5k, remind me Friday for the balance."_\n\n📸 *Picture:* Send a receipt photo and I will log it for you.\n\n💬 *Ask anything:* _"What is my revenue today?"_ or _"Who owes me money?"_\n\nTalk to me like a real person — let's get to work.`;
+        const welcomeText = `Hello *${personalizedName}*,\n\nI'm *Kreddy*, your Digital Chief of Staff.\n\nI've successfully launched your workspace for *${profile.displayName}* and I'm ready to get to work.\n\nHere is what I can do for you:\n\n*Voice Note:*\n_"Sarah bought a bag for 15k, she paid 5k, remind me Friday for the balance."_\n\n*Picture:*\nSend me a paper invoice and I'll record it.\n\n*Ask me:*\n_"What is my revenue today?"_\n_"Who owes me money?"_\n\nTalk to me naturally.\n\nLet's get to work.`;
 
         // Send to Merchant
         await sendWhatsAppAlert(profile.whatsappNumber, personalizedName, welcomeText);
@@ -29,7 +29,7 @@ const triggerWelcomeMessage = async (profile) => {
         // Send to Staff
         if (profile.staffNumbers && profile.staffNumbers.length > 0) {
             for (const staffNum of profile.staffNumbers) {
-                const staffText = `Hello! I'm *Kreddy*, the AI business assistant for *${profile.displayName}*. 🚀\n\nYour manager has added you as a staff member. My job is to help you record sales and track payments without any paperwork.\n\n*How to use me:*\nWhen a customer buys something, just send me a message here like: _"Sold one phone charger for 5,000 naira."_\n\nI'll record it in the company ledger and notify your manager automatically. No more manual recording! 🛡️`;
+                const staffText = `Hello. I'm *Kreddy*, the AI business assistant for *${profile.displayName}*.\n\nYour manager has added you as a staff member. My job is to help you record sales and track payments without any paperwork.\n\n*How to use me:*\nWhen a customer buys something, just send me a message here like: _"Sold one phone charger for 5,000 naira."_\n\nI'll record it in the company ledger and notify your manager automatically. No more manual recording.`;
                 await sendWhatsAppAlert(staffNum, "Staff", staffText);
             }
         }
@@ -80,7 +80,7 @@ exports.updateProfile = async (req, res) => {
                 if (profile.onboardingStep === 4 && newStaff.length > 0) {
                     const { sendWhatsAppAlert } = require("../whatsapp/whatsappController");
                     for (const staffNum of newStaff) {
-                        const staffText = `Hello! I'm *Kreddy*, the AI business assistant for *${profile.displayName}*. 🚀\n\nYour manager has added you as a staff member. My job is to help you record sales and track payments without any paperwork.\n\n*How to use me:*\nWhen a customer buys something, just send me a message here like: _"Sold one phone charger for 5,000 naira."_\n\nI'll record it in the company ledger and notify your manager automatically. No more manual recording! 🛡️`;
+                        const staffText = `Hello. I'm *Kreddy*, the AI business assistant for *${profile.displayName}*.\n\nYour manager has added you as a staff member. My job is to help you record sales and track payments without any paperwork.\n\n*How to use me:*\nWhen a customer buys something, just send me a message here like: _"Sold one phone charger for 5,000 naira."_\n\nI'll record it in the company ledger and notify your manager automatically. No more manual recording.`;
                         sendWhatsAppAlert(staffNum, "Staff", staffText).catch(e => console.error("Staff Welcome Fail:", e));
                     }
                 }
