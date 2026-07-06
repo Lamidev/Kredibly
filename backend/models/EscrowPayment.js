@@ -22,7 +22,7 @@ const EscrowPaymentSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["pending", "released", "frozen", "failed"],
+        enum: ["pending", "released", "frozen", "failed", "bank_error"],
         default: "pending"
     },
     releaseDate: {

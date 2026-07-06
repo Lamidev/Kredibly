@@ -5,7 +5,8 @@ import { useAuth } from "../../context/AuthContext";
 import { 
     Plus, Wallet, Clock, CheckCircle, ChevronRight, 
     TrendingUp, Users, MessagesSquare, Trash2, Shield, 
-    ArrowUpRight, Activity, Zap, Sparkles, Copy, Mic
+    ArrowUpRight, Activity, Zap, Sparkles, Copy, Mic,
+    Bot, AlertCircle, X
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
@@ -18,7 +19,77 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, 
     Tooltip, ResponsiveContainer, BarChart, Bar, Legend 
 } from 'recharts';
-import { initiateSocketConnection, disconnectSocket, listenToEvent, stopListeningToEvent } from "../../utils/socket";
+import { initiateSocketConnection, disconnectSocket, listenToEvent, stopListeningToEvent } from "../../utils/socket";// ⚡ REUSABLE SIMPLE ALERT BANNER TEMPLATE
+// Design uses clean gradient backgrounds, micro-borders, and matches the premium look.
+// If actionButton is not passed, it behaves as a simple warning/alert (no button shown).
+const SimpleAlert = ({ icon, title, message, actionButton, onDismiss }) => {
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            style={{
+                background: 'linear-gradient(135deg, rgba(76, 29, 149, 0.05) 0%, rgba(124, 58, 237, 0.02) 100%)',
+                border: '1px solid rgba(124, 58, 237, 0.15)',
+                borderRadius: '24px',
+                padding: '20px 24px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '20px',
+                marginBottom: '24px',
+                position: 'relative',
+                boxShadow: '0 4px 20px rgba(124, 58, 237, 0.04)'
+            }}
+            className="mobile-stack"
+        >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
+                <div style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '14px',
+                    background: 'rgba(124, 58, 237, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--primary)',
+                    flexShrink: 0
+                }}>
+                    {icon || <Sparkles size={20} />}
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                    {title && <h4 style={{ margin: '0 0 4px 0', fontSize: '0.9rem', fontWeight: 900, color: 'var(--primary)' }}>{title}</h4>}
+                    <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 650, color: '#4B5563', lineHeight: 1.5 }}>{message}</p>
+                </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }} className="mobile-full-width">
+                {actionButton}
+                {onDismiss && (
+                    <button
+                        onClick={onDismiss}
+                        style={{
+                            background: 'rgba(0,0,0,0.03)',
+                            border: 'none',
+                            borderRadius: '10px',
+                            padding: '8px',
+                            cursor: 'pointer',
+                            color: '#64748B',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'background 0.2s'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.06)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.03)'}
+                        title="Dismiss"
+                    >
+                        <X size={14} />
+                    </button>
+                )}
+            </div>
+        </motion.div>
+    );
+};
 
 
 const Dashboard = () => {
@@ -33,6 +104,14 @@ const Dashboard = () => {
     const [deleteModal, setDeleteModal] = useState({ show: false, sale: null });
     const [showLimitModal, setShowLimitModal] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+    // Welcome Banner State
+    const [welcomeDismissed, setWelcomeDismissed] = useState(() => localStorage.getItem("kredibly_welcome_dismissed") === "true");
+
+    const handleDismissWelcome = () => {
+        localStorage.setItem("kredibly_welcome_dismissed", "true");
+        setWelcomeDismissed(true);
+    };
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -240,8 +319,136 @@ const Dashboard = () => {
                     </div>
                 </motion.div>
             </div>
+            {/* ═══ KREDDY ACTIVATION HERO BANNER (new merchants only) ═══ */}
+            {profile?.isKreddyConnected === false && !welcomeDismissed && (
+                <motion.div
+                    initial={{ opacity: 0, y: -12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.45, ease: 'easeOut' }}
+                    style={{
+                        background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 60%, #2D1B69 100%)',
+                        borderRadius: '28px',
+                        padding: '28px 32px',
+                        marginBottom: '28px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '24px',
+                        flexWrap: 'wrap',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        boxShadow: '0 20px 50px -10px rgba(76, 29, 149, 0.45)',
+                        border: '1px solid rgba(124, 58, 237, 0.2)'
+                    }}
+                >
+                    {/* Subtle animated glow orb */}
+                    <div style={{
+                        position: 'absolute', top: '-40px', right: '-40px',
+                        width: '200px', height: '200px',
+                        background: 'radial-gradient(circle, rgba(124,58,237,0.35) 0%, transparent 70%)',
+                        borderRadius: '50%', pointerEvents: 'none'
+                    }} />
+                    <div style={{
+                        position: 'absolute', bottom: '-30px', left: '40%',
+                        width: '120px', height: '120px',
+                        background: 'radial-gradient(circle, rgba(79,70,229,0.2) 0%, transparent 70%)',
+                        borderRadius: '50%', pointerEvents: 'none'
+                    }} />
 
-            {/* 🚀 Grand Launch Urgency Banner - Refined Dark Theme */}
+                    {/* Left: Icon + Text */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flex: 1, minWidth: 0, position: 'relative', zIndex: 1 }}>
+                        {/* Pulsing Kreddy Avatar */}
+                        <div style={{ position: 'relative', flexShrink: 0 }}>
+                            <div style={{
+                                width: '56px', height: '56px', borderRadius: '18px',
+                                background: 'linear-gradient(135deg, #7C3AED, #4C1D95)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                boxShadow: '0 0 0 0 rgba(124,58,237,0.5)',
+                                animation: 'kreddy-pulse 2.5s infinite'
+                            }}>
+                                <Bot size={28} color="white" />
+                            </div>
+                            <div style={{
+                                position: 'absolute', top: '-3px', right: '-3px',
+                                width: '14px', height: '14px', borderRadius: '50%',
+                                background: '#4ade80', border: '2px solid #0F172A',
+                                boxShadow: '0 0 8px rgba(74, 222, 128, 0.7)'
+                            }} />
+                        </div>
+
+                        {/* Copy */}
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '-0.02em' }}>
+                                    Activate Kreddy AI — Your Digital Chief of Staff
+                                </h3>
+                                <span style={{
+                                    fontSize: '0.65rem', fontWeight: 800, background: 'rgba(74,222,128,0.15)',
+                                    color: '#4ade80', padding: '3px 10px', borderRadius: '100px',
+                                    border: '1px solid rgba(74,222,128,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em',
+                                    whiteSpace: 'nowrap'
+                                }}>Online & Ready</span>
+                            </div>
+                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.65)', fontWeight: 500, lineHeight: 1.5 }}>
+                                Tap the button → WhatsApp opens → Send the message → Kreddy introduces herself. Takes 5 seconds.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Right: CTA Buttons */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0, position: 'relative', zIndex: 1, flexWrap: 'wrap' }}>
+                        <a
+                            href={KREDDY_CONFIG.getLink("tell me more about kreddy")}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={handleDismissWelcome}
+                            style={{
+                                background: 'linear-gradient(135deg, #7C3AED, #4C1D95)',
+                                color: 'white',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                borderRadius: '16px',
+                                padding: '14px 24px',
+                                fontSize: '0.9rem',
+                                fontWeight: 900,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                textDecoration: 'none',
+                                boxShadow: '0 8px 24px rgba(124, 58, 237, 0.4)',
+                                whiteSpace: 'nowrap',
+                                transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(124,58,237,0.55)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(124,58,237,0.4)'; }}
+                        >
+                            <Zap size={17} fill="white" /> Activate Kreddy <MessagesSquare size={16} />
+                        </a>
+                        <button
+                            onClick={handleDismissWelcome}
+                            title="Dismiss"
+                            style={{
+                                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
+                                borderRadius: '12px', padding: '10px', cursor: 'pointer',
+                                color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center',
+                                transition: 'background 0.2s'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+
+                    <style>{`
+                        @keyframes kreddy-pulse {
+                            0% { box-shadow: 0 0 0 0 rgba(124,58,237,0.5); }
+                            70% { box-shadow: 0 0 0 12px rgba(124,58,237,0); }
+                            100% { box-shadow: 0 0 0 0 rgba(124,58,237,0); }
+                        }
+                    `}</style>
+                </motion.div>
+            )}
 
             {/* Premium Stats Bento Grid */}
             <div style={{
@@ -643,6 +850,7 @@ const Dashboard = () => {
                                         target="_blank"
                                         rel="noreferrer"
                                         className="hover-scale"
+                                        onClick={handleDismissWelcome}
                                         style={{ 
                                             padding: '16px 32px', 
                                             borderRadius: '16px', 

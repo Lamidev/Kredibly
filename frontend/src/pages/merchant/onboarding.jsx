@@ -59,7 +59,7 @@ const Onboarding = () => {
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
 
-    const { updateProfile, user, profile } = useAuth();
+    const { updateProfile, user, profile, logout } = useAuth();
 
     // Step 3 Data: KYC (Moved after useAuth to access profile)
     const initialKycType = profile?.kyc?.method && profile.kyc.method !== 'none' ? profile.kyc.method : "bvn";
@@ -429,6 +429,27 @@ const Onboarding = () => {
                                         </div>
                                     </div>
                                     <button onClick={() => setStep(2)} className="btn-primary" style={{ width: '100%', height: '64px', fontSize: '1.15rem' }}>Verify Business Profile <ArrowRight size={20} /></button>
+                                    <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                                        <button
+                                            onClick={async () => {
+                                                await logout();
+                                                navigate("/auth/login");
+                                            }}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                fontSize: '0.85rem',
+                                                color: '#64748B',
+                                                cursor: 'pointer',
+                                                textDecoration: 'underline',
+                                                textUnderlineOffset: '3px',
+                                                fontWeight: 500,
+                                                padding: '4px 8px'
+                                            }}
+                                        >
+                                            ← Back to Login
+                                        </button>
+                                    </div>
                                 </motion.div>
                             )}
 
@@ -614,40 +635,6 @@ const Onboarding = () => {
                     </div>
 
                     <div style={{ marginTop: '32px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
-                        {!showWelcomePreview && step === 1 && (
-                            <Link
-                                to="/"
-                                className="back-home-btn"
-                                style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '10px 18px',
-                                    borderRadius: '100px',
-                                    border: '1px solid #E2E8F0',
-                                    background: 'transparent',
-                                    color: '#0F172A',
-                                    fontSize: '0.82rem',
-                                    fontWeight: 600,
-                                    textDecoration: 'none',
-                                    letterSpacing: '0.01em',
-                                    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
-                                }}
-                                onMouseEnter={e => {
-                                    e.currentTarget.style.background = '#F8FAFC';
-                                    e.currentTarget.style.borderColor = '#CBD5E1';
-                                    e.currentTarget.querySelector('.back-arrow').style.transform = 'translateX(-3px)';
-                                }}
-                                onMouseLeave={e => {
-                                    e.currentTarget.style.background = 'transparent';
-                                    e.currentTarget.style.borderColor = '#E2E8F0';
-                                    e.currentTarget.querySelector('.back-arrow').style.transform = 'translateX(0)';
-                                }}
-                            >
-                                <ArrowLeft size={14} className="back-arrow" style={{ transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }} />
-                                Back to Home
-                            </Link>
-                        )}
                         <p style={{ fontSize: '0.75rem', fontWeight: 500, color: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                             <ShieldCheck size={16} color="#0F172A" /> DATA ENCRYPTED & BANK-GRADE SECURE
                         </p>

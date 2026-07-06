@@ -135,37 +135,23 @@ const Login = () => {
         </p>
         <Link
           to="/"
-          className="back-home-btn"
           style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 18px',
-            borderRadius: '100px',
-            border: '1px solid #E2E8F0',
-            background: 'transparent',
+            background: 'none',
+            border: 'none',
+            fontSize: '0.85rem',
             color: '#64748B',
-            fontSize: '0.82rem',
-            fontWeight: 600,
-            textDecoration: 'none',
-            letterSpacing: '0.01em',
-            transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
+            cursor: 'pointer',
+            textDecoration: 'underline',
+            textUnderlineOffset: '3.5px',
+            fontWeight: 500,
+            padding: '4px 8px',
+            display: 'inline-block',
+            transition: 'color 0.2s'
           }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = '#F8FAFC';
-            e.currentTarget.style.borderColor = '#CBD5E1';
-            e.currentTarget.style.color = '#0F172A';
-            e.currentTarget.querySelector('.back-arrow').style.transform = 'translateX(-3px)';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.borderColor = '#E2E8F0';
-            e.currentTarget.style.color = '#64748B';
-            e.currentTarget.querySelector('.back-arrow').style.transform = 'translateX(0)';
-          }}
+          onMouseEnter={e => e.currentTarget.style.color = '#0F172A'}
+          onMouseLeave={e => e.currentTarget.style.color = '#64748B'}
         >
-          <ArrowLeft size={14} className="back-arrow" style={{ transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }} />
-          Back to home
+          ← Back to Home
         </Link>
       </div>
     </div>
