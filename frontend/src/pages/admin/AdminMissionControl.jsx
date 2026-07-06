@@ -10,7 +10,6 @@ import { toast } from 'sonner';
 import { API_BASE_URL } from '../../config';
 
 const AdminMissionControl = () => {
-    const [feed, setFeed] = useState([]);
     const [stats, setStats] = useState({ pending: 0, completed: 0, failed: 0, processing: 0 });
     const [loading, setLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -20,10 +19,6 @@ const AdminMissionControl = () => {
     const [adviceStatus, setAdviceStatus] = useState("pending");
     const [isRegenerating, setIsRegenerating] = useState(false);
     const [isApproving, setIsApproving] = useState(false);
-
-    // Pagination State
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
     
     const API_URL = API_BASE_URL;
 
@@ -91,7 +86,6 @@ const AdminMissionControl = () => {
         try {
             const res = await axios.get(`${API_URL}/admin/mission-control/feed`, { withCredentials: true });
             if (res.data.success) {
-                setFeed(res.data.feed);
                 setStats(res.data.stats);
             }
         } catch (err) {
@@ -103,36 +97,15 @@ const AdminMissionControl = () => {
         }
     };
 
-    const handleJobAction = async (jobId, action) => {
-        const loadingToast = toast.loading(`Performing ${action}...`);
-        try {
-            let res;
-            if (action === 'retry') {
-                res = await axios.post(`${API_URL}/admin/background-jobs/${jobId}/retry`, {}, { withCredentials: true });
-            } else if (action === 'cancel') {
-                res = await axios.patch(`${API_URL}/admin/background-jobs/${jobId}/cancel`, {}, { withCredentials: true });
-            } else if (action === 'delete') {
-                res = await axios.delete(`${API_URL}/admin/background-jobs/${jobId}`, { withCredentials: true });
-            }
-
-            if (res.data.success) {
-                toast.success(res.data.message, { id: loadingToast });
-                fetchMissionControlData(false, true);
-            }
-        } catch (err) {
-            toast.error(err.response?.data?.message || "Action failed", { id: loadingToast });
-        }
-    };
-
-    if (loading && feed.length === 0) {
+    if (loading) {
         return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', padding: '24px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-                    {[1, 2, 3, 4].map(i => (
+                    {[1, 2, 3].map(i => (
                         <div key={i} className="skeleton" style={{ height: '100px', borderRadius: '24px' }} />
                     ))}
                 </div>
-                <div className="skeleton" style={{ height: '500px', borderRadius: '32px' }} />
+                <div className="skeleton" style={{ height: '400px', borderRadius: '32px' }} />
             </div>
         );
     }
@@ -314,114 +287,6 @@ const AdminMissionControl = () => {
             </div>
         </div>
 
-            {/* UNIFIED FEED */}
-            <div className="dashboard-glass" style={{ background: 'white', borderRadius: '32px', border: '1px solid #E2E8F0', padding: 'clamp(16px, 5vw, 32px)', minHeight: '600px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                    <h3 style={{ margin: 0, fontWeight: 950, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <Terminal size={22} color="var(--primary)" /> Platform Pulse Feed
-                    </h3>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                         <span style={{ fontSize: '0.7rem', fontWeight: 900, background: '#F1F5F9', padding: '4px 10px', borderRadius: '100px' }}>14 DAY AUDIT ACTIVE</span>
-                    </div>
-                </div>
-
-                <div style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    gap: '16px', 
-                    minHeight: '400px',
-                    paddingRight: '4px'
-                }}>
-                    <AnimatePresence mode="popLayout">
-                         {feed.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((item) => (
-                            <motion.div 
-                                layout
-                                key={item._id + item.timestamp}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                style={{ 
-                                    padding: 'clamp(12px, 3vw, 20px)', 
-                                    borderRadius: '20px', 
-                                    background: '#F8FAFC', 
-                                    border: `1px solid ${item.status === 'failed' ? '#FEE2E2' : '#E2E8F0'}`,
-                                    display: 'flex',
-                                    gap: 'clamp(10px, 3vw, 16px)',
-                                    alignItems: 'center'
-                                }}
-                            >
-                                {/* EVENT ICON */}
-                                <div style={{ 
-                                    width: 'clamp(40px, 10vw, 48px)', height: 'clamp(40px, 10vw, 48px)', borderRadius: '14px', 
-                                    background: item.color === 'purple' ? '#F5F3FF' : (item.color === 'green' ? '#ECFDF5' : (item.color === 'blue' ? '#F0F9FF' : '#F1F5F9')),
-                                    color: item.color === 'purple' ? '#8B5CF6' : (item.color === 'green' ? '#10B981' : (item.color === 'blue' ? '#0EA5E9' : '#64748B')),
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                                }}>
-                                    {item.type === 'JOB' ? <Zap size={20} /> : (item.type === 'SALE' ? <TrendingUp size={20} /> : (item.type === 'SUB' ? <CreditCard size={20} /> : <Activity size={20} />))}
-                                </div>
- 
-                                {/* CONTENT */}
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '2px' }}>
-                                        <h4 style={{ margin: 0, fontWeight: 900, fontSize: '0.9rem', color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {item.merchant} 
-                                        </h4>
-                                        <span style={{ fontSize: '0.6rem', fontWeight: 700, color: '#94A3B8', whiteSpace: 'nowrap' }}>
-                                            {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                    </div>
-                                    <p style={{ margin: '0 0 4px', fontSize: '0.65rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        {item.event.replace(/_/g, ' ')}
-                                    </p>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                                        <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 650, color: item.status === 'failed' ? '#EF4444' : '#475569', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                                            {item.details}
-                                        </p>
-                                        
-                                        {/* ACTION BUTTONS FOR JOBS */}
-                                        {item.type === 'JOB' && (
-                                            <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                                                {item.status === 'failed' && (
-                                                    <button onClick={() => handleJobAction(item._id, 'retry')} style={actionBtnStyle('#10B981')} title="Retry Operation">
-                                                        <Play size={10} fill="currentColor" />
-                                                    </button>
-                                                )}
-                                                {item.status === 'pending' && (
-                                                    <button onClick={() => handleJobAction(item._id, 'cancel')} style={actionBtnStyle('#F97316')} title="Cancel Task">
-                                                        <XCircle size={10} />
-                                                    </button>
-                                                )}
-                                                <button onClick={() => handleJobAction(item._id, 'delete')} style={actionBtnStyle('#EF4444')} title="Purge Record">
-                                                    <Trash2 size={10} />
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                </div>
-
-                {/* Pagination Controls */}
-                <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'center', gap: '16px', alignItems: 'center' }}>
-                    <button 
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage(p => p - 1)}
-                        style={{ padding: '10px 20px', borderRadius: '12px', background: '#F8FAFC', border: '1px solid #E2E8F0', fontWeight: 800, color: '#64748B', cursor: 'pointer', fontSize: '0.8rem', opacity: currentPage === 1 ? 0.5 : 1 }}
-                    >
-                        Prev
-                    </button>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 900, color: 'var(--primary)' }}>Page {currentPage}</span>
-                    <button 
-                        disabled={currentPage * itemsPerPage >= feed.length}
-                        onClick={() => setCurrentPage(p => p + 1)}
-                        style={{ padding: '10px 20px', borderRadius: '12px', background: '#F8FAFC', border: '1px solid #E2E8F0', fontWeight: 800, color: '#64748B', cursor: 'pointer', fontSize: '0.8rem', opacity: currentPage * itemsPerPage >= feed.length ? 0.5 : 1 }}
-                    >
-                        Next
-                    </button>
-                </div>
-            </div>
 
             <style>{`
                 .spin-animation { animation: spin 1s linear infinite; }
@@ -430,20 +295,5 @@ const AdminMissionControl = () => {
         </motion.div>
     );
 };
-
-const actionBtnStyle = (color) => ({
-    background: 'white',
-    border: '1px solid #E2E8F0',
-    color: color,
-    width: '32px',
-    height: '32px',
-    borderRadius: '10px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-});
 
 export default AdminMissionControl;

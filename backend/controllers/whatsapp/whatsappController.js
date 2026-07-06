@@ -970,9 +970,28 @@ const handleIncoming = async (req, res) => {
         const merchantFirstName = registeredName || profileName || tierTitle;
         const bossTitle = profile?.assistantSettings?.preferredName || merchantFirstName;
 
-        // 🚀 Intercept Welcome Greeting
+        // 🚀 Intercept Welcome Greeting (text OR template button tap)
         const normalizedMsg = text.toLowerCase().replace(/[.,!']/g, "").trim();
-        if (profile && normalizedMsg === "hi kreddy im ready to record") {
+        const welcomeKeywords = [
+            "hi kreddy im ready to record",
+            "who is kreddy",
+            "tell me more about kreddy",
+            "ask me what i can do",
+            "ask me what you can do"
+        ];
+
+        // Button taps from the welcome template come in as msgType === "button"
+        // with message.button.payload set to the button's payload string
+        const btnPayload = (message?.button?.payload || "").toLowerCase().trim();
+        const btnText = (message?.button?.text || "").toLowerCase().trim();
+        const isWelcomeButtonTap = msgType === "button" && (
+            btnPayload === "ask_me_what_i_can_do" || 
+            btnText === "ask me what i can do"
+        );
+
+        const isWelcomeGreeting = welcomeKeywords.includes(normalizedMsg) || isWelcomeButtonTap;
+
+        if (profile && isWelcomeGreeting) {
             if (!profile.isKreddyConnected) {
                 const welcomeText = `Hello *${bossTitle}*,\n\nI'm *Kreddy* — your Digital Chief of Staff.\n\nI've successfully launched your workspace for\n*${profile.displayName}*\nand I'm ready to get to work.\n\nHere is what I can do for you:\n\n*Voice Note:*\n_"Sarah bought a bag for 15k, she paid 5k, remind me Friday for the balance."_\n\n*Picture:*\nSend me a receipt and I'll record it.\n\n*Ask me:*\n_"What is my revenue today?"_\n_"Who owes me money?"_\n\nTalk to me naturally.\n\nLet's get to work.`;
                 

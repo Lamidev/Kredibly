@@ -46,6 +46,9 @@ export const AuthProvider = ({ children }) => {
                 localStorage.setItem("kredibly_user", JSON.stringify(res.data.user));
                 if (res.data.profile) {
                     localStorage.setItem("kredibly_profile", JSON.stringify(res.data.profile));
+                } else {
+                    // Profile is null — clear stale localStorage profile so routing is correct
+                    localStorage.removeItem("kredibly_profile");
                 }
             } else {
                 // Server explicitly said "not authenticated"
@@ -125,6 +128,12 @@ export const AuthProvider = ({ children }) => {
             const res = await axios.post(`${API_URL}/business/profile`, profileData, { withCredentials: true });
             if (res.data.success) {
                 setProfile(res.data.data);
+                // 🛡️ Persist to localStorage so profile survives browser refresh/reopen.
+                // Without this, the hydration on app reload would find null in localStorage,
+                // and if checkAuth had any delay/error, the user would be routed to /onboarding.
+                if (res.data.data) {
+                    localStorage.setItem("kredibly_profile", JSON.stringify(res.data.data));
+                }
                 return res.data;
             }
         } catch (err) {

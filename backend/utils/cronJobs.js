@@ -474,10 +474,13 @@ const scheduleEscrowPayouts = () => {
             });
 
             for (const escrow of readyToRelease) {
+                // 🛡️ Dedup: skip if a job already exists in any active/terminal state.
+                // Including "failed" prevents a new job being spawned every hour after
+                // all 3 retries are exhausted (was causing infinite loop for bad bank accounts).
                 const existing = await BackgroundJob.findOne({
                     type: "ESCROW_PAYOUT",
                     "data.escrowId": escrow._id.toString(),
-                    status: { $in: ["pending", "processing"] }
+                    status: { $in: ["pending", "processing", "failed"] }
                 });
 
                 if (!existing) {

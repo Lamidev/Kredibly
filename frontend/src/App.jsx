@@ -49,7 +49,9 @@ const App = () => {
   const getHomeRedirect = () => {
     if (!user) return "/";
     if (user.role === 'admin') return "/admin";
-    return profile ? "/dashboard" : "/onboarding";
+    // A completed profile always has a displayName — works for all users regardless of onboardingStep value
+    const onboardingComplete = profile && profile.displayName;
+    return onboardingComplete ? "/dashboard" : "/onboarding";
   };
 
   return (
@@ -83,7 +85,7 @@ const App = () => {
 
         {/* Protected Routes with Sidebar Layout */}
         <Route
-          element={user && profile ? <DashboardLayout /> : <Navigate to={getHomeRedirect()} />}
+          element={user && profile && profile.displayName ? <DashboardLayout /> : <Navigate to={getHomeRedirect()} />}
         >
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/sales" element={<SalesList />} />
@@ -107,7 +109,12 @@ const App = () => {
         {/* Onboarding - No Sidebar */}
         <Route
           path="/onboarding"
-          element={user ? (user.role === 'admin' ? <Navigate to="/admin" /> : (!profile ? <Onboarding /> : <Navigate to="/dashboard" />)) : <Navigate to="/auth/login" />}
+          element={
+            !user ? <Navigate to="/auth/login" /> :
+            user.role === 'admin' ? <Navigate to="/admin" /> :
+            (!profile || !profile.displayName) ? <Onboarding /> :
+            <Navigate to="/dashboard" />
+          }
         />
 
         {/* Admin Routes - Restricted to Founders */}

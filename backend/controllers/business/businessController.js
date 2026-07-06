@@ -29,6 +29,16 @@ const triggerWelcomeMessage = async (profile) => {
                     { type: "text", text: String(personalizedName).substring(0, 60) },
                     { type: "text", text: String(profile.displayName).substring(0, 60) }
                 ]
+            },
+            {
+                // Quick Reply button — index 0 = first button on the template.
+                // Button payload must match what the backend intercepts in whatsappController.js.
+                type: "button",
+                sub_type: "quick_reply",
+                index: "0",
+                parameters: [
+                    { type: "payload", payload: "ask_me_what_i_can_do" }
+                ]
             }
         ];
 
