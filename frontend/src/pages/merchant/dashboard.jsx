@@ -3,10 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { useSales } from "../../context/SaleContext";
 import { useAuth } from "../../context/AuthContext";
 import { 
-    Plus, Wallet, Clock, CheckCircle, ChevronRight, 
+    Plus, Wallet, CheckCircle, ChevronRight, 
     TrendingUp, Users, MessagesSquare, Trash2, Shield, 
-    ArrowUpRight, Activity, Zap, Sparkles, Copy, Mic,
-    Bot, AlertCircle, X
+    ArrowUpRight, Zap, Sparkles, Copy, Mic,
+    Bot, AlertCircle, X, Clock, Activity
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
@@ -267,188 +267,113 @@ const Dashboard = () => {
                             {profile?.displayName || (user?.name && !user.name.includes('@') ? user.name.split(' ')[0] : 'Founder')}
                         </span>.
                     </h1>
+
+                    {/* Compact Inline Kreddy Status — Sits right under the name greeting */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '10px', marginBottom: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'white', padding: '5px 12px', borderRadius: '100px', border: '1px solid #E2E8F0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', flexShrink: 0 }}>
+                            <div style={{ 
+                                width: '8px', 
+                                height: '8px', 
+                                borderRadius: '50%', 
+                                background: '#10B981', 
+                                animation: 'pulse-green 2s infinite',
+                                flexShrink: 0
+                            }} />
+                            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#1E293B', display: 'flex', alignItems: 'center', gap: '4px', lineHeight: 1 }}>
+                                <Bot size={13} style={{ color: 'var(--primary)', marginTop: '-1px' }} />
+                                {profile?.isKreddyConnected ? 'Kreddy is Online' : 'Kreddy is Ready'}
+                            </span>
+                        </div>
+
+                        <a 
+                            href={profile?.isKreddyConnected 
+                                ? KREDDY_CONFIG.getLink("hi kreddy! im ready to record") 
+                                : KREDDY_CONFIG.getLink("tell me more about kreddy")
+                            }
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '6px', 
+                                padding: '6px 14px', 
+                                borderRadius: '100px', 
+                                background: profile?.isKreddyConnected ? 'rgba(124, 58, 237, 0.06)' : 'linear-gradient(135deg, #7C3AED, #4C1D95)',
+                                color: profile?.isKreddyConnected ? 'var(--primary)' : 'white', 
+                                fontSize: '0.78rem', 
+                                fontWeight: 800, 
+                                textDecoration: 'none',
+                                transition: 'all 0.2s',
+                                border: profile?.isKreddyConnected ? '1px solid rgba(124, 58, 237, 0.15)' : 'none',
+                                boxShadow: profile?.isKreddyConnected ? 'none' : '0 2px 6px rgba(124, 58, 237, 0.2)',
+                                lineHeight: 1
+                            }}
+                            onMouseEnter={e => {
+                                if (profile?.isKreddyConnected) {
+                                    e.currentTarget.style.background = 'rgba(124, 58, 237, 0.1)';
+                                } else {
+                                    e.currentTarget.style.transform = 'translateY(-1px)';
+                                }
+                            }}
+                            onMouseLeave={e => {
+                                if (profile?.isKreddyConnected) {
+                                    e.currentTarget.style.background = 'rgba(124, 58, 237, 0.06)';
+                                } else {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                }
+                            }}
+                        >
+                            {profile?.isKreddyConnected ? (
+                                <>Say Hi to Kreddy <MessagesSquare size={12} /></>
+                            ) : (
+                                <>Activate Kreddy <Zap size={11} fill="white" /></>
+                            )}
+                        </a>
+                    </div>
+
                     <p className="mobile-hide" style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.95rem' }}>
                         Here's your business overview.
                     </p>
                 </div>
 
-                {/* Plan Badge */}
-                <motion.div 
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    style={{ 
-                        padding: '12px 24px', 
-                        borderRadius: '20px', 
-                        background: profile?.planStatus === 'inactive' ? '#F1F5F9' :
-                                    profile?.planStatus === 'past_due' ? '#FEF2F2' :
-                                    profile?.plan === 'chairman' ? 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)' : 
-                                    profile?.plan === 'oga' ? 'linear-gradient(135deg, var(--primary) 0%, #7C3AED 100%)' : 
-                                    '#FFFFFF',
-                        color: profile?.planStatus === 'inactive' ? '#64748B' : 
-                               profile?.planStatus === 'past_due' ? '#EF4444' :
-                               profile?.plan === 'hustler' ? '#64748B' : 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-                        border: '1px solid rgba(0,0,0,0.05)',
-                        cursor: 'pointer'
-                    }}
-                    onClick={() => navigate('/settings')}
-                >
-                    <div style={{ 
-                        width: '32px', height: '32px', borderRadius: '10px', 
-                        background: profile?.planStatus === 'past_due' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255,255,255,0.2)', 
-                        display: 'flex', alignItems: 'center', justifyContent: 'center' 
-                    }}>
-                        {profile?.planStatus === 'past_due' ? <Clock size={18} /> :
-                         profile?.plan === 'chairman' ? <Shield size={18} /> : 
-                         profile?.plan === 'oga' ? <Zap size={18} fill="white" /> : 
-                         <Activity size={18} />}
-                    </div>
-                    <div>
-                        <p style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', opacity: 0.8, letterSpacing: '0.05em', marginBottom: '-2px' }}>
-                            {profile?.planStatus === 'trialing' ? 'Active Trial' : 
-                             profile?.planStatus === 'past_due' ? 'Plan Expired' : 
-                             profile?.planStatus === 'inactive' ? 'Hustler Mode' : 'Account Status'}
-                        </p>
-                        <p style={{ fontSize: '0.9rem', fontWeight: 900, letterSpacing: '0.02em' }}>
-                            {profile?.plan?.toUpperCase() || 'HUSTLER'}
-                            {profile?.isFoundingMember && <span style={{ marginLeft: '8px', fontSize: '0.7rem', color: '#4ADE80' }}>★</span>}
-                        </p>
-                    </div>
-                </motion.div>
+                {/* Kreddy Connect CTA — shown in header slot only for new merchants, replaces plan badge */}
+                {profile?.isKreddyConnected === false && !welcomeDismissed && (
+                    <a
+                        href={KREDDY_CONFIG.getLink("tell me more about kreddy")}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={handleDismissWelcome}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '10px 18px',
+                            borderRadius: '14px',
+                            background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)',
+                            color: 'white',
+                            textDecoration: 'none',
+                            fontSize: '0.85rem',
+                            fontWeight: 800,
+                            boxShadow: '0 4px 14px rgba(76,29,149,0.3)',
+                            border: '1px solid rgba(124,58,237,0.3)',
+                            whiteSpace: 'nowrap',
+                            flexShrink: 0
+                        }}
+                    >
+                        <Bot size={16} />
+                        <span>Activate Kreddy</span>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px rgba(74,222,128,0.8)' }} />
+                    </a>
+                )}
             </div>
-            {/* ═══ KREDDY ACTIVATION HERO BANNER (new merchants only) ═══ */}
-            {profile?.isKreddyConnected === false && !welcomeDismissed && (
-                <motion.div
-                    initial={{ opacity: 0, y: -12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.45, ease: 'easeOut' }}
-                    style={{
-                        background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 60%, #2D1B69 100%)',
-                        borderRadius: '28px',
-                        padding: '28px 32px',
-                        marginBottom: '28px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '24px',
-                        flexWrap: 'wrap',
-                        position: 'relative',
-                        overflow: 'hidden',
-                        boxShadow: '0 20px 50px -10px rgba(76, 29, 149, 0.45)',
-                        border: '1px solid rgba(124, 58, 237, 0.2)'
-                    }}
-                >
-                    {/* Subtle animated glow orb */}
-                    <div style={{
-                        position: 'absolute', top: '-40px', right: '-40px',
-                        width: '200px', height: '200px',
-                        background: 'radial-gradient(circle, rgba(124,58,237,0.35) 0%, transparent 70%)',
-                        borderRadius: '50%', pointerEvents: 'none'
-                    }} />
-                    <div style={{
-                        position: 'absolute', bottom: '-30px', left: '40%',
-                        width: '120px', height: '120px',
-                        background: 'radial-gradient(circle, rgba(79,70,229,0.2) 0%, transparent 70%)',
-                        borderRadius: '50%', pointerEvents: 'none'
-                    }} />
 
-                    {/* Left: Icon + Text */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flex: 1, minWidth: 0, position: 'relative', zIndex: 1 }}>
-                        {/* Pulsing Kreddy Avatar */}
-                        <div style={{ position: 'relative', flexShrink: 0 }}>
-                            <div style={{
-                                width: '56px', height: '56px', borderRadius: '18px',
-                                background: 'linear-gradient(135deg, #7C3AED, #4C1D95)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                boxShadow: '0 0 0 0 rgba(124,58,237,0.5)',
-                                animation: 'kreddy-pulse 2.5s infinite'
-                            }}>
-                                <Bot size={28} color="white" />
-                            </div>
-                            <div style={{
-                                position: 'absolute', top: '-3px', right: '-3px',
-                                width: '14px', height: '14px', borderRadius: '50%',
-                                background: '#4ade80', border: '2px solid #0F172A',
-                                boxShadow: '0 0 8px rgba(74, 222, 128, 0.7)'
-                            }} />
-                        </div>
-
-                        {/* Copy */}
-                        <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '-0.02em' }}>
-                                    Activate Kreddy AI — Your Digital Chief of Staff
-                                </h3>
-                                <span style={{
-                                    fontSize: '0.65rem', fontWeight: 800, background: 'rgba(74,222,128,0.15)',
-                                    color: '#4ade80', padding: '3px 10px', borderRadius: '100px',
-                                    border: '1px solid rgba(74,222,128,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em',
-                                    whiteSpace: 'nowrap'
-                                }}>Online & Ready</span>
-                            </div>
-                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.65)', fontWeight: 500, lineHeight: 1.5 }}>
-                                Tap the button → WhatsApp opens → Send the message → Kreddy introduces herself. Takes 5 seconds.
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Right: CTA Buttons */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0, position: 'relative', zIndex: 1, flexWrap: 'wrap' }}>
-                        <a
-                            href={KREDDY_CONFIG.getLink("tell me more about kreddy")}
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={handleDismissWelcome}
-                            style={{
-                                background: 'linear-gradient(135deg, #7C3AED, #4C1D95)',
-                                color: 'white',
-                                border: '1px solid rgba(255,255,255,0.15)',
-                                borderRadius: '16px',
-                                padding: '14px 24px',
-                                fontSize: '0.9rem',
-                                fontWeight: 900,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                textDecoration: 'none',
-                                boxShadow: '0 8px 24px rgba(124, 58, 237, 0.4)',
-                                whiteSpace: 'nowrap',
-                                transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(124,58,237,0.55)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(124,58,237,0.4)'; }}
-                        >
-                            <Zap size={17} fill="white" /> Activate Kreddy <MessagesSquare size={16} />
-                        </a>
-                        <button
-                            onClick={handleDismissWelcome}
-                            title="Dismiss"
-                            style={{
-                                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
-                                borderRadius: '12px', padding: '10px', cursor: 'pointer',
-                                color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center',
-                                transition: 'background 0.2s'
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
-                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
-                        >
-                            <X size={16} />
-                        </button>
-                    </div>
-
-                    <style>{`
-                        @keyframes kreddy-pulse {
-                            0% { box-shadow: 0 0 0 0 rgba(124,58,237,0.5); }
-                            70% { box-shadow: 0 0 0 12px rgba(124,58,237,0); }
-                            100% { box-shadow: 0 0 0 0 rgba(124,58,237,0); }
-                        }
-                    `}</style>
-                </motion.div>
-            )}
+            <style>{`
+                @keyframes pulse-green {
+                    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+                    70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+                }
+            `}</style>
 
             {/* Premium Stats Bento Grid */}
             <div style={{
@@ -799,80 +724,6 @@ const Dashboard = () => {
 
                 {/* Right Column: Sidebar Widgets */}
                 <div style={{ flex: '1 1 300px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    {/* Kreddy AI Status Card */}
-                    {!profile?.whatsappNumber ? (
-                        <div className="dashboard-glass" style={{ padding: '24px', borderRadius: '28px', background: 'white', border: '1px solid var(--primary)' }}>
-                            <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
-                                <div style={{ background: 'var(--primary)', color: 'white', padding: '16px', borderRadius: '20px' }}>
-                                    <MessagesSquare size={32} />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <h3 style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '8px' }}>Activate Kreddy AI</h3>
-                                    <p style={{ color: 'var(--text-muted)', fontWeight: 600, marginBottom: '24px', lineHeight: 1.5 }}>
-                                        Link your WhatsApp to start recording sales.
-                                    </p>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                        <input
-                                            type="tel"
-                                            placeholder="23480..."
-                                            value={whatsappInput}
-                                            onChange={(e) => setWhatsappInput(e.target.value)}
-                                            style={{ padding: '16px 24px', borderRadius: '16px', border: '1px solid var(--border)', fontSize: '1rem', fontWeight: 600 }}
-                                        />
-                                        <button
-                                            onClick={handleUpdateWhatsapp}
-                                            disabled={updatingWhatsapp}
-                                            className="btn-primary"
-                                            style={{ padding: '16px', borderRadius: '16px', width: '100%', justifyContent: 'center' }}
-                                        >
-                                            {updatingWhatsapp ? "Syncing..." : "Connect Now"}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="dashboard-glass" style={{ padding: '24px', borderRadius: '28px', background: 'linear-gradient(135deg, #0F172A, #1E1B4B)', color: 'white', boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.3)' }}>
-                            <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-                                <div style={{ background: 'rgba(255,255,255,0.1)', padding: '16px', borderRadius: '20px' }}>
-                                    <Sparkles size={32} color="#4ade80" />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                        <h3 style={{ fontSize: '1.4rem', fontWeight: 900 }}>Kreddy is Online</h3>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 800, background: '#4ade80', color: '#064e3b', padding: '4px 12px', borderRadius: '100px', textTransform: 'uppercase' }}>Active</span>
-                                    </div>
-                                    <p style={{ opacity: 0.8, fontWeight: 500, marginBottom: '24px', fontSize: '0.85rem' }}>
-                                        Ready to record? Sync your first sale now.
-                                    </p>
-                                    <a 
-                                        href={KREDDY_CONFIG.getLink("hi kreddy! im ready to record")}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="hover-scale"
-                                        onClick={handleDismissWelcome}
-                                        style={{ 
-                                            padding: '16px 32px', 
-                                            borderRadius: '16px', 
-                                            background: '#FFFFFF', 
-                                            color: '#0F172A', 
-                                            width: '100%', 
-                                            justifyContent: 'center',
-                                            textDecoration: 'none',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '12px',
-                                            fontWeight: 900,
-                                            fontSize: '1rem',
-                                            boxShadow: '0 10px 20px -5px rgba(255, 255, 255, 0.1)'
-                                        }}
-                                    >
-                                        <MessagesSquare size={20} /> Say Hi to Kreddy
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     <div className="dashboard-glass" style={{ padding: '24px', borderRadius: '28px', border: '1px solid var(--border)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>

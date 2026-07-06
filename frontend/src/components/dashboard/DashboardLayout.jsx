@@ -23,8 +23,10 @@ import {
     Shield,
     Bot,
     Zap,
-    UserCheck
+    UserCheck,
+    Activity
 } from 'lucide-react';
+import { KREDDY_CONFIG } from '../../config';
 import { useSales } from '../../context/SaleContext';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
@@ -226,7 +228,7 @@ const DashboardLayout = () => {
         { label: 'Staff', path: '/settings/staff', icon: UserCheck, activeIfMatch: ['/settings/staff'] },
         { label: 'Kreddy AI', path: '/settings/kreddy', icon: Bot, activeIfMatch: ['/settings/kreddy'] },
         { label: 'Notifications', path: '/settings/notifications', icon: Bell, activeIfMatch: ['/settings/notifications'] },
-        { label: 'Plan', path: '/settings/plan', icon: Zap, activeIfMatch: ['/settings/plan'], planBadge: profile?.plan },
+        { label: 'Plan', path: '/settings/plan', icon: Zap, activeIfMatch: ['/settings/plan'] },
     ];
 
     return (
@@ -289,6 +291,8 @@ const DashboardLayout = () => {
                         <Plus size={20} strokeWidth={3} /> New Invoice
                     </button>
                 </div>
+
+
 
                 <nav className="sidebar-nav">
                     {navItems.map((item) => (
@@ -353,6 +357,55 @@ const DashboardLayout = () => {
                 </nav>
 
                 <div className="sidebar-footer" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {/* Plan Badge — clickable, navigates to plan settings */}
+                    <div
+                        onClick={() => navigate('/settings/plan')}
+                        style={{
+                            padding: '12px 16px',
+                            borderRadius: '14px',
+                            background: profile?.planStatus === 'inactive' ? '#F1F5F9' :
+                                        profile?.planStatus === 'past_due' ? '#FEF2F2' :
+                                        profile?.plan === 'chairman' ? 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)' :
+                                        profile?.plan === 'oga' ? 'linear-gradient(135deg, var(--primary) 0%, #7C3AED 100%)' :
+                                        '#F8FAFC',
+                            color: profile?.planStatus === 'inactive' ? '#64748B' :
+                                   profile?.planStatus === 'past_due' ? '#EF4444' :
+                                   profile?.plan === 'hustler' ? '#64748B' : 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            cursor: 'pointer',
+                            border: profile?.planStatus === 'inactive' ? '1px solid #E2E8F0' :
+                                    profile?.planStatus === 'past_due' ? '1px solid rgba(239,68,68,0.2)' :
+                                    '1px solid rgba(255,255,255,0.1)',
+                            transition: 'opacity 0.2s',
+                            marginBottom: '4px'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+                        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                    >
+                        <div style={{
+                            width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
+                            background: profile?.planStatus === 'past_due' ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.2)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                            {profile?.planStatus === 'past_due' ? <AlertTriangle size={16} /> :
+                             profile?.plan === 'chairman' ? <Shield size={16} /> :
+                             profile?.plan === 'oga' ? <Zap size={16} fill="white" /> :
+                             <Activity size={16} />}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', opacity: 0.75, letterSpacing: '0.06em', margin: 0, lineHeight: 1 }}>
+                                {profile?.planStatus === 'trialing' ? 'Active Trial' :
+                                 profile?.planStatus === 'past_due' ? 'Plan Expired' :
+                                 profile?.planStatus === 'inactive' ? 'Hustler Mode' : 'Account Status'}
+                            </p>
+                            <p style={{ fontSize: '0.9rem', fontWeight: 900, letterSpacing: '0.02em', margin: '3px 0 0', lineHeight: 1 }}>
+                                {profile?.plan?.toUpperCase() || 'HUSTLER'}
+                                {profile?.isFoundingMember && <span style={{ marginLeft: '6px', fontSize: '0.65rem', color: '#4ADE80' }}>★</span>}
+                            </p>
+                        </div>
+                    </div>
                     <NavLink
                         to="/settings/identity"
                         className={() => {

@@ -359,7 +359,7 @@ const Onboarding = () => {
                 />
             </div>
             
-            <div className="onboarding-container" style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px 24px 60px', position: 'relative', zIndex: 10 }}>
+            <div className="onboarding-container" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px 24px 60px', position: 'relative', zIndex: 10 }}>
                 <div style={{ maxWidth: '540px', width: '100%' }}>
                     
                     <div className="glass-card" style={{ padding: 'clamp(24px, 6vw, 48px)', borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)' }}>
