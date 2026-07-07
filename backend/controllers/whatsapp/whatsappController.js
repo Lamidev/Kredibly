@@ -8,6 +8,7 @@ const User = require("../../models/User");
 const Feedback = require("../../models/Feedback");
 const CustomerAlias = require("../../models/CustomerAlias");
 const axios = require("axios");
+const chrono = require("chrono-node");
 const { logActivity } = require("../../utils/activityLogger");
 const { processMessageWithAI, processAudioWithAI, processImageWithAI } = require("../../utils/aiService");
 const { logUsage } = require("../../utils/usageTracker");
@@ -1016,7 +1017,7 @@ const handleIncoming = async (req, res) => {
         if (msgType === "interactive") {
             const buttonId = message?.interactive?.button_reply?.id || "";
             if (buttonId.startsWith("pay_now:") || buttonId.startsWith("req_ext:") || 
-                buttonId.startsWith("ext_3days:") || buttonId.startsWith("ext_1week:") || buttonId.startsWith("ext_2weeks:")) {
+                buttonId.startsWith("ext_3days:") || buttonId.startsWith("ext_1week:") || buttonId.startsWith("ext_custom:")) {
                 isForCustomerFlow = true;
             }
         } else if (msgType === "button") {
@@ -1029,7 +1030,9 @@ const handleIncoming = async (req, res) => {
         } else {
             // Check if they are in the middle of a customer extension request session
             const tempSession = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
-            if (tempSession?.type === 'customer_extension_duration') {
+            if (tempSession && (tempSession.type === 'customer_extension_duration' || 
+                                tempSession.type === 'customer_extension_custom_date' || 
+                                tempSession.type === 'customer_extension_reason')) {
                 isForCustomerFlow = true;
             }
         }
@@ -1208,11 +1211,14 @@ const handleIncoming = async (req, res) => {
             status: { $in: ['open', 'replied'] }
         }).sort({ updatedAt: -1 });
 
-        // 🧠 KREDDY AI: Handle interactive button replies (from merchant extension approve/reject)
+        // 🧠 KREDDY AI: Handle interactive button or list replies (from merchant extension approve/reject or task reminders)
         if (msgType === "interactive") {
             const buttonReply = message?.interactive?.button_reply;
-            if (buttonReply) {
-                const { id: buttonId } = buttonReply;
+            const listReply = message?.interactive?.list_reply;
+            const interactiveId = buttonReply?.id || listReply?.id;
+            
+            if (interactiveId) {
+                const buttonId = interactiveId;
                 if (buttonId === "invoice_yes" || buttonId === "invoice_no" || buttonId === "invoice_edit") {
                     text = buttonId;
                     lowerText = buttonId.toLowerCase().trim();
@@ -1220,7 +1226,7 @@ const handleIncoming = async (req, res) => {
                     const saleId = buttonId.split(":")[1];
                     const sale = await Sale.findById(saleId);
                     if (!sale) {
-                        await sendReply(from, `I couldn't find the invoice details anymore. 🤔`);
+                        await sendReply(from, `I couldn't locate that invoice anymore. It may have been deleted.`);
                         return;
                     }
                     await sendReply(from, `Sending payment reminder to *${sale.customerName}* (+${sale.customerPhone})...`);
@@ -1230,7 +1236,7 @@ const handleIncoming = async (req, res) => {
                     } else {
                         const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                         const link = `${APP_URL}/i/${sale.invoiceNumber}`;
-                        const draft = `Hello ${sale.customerName}! 👋\n\nThis is a friendly reminder to settle your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\n🔗 *Tap here to view and pay securely:*\n${link}`;
+                        const draft = `Hello ${sale.customerName},\n\nThis is a friendly reminder about your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\nPlease tap the link below to view and pay your invoice:\n${link}`;
                         await sendReply(from, `⚠️ I had trouble sending the reminder to their WhatsApp automatically. Here is the draft to send manually instead:\n\n${draft}`);
                     }
                     return;
@@ -1243,7 +1249,7 @@ const handleIncoming = async (req, res) => {
                     }
                     const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                     const link = `${APP_URL}/i/${sale.invoiceNumber}`;
-                    const draft = `Hello ${sale.customerName}! 👋\n\nThis is a friendly reminder to settle your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\n🔗 *Tap here to view and pay securely:*\n${link}`;
+                    const draft = `Hello ${sale.customerName},\n\nThis is a friendly reminder about your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\nPlease tap the link below to view and pay your invoice:\n${link}`;
                     
                     await sendReply(from, `📝 *Draft for ${sale.customerName}* (Copy the message below):`);
                     await sendReply(from, draft);
@@ -1290,6 +1296,75 @@ const handleIncoming = async (req, res) => {
                     } else {
                         await sendReply(from, `I couldn't find the extension request to reject. It may have expired. 🤔`);
                     }
+                    return;
+                }
+
+                // ── Overpayment: Mark Refunded ────────────────────────────────
+                if (buttonId.startsWith("overpay_refunded:")) {
+                    const saleId = buttonId.split(":")[1];
+                    await WhatsAppSession.deleteOne({ whatsappNumber: cleanFrom, type: "merchant_overpayment" });
+                    await Sale.findByIdAndUpdate(saleId, { overpaymentStatus: 'refunded' });
+                    await sendReply(from, `✅ *Marked as refunded.* I've updated the record. All sorted — great work keeping things clean, ${bossTitle}!`);
+                    return;
+                }
+
+                // ── Overpayment: Remind Me Later (defer 24h) ──────────────────
+                if (buttonId.startsWith("overpay_later:")) {
+                    const saleId = buttonId.split(":")[1];
+                    const opSession = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom, type: "merchant_overpayment" });
+                    if (opSession) {
+                        // Extend the session expiry by 24h from now
+                        await WhatsAppSession.findOneAndUpdate(
+                            { _id: opSession._id },
+                            { expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) }
+                        );
+                    }
+                    await Sale.findByIdAndUpdate(saleId, { overpaymentStatus: 'deferred' });
+                    await sendReply(from, `No problem, ${bossTitle}. I'll remind you again in 24 hours. Just reply *"refunded"* at any time to close it out.`);
+                    return;
+                }
+
+                // ── Multi-invoice: Continue (create new invoice for customer with existing) ─
+                if (buttonId.startsWith("multi_inv_continue:")) {
+                    const pendingSession = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom, type: "pending_invoice_after_warning" });
+                    if (pendingSession) {
+                        await WhatsAppSession.deleteOne({ _id: pendingSession._id });
+                        // Re-trigger invoice creation with stored pending data
+                        const { pendingInvoiceData } = pendingSession.data;
+                        if (pendingInvoiceData) {
+                            // Proceed directly to invoice summary (isStaff=false for merchant-initiated)
+                            await _proceedToInvoiceSummary(from, cleanFrom, profile, false, pendingInvoiceData);
+                        } else {
+                            await sendReply(from, `Got it — go ahead and tell me the details for the new invoice and I'll create it now.`);
+                        }
+                    } else {
+                        await sendReply(from, `Sure! Tell me the details for the new invoice.`);
+                    }
+                    return;
+                }
+
+                // ── Multi-invoice: View Existing Invoice ──────────────────────
+                if (buttonId.startsWith("multi_inv_view:")) {
+                    const saleId = buttonId.split(":")[1];
+                    const existingSale = await Sale.findById(saleId);
+                    if (!existingSale) {
+                        await sendReply(from, `I couldn't find that invoice. It may have already been settled.`);
+                        return;
+                    }
+                    const bal = existingSale.totalAmount - (existingSale.payments || []).reduce((s, p) => s + p.amount, 0);
+                    const daysOld = Math.floor((Date.now() - new Date(existingSale.createdAt)) / (1000 * 60 * 60 * 24));
+                    await sendReply(from, [
+                        `*Invoice #${existingSale.invoiceNumber}*`,
+                        `Customer: *${existingSale.customerName}*`,
+                        `Total: ₦${existingSale.totalAmount.toLocaleString()}`,
+                        `Outstanding: *₦${bal.toLocaleString()}*`,
+                        `Status: ${existingSale.status}`,
+                        `Age: ${daysOld} day${daysOld !== 1 ? "s" : ""}`,
+                        ``,
+                        `Reply *"chase ${existingSale.customerName}"* to send them a reminder, or go ahead and describe the new invoice to create it separately.`
+                    ].join("\n"));
+                    // Clean up the warning session
+                    await WhatsAppSession.deleteOne({ whatsappNumber: cleanFrom, type: "pending_invoice_after_warning" });
                     return;
                 }
 
@@ -1365,6 +1440,74 @@ const handleIncoming = async (req, res) => {
                     }
                     return;
                 }
+
+                if (buttonId.startsWith("t_tomorrow:")) {
+                    const remId = buttonId.split(":")[1];
+                    const reminder = await Reminder.findById(remId);
+                    if (reminder) {
+                        // ── ONE-TIME GUARD: Block duplicate click ──────────────────────
+                        if (reminder.status === "delivered") {
+                            await sendReply(from, `This task has already been completed, so it cannot be snoozed, ${bossTitle}! 🌟`);
+                            return;
+                        }
+                        if (reminder.triggerDate > new Date()) {
+                            await sendReply(from, `This reminder has already been snoozed, ${bossTitle}! 😴`);
+                            return;
+                        }
+
+                        const tzOffset = 60 * 60 * 1000; // Lagos is UTC+1
+                        const nowLagos = new Date(Date.now() + tzOffset);
+                        const tomorrowLagos = new Date(nowLagos);
+                        tomorrowLagos.setDate(tomorrowLagos.getDate() + 1);
+                        tomorrowLagos.setUTCHours(8, 0, 0, 0);
+                        const newTriggerDate = new Date(tomorrowLagos.getTime() - tzOffset);
+
+                        reminder.triggerDate = newTriggerDate;
+                        reminder.status = "pending";
+                        reminder.snoozeCount += 1;
+                        await reminder.save();
+
+                        const friendly = newTriggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                        await sendReply(from, `Understood, ${bossTitle}! 😴 I've rescheduled *"${reminder.description}"* for tomorrow morning at *${friendly}*. Talk then!`);
+                    } else {
+                        await sendReply(from, `I couldn't find that reminder anymore, ${bossTitle}. 🤔`);
+                    }
+                    return;
+                }
+
+                if (buttonId.startsWith("t_dismiss:")) {
+                    const remId = buttonId.split(":")[1];
+                    const reminder = await Reminder.findById(remId);
+                    if (reminder) {
+                        reminder.status = "delivered";
+                        reminder.deliveredAt = new Date();
+                        await reminder.save();
+                        await sendReply(from, `Got it, ${bossTitle}! I've dismissed and archived that reminder. Let me know if you need anything else! 🫡`);
+                    } else {
+                        await sendReply(from, `I couldn't find that reminder anymore, ${bossTitle}. 🤔`);
+                    }
+                    return;
+                }
+
+                if (buttonId.startsWith("t_choose_time:")) {
+                    const remId = buttonId.split(":")[1];
+                    const reminder = await Reminder.findById(remId);
+                    if (reminder) {
+                        await WhatsAppSession.findOneAndUpdate(
+                            { whatsappNumber: cleanFrom },
+                            {
+                                type: "merchant_task_reschedule",
+                                data: { reminderId: remId },
+                                expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+                            },
+                            { upsert: true }
+                        );
+                        await sendReply(from, `No problem, ${bossTitle}! What date and time would you like to reschedule this task to? (e.g. *5pm today*, *Friday 10am*, or *24 July*) 🗓️`);
+                    } else {
+                        await sendReply(from, `I couldn't find that reminder anymore, ${bossTitle}. 🤔`);
+                    }
+                    return;
+                }
             }
         }
 
@@ -1411,6 +1554,33 @@ const handleIncoming = async (req, res) => {
         }
 
         if (session) {
+            // ⚡ Reschedule ignored task reminder session handler
+            if (session.type === 'merchant_task_reschedule') {
+                const parsedDate = chrono.parseDate(text);
+                if (!parsedDate || parsedDate <= new Date()) {
+                    await sendReply(from, `I couldn't understand that date/time or it's in the past. Please reply with a valid future date and time like "5pm today", "Friday 10am", or "24 July". 🗓️`);
+                    return;
+                }
+
+                const { reminderId } = session.data;
+                const reminder = await Reminder.findById(reminderId);
+                if (reminder) {
+                    reminder.triggerDate = parsedDate;
+                    reminder.status = "pending";
+                    reminder.snoozeCount += 1;
+                    await reminder.save();
+
+                    await WhatsAppSession.deleteOne({ _id: session._id });
+
+                    const friendly = parsedDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                    await sendReply(from, `Understood, ${bossTitle}! 😴 I've rescheduled *"${reminder.description}"* to *${friendly}*. Talk then!`);
+                } else {
+                    await WhatsAppSession.deleteOne({ _id: session._id });
+                    await sendReply(from, `I couldn't find that reminder anymore, ${bossTitle}. 🤔`);
+                }
+                return;
+            }
+
             // 🚀 Extension Request template buttons / reply interceptor
             if (session.type === 'merchant_extension_approval') {
                 const lowerText = text ? text.toLowerCase().trim() : "";
@@ -1554,6 +1724,12 @@ const handleIncoming = async (req, res) => {
                     });
                     await newSale.save();
 
+                    // P1-B: Immediate acknowledgment so merchant never waits in silence
+                    await sendReply(from,
+                        `On it — generating Invoice #${newSale.invoiceNumber} for *${customerName}* now. ` +
+                        `I'll send you a copy as soon as it's delivered.`
+                    );
+
                     await Notification.create({
                         businessId: profile._id,
                         title: "Invoice Created via Kreddy",
@@ -1587,7 +1763,7 @@ const handleIncoming = async (req, res) => {
                     return;
                 } else if (isRejection || text.toLowerCase().trim() === 'invoice_no') {
                     await WhatsAppSession.deleteOne({ _id: session._id });
-                    await sendReply(from, `No problem — invoice cancelled. Just tell me again when you're ready.`);
+                    await sendReply(from, `Understood — invoice cancelled. Just let me know when you're ready to send it.`);
                     return;
                 } else if (text.toLowerCase().trim() === 'invoice_edit') {
                     const sd = session.data;
@@ -1708,7 +1884,7 @@ const handleIncoming = async (req, res) => {
                             `Total: ₦${effectiveTotal.toLocaleString()}`,
                             effectiveBal > 0 && effectivePaid > 0 ? `Balance due: ₦${effectiveBal.toLocaleString()}` : null,
                             ``,
-                            `Shall I go ahead and generate this invoice and send it to the customer?`
+                            `Ready to send. Shall I go ahead?`
                         ].filter(v => v !== null).join('\n');
 
                         await sendInteractiveButtons(
@@ -1717,9 +1893,9 @@ const handleIncoming = async (req, res) => {
                             updatedSummary,
                             '',
                             [
-                                { id: 'invoice_yes', title: 'Yes' },
-                                { id: 'invoice_no', title: 'No' },
-                                { id: 'invoice_edit', title: 'Edit' }
+                                { id: 'invoice_yes', title: 'Send Invoice' },
+                                { id: 'invoice_no', title: 'Cancel' },
+                                { id: 'invoice_edit', title: 'Edit Details' }
                             ]
                         );
                         return;
@@ -1734,12 +1910,12 @@ const handleIncoming = async (req, res) => {
                             { _id: session._id },
                             { 'data.customerPhone': cleanPhone }
                         );
-                        await sendReply(from, `Got it — I'll deliver the invoice to *+${cleanPhone}*. Reply *Yes* to confirm and send, or *No* to cancel.`);
+                        await sendReply(from, `Got it — I'll deliver the invoice to *+${cleanPhone}*. Tap *Send Invoice* to confirm, or *Cancel* to discard.`);
                         return;
                     }
 
                     // If no edit command was parsed and it's not a phone number, guide them
-                    await sendReply(from, `I didn't quite catch that edit. Please reply *Yes* to confirm and send, *No* to cancel, or type a change like *change name to Bukola* or *price is 85k*.`);
+                    await sendReply(from, `I didn't quite catch that. You can type a correction like *change name to Bukola* or *price is 85k*, or tap *Send Invoice* to confirm, or *Cancel* to discard.`);
                     return;
                 }
             }
@@ -1779,7 +1955,7 @@ const handleIncoming = async (req, res) => {
                         `Total: ₦${pendingSaleData.totalAmount.toLocaleString()}`,
                         bal > 0 && pendingSaleData.paidAmount > 0 ? `Balance due: ₦${bal.toLocaleString()}` : null,
                         ``,
-                        `Shall I go ahead and generate this invoice and send it to the customer?`
+                        `Ready to send. Shall I go ahead?`
                     ].filter(v => v !== null).join("\n");
 
                     // Save data for confirmation approval
@@ -1809,14 +1985,84 @@ const handleIncoming = async (req, res) => {
                         summaryMsg,
                         "",
                         [
-                            { id: "invoice_yes", title: "Yes" },
-                            { id: "invoice_no", title: "No" },
-                            { id: "invoice_edit", title: "Edit" }
+                            { id: "invoice_yes", title: "Send Invoice" },
+                            { id: "invoice_no", title: "Cancel" },
+                            { id: "invoice_edit", title: "Edit Details" }
                         ]
                     );
                     return;
                 } else {
-                    await sendReply(from, `Please provide a valid WhatsApp phone number to continue (e.g. 08012345678). 📱`);
+                    await sendReply(from, `That doesn't look like a valid number. Please enter it as 08012345678 or +2348012345678.`);
+                    return;
+                }
+            }
+
+
+            // ─────────────────────────────────────────────────────────────────
+            // KREDDY AI: collect_ocr_payment_status — OCR ambiguity flow
+            // ─────────────────────────────────────────────────────────────────
+            if (session.type === 'collect_ocr_payment_status') {
+                const lowerInput = text.toLowerCase().trim();
+                const pendingData = session.data.pendingSaleData;
+
+                const isFullyPaid = lowerInput === 'ocr_paid' || lowerInput === 'paid' || lowerInput === 'fully paid' || isConfirmation;
+                const isNotPaid   = lowerInput === 'ocr_unpaid' || lowerInput === 'not paid yet' || lowerInput === 'unpaid' || isRejection;
+                const isPartPaid  = lowerInput === 'ocr_part_paid' || lowerInput.includes('part') || lowerInput.includes('partial');
+
+                if (isFullyPaid) {
+                    pendingData.paidAmount = pendingData.totalAmount;
+                    pendingData.invoiceType = 'record';
+                    await WhatsAppSession.deleteOne({ _id: session._id });
+                    await _proceedToInvoiceSummary(from, cleanFrom, profile, isStaff, pendingData);
+                    return;
+                } else if (isNotPaid) {
+                    pendingData.paidAmount = 0;
+                    pendingData.invoiceType = 'billing';
+                    await WhatsAppSession.deleteOne({ _id: session._id });
+                    await _proceedToInvoiceSummary(from, cleanFrom, profile, isStaff, pendingData);
+                    return;
+                } else if (isPartPaid) {
+                    await WhatsAppSession.findOneAndUpdate(
+                        { whatsappNumber: cleanFrom },
+                        {
+                            type: 'collect_ocr_partial_amount',
+                            data: { pendingSaleData: pendingData },
+                            expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+                        },
+                        { upsert: true }
+                    );
+                    await sendReply(from, 'How much has the customer paid so far?');
+                    return;
+                } else {
+                    await sendInteractiveButtons(
+                        from,
+                        'Payment Status',
+                        'I just need to confirm — has the customer paid for this invoice?',
+                        '',
+                        [
+                            { id: 'ocr_paid', title: 'Fully Paid' },
+                            { id: 'ocr_part_paid', title: 'Partially Paid' },
+                            { id: 'ocr_unpaid', title: 'Not Paid Yet' }
+                        ]
+                    );
+                    return;
+                }
+            }
+
+            // ─────────────────────────────────────────────────────────────────
+            // KREDDY AI: collect_ocr_partial_amount — partial payment amount
+            // ─────────────────────────────────────────────────────────────────
+            if (session.type === 'collect_ocr_partial_amount') {
+                const pendingData = session.data.pendingSaleData;
+                const amt = parseAmountFromText(text);
+                if (amt !== null && amt > 0 && amt <= pendingData.totalAmount) {
+                    pendingData.paidAmount = amt;
+                    pendingData.invoiceType = 'billing';
+                    await WhatsAppSession.deleteOne({ _id: session._id });
+                    await _proceedToInvoiceSummary(from, cleanFrom, profile, isStaff, pendingData);
+                    return;
+                } else {
+                    await sendReply(from, `Please enter a valid amount between ₦1 and ₦${pendingData.totalAmount.toLocaleString()}.`);
                     return;
                 }
             }
@@ -1838,23 +2084,23 @@ const handleIncoming = async (req, res) => {
                         sale.customerPhone = cleanPhone;
                         await sale.save();
 
-                        await sendReply(from, `Got the number! 📱 Sending the payment reminder directly to *${sale.customerName}* (+${cleanPhone}) now...`);
+                        await sendReply(from, `On it — sending the reminder to *${sale.customerName}* now.`);
                         
                         const result = await sendChaseToCustomer(sale._id, profile._id);
                         if (result.success) {
-                            await sendReply(from, `✅ Done! The reminder has been sent to *${sale.customerName}*. I'll monitor for their response and keep you updated! 🛡️`);
+                            await sendReply(from, `Done. The reminder has been delivered to *${sale.customerName}*. I'll let you know if they respond.`);
                         } else {
                             const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                             const link = `${APP_URL}/i/${sale.invoiceNumber}`;
-                            const draft = `Hello ${sale.customerName}! 👋\n\nThis is a friendly reminder to settle your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\n🔗 *Tap here to view and pay securely:*\n${link}`;
-                            await sendReply(from, `⚠️ I had trouble sending the reminder to their WhatsApp automatically. Here is the draft to send manually instead:\n\n${draft}`);
+                            const draft = `Hello ${sale.customerName},\n\nThis is a friendly reminder about your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\nPlease tap the link below to view and pay your invoice:\n${link}`;
+                            await sendReply(from, `I wasn't able to send the reminder automatically. Here's a draft you can forward directly:\n\n${draft}`);
                         }
                     } else {
                         await sendReply(from, `I couldn't find the invoice details anymore. 🤔`);
                     }
                     return;
                 } else {
-                    await sendReply(from, `Please provide a valid WhatsApp phone number to continue (e.g. 08012345678). 📱`);
+                    await sendReply(from, `That doesn't look like a valid number. Please enter it as 08012345678 or +2348012345678.`);
                     return;
                 }
             }
@@ -2631,7 +2877,44 @@ const handleIncoming = async (req, res) => {
                 const aiItems = aiResponseItem.data.items || [];
                 const resolvedName = customerName || session?.data?.customerName || "Customer";
 
+                // P3-A: OCR ambiguous payment status — ask merchant before proceeding
+                if (aiResponseItem.data.clarify_payment_status) {
+                    await WhatsAppSession.findOneAndUpdate(
+                        { whatsappNumber: cleanFrom },
+                        {
+                            type: 'collect_ocr_payment_status',
+                            data: {
+                                pendingSaleData: {
+                                    customerName: resolvedName,
+                                    totalAmount,
+                                    paidAmount: 0,
+                                    items: aiItems,
+                                    item: item || 'Purchase',
+                                    dueDate: dueDate || null,
+                                    invoiceType: 'billing',
+                                    customerPhone: aiResponseItem.data.customerPhone || null
+                                }
+                            },
+                            expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+                        },
+                        { upsert: true }
+                    );
+                    await sendInteractiveButtons(
+                        from,
+                        'Payment Status',
+                        `Got the invoice details. Has ${resolvedName} paid for this?`,
+                        '',
+                        [
+                            { id: 'ocr_paid', title: 'Fully Paid' },
+                            { id: 'ocr_part_paid', title: 'Partially Paid' },
+                            { id: 'ocr_unpaid', title: 'Not Paid Yet' }
+                        ]
+                    );
+                    isProcessed = true;
+                }
+
                 // Check for customer WhatsApp number — strictly required
+                if (!isProcessed) {
                 let customerPhone = aiResponseItem.data.customerPhone || null;
                 if (!customerPhone) {
                     await WhatsAppSession.findOneAndUpdate(
@@ -2653,7 +2936,11 @@ const handleIncoming = async (req, res) => {
                         },
                         { upsert: true }
                     );
-                    await sendReply(from, `What's the customer's WhatsApp number for this invoice?`);
+                    // P1-A: Send AI ownership acknowledgment first
+                    if (aiResponseItem.data.reply) {
+                        await sendReply(from, aiResponseItem.data.reply);
+                    }
+                    await sendReply(from, `I just need ${resolvedName}'s WhatsApp number to deliver the invoice.`);
                     if (isStaff && profile.whatsappNumber) {
                         await sendReply(profile.whatsappNumber, `📢 *Staff Activity:* ${cleanFrom} is creating an invoice for ${resolvedName} (₦${totalAmount.toLocaleString()}).`);
                     }
@@ -2686,7 +2973,7 @@ const handleIncoming = async (req, res) => {
                         bal > 0 ? `Balance due: ₦${bal.toLocaleString()}` : null,
                         invoiceType === "record" ? `Type: ${typeLabel}` : null,
                         ``,
-                        `Shall I create this invoice and send it to the customer?`
+                        `Ready to send. Shall I go ahead?`
                     ].filter(v => v !== null).join("\n");
 
                     // Save to session for approval
@@ -2716,9 +3003,9 @@ const handleIncoming = async (req, res) => {
                         summaryMsg,
                         "",
                         [
-                            { id: "invoice_yes", title: "Yes" },
-                            { id: "invoice_no", title: "No" },
-                            { id: "invoice_edit", title: "Edit" }
+                            { id: "invoice_yes", title: "Send Invoice" },
+                            { id: "invoice_no", title: "Cancel" },
+                            { id: "invoice_edit", title: "Edit Details" }
                         ]
                     );
 
@@ -2727,6 +3014,7 @@ const handleIncoming = async (req, res) => {
                     }
                     isProcessed = true;
                 }
+                } // end if (!isProcessed) [OCR skip guard]
             }
 
             // 3. OTHER INTENTS
@@ -2916,6 +3204,18 @@ const handleIncoming = async (req, res) => {
                         } else if ((triggerDate.getTime() - new Date().getTime()) < 5 * 60 * 1000) {
                             await sendReply(from, `That time is too close for me to prepare a proper alert. Give me at least 5 minutes from now and I'll have it ready.`);
                         } else {
+                            let priority = data.priority || aiResponseItem.priority;
+                            if (!["high", "normal", "low"].includes(priority)) {
+                                const descLower = String(taskDescription).toLowerCase();
+                                if (/rent|salary|salaries|invoice|pay|loan|fee|bill|tax|settle|debt|owe|client|customer|contract/i.test(descLower)) {
+                                    priority = "high";
+                                } else if (/milk|grocery|groceries|parcel|package|errand|shop|store|buy|laundry|clean|barber/i.test(descLower)) {
+                                    priority = "low";
+                                } else {
+                                    priority = "normal";
+                                }
+                            }
+
                             let canSet = true;
                             const usedReminders = (profile.monthlyUsage?.reminders) || 0;
 
@@ -2958,7 +3258,8 @@ const handleIncoming = async (req, res) => {
                                     triggerDate: triggerDate,
                                     type: reminderType,
                                     recurrence: recurrence,
-                                    saleId: linkedSaleId
+                                    saleId: linkedSaleId,
+                                    priority: priority
                                 });
 
                                 // Sync the sale's dueDate if it's a debt reminder
@@ -3634,6 +3935,126 @@ const handleIncoming = async (req, res) => {
         }
     }
 };
+
+
+/**
+ * _proceedToInvoiceSummary — shared helper used by OCR and phone-collect sessions.
+ * Either asks for the customer phone (if missing) or shows the invoice approval buttons.
+ */
+async function _proceedToInvoiceSummary(from, cleanFrom, profile, isStaff, pendingData) {
+    const { customerName, totalAmount, paidAmount, items, item, dueDate, invoiceType, customerPhone } = pendingData;
+    const resolvedName = customerName || 'Customer';
+
+    if (!customerPhone) {
+        await WhatsAppSession.findOneAndUpdate(
+            { whatsappNumber: cleanFrom },
+            {
+                type: 'collect_customer_phone',
+                data: { pendingSaleData: pendingData },
+                expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+            },
+            { upsert: true }
+        );
+        await sendReply(from, `What's ${resolvedName}'s WhatsApp number so I can deliver the invoice?`);
+        return;
+    }
+
+    let cleanPhone = String(customerPhone).replace(/\D/g, '');
+    if (cleanPhone.startsWith('0') && cleanPhone.length === 11) cleanPhone = '234' + cleanPhone.slice(1);
+
+    // ── Phase 4: Multi-invoice warning ────────────────────────────────────────
+    const existingUnpaid = await Sale.find({
+        businessId: profile._id,
+        customerPhone: cleanPhone,
+        status: { $in: ['unpaid', 'partial'] }
+    }).sort({ createdAt: -1 }).limit(1);
+
+    if (existingUnpaid.length > 0) {
+        const existing = existingUnpaid[0];
+        const existingBal = existing.totalAmount - (existing.payments || []).reduce((s, p) => s + p.amount, 0);
+        const daysOld = Math.floor((Date.now() - new Date(existing.createdAt)) / (1000 * 60 * 60 * 24));
+        await WhatsAppSession.findOneAndUpdate(
+            { whatsappNumber: cleanFrom },
+            {
+                type: 'pending_invoice_after_warning',
+                data: { pendingInvoiceData: pendingData },
+                expiresAt: new Date(Date.now() + 15 * 60 * 1000)
+            },
+            { upsert: true }
+        );
+        await sendInteractiveButtons(
+            from,
+            'Heads Up',
+            `*${resolvedName}* already has an open invoice with you.\n\nInvoice *#${existing.invoiceNumber}* — *\u20a6${existingBal.toLocaleString()}* outstanding (${daysOld} day${daysOld !== 1 ? 's' : ''} old).\n\nWould you like to create a separate invoice anyway, or view the existing one?`,
+            'Every invoice stays independent',
+            [
+                { id: `multi_inv_continue:${existing._id}`, title: 'Create New Invoice' },
+                { id: `multi_inv_view:${existing._id}`, title: 'View Existing' }
+            ]
+        );
+        return;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const effectivePaid = paidAmount || 0;
+    const bal = totalAmount - effectivePaid;
+
+
+    const itemsDisplay = items && items.length > 0
+        ? items.map((i, idx) => `${idx + 1}. ${i.name} × ${i.quantity || 1} — ₦${((i.unitPrice || 0) * (i.quantity || 1)).toLocaleString()}`).join('\n')
+        : `${item && item !== 'Item' ? item : 'Purchase'} — ₦${totalAmount.toLocaleString()}`;
+
+    const summaryLines = [
+        `Here's the invoice summary:`,
+        ``,
+        `Customer: *${resolvedName}*`,
+        `Phone: +${cleanPhone}`,
+        ``,
+        itemsDisplay,
+        ``,
+        effectivePaid > 0 ? `Subtotal: ₦${totalAmount.toLocaleString()}` : null,
+        effectivePaid > 0 ? `Paid: ₦${effectivePaid.toLocaleString()}` : null,
+        `Total: ₦${totalAmount.toLocaleString()}`,
+        bal > 0 && effectivePaid > 0 ? `Balance due: ₦${bal.toLocaleString()}` : null,
+        ``,
+        `Ready to send. Shall I go ahead?`
+    ].filter(v => v !== null).join('\n');
+
+    await WhatsAppSession.findOneAndUpdate(
+        { whatsappNumber: cleanFrom },
+        {
+            type: 'invoice_approval',
+            data: {
+                customerName: resolvedName,
+                totalAmount,
+                paidAmount: effectivePaid,
+                items: items || [],
+                item: item || 'Purchase',
+                dueDate: dueDate || null,
+                invoiceType: invoiceType || 'billing',
+                customerPhone: cleanPhone
+            },
+            expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+        },
+        { upsert: true }
+    );
+
+    await sendInteractiveButtons(
+        from,
+        'Invoice Summary',
+        summaryLines,
+        '',
+        [
+            { id: 'invoice_yes', title: 'Send Invoice' },
+            { id: 'invoice_no', title: 'Cancel' },
+            { id: 'invoice_edit', title: 'Edit Details' }
+        ]
+    );
+
+    if (isStaff && profile.whatsappNumber) {
+        await sendReply(profile.whatsappNumber, `📢 *Staff Activity:* ${cleanFrom} is creating an invoice for ${resolvedName} (₦${totalAmount.toLocaleString()}).`);
+    }
+}
 
 exports.sendWhatsAppMessage = sendReply;
 exports.sendReply = sendReply;

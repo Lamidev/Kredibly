@@ -12,13 +12,18 @@
  */
 
 const axios = require("axios");
+const chrono = require("chrono-node");
 const Sale = require("../models/Sale");
 const BusinessProfile = require("../models/BusinessProfile");
 const Reminder = require("../models/Reminder");
 const Notification = require("../models/Notification");
 const WhatsAppSession = require("../models/WhatsAppSession");
+const PaymentSession = require("../models/PaymentSession");
+const { generatePaymentConfirmationCard } = require("./receiptGenerator");
 const { generateAndUploadInvoicePDF } = require("./pdfGenerator");
 const { logActivity } = require("./activityLogger");
+const { createDynamicVirtualAccount } = require("./nomba");
+const FINANCIAL_CONFIG = require("../config/financials");
 
 const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
 
@@ -148,6 +153,34 @@ const sendDocument = async (to, pdfUrl, filename, caption = "") => {
 };
 
 /**
+ * Send a WhatsApp image message with optional caption.
+ */
+const sendImage = async (to, imageUrl, caption = "") => {
+    const { phoneId, accessToken } = getWACredentials();
+    if (!accessToken || !phoneId) return false;
+    const cleanTo = normalizePhone(to);
+    try {
+        await axios.post(
+            `https://graph.facebook.com/v21.0/${phoneId}/messages`,
+            {
+                messaging_product: "whatsapp",
+                to: cleanTo,
+                type: "image",
+                image: {
+                    link: imageUrl,
+                    caption: caption
+                }
+            },
+            { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 15000 }
+        );
+        return true;
+    } catch (err) {
+        console.error("❌ sendImage Error:", err.response?.data || err.message);
+        return false;
+    }
+};
+
+/**
  * Send an interactive message with reply buttons (max 3 buttons).
  * Used for customer-facing messages like invoice delivery and extension requests.
  */
@@ -191,6 +224,51 @@ const sendInteractiveButtons = async (to, headerText, bodyText, footerText, butt
         return true;
     } catch (err) {
         console.error("❌ sendInteractiveButtons Error:", err.response?.data || err.message);
+        return false;
+    }
+};
+
+/**
+ * Send an interactive message with a list (up to 10 options).
+ * Used when more than 3 options are needed, e.g., task reminders.
+ */
+const sendInteractiveList = async (to, headerText, bodyText, footerText, buttonText, sections) => {
+    const { phoneId, accessToken } = getWACredentials();
+    if (!accessToken || !phoneId) return false;
+    const cleanTo = normalizePhone(to);
+
+    const payload = {
+        messaging_product: "whatsapp",
+        to: cleanTo,
+        type: "interactive",
+        interactive: {
+            type: "list",
+            header: headerText ? {
+                type: "text",
+                text: headerText.replace(/[\*_~`#]/g, "").substring(0, 60)
+            } : undefined,
+            body: { text: bodyText.substring(0, 1024) },
+            footer: footerText ? { text: footerText.substring(0, 60) } : undefined,
+            action: {
+                button: buttonText.substring(0, 20),
+                sections: sections
+            }
+        }
+    };
+
+    // Remove undefined keys
+    if (!payload.interactive.header) delete payload.interactive.header;
+    if (!payload.interactive.footer) delete payload.interactive.footer;
+
+    try {
+        await axios.post(
+            `https://graph.facebook.com/v21.0/${phoneId}/messages`,
+            payload,
+            { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 10000 }
+        );
+        return true;
+    } catch (err) {
+        console.error("❌ sendInteractiveList Error:", err.response?.data || err.message);
         return false;
     }
 };
@@ -627,40 +705,150 @@ const handleCustomerPayNow = async (saleId, customerPhone) => {
         const sale = await Sale.findById(saleId).populate("businessId");
         if (!sale) return;
 
-        const business = sale.businessId;
         const bal = sale.totalAmount - (sale.payments || []).reduce((s, p) => s + p.amount, 0);
 
         if (bal <= 0) {
-            await sendText(customerPhone, `Great news! This invoice *#${sale.invoiceNumber}* has already been fully paid. Thank you!`);
+            await sendText(customerPhone, `Great news! This invoice *#${sale.invoiceNumber}* has already been fully paid. Thank you! 🎉`);
             return;
         }
 
         const cleanCustomerPhone = normalizePhone(customerPhone);
-        const paymentMsg = `Ready to pay Invoice #${sale.invoiceNumber}? Tap the button below to settle outstanding balance of ₦${bal.toLocaleString()} securely online.`;
-        
-        // Use template message with URL button (no naked links!)
-        const templateName = 'kreddy_system_alert';
-        const components = [
-            {
-                type: "body",
-                parameters: [
-                    { type: "text", text: String(sale.customerName || "Customer").substring(0, 60) },
-                    { type: "text", text: paymentMsg }
-                ]
-            },
-            {
-                type: "button",
-                sub_type: "url",
-                index: "0",
-                parameters: [
-                    { type: "text", text: `${sale.invoiceNumber}` }
-                ]
-            }
-        ];
-        
-        await sendTemplateMsg(cleanCustomerPhone, templateName, components);
+
+        // V2: Ownership-first language, cleaner options
+        await sendInteractiveButtons(
+            cleanCustomerPhone,
+            `Invoice #${sale.invoiceNumber}`,
+            `Hi ${sale.customerName} 👋\n\nYou have an outstanding balance of *₦${bal.toLocaleString()}* on Invoice *#${sale.invoiceNumber}*.\n\nWould you like to pay the full balance or make a partial payment?`,
+            "A unique bank account will be generated for you instantly.",
+            [
+                { id: `pay_full:${saleId}`, title: "Full Payment" },
+                { id: `pay_part:${saleId}`, title: "Partial Payment" }
+            ]
+        );
     } catch (err) {
         console.error("❌ handleCustomerPayNow Error:", err.message);
+    }
+};
+
+/**
+ * Handle a [Pay Full] button press — generate a DVA for the full outstanding balance.
+ */
+const handleCustomerPayFull = async (saleId, customerPhone) => {
+    try {
+        const sale = await Sale.findById(saleId).populate("businessId");
+        if (!sale) return;
+
+        const business = sale.businessId;
+        const cleanPhone = normalizePhone(customerPhone);
+        const bal = sale.totalAmount - (sale.payments || []).reduce((s, p) => s + p.amount, 0);
+
+        if (bal <= 0) {
+            await sendText(cleanPhone, `Invoice *#${sale.invoiceNumber}* is already fully paid. Thank you! 🎉`);
+            return;
+        }
+
+        // Invalidate any existing open PaymentSession for this sale
+        await PaymentSession.updateMany(
+            { saleId, status: "pending" },
+            { $set: { status: "expired" } }
+        );
+
+        // Determine DVA amount — gross up if merchant doesn't absorb fees
+        const absorbFees = business?.prefersGatewayFeeAbsorption !== false;
+        const dvaAmount = FINANCIAL_CONFIG.calculateGrossAmount(bal, absorbFees);
+
+        // Generate DVA
+        const dva = await createDynamicVirtualAccount({
+            amount: dvaAmount,
+            invoiceNumber: sale.invoiceNumber,
+            merchantName: business?.displayName || "Kredibly",
+            customerEmail: sale.customerEmail || "payments@usekredibly.com"
+        });
+
+        // Persist PaymentSession
+        const paySession = await PaymentSession.create({
+            saleId,
+            businessId: sale.businessId?._id || sale.businessId,
+            customerPhone: cleanPhone,
+            amountExpected: dvaAmount,
+            amountIntended: bal,
+            paymentType: "full",
+            nombaReference: dva.reference,
+            nombaAccountNumber: dva.accountNumber,
+            nombaBankName: dva.bankName,
+            nombaAccountName: dva.accountName,
+            nombaExpiresAt: new Date(dva.expiresAt),
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+        });
+
+        // V2: Structured payment card
+        const expiryTime = new Date(dva.expiresAt);
+        const expiryStr = expiryTime.toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit", hour12: true });
+        const expiryDateStr = expiryTime.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short" });
+        const validUntil = `${expiryDateStr} at ${expiryStr}`;
+
+        const feeLines = absorbFees
+            ? ``
+            : `\n*Invoice Amount:* ₦${bal.toLocaleString()}\n*Gateway Fee:* ₦${(dvaAmount - bal).toLocaleString()}`;
+
+        await sendText(
+            cleanPhone,
+            `*You're paying*\n${sale.businessId?.displayName || "Your Merchant"}\nInvoice ${sale.invoiceNumber}\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `*Amount*          ₦${bal.toLocaleString()}${feeLines}\n` +
+            `*Transfer exactly* ₦${dvaAmount.toLocaleString()}\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `*Bank*            ${dva.bankName}\n` +
+            `*Account Name*    ${dva.accountName}\n` +
+            `*Account Number*  ${dva.accountNumber}\n` +
+            `*Valid until*     ${validUntil}\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `Open your banking app and transfer exactly *₦${dvaAmount.toLocaleString()}*. Your payment will be confirmed automatically — no need to send a screenshot. 🏦`
+        );
+    } catch (err) {
+        console.error("❌ handleCustomerPayFull Error:", err.message);
+        await sendText(
+            normalizePhone(customerPhone),
+            "Sorry, we couldn't generate your payment account right now. Please try again in a moment."
+        );
+    }
+};
+
+/**
+ * Handle a [Pay Part] button press — ask the customer how much they want to pay.
+ */
+const handleCustomerPayPart = async (saleId, customerPhone) => {
+    try {
+        const sale = await Sale.findById(saleId).populate("businessId");
+        if (!sale) return;
+
+        const cleanPhone = normalizePhone(customerPhone);
+        const bal = sale.totalAmount - (sale.payments || []).reduce((s, p) => s + p.amount, 0);
+
+        if (bal <= 0) {
+            await sendText(cleanPhone, `Invoice *#${sale.invoiceNumber}* is already fully paid. Thank you! 🎉`);
+            return;
+        }
+
+        // Open a WhatsApp session to collect the partial amount
+        await WhatsAppSession.findOneAndUpdate(
+            { whatsappNumber: cleanPhone },
+            {
+                whatsappNumber: cleanPhone,
+                type: "collect_partial_payment_amount",
+                data: { saleId: saleId.toString(), balance: bal, invoiceNumber: sale.invoiceNumber }
+            },
+            { upsert: true, new: true }
+        );
+
+        await sendText(
+            cleanPhone,
+            `💬 How much would you like to pay now?\n\n` +
+            `Outstanding balance on Invoice *#${sale.invoiceNumber}*: *₦${bal.toLocaleString()}*\n\n` +
+            `Please reply with the amount (e.g. *5000*).`
+        );
+    } catch (err) {
+        console.error("❌ handleCustomerPayPart Error:", err.message);
     }
 };
 
@@ -729,12 +917,12 @@ const handleCustomerRequestExtension = async (saleId, customerPhone) => {
         const sent = await sendInteractiveButtons(
             customerPhone,
             "Payment Extension",
-            `Hi ${sale.customerName}, how much more time do you need to settle Invoice #${sale.invoiceNumber} (₦${sale.totalAmount.toLocaleString()})? Alternatively, you can reply with natural text like "I need 5 days".`,
+            `Hi ${sale.customerName}, how much more time do you need to settle Invoice #${sale.invoiceNumber} (₦${sale.totalAmount.toLocaleString()})?`,
             "Your merchant will be notified immediately",
             [
-                { id: `ext_3days:${saleId}`, title: "3 More Days" },
-                { id: `ext_1week:${saleId}`, title: "1 More Week" },
-                { id: `ext_2weeks:${saleId}`, title: "2 More Weeks" }
+                { id: `ext_3days:${saleId}`, title: "+3 Days" },
+                { id: `ext_1week:${saleId}`, title: "+1 Week" },
+                { id: `ext_custom:${saleId}`, title: "Custom Date" }
             ]
         );
 
@@ -753,10 +941,43 @@ const handleCustomerRequestExtension = async (saleId, customerPhone) => {
 };
 
 /**
- * Handle customer selecting an extension duration.
- * Notifies the merchant with [Approve] [Reject] buttons.
+ * Handle customer selecting 'Custom Date' — opens a conversation to collect the date.
  */
-const handleCustomerExtensionDuration = async (saleId, days, customerPhone, customerName) => {
+const handleCustomerCustomDate = async (saleId, customerPhone, sale) => {
+    try {
+        // Save session so we capture the next free-text reply as a date
+        await WhatsAppSession.findOneAndUpdate(
+            { whatsappNumber: normalizePhone(customerPhone) },
+            {
+                type: "customer_extension_custom_date",
+                data: {
+                    saleId: saleId.toString(),
+                    customerName: sale.customerName,
+                    invoiceNumber: sale.invoiceNumber,
+                    businessId: sale.businessId?._id?.toString() || sale.businessId?.toString(),
+                    merchantPhone: sale.businessId?.whatsappNumber
+                },
+                expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 min to answer
+            },
+            { upsert: true, new: true }
+        );
+
+        await sendText(
+            customerPhone,
+            `Sure. What date would you like to pay by? (e.g. *24 July* or *31/07*)`
+        );
+    } catch (err) {
+        console.error("❌ handleCustomerCustomDate Error:", err.message);
+    }
+};
+
+/**
+ * Handle customer selecting an extension duration (from buttons or parsed text).
+ * Accepts an optional reason string to include in the merchant card.
+ * @param {string|null} reason  - Customer's stated reason (null = skipped)
+ * @param {Date|null}   newDueDateOverride - If set, use this date instead of computing from days
+ */
+const handleCustomerExtensionDuration = async (saleId, days, customerPhone, customerName, reason = null, newDueDateOverride = null) => {
     try {
         const sale = await Sale.findById(saleId).populate("businessId");
         if (!sale) return;
@@ -764,26 +985,42 @@ const handleCustomerExtensionDuration = async (saleId, days, customerPhone, cust
         const business = sale.businessId;
         const daysNum = parseInt(days);
 
+        // Resolve the target date — either from override (custom date flow) or from days count
+        const requestedDate = newDueDateOverride
+            ? new Date(newDueDateOverride)
+            : new Date(Date.now() + daysNum * 24 * 60 * 60 * 1000);
+
+        // Human-readable label for the date
+        const newDueDateStr = requestedDate.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+
+        // Compute a display label for the duration
+        const actualDays = newDueDateOverride
+            ? Math.ceil((requestedDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000))
+            : daysNum;
+        const durationLabel = newDueDateOverride ? `until ${newDueDateStr}` : `${actualDays}-day extension`;
+
         // Update sale: extension requested
         await Sale.findByIdAndUpdate(saleId, {
             lifecycleStatus: "EXTENSION_REQUESTED",
             extensionRequestedAt: new Date(),
-            requestedExtensionDays: daysNum
+            requestedExtensionDays: actualDays
         });
 
         // Acknowledge to customer using merchant business display name
         const bizName = business?.displayName || "the merchant";
         await sendText(
             customerPhone,
-            `Got it, ${customerName}! I've sent your request for a *${daysNum}-day extension* to *${bizName}*. They will respond shortly.`
+            `Got it, ${customerName}! I've sent your request for a *${durationLabel}* to *${bizName}*. They will respond shortly.`
         );
 
-        // Notify merchant with [Approve] [Reject] interactive buttons
+        // Notify merchant with [Approve] [Decline] interactive buttons
         const merchantPhone = business?.whatsappNumber;
         if (!merchantPhone) return;
 
-        const requestedDate = new Date(Date.now() + daysNum * 24 * 60 * 60 * 1000);
-        const newDueDateStr = requestedDate.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short" });
+        // Build reason line for merchant card
+        const reasonLine = reason
+            ? `\n\nReason:\n"${reason}"`
+            : `\n\nReason:\nNo reason provided.`;
 
         // Save session on merchant's number so they can approve/reject
         await WhatsAppSession.findOneAndUpdate(
@@ -795,7 +1032,7 @@ const handleCustomerExtensionDuration = async (saleId, days, customerPhone, cust
                     customerName: sale.customerName,
                     customerPhone: normalizePhone(customerPhone),
                     invoiceNumber: sale.invoiceNumber,
-                    requestedDays: daysNum,
+                    requestedDays: actualDays,
                     newDueDate: requestedDate.toISOString(),
                     businessId: business._id.toString()
                 },
@@ -807,21 +1044,21 @@ const handleCustomerExtensionDuration = async (saleId, days, customerPhone, cust
         const success = await sendInteractiveButtons(
             merchantPhone,
             "Extension Request",
-            `${sale.customerName} is requesting a ${daysNum}-day payment extension for Invoice #${sale.invoiceNumber} (₦${sale.totalAmount.toLocaleString()}).\n\nNew due date: ${newDueDateStr}\n\nDo you approve?`,
+            `${sale.customerName} is requesting an extension for Invoice #${sale.invoiceNumber} (₦${sale.totalAmount.toLocaleString()}).\n\nRequested date: *${newDueDateStr}*${reasonLine}\n\nDo you approve?`,
             "Reply to notify the customer instantly",
             [
                 { id: `ext_approve:${saleId}`, title: "Approve" },
-                { id: `ext_reject:${saleId}`, title: "Reject" }
+                { id: `ext_reject:${saleId}`, title: "Decline" }
             ]
         );
 
         if (!success) {
-            console.log(`⚠️ Merchant 24h window closed for extension request. Sending template alert with buttons to ${merchantPhone}...`);
+            console.log(`⚠️ Merchant 24h window closed for extension request. Sending template alert to ${merchantPhone}...`);
             const { sendWhatsAppTemplate } = require("../controllers/whatsapp/whatsappController");
             
             const finalTitle = business?.assistantSettings?.preferredName || business?.displayName || "Partner";
-            
-            const alertText = `*${sale.customerName}* requested a *${daysNum}-day* payment extension for Invoice *#${sale.invoiceNumber}* (₦${sale.totalAmount.toLocaleString()}). New Due Date: *${newDueDateStr}*.`;
+            const reasonClean = reason ? `Reason: "${reason}"` : `Reason: No reason provided.`;
+            const alertText = `*${sale.customerName}* has requested a payment extension for Invoice *#${sale.invoiceNumber}* (₦${sale.totalAmount.toLocaleString()}). Requested date: *${newDueDateStr}*. ${reasonClean}`;
             const cleanMsg = alertText
                 .replace(/[\r\n\t]+/g, ' ')
                 .replace(/\s\s+/g, ' ')
@@ -844,7 +1081,7 @@ const handleCustomerExtensionDuration = async (saleId, days, customerPhone, cust
         await Notification.create({
             businessId: business._id,
             title: "Extension Request",
-            message: `${sale.customerName} requested a ${daysNum}-day extension for Invoice #${sale.invoiceNumber}.`,
+            message: `${sale.customerName} requested an extension for Invoice #${sale.invoiceNumber}. Requested date: ${newDueDateStr}.`,
             type: "system",
             saleId: sale._id
         });
@@ -926,6 +1163,9 @@ const handleMerchantRejectExtension = async (saleId, sessionData) => {
 
 /**
  * Send a payment confirmation to the customer after a successful payment.
+ * Sequence:
+ *  1. Branded payment confirmation image card (always)
+ *  2. Final PAID PDF (only when fully settled)
  */
 const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
     try {
@@ -939,48 +1179,69 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
         const totalPaid = (sale.payments || []).reduce((s, p) => s + p.amount, 0);
         const balance = sale.totalAmount - totalPaid;
         const businessName = business?.displayName || "Your merchant";
+        const isFullyPaid = balance <= 0;
 
-        let lifecycleStatus = "PARTIALLY_PAID";
-        let msg;
-        if (balance <= 0) {
-            lifecycleStatus = "PAID";
-            msg = `Payment confirmed. Thank you, ${sale.customerName}. Your payment of ₦${amountPaid.toLocaleString()} for Invoice #${sale.invoiceNumber} has been received. The invoice is now fully paid.`;
-            // Cancel pending customer reminders
-            await cancelCustomerReminders(saleId);
-        } else {
-            msg = `Partial payment received. Thank you, ${sale.customerName}. Your payment of ₦${amountPaid.toLocaleString()} for Invoice #${sale.invoiceNumber} has been received.\n\nOutstanding balance: ₦${balance.toLocaleString()}`;
-        }
-
-        // Update database status first so PDF generation reads it
+        // Update lifecycle status first so PDF watermark reads correctly
+        const lifecycleStatus = isFullyPaid ? "PAID" : "PARTIALLY_PAID";
+        if (isFullyPaid) await cancelCustomerReminders(saleId);
         sale = await Sale.findByIdAndUpdate(saleId, { lifecycleStatus }, { new: true }).populate("businessId");
-
-        // Step 2: Regenerate updated PDF (with stamp PAID or updated balances) and upload to Cloudinary
-        console.log(`📄 Regenerating PDF for Invoice ${sale.invoiceNumber} post-payment...`);
-        const pdfUrl = await generateAndUploadInvoicePDF(sale, business);
-        if (pdfUrl) {
-            sale = await Sale.findByIdAndUpdate(saleId, { pdfUrl }, { new: true }).populate("businessId");
-        }
 
         const cleanCustomerPhone = normalizePhone(customerPhone);
 
-        // Step 3: Send the updated PDF document to the customer
-        if (sale.pdfUrl) {
-            const docCaption = balance <= 0
-                ? `*Official Receipt from ${businessName}*\nStatus: Fully Settled`
-                : `*Updated Invoice from ${businessName}*\nNew Balance: ₦${balance.toLocaleString()}`;
-            
-            await sendDocument(
-                cleanCustomerPhone,
-                sale.pdfUrl,
-                `${balance <= 0 ? 'Receipt' : 'Invoice'}-${sale.invoiceNumber}.pdf`,
-                docCaption
-            );
-            // Small delay so PDF arrives first
-            await new Promise(r => setTimeout(r, 1500));
+        // ── Step 1: Branded payment confirmation card (image) ──────────────────
+        try {
+            const VirtualAccount = require("../models/VirtualAccount");
+            const va = await VirtualAccount.findOne({ saleId: sale._id }).sort({ createdAt: -1 });
+            const latestPayment = sale.payments && sale.payments.length > 0 
+                ? sale.payments[sale.payments.length - 1] 
+                : null;
+
+            const cardUrl = await generatePaymentConfirmationCard({
+                businessName,
+                customerName: sale.customerName,
+                invoiceNumber: sale.invoiceNumber,
+                amountPaid,
+                balance: isFullyPaid ? 0 : balance,
+                reference: latestPayment?.reference || latestPayment?.externalReference || va?.reference || "N/A",
+                date: latestPayment?.date || new Date(),
+                method: latestPayment?.method || "Transfer",
+                beneficiaryAccountNumber: va?.accountNumber || "N/A",
+                beneficiaryAccountName: va?.accountName || businessName,
+                bankName: va?.bankName || "Paycom (Opay)"
+            });
+            if (cardUrl) {
+                const cardCaption = isFullyPaid
+                    ? `✅ Payment received! Invoice *#${sale.invoiceNumber}* is now fully settled.`
+                    : `✅ Partial payment of ₦${amountPaid.toLocaleString()} received for Invoice *#${sale.invoiceNumber}*.\n\nOutstanding: *₦${balance.toLocaleString()}*`;
+                await sendImage(cleanCustomerPhone, cardUrl, cardCaption);
+                // Small delay before next message
+                await new Promise(r => setTimeout(r, 1500));
+            }
+        } catch (cardErr) {
+            console.error("⚠️ Could not generate payment card, falling back to text:", cardErr.message);
+            // Fallback to plain text confirmation
+            const msg = isFullyPaid
+                ? `✅ Payment confirmed! Thank you, ${sale.customerName}. Your payment of ₦${amountPaid.toLocaleString()} for Invoice #${sale.invoiceNumber} has been received. The invoice is now fully paid.`
+                : `✅ Partial payment received. Thank you, ${sale.customerName}. ₦${amountPaid.toLocaleString()} received for Invoice #${sale.invoiceNumber}.\n\nOutstanding balance: ₦${balance.toLocaleString()}`;
+            await sendText(cleanCustomerPhone, msg);
+            await new Promise(r => setTimeout(r, 1000));
         }
 
-        // Step 4: Send the confirmation text message (with template fallback if needed)
-        await sendCustomerMessageWithFallback(cleanCustomerPhone, msg, sale.customerName, sale.invoiceNumber);
+        // ── Step 2: Final PAID PDF — only when fully settled ──────────────────
+        if (isFullyPaid) {
+            console.log(`📄 Regenerating PAID PDF for Invoice ${sale.invoiceNumber}...`);
+            const pdfUrl = await generateAndUploadInvoicePDF(sale, business);
+            if (pdfUrl) {
+                sale = await Sale.findByIdAndUpdate(saleId, { pdfUrl }, { new: true }).populate("businessId");
+                await sendDocument(
+                    cleanCustomerPhone,
+                    sale.pdfUrl,
+                    `Receipt-${sale.invoiceNumber}.pdf`,
+                    `🧾 *Official Receipt from ${businessName}*\nInvoice #${sale.invoiceNumber} — Fully Settled`
+                );
+            }
+        }
+
         console.log(`📩 Payment confirmation sent to customer ${customerPhone} for Invoice #${sale.invoiceNumber}`);
     } catch (err) {
         console.error("❌ notifyCustomerPaymentReceived Error:", err.message);
@@ -1004,10 +1265,24 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
 
             const { id: buttonId } = buttonReply;
 
-            // [Pay Now] button
+            // [Pay Now] button — shows Pay Full / Pay Part choice
             if (buttonId.startsWith("pay_now:")) {
                 const saleId = buttonId.split(":")[1];
                 await handleCustomerPayNow(saleId, cleanFrom);
+                return true;
+            }
+
+            // [Pay Full] button — generate DVA for full balance
+            if (buttonId.startsWith("pay_full:")) {
+                const saleId = buttonId.split(":")[1];
+                await handleCustomerPayFull(saleId, cleanFrom);
+                return true;
+            }
+
+            // [Pay Part] button — ask how much they'd like to pay
+            if (buttonId.startsWith("pay_part:")) {
+                const saleId = buttonId.split(":")[1];
+                await handleCustomerPayPart(saleId, cleanFrom);
                 return true;
             }
 
@@ -1018,10 +1293,10 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
                 return true;
             }
 
-            // Extension duration: 3 days / 1 week / 2 weeks
-            if (buttonId.startsWith("ext_3days:") || buttonId.startsWith("ext_1week:") || buttonId.startsWith("ext_2weeks:")) {
+            // Extension duration: 3 days / 1 week
+            if (buttonId.startsWith("ext_3days:") || buttonId.startsWith("ext_1week:")) {
                 const [prefix, saleId] = buttonId.split(":");
-                const daysMap = { "ext_3days": 3, "ext_1week": 7, "ext_2weeks": 14 };
+                const daysMap = { "ext_3days": 3, "ext_1week": 7 };
                 const days = daysMap[prefix];
 
                 // Get customer name from session or sale
@@ -1029,6 +1304,16 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
                 const customerName = session?.data?.customerName || "Customer";
                 await handleCustomerExtensionDuration(saleId, days, cleanFrom, customerName);
                 if (session) await WhatsAppSession.deleteOne({ _id: session._id });
+                return true;
+            }
+
+            // Custom Extension Date Button
+            if (buttonId.startsWith("ext_custom:")) {
+                const saleId = buttonId.split(":")[1];
+                const sale = await Sale.findById(saleId);
+                if (sale) {
+                    await handleCustomerCustomDate(saleId, cleanFrom, sale);
+                }
                 return true;
             }
 
@@ -1076,8 +1361,100 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
             return false;
         }
 
-        // Check for text-based session (customer_extension_duration)
+        // Check for text-based session
         const session = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
+
+        // ── Collect partial payment amount ─────────────────────────────────────
+        if (session?.type === "collect_partial_payment_amount") {
+            const amountMatch = lowerText.match(/([\d,]+(?:\.\d{1,2})?)/);
+            const parsedAmount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, "")) : NaN;
+
+            if (!isNaN(parsedAmount) && parsedAmount > 0) {
+                const { saleId, balance, invoiceNumber } = session.data;
+
+                if (parsedAmount > balance) {
+                    await sendText(cleanFrom,
+                        `⚠️ The amount \u20a6${parsedAmount.toLocaleString()} exceeds the outstanding balance of *₦${balance.toLocaleString()}*.\n\nPlease enter an amount up to *₦${balance.toLocaleString()}*.`
+                    );
+                    return true;
+                }
+
+                // Delete the session — we're acting on it now
+                await WhatsAppSession.deleteOne({ _id: session._id });
+
+                // Fetch sale and generate partial DVA
+                const partSale = await Sale.findById(saleId).populate("businessId");
+                if (!partSale) return false;
+
+                const business = partSale.businessId;
+                const absorbFees = business?.prefersGatewayFeeAbsorption !== false;
+                const dvaAmount = FINANCIAL_CONFIG.calculateGrossAmount(parsedAmount, absorbFees);
+
+                await PaymentSession.updateMany(
+                    { saleId, status: "pending" },
+                    { $set: { status: "expired" } }
+                );
+
+                let dva;
+                try {
+                    dva = await createDynamicVirtualAccount({
+                        amount: dvaAmount,
+                        invoiceNumber: partSale.invoiceNumber,
+                        merchantName: business?.displayName || "Kredibly",
+                        customerEmail: partSale.customerEmail || "payments@usekredibly.com"
+                    });
+                } catch (dvaErr) {
+                    await sendText(cleanFrom, "Sorry, we couldn't generate your payment account. Please try again.");
+                    return true;
+                }
+
+                await PaymentSession.create({
+                    saleId,
+                    businessId: partSale.businessId?._id || partSale.businessId,
+                    customerPhone: cleanFrom,
+                    amountExpected: dvaAmount,
+                    amountIntended: parsedAmount,
+                    paymentType: "partial",
+                    nombaReference: dva.reference,
+                    nombaAccountNumber: dva.accountNumber,
+                    nombaBankName: dva.bankName,
+                    nombaAccountName: dva.accountName,
+                    nombaExpiresAt: new Date(dva.expiresAt),
+                    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+                });
+
+                // V2: Structured payment card for partial payment
+                const partExpiryTime = new Date(dva.expiresAt);
+                const partExpiryStr = partExpiryTime.toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit", hour12: true });
+                const partExpiryDateStr = partExpiryTime.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short" });
+                const partValidUntil = `${partExpiryDateStr} at ${partExpiryStr}`;
+
+                const partFeeLines = absorbFees
+                    ? ``
+                    : `\n*Partial Amount:* ₦${parsedAmount.toLocaleString()}\n*Gateway Fee:* ₦${(dvaAmount - parsedAmount).toLocaleString()}`;
+
+                await sendText(
+                    cleanFrom,
+                    `*You're paying (partial)*\nInvoice ${partSale.invoiceNumber}\n` +
+                    `━━━━━━━━━━━━━━━━━━━━\n` +
+                    `*Amount*          ₦${parsedAmount.toLocaleString()}${partFeeLines}\n` +
+                    `*Transfer exactly* ₦${dvaAmount.toLocaleString()}\n` +
+                    `━━━━━━━━━━━━━━━━━━━━\n` +
+                    `*Bank*            ${dva.bankName}\n` +
+                    `*Account Name*    ${dva.accountName}\n` +
+                    `*Account Number*  ${dva.accountNumber}\n` +
+                    `*Valid until*     ${partValidUntil}\n` +
+                    `━━━━━━━━━━━━━━━━━━━━\n` +
+                    `Open your banking app and transfer exactly *₦${dvaAmount.toLocaleString()}*. Your payment will be confirmed automatically — no need to send a screenshot. 🏦`
+                );
+                return true;
+            } else {
+                await sendText(cleanFrom, `Please reply with a valid amount (e.g. *5000*).`);
+                return true;
+            }
+        }
+
+        // ── Extension duration session ─────────────────────────────────────────
         if (session?.type === "customer_extension_duration") {
             // They may have typed a number of days
             const numMatch = lowerText.match(/(\d+)\s*(day|week|month)/i);
@@ -1094,6 +1471,37 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
             }
         }
 
+        // ── Custom Extension Date session ──────────────────────────────────────
+        if (session?.type === "customer_extension_custom_date") {
+            const parsedDate = chrono.parseDate(text);
+            if (!parsedDate || parsedDate <= new Date()) {
+                await sendText(cleanFrom, `I couldn't understand that date or it's not a future date. Please reply with a valid future date like "24 July" or "31/07".`);
+                return true;
+            }
+
+            // Move to reason collection step
+            session.type = "customer_extension_reason";
+            session.data.newDueDate = parsedDate.toISOString();
+            await session.save();
+
+            await sendText(cleanFrom, `Got it. Would you like to tell the merchant why you're requesting this extension?\n\n(Reply with your reason, or type *skip* to skip)`);
+            return true;
+        }
+
+        // ── Custom Extension Reason session ────────────────────────────────────
+        if (session?.type === "customer_extension_reason") {
+            const reply = text.trim();
+            const reason = reply.toLowerCase() === "skip" ? null : reply;
+            const { saleId, customerName, newDueDate } = session.data;
+
+            // Delete session
+            await WhatsAppSession.deleteOne({ _id: session._id });
+
+            // Trigger the duration handler with the custom date and optional reason
+            await handleCustomerExtensionDuration(saleId, null, cleanFrom, customerName, reason, new Date(newDueDate));
+            return true;
+        }
+
         // Check if this customer has any active invoice delivered to them
         const activeSale = await Sale.findOne({
             deliveredToPhone: cleanFrom,
@@ -1104,18 +1512,13 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
         if (activeSale) {
             const bal = activeSale.totalAmount - (activeSale.payments || []).reduce((s, p) => s + p.amount, 0);
 
-            // If they say something about paying, send them the payment button (no raw links in V2)
+            // If they mention paying, trigger the Pay Full / Pay Part flow directly
             if (/pay|payment|transfer|link|invoice/i.test(lowerText)) {
-                await sendCustomerMessageWithFallback(
-                    cleanFrom,
-                    `Hi ${activeSale.customerName}, here are the payment details for Invoice #${activeSale.invoiceNumber}. Balance due: \u20a6${bal.toLocaleString()}.`,
-                    activeSale.customerName,
-                    activeSale.invoiceNumber
-                );
+                await handleCustomerPayNow(activeSale._id, cleanFrom);
                 return true;
             }
 
-            // If they click the template quick-reply "Request Extension" or ask for more time
+            // If they ask for more time
             if (/extend|extension|more time/i.test(lowerText)) {
                 await handleCustomerRequestExtension(activeSale._id, cleanFrom);
                 return true;
@@ -1354,14 +1757,19 @@ module.exports = {
     notifyCustomerPaymentReceived,
     handleCustomerInbound,
     handleCustomerPayNow,
+    handleCustomerPayFull,
+    handleCustomerPayPart,
     handleCustomerRequestExtension,
+    handleCustomerCustomDate,
     handleCustomerExtensionDuration,
     handleMerchantApproveExtension,
     handleMerchantRejectExtension,
     isCustomerPhone,
     sendCustomerReminderTemplate,
     sendInteractiveButtons,
+    sendInteractiveList,
     sendDocument,
+    sendImage,
     sendText,
     sendTemplateMsg,
     sendCustomerMessageWithFallback,

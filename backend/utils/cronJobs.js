@@ -10,6 +10,7 @@ const { processIndividualEscrowPayout } = require("./payoutService");
 const SystemConfig = require("../models/SystemConfig");
 const { generateDailyAdvice } = require("./adviceService");
 const BackgroundJob = require("../models/BackgroundJob");
+const PaymentSession = require("../models/PaymentSession");
 
 /**
  * 0. AUTONOMOUS MORNING DISPATCH (Runs at 8:00 AM WAT)
@@ -150,6 +151,27 @@ const scheduleRemindersWorker = () => {
                         // Skip if already paid
                         if (bal <= 0) {
                             acquired.status = "delivered";
+                            acquired.deliveredAt = new Date();
+                            await acquired.save();
+                            continue;
+                        }
+
+                        // ── CONTEXT-AWARE INTELLIGENT REMINDER GUARD ───────────────────
+                        // Do not remind if:
+                        // 1. Extension was approved within last 24h
+                        // 2. Customer made a partial payment in last 12h
+                        // 3. Extension is currently pending decision
+                        const recentExtension = sale.extensionApprovedAt && 
+                            (Date.now() - new Date(sale.extensionApprovedAt).getTime()) < (24 * 60 * 60 * 1000);
+
+                        const recentPartialPayment = sale.payments?.length > 0 &&
+                            (Date.now() - new Date(sale.payments[sale.payments.length - 1].date).getTime()) < (12 * 60 * 60 * 1000);
+
+                        const extensionPending = sale.lifecycleStatus === "EXTENSION_REQUESTED";
+
+                        if (recentExtension || recentPartialPayment || extensionPending) {
+                            console.log(`🧠 Context Guard: Silently skipping reminder #${acquired.reminderSequence} for Invoice #${sale.invoiceNumber} (D: ${sale.dueDate}, Bal: ₦${bal.toLocaleString()}).`);
+                            acquired.status = "delivered"; // Mark handled
                             acquired.deliveredAt = new Date();
                             await acquired.save();
                             continue;
@@ -304,22 +326,47 @@ const scheduleRemindersWorker = () => {
                 
                 if (isInsideWindow) {
                     if (isTaskReminder) {
-                        // ⚡ Task Reminder: Send interactive quick-action buttons at trigger time
-                        const { sendInteractiveButtons } = require("../utils/customerInvoiceService");
+                        // ⚡ Task Reminder: Send interactive list message at trigger time
+                        const { sendInteractiveList } = require("../utils/customerInvoiceService");
                         const remId = acquired._id.toString();
-                        success = await sendInteractiveButtons(
+                        const listSections = [
+                            {
+                                title: "Task Actions",
+                                rows: [
+                                    {
+                                        id: `t_done:${remId}`,
+                                        title: "Mark Done",
+                                        description: "Complete this task"
+                                    },
+                                    {
+                                        id: `t_snooze30m:${remId}`,
+                                        title: "Snooze 30 mins",
+                                        description: "Remind me in 30 minutes"
+                                    },
+                                    {
+                                        id: `t_snooze1h:${remId}`,
+                                        title: "Snooze 1 hour",
+                                        description: "Remind me in 1 hour"
+                                    },
+                                    {
+                                        id: `t_tomorrow:${remId}`,
+                                        title: "Tomorrow",
+                                        description: "Remind me tomorrow morning"
+                                    }
+                                ]
+                            }
+                        ];
+
+                        success = await sendInteractiveList(
                             acquired.whatsappNumber,
-                            acquired.description,
+                            "Task Reminder",
                             msg,
-                            "",
-                            [
-                                { id: `t_done:${remId}`, title: "Mark Done" },
-                                { id: `t_snooze30m:${remId}`, title: "Snooze 30 mins" },
-                                { id: `t_snooze1h:${remId}`, title: "Snooze 1 hour" }
-                            ]
+                            "Select an action from the menu",
+                            "Choose Action",
+                            listSections
                         ).catch(e => false);
 
-                        // If interactive buttons fail, fallback to plain message
+                        // If interactive list fails, fallback to plain message
                         if (!success) {
                             success = await sendWhatsAppMessage(acquired.whatsappNumber, msg).catch(e => false);
                         }
@@ -604,7 +651,90 @@ const scheduleUpcomingNudges = () => {
 };
 
 /**
- * 10. BANK SECURITY LOCK CHECKER (Hourly)
+ * 10.5 PAYMENT SESSION EXPIRY (Every 30 minutes)
+ * Marks pending PaymentSessions as 'expired' when their 24h window passes.
+ * The MongoDB TTL will physically delete them 3 days later.
+ */
+const schedulePaymentSessionExpiry = () => {
+    cron.schedule("*/30 * * * *", async () => {
+        try {
+            const result = await PaymentSession.updateMany(
+                { status: "pending", expiresAt: { $lte: new Date() } },
+                { $set: { status: "expired" } }
+            );
+            if (result.modifiedCount > 0) {
+                console.log(`⏰ [PaymentSession] Expired ${result.modifiedCount} stale session(s).`);
+            }
+        } catch (err) {
+            console.error("Cron Error (PaymentSession Expiry):", err.message);
+        }
+    });
+};
+
+/**
+ * 10.6 ABANDONED TASK FOLLOW-UP (Every 30 minutes)
+ * Finds tasks ignored for more than 4 hours and sends a single rescheduling follow-up.
+ */
+const scheduleAbandonedTasksFollowUp = () => {
+    cron.schedule("*/30 * * * *", async () => {
+        try {
+            const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
+            const abandonedReminders = await Reminder.find({
+                type: "task",
+                status: "pending",
+                triggerDate: { $lte: fourHoursAgo },
+                followUpSent: { $ne: true }
+            }).populate("businessId");
+
+            if (abandonedReminders.length === 0) return;
+
+            const { sendInteractiveButtons } = require("./customerInvoiceService");
+
+            for (const rem of abandonedReminders) {
+                // Ensure profile is valid and active session window is open
+                const profile = rem.businessId;
+                if (!profile) continue;
+                
+                const isInsideWindow = profile.lastInboundAt && (new Date() - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
+                if (!isInsideWindow) {
+                    // If they are outside the 24h window, mark followUpSent = true so we don't keep trying
+                    rem.followUpSent = true;
+                    rem.followUpAt = new Date();
+                    await rem.save();
+                    continue;
+                }
+
+                const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || "Partner";
+                const remId = rem._id.toString();
+
+                const success = await sendInteractiveButtons(
+                    rem.whatsappNumber,
+                    "Task Reschedule?",
+                    `Hi ${bossTitle}, I noticed your task *"${rem.description}"* wasn't completed. Would you like me to reschedule it?`,
+                    "",
+                    [
+                        { id: `t_tomorrow:${remId}`, title: "Tomorrow" },
+                        { id: `t_choose_time:${remId}`, title: "Choose Time" },
+                        { id: `t_dismiss:${remId}`, title: "Dismiss" }
+                    ]
+                ).catch(() => false);
+
+                rem.followUpSent = true;
+                rem.followUpAt = new Date();
+                await rem.save();
+
+                if (success) {
+                    console.log(`🧠 [Follow-up] Dispatched abandoned task follow-up for reminder ${remId}`);
+                }
+            }
+        } catch (err) {
+            console.error("Cron Error (Abandoned Task Follow-up):", err.message);
+        }
+    });
+};
+
+/**
+ * 11. BANK SECURITY LOCK CHECKER (Hourly)
  */
 const scheduleBankLockChecker = () => {
     cron.schedule("0 * * * *", async () => {
@@ -734,5 +864,7 @@ module.exports = {
     scheduleUpcomingNudges,
     scheduleBankLockChecker,
     scheduleDailySettlements,
+    schedulePaymentSessionExpiry,
+    scheduleAbandonedTasksFollowUp,
     startBackgroundJobRunner
 };

@@ -185,6 +185,18 @@ const generateInvoicePDFBuffer = async (sale, business) => {
         doc.registerFont("Roboto", FONT_REGULAR);
         doc.registerFont("Roboto-Bold", FONT_BOLD);
 
+        // Watermark background for settled invoices
+        const isPaid = (sale.totalAmount - paidAmount) <= 0;
+        if (isPaid) {
+            doc.save();
+            doc.fillColor("#10B981");
+            doc.opacity(0.12);
+            doc.font("Roboto-Bold").fontSize(100);
+            doc.rotate(-30, { origin: [PAGE_W / 2, PAGE_H / 2] });
+            doc.text("PAID", PAGE_W / 2 - 120, PAGE_H / 2 - 50, { width: 300, align: "center" });
+            doc.restore();
+        }
+
         const MARGIN   = 48;
         const INNER_W  = PAGE_W - MARGIN * 2;
 
