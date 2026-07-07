@@ -976,6 +976,23 @@ const handleIncoming = async (req, res) => {
         const merchantFirstName = registeredName || profileName || tierTitle;
         const bossTitle = profile?.assistantSettings?.preferredName || merchantFirstName;
 
+        // 🚀 V2 Workflow Intercept
+        const ConversationGateway = require("../../conversation/ConversationGateway");
+        const workflowIsStaff = profile ? (profile.whatsappNumber !== cleanFrom) : false;
+        const workflowOpts = {
+            from,
+            cleanFrom,
+            text,
+            msgType,
+            bossTitle: bossTitle || "Boss",
+            isStaff: workflowIsStaff
+        };
+        const handledByWorkflow = await ConversationGateway.receive(message, profile, workflowOpts);
+        if (handledByWorkflow) {
+            console.log(`[handleIncoming] Message intercepted and handled by V2 workflow gateway for ${cleanFrom}`);
+            return;
+        }
+
         // 🚀 Intercept Welcome Greeting (text OR template button tap)
         const normalizedMsg = text.toLowerCase().replace(/[.,!']/g, "").trim();
         const welcomeKeywords = [

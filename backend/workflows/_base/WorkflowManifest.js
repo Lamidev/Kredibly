@@ -65,12 +65,26 @@ class WorkflowManifest {
      * Called internally by validate().
      */
     static _normalize(raw) {
+        let steps = [];
+        let stepConfigs = {};
+
+        if (Array.isArray(raw.steps)) {
+            steps = raw.steps;
+            raw.steps.forEach(step => {
+                stepConfigs[step] = { acceptedInputs: ["any"] };
+            });
+        } else if (raw.steps && typeof raw.steps === "object") {
+            steps = Object.keys(raw.steps);
+            stepConfigs = raw.steps;
+        }
+
         return {
             id:           raw.id,
             category:     raw.category,
             owner:        raw.owner        || "merchant",
             priority:     raw.priority     || "MEDIUM",
-            steps:        Array.isArray(raw.steps) ? raw.steps : [],
+            steps:        steps,
+            stepConfigs:  stepConfigs,
             interruptible: raw.interruptible !== false,  // default: true
 
             timeout: {

@@ -10,9 +10,6 @@ const buttons = require("./buttons");
 
 // Models and Services
 const Sale = require("../../models/Sale");
-const Notification = require("../../models/Notification");
-const { logActivity } = require("../../utils/activityLogger");
-const { deliverInvoiceToCustomer } = require("../../utils/customerInvoiceService");
 
 class InvoiceWorkflow extends WorkflowBase {
     constructor(manifest) {
@@ -99,40 +96,18 @@ class InvoiceWorkflow extends WorkflowBase {
                 `On it — generating Invoice #${newSale.invoiceNumber} for *${newSale.customerName}* now. I'll send you a copy as soon as it's delivered.`
             );
 
-            // Log notification & activity
-            await Notification.create({
+            // Publish InvoiceCreated Event
+            const WorkflowEventBus = require("../../conversation/WorkflowEventBus");
+            WorkflowEventBus.publish("InvoiceCreated", {
+                saleId: newSale._id,
                 businessId: profile._id,
-                title: "Invoice Created via Kreddy",
-                message: `₦${totalAmount.toLocaleString()} invoice created for ${customerName}.`,
-                type: "sale",
-                saleId: newSale._id
+                from: opts.from,
+                cleanFrom: opts.cleanFrom,
+                isStaff: opts.isStaff,
+                customerPhone: customerPhone || null,
+                totalAmount: totalAmount,
+                customerName: customerName || "Customer"
             });
-            await logActivity({
-                businessId: profile._id,
-                action: "SALE_CREATED_WHATSAPP",
-                entityType: "SALE",
-                entityId: newSale._id,
-                details: `Invoice #${newSale.invoiceNumber} created for ${customerName} via Kreddy`
-            });
-
-            // Notify staff's Oga if staff created it
-            if (opts.isStaff && profile.whatsappNumber) {
-                await MessageDispatcher.send(
-                    profile.whatsappNumber,
-                    `📢 *Staff Activity:* ${opts.cleanFrom} created Invoice #${newSale.invoiceNumber} for ${customerName} (₦${totalAmount.toLocaleString()}).`
-                );
-            }
-
-            if (customerPhone) {
-                // Deliver asynchronously
-                deliverInvoiceToCustomer(newSale._id, profile._id, { customerPhone })
-                    .then(async (result) => {
-                        if (!result.success) {
-                            await MessageDispatcher.send(opts.from, `I had trouble delivering the invoice to ${newSale.customerName}'s WhatsApp. Check the number and try sending manually from the dashboard.`);
-                        }
-                    })
-                    .catch(e => console.error("Async delivery error:", e));
-            }
             return true;
         }
 
@@ -236,8 +211,28 @@ class InvoiceWorkflow extends WorkflowBase {
         const { customerName, totalAmount, paidAmount, items, item, dueDate, invoiceType, customerPhone } = pendingData;
         const resolvedName = customerName || "Customer";
 
-        // 1. Missing phone -> transition step
+        // 1. Missing phone -> check memory or transition step
         if (!customerPhone) {
+            let memoryPhone = null;
+            try {
+                const ConversationMemory = require("../../models/ConversationMemory");
+                const memory = await ConversationMemory.findOne({ businessId: profile._id });
+                if (memory) {
+                    const matchedCust = memory.findCustomer(resolvedName);
+                    if (matchedCust) {
+                        memoryPhone = matchedCust.phone;
+                    }
+                }
+            } catch (err) {
+                console.error("🚨 Error querying conversation memory in proceedToInvoiceSummary:", err);
+            }
+
+            if (memoryPhone) {
+                pendingData.customerPhone = memoryPhone;
+                pendingData.autofilledFromMemory = true;
+                return await this.proceedToInvoiceSummary(from, cleanFrom, profile, isStaff, pendingData, state);
+            }
+
             state.step = "awaiting_customer_phone";
             state.data = { pendingSaleData: pendingData };
             state.markModified("data");
@@ -292,7 +287,7 @@ class InvoiceWorkflow extends WorkflowBase {
             `Here's the invoice summary:`,
             ``,
             `Customer: *${resolvedName}*`,
-            `Phone: +${cleanPhone}`,
+            `Phone: +${cleanPhone}${pendingData.autofilledFromMemory ? " (Autofilled from memory)" : ""}`,
             ``,
             itemsDisplay,
             ``,
