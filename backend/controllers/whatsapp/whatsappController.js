@@ -3036,10 +3036,20 @@ const handleIncoming = async (req, res) => {
                             const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                             const link = `${APP_URL}/i/${sale.invoiceNumber}`;
 
-                            let msg1 = `🤝 *Payment Link for ${sale.customerName}*\n💰 Balance: *₦${bal.toLocaleString()}*\n\n*Just forward the message below directly to them:* 👇`;
-                            let msg2 = `Hi ${sale.customerName}, here is the secure update and payment link for your outstanding balance of ₦${bal.toLocaleString()} with ${profile.displayName}: ${link}`;
-                            await sendReply(from, msg1);
-                            await sendReply(from, msg2);
+                            // V2: No naked links — send as a CTA URL button (link opens inside WhatsApp)
+                            const { sendInteractiveButtons } = require('../../utils/customerInvoiceService');
+                            const sent = await sendInteractiveButtons(
+                                from,
+                                `Invoice — ${sale.customerName}`,
+                                `💰 Outstanding balance: *₦${bal.toLocaleString()}*\nInvoice *#${sale.invoiceNumber}*\n\nShare this invoice link with your customer so they can view and pay.`,
+                                '',
+                                [{ id: `view_invoice:${sale.invoiceNumber}`, title: 'View Invoice' }],
+                                link   // CTA URL passed as the url parameter
+                            );
+                            if (!sent) {
+                                // Fallback: plain text without the URL if button delivery fails
+                                await sendReply(from, `💰 *${sale.customerName}* owes *₦${bal.toLocaleString()}* on Invoice *#${sale.invoiceNumber}*. Share the invoice link with them from the Kredibly dashboard.`);
+                            }
                         }
                     }
                     isProcessed = true;

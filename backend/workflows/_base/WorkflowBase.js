@@ -14,6 +14,7 @@
  */
 
 const MessageDispatcher = require("../../conversation/MessageDispatcher");
+const WorkflowEventBus = require("../../conversation/WorkflowEventBus");
 
 class WorkflowBase {
     /**
@@ -59,16 +60,38 @@ class WorkflowBase {
      * Mark the workflow as completed and return to free conversation.
      */
     async complete(state) {
+        const snapshot = { ...(state.data || {}) };
+        const workflowType = state.workflowId || this.workflowId;
+        const businessId = state.businessId;
+
         state.completeWorkflow();
         await state.save();
+
+        // Publish event so subscribers can snapshot draft data
+        WorkflowEventBus.publish("WorkflowCompleted", {
+            businessId,
+            workflowType,
+            draftData: snapshot
+        });
     }
 
     /**
      * Cancel the workflow with a reason and return to free conversation.
      */
     async cancel(state, reason = "merchant_cancelled") {
+        const snapshot = { ...(state.data || {}) };
+        const workflowType = state.workflowId || this.workflowId;
+        const businessId = state.businessId;
+
         state.cancelWorkflow(reason);
         await state.save();
+
+        // Publish event so subscribers can snapshot draft data
+        WorkflowEventBus.publish("WorkflowCancelled", {
+            businessId,
+            workflowType,
+            draftData: snapshot
+        });
     }
 
     // ── Message Helpers ───────────────────────────────────────────────────────
