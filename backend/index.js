@@ -45,6 +45,9 @@ const {
   startBackgroundJobRunner
 } = require("./utils/cronJobs");
 
+// Initialize V2 Workflow Registry
+require("./conversation/bootstrap");
+
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize"); 

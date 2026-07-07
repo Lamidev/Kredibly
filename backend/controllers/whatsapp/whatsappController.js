@@ -933,6 +933,11 @@ const handleIncoming = async (req, res) => {
                    message.image?.caption?.trim() || 
                    message.document?.caption?.trim() || 
                    message.button?.text?.trim() || 
+                   message.button?.payload?.trim() ||
+                   message.interactive?.button_reply?.id?.trim() ||
+                   message.interactive?.list_reply?.id?.trim() ||
+                   message.interactive?.button_reply?.title?.trim() ||
+                   message.interactive?.list_reply?.title?.trim() ||
                    "";
         const whatsappProfileName = value?.contacts?.[0]?.profile?.name || "";
         
@@ -2915,106 +2920,44 @@ const handleIncoming = async (req, res) => {
 
                 // Check for customer WhatsApp number — strictly required
                 if (!isProcessed) {
-                let customerPhone = aiResponseItem.data.customerPhone || null;
-                if (!customerPhone) {
-                    await WhatsAppSession.findOneAndUpdate(
-                        { whatsappNumber: cleanFrom },
-                        {
-                            type: 'collect_customer_phone',
-                            data: {
-                                pendingSaleData: {
-                                    customerName: resolvedName,
-                                    totalAmount,
-                                    paidAmount: paidAmount || 0,
-                                    items: aiItems,
-                                    item: item || "Purchase",
-                                    dueDate: dueDate || null,
-                                    invoiceType: invoiceType || "billing"
-                                }
-                            },
-                            expiresAt: new Date(Date.now() + 10 * 60 * 1000)
-                        },
-                        { upsert: true }
+                    const customerPhone = aiResponseItem.data.customerPhone || null;
+                    const pendingData = {
+                        customerName: resolvedName,
+                        totalAmount,
+                        paidAmount: paidAmount || 0,
+                        items: aiItems,
+                        item: item || "Purchase",
+                        dueDate: dueDate || null,
+                        invoiceType: invoiceType || "billing",
+                        customerPhone: customerPhone
+                    };
+
+                    const WorkflowQueue = require("../../conversation/WorkflowQueue");
+                    const WorkflowRegistry = require("../../conversation/WorkflowRegistry");
+
+                    // Start the workflow
+                    const workflowState = await WorkflowQueue.enqueue(
+                        cleanFrom,
+                        profile._id,
+                        "invoice_creation",
+                        customerPhone ? "awaiting_confirmation" : "awaiting_customer_phone",
+                        "HIGH",
+                        pendingData,
+                        20 // 20 minutes timeout
                     );
-                    // P1-A: Send AI ownership acknowledgment first
+
+                    // Immediate AI ownership acknowledgment if present
                     if (aiResponseItem.data.reply) {
                         await sendReply(from, aiResponseItem.data.reply);
                     }
-                    await sendReply(from, `I just need ${resolvedName}'s WhatsApp number to deliver the invoice.`);
-                    if (isStaff && profile.whatsappNumber) {
-                        await sendReply(profile.whatsappNumber, `📢 *Staff Activity:* ${cleanFrom} is creating an invoice for ${resolvedName} (₦${totalAmount.toLocaleString()}).`);
-                    }
-                    isProcessed = true;
-                } else {
-                    // Normalize the customer phone number
-                    let cleanPhone = String(customerPhone).replace(/\D/g, '');
-                    if (cleanPhone.startsWith('0') && cleanPhone.length === 11) {
-                        cleanPhone = '234' + cleanPhone.slice(1);
-                    }
 
-                    // Build summary with phone number
-                    const itemsDisplay = aiItems.length > 0
-                        ? aiItems.map(i => `${i.name} × ${i.quantity || 1} — ₦${((i.unitPrice || 0) * (i.quantity || 1)).toLocaleString()}`).join("\n")
-                        : `${item && item !== "Item" ? item : "Purchase"} — ₦${totalAmount.toLocaleString()}`;
-
-                    const bal = totalAmount - (paidAmount || 0);
-                    const typeLabel = (invoiceType === "record") ? "Record (Settled)" : "Invoice (Payment Request)";
-
-                    const summaryMsg = [
-                        `Here's the invoice summary:`,
-                        ``,
-                        `Customer: *${resolvedName}*`,
-                        `Phone: +${cleanPhone}`,
-                        ``,
-                        itemsDisplay,
-                        ``,
-                        `Total: ₦${totalAmount.toLocaleString()}`,
-                        paidAmount > 0 ? `Paid: ₦${paidAmount.toLocaleString()}` : null,
-                        bal > 0 ? `Balance due: ₦${bal.toLocaleString()}` : null,
-                        invoiceType === "record" ? `Type: ${typeLabel}` : null,
-                        ``,
-                        `Ready to send. Shall I go ahead?`
-                    ].filter(v => v !== null).join("\n");
-
-                    // Save to session for approval
-                    await WhatsAppSession.findOneAndUpdate(
-                        { whatsappNumber: cleanFrom },
-                        {
-                            type: "invoice_approval",
-                            data: {
-                                customerName: resolvedName,
-                                totalAmount,
-                                paidAmount: paidAmount || 0,
-                                items: aiItems,
-                                item: item || "Purchase",
-                                dueDate: dueDate || null,
-                                invoiceType: invoiceType || "billing",
-                                customerPhone: cleanPhone
-                            },
-                            expiresAt: new Date(Date.now() + 10 * 60 * 1000)
-                        },
-                        { upsert: true }
-                    );
-
-                    // Send summary with interactive buttons
-                    await sendInteractiveButtons(
-                        from,
-                        "Invoice Summary",
-                        summaryMsg,
-                        "",
-                        [
-                            { id: "invoice_yes", title: "Send Invoice" },
-                            { id: "invoice_no", title: "Cancel" },
-                            { id: "invoice_edit", title: "Edit Details" }
-                        ]
-                    );
-
-                    if (isStaff && profile.whatsappNumber) {
-                        await sendReply(profile.whatsappNumber, `📢 *Staff Activity:* ${cleanFrom} is creating an invoice for ${resolvedName} (₦${totalAmount.toLocaleString()}).`);
+                    // Retrieve active workflow class to execute step or display initial output
+                    const handler = WorkflowRegistry.getHandler("invoice_creation");
+                    if (handler) {
+                        await handler.proceedToInvoiceSummary(from, cleanFrom, profile, isStaff, pendingData, workflowState);
                     }
                     isProcessed = true;
                 }
-                } // end if (!isProcessed) [OCR skip guard]
             }
 
             // 3. OTHER INTENTS
