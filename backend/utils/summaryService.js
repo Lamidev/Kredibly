@@ -12,6 +12,43 @@ const { getDailyAdvice } = require("./adviceService");
  * 1. Active Users (<24h window): Full Accountant Summary on WhatsApp (FREE)
  * 2. Inactive Users (>24h window): Growth Masterclass on Email (DRIVES ENGAGEMENT)
  */
+/**
+ * Heuristic helper to calculate engagement score in the last 7 days.
+ */
+const checkEngagement = async (businessId, now) => {
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    try {
+        // Count invoices created
+        const invoices = await Sale.countDocuments({
+            businessId,
+            createdAt: { $gte: sevenDaysAgo }
+        });
+        
+        // Count payments received
+        const payments = await Sale.countDocuments({
+            businessId,
+            "payments.date": { $gte: sevenDaysAgo }
+        });
+        
+        // Count reminders/tasks created
+        const tasks = await Reminder.countDocuments({
+            businessId,
+            createdAt: { $gte: sevenDaysAgo }
+        });
+        
+        return invoices + payments + tasks;
+    } catch (err) {
+        console.error("Engagement check error:", err.message);
+        return 0;
+    }
+};
+
+/**
+ * NEW KREDY GROWTH ENGINE LOGIC:
+ * 1. Active Users (<24h window): Full Accountant Summary on WhatsApp (FREE)
+ * 2. Active Users (>24h window / Closed): Briefing delivered via Email
+ * 3. Inactive Users (No recent engagement): Skipped entirely (Prevents notification fatigue)
+ */
 const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
     try {
         console.log(`🔍 [SUMMARY] Resolving merchant record for input: ${profileInput}...`);
@@ -26,87 +63,214 @@ const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
         const startOfToday = new Date(now);
         startOfToday.setHours(0, 0, 0, 0);
 
-        // 1. Skip if already handled today (Accountant or Growth)
+        // 1. Skip if already handled today (WhatsApp or Email)
         if (profile.lastSummaryAt && profile.lastSummaryAt >= startOfToday) {
             return { status: "skipped", reason: "Merchant already handled today" };
         }
 
-        // 2. Fetch Daily Advice Segment (Masterclass)
-        const dailyTip = await getDailyAdvice();
-
-        // 3. Resolve merchant's preferred name strictly
+        // 2. Resolve merchant's preferred name strictly
         const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || "Partner";
 
-        // 4. Determine if merchant is ACTIVE (Inside 24h WhatsApp Window)
+        // 3. Determine if merchant is ACTIVE (interacted < 24h OR engagement score > 0)
         const isInsideWindow = profile.isKreddyConnected && 
                              profile.lastInboundAt && 
                              (now - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
 
-        if (isInsideWindow && profile.whatsappNumber) {
-            // 🟢 GROUP 1: FULL ACCOUNTANT SUMMARY (WhatsApp - Active Inside 24h Window)
-            console.log(`📡 [ACTIVE] Preparing Full Summary for ${profile.displayName} on WhatsApp...`);
+        const engagementScore = await checkEngagement(profile._id, now);
+        const isMerchantActive = isInsideWindow || (engagementScore > 0);
 
-            // Fetch Data for Report
-            const startOfYesterday = new Date(startOfToday);
-            startOfYesterday.setDate(startOfYesterday.getDate() - 1);
-            const endOfYesterday = new Date(startOfYesterday);
-            endOfYesterday.setHours(23, 59, 59, 999);
+        if (!isMerchantActive) {
+            console.log(`🔇 [INACTIVE] Skipping morning summary for inactive merchant ${profile.displayName} (engagement: ${engagementScore})`);
+            return { status: "skipped", reason: "Merchant is inactive" };
+        }
 
-            const salesYesterday = await Sale.find({
-                businessId: profile._id,
-                createdAt: { $gte: startOfYesterday, $lte: endOfYesterday }
+        // 4. Fetch Daily Advice Segment (Masterclass)
+        const dailyTip = await getDailyAdvice();
+
+        // 5. Gather metrics & report data
+        const startOfYesterday = new Date(startOfToday);
+        startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+        const endOfYesterday = new Date(startOfYesterday);
+        endOfYesterday.setHours(23, 59, 59, 999);
+
+        const salesYesterday = await Sale.find({
+            businessId: profile._id,
+            createdAt: { $gte: startOfYesterday, $lte: endOfYesterday }
+        });
+
+        const allSalesWithPaymentsYesterday = await Sale.find({
+            businessId: profile._id,
+            "payments.date": { $gte: startOfYesterday, $lte: endOfYesterday }
+        });
+
+        let totalCashIn = 0;
+        allSalesWithPaymentsYesterday.forEach(s => {
+            s.payments.forEach(p => {
+                if (new Date(p.date) >= startOfYesterday && new Date(p.date) <= endOfYesterday) totalCashIn += p.amount;
             });
+        });
 
-            const allSalesWithPaymentsYesterday = await Sale.find({
-                businessId: profile._id,
-                "payments.date": { $gte: startOfYesterday, $lte: endOfYesterday }
+        let pendingDebt = 0;
+        salesYesterday.forEach(s => {
+            const paid = s.payments.reduce((sum, p) => sum + p.amount, 0);
+            pendingDebt += Math.max(0, s.totalAmount - paid);
+        });
+
+        const topDebtors = await Sale.find({
+            businessId: profile._id,
+            status: { $in: ["unpaid", "partial"] }
+        })
+        .sort({ totalAmount: -1, createdAt: 1 })
+        .limit(3);
+
+        const activeSessionCount = await require("../models/PaymentSession").countDocuments({
+            businessId: profile._id,
+            status: "pending",
+            expiresAt: { $gt: now }
+        });
+
+        // ── While You Were Away ──────────────────────────────────────────────
+        const offlineSince = profile.lastInboundAt ? new Date(profile.lastInboundAt) : new Date(now - 24 * 60 * 60 * 1000);
+        
+        // Payments received while merchant was offline
+        const offlinePayments = await Sale.find({
+            businessId: profile._id,
+            "payments.date": { $gte: offlineSince }
+        });
+        
+        let offlinePaymentsList = [];
+        offlinePayments.forEach(s => {
+            s.payments.forEach(p => {
+                if (new Date(p.date) >= offlineSince) {
+                    offlinePaymentsList.push(`• *${s.customerName}* paid ₦${p.amount.toLocaleString()}.`);
+                }
             });
+        });
 
-            let totalCashIn = 0;
-            allSalesWithPaymentsYesterday.forEach(s => {
-                s.payments.forEach(p => {
-                    if (new Date(p.date) >= startOfYesterday && new Date(p.date) <= endOfYesterday) totalCashIn += p.amount;
-                });
-            });
+        const invoicesMonitored = await Sale.countDocuments({
+            businessId: profile._id,
+            status: { $in: ["unpaid", "partial"] }
+        });
 
-            let pendingDebt = 0;
-            salesYesterday.forEach(s => {
-                const paid = s.payments.reduce((sum, p) => sum + p.amount, 0);
-                pendingDebt += Math.max(0, s.totalAmount - paid);
-            });
+        const offlineRemindersSent = await Reminder.countDocuments({
+            businessId: profile._id,
+            triggerDate: { $gte: offlineSince, $lte: now },
+            status: "delivered",
+            recipientType: "customer"
+        });
 
-            const remindersToday = await Reminder.find({
+        let whileAwaySection = "";
+        if (offlinePaymentsList.length > 0) {
+            whileAwaySection = [
+                `*While you were away:*`,
+                ...offlinePaymentsList,
+                `• Receipts have already been delivered. 🧾`,
+                ``
+            ].join("\n");
+        } else if (invoicesMonitored > 0) {
+            const todayRemindersCount = await Reminder.countDocuments({
                 businessId: profile._id,
                 triggerDate: { $gte: startOfToday, $lte: new Date(startOfToday.getTime() + 86400000) },
-                recipientType: "merchant",
+                recipientType: "customer",
                 status: "pending"
-            }).limit(2);
+            });
+            whileAwaySection = [
+                `*While you were away:*`,
+                `• I monitored ${invoicesMonitored} invoice${invoicesMonitored > 1 ? "s" : ""} overnight.`,
+                `• No new payments were received.`,
+                offlineRemindersSent > 0 ? `• Sent ${offlineRemindersSent} customer payment reminder${offlineRemindersSent > 1 ? "s" : ""}.` : null,
+                todayRemindersCount > 0 ? `• ${todayRemindersCount} reminder${todayRemindersCount > 1 ? "s are" : " is"} scheduled for today.` : null,
+                ``
+            ].filter(Boolean).join("\n");
+        }
 
-            let agendaSection = "";
-            if (remindersToday.length > 0) {
-                const agendaText = remindersToday.map((r, i) => `${i + 1}. ${r.description}`).join('\n');
-                agendaSection = `*Today's Agenda:*\n${agendaText}\n\n`;
-            }
+        // ── Yesterday metrics (no unnecessary zeros) ─────────────────────────
+        const yesterdayRevenue = salesYesterday.reduce((sum, s) => sum + s.totalAmount, 0);
+        const yesterdayLines = [];
+        if (totalCashIn > 0) {
+            yesterdayLines.push(`• Cash Collected: *₦${totalCashIn.toLocaleString()}*`);
+        } else {
+            yesterdayLines.push(`• No payments were received yesterday.`);
+        }
+        if (salesYesterday.length > 0) {
+            yesterdayLines.push(`• New Invoices: *${salesYesterday.length}* (₦${yesterdayRevenue.toLocaleString()} invoiced)`);
+        } else {
+            yesterdayLines.push(`• No new invoices were created yesterday.`);
+        }
+        if (pendingDebt > 0) {
+            yesterdayLines.push(`• Debt Recorded: *₦${pendingDebt.toLocaleString()}*`);
+        } else {
+            yesterdayLines.push(`• No new debt was recorded yesterday.`);
+        }
+        const yesterdaySection = yesterdayLines.join("\n");
 
-            // Top Aging Debts
-            const topDebtors = await Sale.find({
-                businessId: profile._id,
-                status: { $in: ["unpaid", "partial"] }
-            })
-            .sort({ totalAmount: -1, createdAt: 1 })
-            .limit(3);
+        // ── Determine "Today's Priority" via rule-based heuristics ──────────
+        const priorityItems = [];
+        
+        // 1. Check for pending overpayments awaiting refund
+        const overpaidPendingCount = await Sale.countDocuments({
+            businessId: profile._id,
+            overpaymentStatus: "pending_refund"
+        });
+        if (overpaidPendingCount > 0) {
+            priorityItems.push(`• ${overpaidPendingCount} payment${overpaidPendingCount > 1 ? "s are" : " is"} awaiting refund/reconciliation`);
+        }
 
-            let debtorSection = "";
-            if (topDebtors.length > 0) {
-                const debtorList = topDebtors.map(d => {
-                    const bal = d.totalAmount - d.payments.reduce((s, p) => s + p.amount, 0);
-                    return `• ${d.customerName}: *₦${bal.toLocaleString()}* (#${d.invoiceNumber}) - _${d.description}_`;
-                }).join('\n');
-                debtorSection = `*Top Debt Alerts:*\n${debtorList}\n\n`;
-            }
+        // 2. Check for pending customer extension requests
+        const pendingExtCount = await Sale.countDocuments({
+            businessId: profile._id,
+            lifecycleStatus: "EXTENSION_REQUESTED"
+        });
+        if (pendingExtCount > 0) {
+            priorityItems.push(`• ${pendingExtCount} extension request${pendingExtCount > 1 ? "s require" : " requires"} review`);
+        }
 
-            const message = `Good morning, ${bossTitle}.\n\n*Yesterday's Performance:*\nCash Collected: *₦${totalCashIn.toLocaleString()}*\nNew Invoices: *${salesYesterday.length}* (₦${salesYesterday.reduce((sum, s) => sum + s.totalAmount, 0).toLocaleString()})\nDebt Recorded: *₦${pendingDebt.toLocaleString()}*\n\n${agendaSection}${debtorSection}*Today's Kreddy Tip:*\n${dailyTip}\n\n_Let's scale your business today._`;
+        // 3. Check for due/overdue invoices needing follow-up
+        const dueInvoicesCount = await Sale.countDocuments({
+            businessId: profile._id,
+            status: { $in: ["unpaid", "partial"] },
+            dueDate: { $lte: now }
+        });
+        if (dueInvoicesCount > 0) {
+            priorityItems.push(`• ${dueInvoicesCount} invoice${dueInvoicesCount > 1 ? "s require" : " requires"} follow-up`);
+        }
 
+        let prioritySection = "";
+        if (priorityItems.length > 0) {
+            prioritySection = `⚡ *TODAY'S PRIORITY*\n${priorityItems.slice(0, 3).join("\n")}`;
+        } else {
+            prioritySection = `⚡ *TODAY'S PRIORITY*\nEverything is on track — no urgent priority items. 🟢`;
+        }
+
+        // ── I'll Handle section ───────────────────────────────────────────
+        const commitmentLines = [
+            `🤝 *I'LL HANDLE*`,
+            `✓ Monitor all invoice payments`,
+            `✓ Send invoice reminders automatically`,
+            `✓ Notify you immediately when payments arrive`,
+            `✓ Keep your business records updated`
+        ].join("\n");
+
+        // ── Assemble the WhatsApp Daily Brief ────────────────────────────────
+        const message = [
+            `Good morning, ${bossTitle}.`,
+            `Here's today's business briefing. 📋`,
+            ``,
+            whileAwaySection,
+            `📊 *YESTERDAY*`,
+            yesterdaySection,
+            ``,
+            prioritySection,
+            ``,
+            commitmentLines,
+            ``,
+            `💡 *TODAY'S GROWTH PLAY*`,
+            dailyTip
+        ].filter(v => v !== null).join("\n");
+
+        if (isInsideWindow && profile.whatsappNumber) {
+            // 🟢 GROUP 1: WHATSAPP BRIEFING (Session open)
+            console.log(`📡 [ACTIVE] Delivering WhatsApp Daily Brief to ${profile.displayName}...`);
             const sent = await sendWhatsAppMessage(profile.whatsappNumber, message);
 
             if (sent) {
@@ -120,23 +284,23 @@ const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
             }
 
         } else {
-            // 🟠 MODE B: GROWTH MASTERCLASS (Email - Inactive Merchants)
-            console.log(`📪 [INACTIVE] Sending Growth Masterclass to ${profile.displayName} via Email...`);
+            // 🟠 GROUP 2: EMAIL BRIEFING (Session closed)
+            console.log(`📪 [ACTIVE] Sending Daily Brief to ${profile.displayName} via Email...`);
             
             const user = await require("../models/User").findById(profile.ownerId);
-            if (!user || !user.email) return { status: "failed", error: "No email found for inactive user" };
+            if (!user || !user.email) return { status: "failed", error: "No email found for active user" };
 
             const emailHtml = GROWTH_MASTERCLASS_TEMPLATE
                 .replace(/{name}/g, profile.displayName)
-                .replace(/{adviceText}/g, dailyTip);
+                .replace(/{adviceText}/g, `<div style="font-family: sans-serif; white-space: pre-line; color: #333;">${message.replace(/\*/g, '')}</div>`);
 
             await sendEmail({
                 to: user.email,
-                subject: `🌅 Morning Insight: A quick note for ${profile.displayName}`,
+                subject: `🌅 Your Daily Briefing: ${profile.displayName}`,
                 html: emailHtml
             });
 
-            console.log(`✅ [EMAIL] Growth Masterclass sent to ${user.email}.`);
+            console.log(`✅ [EMAIL] Daily Brief sent to ${user.email}.`);
             profile.lastSummaryAt = new Date();
             await profile.save();
             return { status: "sent", channel: "email" };
@@ -149,3 +313,4 @@ const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
 };
 
 module.exports = { sendIndividualMorningSummary };
+

@@ -71,6 +71,22 @@ const ReminderSchema = new mongoose.Schema({
     reminderSequence: {
         type: Number,
         default: 1
+    },
+    // Task priority (inferred by Kreddy from task description)
+    priority: {
+        type: String,
+        enum: ["high", "normal", "low"],
+        default: "normal"
+    },
+    // Abandoned-task follow-up: was the single 4h follow-up already sent?
+    followUpSent: {
+        type: Boolean,
+        default: false
+    },
+    // When the abandoned follow-up was sent
+    followUpAt: {
+        type: Date,
+        default: null
     }
 }, { timestamps: true });
 

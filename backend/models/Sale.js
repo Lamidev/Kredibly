@@ -119,7 +119,15 @@ const SaleSchema = new mongoose.Schema({
     requestedExtensionDays: { type: Number }, // How many days customer asked for
     extensionApprovedAt: { type: Date },
     extensionsCount: { type: Number, default: 0 },
-    pdfUrl: { type: String }  // Cloudinary URL of generated PDF
+    pdfUrl: { type: String },  // Cloudinary URL of generated PDF
+
+    // Overpayment tracking — set when customer transfers more than the DVA amount
+    overpaymentStatus: {
+        type: String,
+        enum: ['none', 'pending_refund', 'refunded', 'deferred'],
+        default: 'none'
+    },
+    overpaymentAmount: { type: Number, default: 0 } // Excess amount transferred by customer
 }, {
     timestamps: true,
     toJSON: { virtuals: true },

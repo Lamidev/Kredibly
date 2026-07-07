@@ -40,6 +40,8 @@ const {
   scheduleUpcomingNudges,
   scheduleBankLockChecker,
   scheduleDailySettlements,
+  schedulePaymentSessionExpiry,
+  scheduleAbandonedTasksFollowUp,
   startBackgroundJobRunner
 } = require("./utils/cronJobs");
 
@@ -204,6 +206,8 @@ mongoose
     scheduleUpcomingNudges();
     scheduleBankLockChecker();
     scheduleDailySettlements();
+    schedulePaymentSessionExpiry();
+    scheduleAbandonedTasksFollowUp();
     startBackgroundJobRunner();
 
     // 7. Start Server

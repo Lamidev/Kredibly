@@ -1,6 +1,7 @@
 const Sale = require('../../models/Sale');
 const BusinessProfile = require('../../models/BusinessProfile');
 const VirtualAccount = require('../../models/VirtualAccount');
+const PaymentSession = require('../../models/PaymentSession');
 const FINANCIAL_CONFIG = require('../../config/financials');
 const Notification = require('../../models/Notification');
 const ActivityLog = require('../../models/ActivityLog');
@@ -224,6 +225,27 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
         vaRecord.status = 'used';
         await vaRecord.save();
 
+        // ── Resolve matching PaymentSession (WhatsApp-native DVA flow) ──────────
+        try {
+            const matchedSession = await PaymentSession.findOneAndUpdate(
+                { nombaReference: accountReference, status: 'pending' },
+                {
+                    $set: {
+                        status: 'paid',
+                        resolvedAt: new Date(),
+                        actualAmountReceived: amount,
+                        nombaTransactionReference: transactionReference
+                    }
+                },
+                { new: true }
+            );
+            if (matchedSession) {
+                console.log(`✅ PaymentSession ${matchedSession._id} resolved as paid for Sale ${matchedSession.saleId}`);
+            }
+        } catch (psErr) {
+            console.error('⚠️ Could not resolve PaymentSession:', psErr.message);
+        }
+
         const totalPaid = updatedSale.payments.reduce((sum, p) => sum + p.amount, 0);
         const balanceRemaining = Math.max(0, sale.totalAmount - totalPaid);
 
@@ -357,31 +379,97 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                     : `⏳ Balance Remaining: ₦${balanceRemaining.toLocaleString()}`;
 
             } else if (isUnderpaid) {
-                // Customer paid less than expected
+                // Customer paid less than expected — notify both parties
                 const shortfall = Math.abs(diff);
-                customText = `⚠️ *Underpayment Alert!* Your customer transferred *₦${amount.toLocaleString()}* but the invoice expected *₦${vaRecord.amount.toLocaleString()}* (short by ₦${shortfall.toLocaleString()}). \n\nThe invoice has been credited for ₦${creditAmount.toLocaleString()}. Outstanding balance: ₦${balanceRemaining.toLocaleString()}. \n\nKindly follow up with ${sale.customerName} for the shortfall.`;
+                const bossTitle = business.assistantSettings?.preferredName || business.displayName || "Boss";
+                customText = `*Payment Received — Shortfall Detected*\n\n${sale.customerName} transferred *₦${amount.toLocaleString()}* for Invoice #${sale.invoiceNumber}.\n\nThe invoice expected *₦${vaRecord.amount.toLocaleString()}* — they are short by *₦${shortfall.toLocaleString()}*.\n\nI've updated the invoice. Outstanding balance is now *₦${balanceRemaining.toLocaleString()}*. I'll continue monitoring for the remaining payment.`;
 
             } else if (isOverpaid) {
-                // Customer paid more than expected
-                customText = `💰 *Overpayment Alert!* Your customer transferred *₦${amount.toLocaleString()}* but the invoice expected *₦${vaRecord.amount.toLocaleString()}* (excess of ₦${Math.abs(diff).toLocaleString()}). \n\nThe invoice has been marked as fully paid. The full net amount (₦${FINANCIAL_CONFIG.calculateNetAmount(amount).toLocaleString()}) has been swept to your bank. \n\nYou may need to refund ₦${Math.abs(diff).toLocaleString()} to ${sale.customerName} directly.`;
+                // Customer paid more than expected — send interactive buttons
+                const overpaymentExcess = Math.abs(diff);
+                const bossTitle = business.assistantSettings?.preferredName || business.displayName || "Boss";
+
+                // Mark the sale's overpayment status
+                await Sale.findByIdAndUpdate(sale._id, {
+                    overpaymentStatus: 'pending_refund',
+                    overpaymentAmount: overpaymentExcess
+                });
+
+                // Open a merchant session so button presses are handled correctly
+                const WhatsAppSession = require('../../models/WhatsAppSession');
+                if (business.whatsappNumber) {
+                    await WhatsAppSession.findOneAndUpdate(
+                        { whatsappNumber: business.whatsappNumber },
+                        {
+                            whatsappNumber: business.whatsappNumber,
+                            type: 'merchant_overpayment',
+                            data: {
+                                saleId: sale._id.toString(),
+                                invoiceNumber: sale.invoiceNumber,
+                                customerName: sale.customerName,
+                                overpaymentAmount: overpaymentExcess
+                            },
+                            expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000)
+                        },
+                        { upsert: true, new: true }
+                    );
+
+                    // Send the conversational Kreddy overpayment message with buttons
+                    const { sendInteractiveButtons } = require('../../utils/customerInvoiceService');
+                    const overpayMsg = [
+                        `*Overpayment Detected, ${bossTitle}*`,
+                        ``,
+                        `${sale.customerName} transferred *₦${amount.toLocaleString()}*.`,
+                        `Invoice #${sale.invoiceNumber} only required *₦${vaRecord.amount.toLocaleString()}*.`,
+                        `Overpayment: *₦${overpaymentExcess.toLocaleString()}*`,
+                        ``,
+                        `The invoice has been marked as fully paid ✔️`,
+                        ``,
+                        `Since payments settle directly into your bank account, please refund *₦${overpaymentExcess.toLocaleString()}* to ${sale.customerName} outside Kredibly.`,
+                        ``,
+                        `Have you sorted the refund?`
+                    ].join('\n');
+
+                    const btnSent = await sendInteractiveButtons(
+                        business.whatsappNumber,
+                        `Invoice #${sale.invoiceNumber}`,
+                        overpayMsg,
+                        '',
+                        [
+                            { id: `overpay_refunded:${sale._id}`, title: 'Mark Refunded' },
+                            { id: `overpay_later:${sale._id}`, title: 'Remind Me Later' }
+                        ]
+                    );
+
+                    if (!btnSent) {
+                        // Fallback: plain text if 24h window closed
+                        customText = `*Overpayment Alert!* ${sale.customerName} transferred ₦${amount.toLocaleString()} but Invoice #${sale.invoiceNumber} only required ₦${vaRecord.amount.toLocaleString()} (excess: ₦${overpaymentExcess.toLocaleString()}). The invoice is now fully paid. Please refund ₦${overpaymentExcess.toLocaleString()} to ${sale.customerName} directly.`;
+                    } else {
+                        // Skip the generic sendWhatsAppPaymentAlert below — we already handled it
+                        customText = null;
+                    }
+                }
             }
 
             // 🛡️ PLAN EXPIRED NUDGE: Even on inactive plans, payment notifications always
             // fire — but we append a resubscribe nudge to bring them back.
-            if (business.planStatus === 'inactive' || business.planStatus === 'cancelled') {
+            if (customText !== null && (business.planStatus === 'inactive' || business.planStatus === 'cancelled')) {
                 customText += `\n\n⚡ *Kreddy Note:* Even while I'm off-duty, your money is still moving! Subscribe now to get your full AI briefings and debt recovery back.\n🔗 https://usekredibly.com/settings`;
             }
 
-            const { sendWhatsAppPaymentAlert } = require('../whatsapp/whatsappController');
-            await sendWhatsAppPaymentAlert(
-                business.whatsappNumber,
-                creditAmount,
-                sale.invoiceNumber,
-                sale.customerName || payer,
-                customText,
-                business.displayName || 'Chief',
-                ""
-            ).catch(err => console.error('❌ WhatsApp Payment Alert Failed:', err.message));
+            // Only fire the generic alert when overpayment interactive buttons weren't already sent
+            if (customText !== null) {
+                const { sendWhatsAppPaymentAlert } = require('../whatsapp/whatsappController');
+                await sendWhatsAppPaymentAlert(
+                    business.whatsappNumber,
+                    creditAmount,
+                    sale.invoiceNumber,
+                    sale.customerName || payer,
+                    customText,
+                    business.displayName || 'Chief',
+                    ""
+                ).catch(err => console.error('❌ WhatsApp Payment Alert Failed:', err.message));
+            }
 
             // 🧠 KREDDY AI: Notify customer via WhatsApp too
             try {
