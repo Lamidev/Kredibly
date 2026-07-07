@@ -60,6 +60,7 @@ const getTodayRevenue = async (businessId) => {
 };
 
 const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
+const FRONTEND_URL = APP_URL;
 const BACKEND_URL = process.env.BACKEND_URL || "https://api.usekredibly.com";
 
 const HUMANIZE = {
