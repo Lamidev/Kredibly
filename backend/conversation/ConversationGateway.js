@@ -4,12 +4,81 @@
  * Receives all inbound messages. Resolves ConversationContext.
  * Decides if we are in an active workflow (One Thought Rule) or free conversation.
  * Integrates backward-compatible routing for legacy sessions during transition.
+ *
+ * Priority 5: Pre-AI memory recall check.
+ * If the merchant asks a temporal recall question ("what amount did I enter earlier?")
+ * and a recent draft exists in ConversationMemory, we answer directly from memory.
+ * The AI never sees these messages — no misclassification possible.
  */
 
 const ConversationContext = require("../models/ConversationContext");
 const WorkflowQueue = require("./WorkflowQueue");
 const WorkflowRouter = require("./WorkflowRouter");
 const WhatsAppSession = require("../models/WhatsAppSession");
+const MessageDispatcher = require("./MessageDispatcher");
+
+// Patterns that signal the merchant is recalling something from this session,
+// NOT querying who owes money.
+const RECALL_PATTERNS = [
+    /what\s+(was|were|is)\s+the\s+(amount|price|total|number|deposit|figure)/i,
+    /what\s+(amount|price|total|deposit|number|figure)\s+(did\s+i|i)\s+(enter|type|input|put|say|give)/i,
+    /earlier\s+(i\s+was|before\s+i\s+was|when\s+i\s+was)\s+creating/i,
+    /what\s+did\s+i\s+(enter|type|input|put|say)\s+(earlier|before|just\s+now)/i,
+    /the\s+(amount|price|total|deposit)\s+i\s+(entered|typed|inputted|put|said)/i,
+    /what\s+number\s+did\s+i\s+(type|enter|input|say)/i,
+    /what\s+(was|is)\s+the\s+invoice\s+(amount|price|total)\s+i/i,
+];
+
+/**
+ * Detect if a message is a temporal recall query.
+ * @param {string} text
+ * @returns {boolean}
+ */
+const isRecallQuery = (text) => {
+    if (!text) return false;
+    return RECALL_PATTERNS.some(p => p.test(text));
+};
+
+/**
+ * Build a human-readable summary of a lastDraft for the merchant.
+ * @param {Object} lastDraft - ConversationMemory.lastDraft
+ * @returns {string}
+ */
+const buildDraftRecallReply = (lastDraft) => {
+    const d = lastDraft.data || {};
+    const statusLabel = lastDraft.status === "cancelled" ? "cancelled" : "completed";
+    const ago = Math.round((Date.now() - new Date(lastDraft.savedAt).getTime()) / 60000);
+    const agoLabel = ago < 2 ? "just now" : `${ago} minute${ago !== 1 ? "s" : ""} ago`;
+
+    const lines = [
+        `Here's what I have from your ${statusLabel} invoice draft (${agoLabel}):`,
+        ``
+    ];
+
+    if (d.customerName) lines.push(`Customer: *${d.customerName}*`);
+    if (d.customerPhone) lines.push(`Phone: +${d.customerPhone}`);
+
+    if (d.items && d.items.length > 0) {
+        d.items.forEach((item, i) => {
+            const total = (item.unitPrice || 0) * (item.quantity || 1);
+            lines.push(`${i + 1}. ${item.name} × ${item.quantity || 1} — ₦${total.toLocaleString()}`);
+        });
+    } else if (d.item) {
+        lines.push(`Item: ${d.item}`);
+    }
+
+    if (d.totalAmount) lines.push(`\nInvoice Amount: *₦${d.totalAmount.toLocaleString()}*`);
+    if (d.paidAmount && d.paidAmount > 0) {
+        lines.push(`Deposit: ₦${d.paidAmount.toLocaleString()}`);
+        lines.push(`Balance Due: ₦${(d.totalAmount - d.paidAmount).toLocaleString()}`);
+    }
+    if (d.dueDate) {
+        const due = new Date(d.dueDate).toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short" });
+        lines.push(`Due Date: ${due}`);
+    }
+
+    return lines.join("\n");
+};
 
 class ConversationGateway {
     /**
@@ -58,9 +127,33 @@ class ConversationGateway {
             }
         }
 
-        // 4. Default to false: fall through to AI Intent engine (free conversation)
+        // 4. Pre-AI Memory Recall Check (Priority 5 — Conversation Memory Manager)
+        // If no active workflow, check if the merchant is asking a temporal recall question.
+        // If so, answer directly from ConversationMemory.lastDraft — no AI needed.
+        if (opts.text && isRecallQuery(opts.text) && profile) {
+            try {
+                const ConversationMemory = require("../models/ConversationMemory");
+                const memory = await ConversationMemory.findOne({ businessId: profile._id });
+                const recentDraft = memory ? memory.getRecentDraft() : null;
+
+                if (recentDraft) {
+                    const reply = buildDraftRecallReply(recentDraft);
+                    await MessageDispatcher.send(opts.from, reply);
+                    console.log(`🧠 [Gateway] Answered recall query from memory for ${cleanFrom} (draft: ${recentDraft.workflowType}/${recentDraft.status})`);
+                    return true; // Intercepted — AI never sees this
+                }
+                // No recent draft — fall through to AI which will reply with an honest "I don't know"
+            } catch (err) {
+                console.error("🚨 [Gateway] Memory recall check error:", err.message);
+                // Safe fallthrough to AI on any memory error
+            }
+        }
+
+        // 5. Default to false: fall through to AI Intent engine (free conversation)
         return false;
     }
 }
 
 module.exports = ConversationGateway;
+
+

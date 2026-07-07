@@ -99,15 +99,21 @@ INTENTS:
 9. "upgrade": Asking how to upgrade or change plans.
 10. "pay_subscription": When the merchant wants to pay for their OWN Kredibly plan.
 11. "check_billing": Asking about their plan status or billing date.
-12. "draft_invoice": Generate a payment link message to copy/forward for an EXISTING recorded sale/invoice. Use this ONLY if the user asks to "send the invoice link", "get the payment link", or "draft the invoice" for an already recorded transaction/debt without providing new transaction details like amount/item.
-13. "draft_reminder": Draft a debt reminder message to forward to the customer for an EXISTING recorded unpaid transaction/debt.
-    - When drafting a message for a customer (intents: draft_invoice, draft_reminder), ALWAYS start the draft part with the marker: "📝 Draft for [Name]:".
+12. "draft_reminder": Draft a debt reminder message to forward to the customer for an EXISTING recorded unpaid transaction/debt.
+    - When drafting a reminder message, ALWAYS start the draft part with the marker: "📝 Draft for [Name]:".
     - This allows the system to split the draft into its own WhatsApp bubble for easy forwarding.
 14. "add_staff": Add a new staff member by providing a phone number.
 15. "check_staff": Query current staff list.
 16. "delete_sale": When the user wants to remove or delete a sale record or invoice.
 17. "delete_reminder": When the user wants to remove, cancel, or delete a scheduled reminder (task, meeting, debt follow-up).
-18. "general_chat": Greetings, math, business advice, casual talk, or when requesting clarification from the user.
+17. "general_chat": Greetings, math, business advice, casual talk, or requesting clarification.
+    IMPORTANT — always use "general_chat" for temporal/historical recall questions. Examples:
+    - "what was the amount I entered earlier"
+    - "earlier I was creating an invoice for X, what did I input?"
+    - "what did I say the price was?"
+    - "the previous customer, what was their amount?"
+    - "what number did I type just now?"
+    These are NEVER "check_debt" — the merchant is recalling their own recent actions, NOT querying who owes money.
 19. "set_preferred_name": When the user asks to be called a specific name (e.g., "From now call me Papa").
 20. "list_sales": When the user asks for "all sales", "show me everything", "history", "what I sold today", or "everything recorded". 
 21. "check_performance": When the user asks "how much did I make today?", "any payments today?", "daily summary", "what is my today revenue?".
