@@ -11,9 +11,18 @@ const merchantExtension = {
     owner: "merchant",
     priority: "HIGH",
 
-    steps: [
-        "awaiting_decision"
-    ],
+    steps: {
+        awaiting_decision: {
+            acceptedInputs: ["button_tap", "yes_no_confirmation", "text"],
+            buttons: [
+                { id: "ext_approve", title: "Approve" },
+                { id: "ext_reject", title: "Decline" }
+            ],
+            validation: {
+                errorMessage: "Please reply with *approve* or *decline*, or tap one of the buttons above to decide on the extension."
+            }
+        }
+    },
 
     timeout: {
         minutes: 15,
@@ -40,11 +49,31 @@ const customerExtension = {
     owner: "customer",
     priority: "HIGH",
 
-    steps: [
-        "awaiting_duration",
-        "awaiting_custom_date",
-        "awaiting_reason"
-    ],
+    steps: {
+        awaiting_duration: {
+            acceptedInputs: ["button_tap", "text"],
+            buttons: [
+                { id: "ext_3days", title: "3 Days" },
+                { id: "ext_1week", title: "1 Week" },
+                { id: "ext_custom", title: "Custom Date" }
+            ],
+            validation: {
+                errorMessage: "Please choose one of the options or enter a number of days (e.g. '3 days' or '1 week')."
+            }
+        },
+        awaiting_custom_date: {
+            acceptedInputs: ["date"],
+            buttons: [
+                { id: "cancel", title: "Cancel" }
+            ]
+        },
+        awaiting_reason: {
+            acceptedInputs: ["button_tap", "text"],
+            buttons: [
+                { id: "ext_skip_reason", title: "Skip" }
+            ]
+        }
+    },
 
     timeout: {
         minutes: 30,

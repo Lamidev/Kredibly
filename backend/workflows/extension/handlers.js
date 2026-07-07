@@ -42,13 +42,14 @@ class MerchantExtension extends WorkflowBase {
                          ["reject", "decline", "no", "n"].includes(lowerText);
 
         if (isApprove) {
+            const sessionData = { ...state.data };
             await this.complete(state);
-            const result = await handleMerchantApproveExtension(saleId, state.data);
+            const result = await handleMerchantApproveExtension(saleId, sessionData);
             if (result.success) {
-                const newDate = new Date(state.data.newDueDate);
+                const newDate = new Date(sessionData.newDueDate);
                 const dateStr = newDate.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short" });
                 const successMsg = messages.merchantApproveSuccess
-                    .replace("{customerName}", state.data.customerName || "Customer")
+                    .replace("{customerName}", sessionData.customerName || "Customer")
                     .replace("{dateStr}", dateStr);
                 await MessageDispatcher.send(opts.from, successMsg);
             } else {
@@ -58,11 +59,12 @@ class MerchantExtension extends WorkflowBase {
         }
 
         if (isReject) {
+            const sessionData = { ...state.data };
             await this.complete(state);
-            const result = await handleMerchantRejectExtension(saleId, state.data);
+            const result = await handleMerchantRejectExtension(saleId, sessionData);
             if (result.success) {
                 const successMsg = messages.merchantRejectSuccess
-                    .replace("{customerName}", state.data.customerName || "Customer");
+                    .replace("{customerName}", sessionData.customerName || "Customer");
                 await MessageDispatcher.send(opts.from, successMsg);
             } else {
                 await MessageDispatcher.send(opts.from, messages.merchantNoExtensionFound);

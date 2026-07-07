@@ -72,6 +72,23 @@ class WorkflowRouter {
             }
         }
 
+        // Validate input before handler runs
+        const stepConfig = manifest.stepConfigs ? manifest.stepConfigs[workflowContext.step] : null;
+        if (stepConfig) {
+            const buttonId = message.interactive?.button_reply?.id || 
+                             message.interactive?.list_reply?.id || 
+                             message.button?.payload || 
+                             null;
+            
+            const WorkflowValidator = require("./WorkflowValidator");
+            const validation = WorkflowValidator.validate(text, buttonId, stepConfig);
+            if (!validation.isValid) {
+                const feedback = stepConfig.validation?.errorMessage || validation.feedback || "Invalid input. Please try again.";
+                await MessageDispatcher.send(opts.from, feedback);
+                return true; // Intercepted and handled
+            }
+        }
+
         // Normal route to step handler
         try {
             const handled = await handler.handle(workflowContext.step, message, workflowContext, profile, opts);

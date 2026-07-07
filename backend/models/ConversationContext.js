@@ -113,6 +113,7 @@ ConversationContextSchema.methods.advanceTo = function (step, extraData = {}) {
     this.step = step;
     if (extraData && Object.keys(extraData).length > 0) {
         this.data = { ...(this.data || {}), ...extraData };
+        this.markModified("data");
     }
 };
 

@@ -22,6 +22,9 @@ const customerHandler = new extensionHandlers.customer(extensionManifests.custom
 WorkflowRegistry.register("merchant_extension", extensionManifests.merchant, merchantHandler);
 WorkflowRegistry.register("customer_extension", extensionManifests.customer, customerHandler);
 
+// Load event subscribers
+require("./subscribers");
+
 module.exports = {
     initialized: true
 };
