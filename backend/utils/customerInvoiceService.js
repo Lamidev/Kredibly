@@ -303,8 +303,24 @@ const sendTemplateMsg = async (to, templateName, components = []) => {
 };
 
 /**
- * Send the official kreddy_customer_invoice template with a document (PDF) header
- * and body variables matching the Xara customer invoice template.
+ * Send the customer invoice WhatsApp template.
+ *
+ * Supports two templates:
+ *
+ * 1. kreddy_customer_invoice (CURRENT — legacy)
+ *    Button 0: URL → opens public invoice page  ← V1 behaviour
+ *    Button 1: Quick Reply → req_ext:{saleId}
+ *
+ * 2. kreddy_customer_invoice_v2 (V2 — set USE_INVOICE_V2_TEMPLATE=true in .env)
+ *    Button 0: Quick Reply → payload "pay_now"   ← stays in WhatsApp ✅
+ *    Button 1: Quick Reply → payload "req_ext"   ← stays in WhatsApp ✅
+ *
+ * Note: Template Quick Reply payloads MUST be static strings (Meta limitation).
+ * The code resolves the active sale from the customer's phone when these fire.
+ *
+ * In both cases, after the template sends, Kreddy immediately follows up with
+ * a free-form interactive message containing pay_now:{saleId} buttons — this
+ * is the primary V2 payment entry point.
  */
 const sendInvoiceTemplateToCustomer = async (to, sale, business, pdfUrl) => {
     const { phoneId, accessToken } = getWACredentials();
@@ -318,8 +334,10 @@ const sendInvoiceTemplateToCustomer = async (to, sale, business, pdfUrl) => {
     const formattedAmount = `₦${sale.totalAmount.toLocaleString()}`;
     const invoiceRef = `#${sale.invoiceNumber}`;
     const businessName = business.displayName || "Our Merchant";
+    const useV2Template = process.env.USE_INVOICE_V2_TEMPLATE === "true";
+    const templateName = useV2Template ? "kreddy_customer_invoice_v2" : "kreddy_customer_invoice";
 
-    // Meta requires components in strict order: header → body → button
+    // Meta requires components in strict order: header → body → buttons
     const components = [];
 
     // 1. Header (document / PDF) — must come first
@@ -338,7 +356,7 @@ const sendInvoiceTemplateToCustomer = async (to, sale, business, pdfUrl) => {
         });
     }
 
-    // 2. Body — variables matching the approved template
+    // 2. Body — variables matching the approved template body
     components.push({
         type: "body",
         parameters: [
@@ -350,40 +368,63 @@ const sendInvoiceTemplateToCustomer = async (to, sale, business, pdfUrl) => {
         ]
     });
 
-    // 3. Button — dynamic URL suffix
-    components.push({
-        type: "button",
-        sub_type: "url",
-        index: "0",
-        parameters: [
-            { type: "text", text: `${sale.invoiceNumber}` }
-        ]
-    });
-
-    // 4. Button 1 — Quick Reply (Request Extension)
     const canRequestExt = (sale.extensionsCount || 0) < 2
         && sale.lifecycleStatus !== "EXTENSION_REQUESTED";
-    if (canRequestExt) {
+
+    if (useV2Template) {
+        // V2 template: both buttons are Quick Replies — customer stays in WhatsApp
+        // Button 0: Pay with Transfer (static payload "pay_now")
         components.push({
             type: "button",
             sub_type: "quick_reply",
-            index: "1",
+            index: "0",
+            parameters: [{ type: "payload", payload: "pay_now" }]
+        });
+
+        // Button 1: Request Extension (static payload "req_ext") — only if eligible
+        if (canRequestExt) {
+            components.push({
+                type: "button",
+                sub_type: "quick_reply",
+                index: "1",
+                parameters: [{ type: "payload", payload: "req_ext" }]
+            });
+        }
+    } else {
+        // Legacy template: Button 0 is a URL button (opens browser — V1 behaviour)
+        // Kreddy's follow-up interactive message below is the real V2 entry point.
+        components.push({
+            type: "button",
+            sub_type: "url",
+            index: "0",
             parameters: [
-                { type: "payload", payload: `req_ext:${sale._id}` }
+                { type: "text", text: `${sale.invoiceNumber}` }
             ]
         });
+
+        // Button 1: Quick Reply → Request Extension (with saleId in payload)
+        if (canRequestExt) {
+            components.push({
+                type: "button",
+                sub_type: "quick_reply",
+                index: "1",
+                parameters: [
+                    { type: "payload", payload: `req_ext:${sale._id}` }
+                ]
+            });
+        }
     }
 
     try {
-        console.log(`Sending customer invoice template (kreddy_customer_invoice) to ${cleanTo}...`);
-        const res = await axios.post(
+        console.log(`Sending ${templateName} template to ${cleanTo}...`);
+        await axios.post(
             `https://graph.facebook.com/v21.0/${phoneId}/messages`,
             {
                 messaging_product: "whatsapp",
                 to: cleanTo,
                 type: "template",
                 template: {
-                    name: "kreddy_customer_invoice",
+                    name: templateName,
                     language: { code: "en" },
                     components
                 }
@@ -396,6 +437,7 @@ const sendInvoiceTemplateToCustomer = async (to, sale, business, pdfUrl) => {
         return false;
     }
 };
+
 
 // ─── Core Invoice Delivery ─────────────────────────────────────────────────────
 
@@ -459,10 +501,13 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
             `Tap "Pay Invoice Now" to complete payment.`
         ].join("\n");
 
+        const canRequestExt = (sale.extensionsCount || 0) < 2
+            && sale.lifecycleStatus !== "EXTENSION_REQUESTED";
+
         if (bal > 0) {
-            // Always use the kreddy_customer_invoice template directly.
-            // Free-form messages (document/interactive) only work when a customer has an
-            // open 24h session — new customers never do. Template-first guarantees delivery.
+
+            // Step 2a: Send the invoice template (delivers the PDF and opens a 24h window).
+            // Template-first guarantees delivery even for new customers with no prior session.
             console.log(`📨 Sending invoice template to customer ${cleanCustomerPhone}...`);
             const tplSent = await sendInvoiceTemplateToCustomer(cleanCustomerPhone, sale, business, pdfUrl);
             console.log(`📨 Template delivery to customer ${cleanCustomerPhone}: ${tplSent ? '✅ sent' : '❌ failed'}`);
@@ -475,6 +520,40 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
                     summaryLines,
                     sale.customerName,
                     sale.invoiceNumber
+                );
+            } else {
+                // Step 2b: V2 — Follow up immediately with interactive buttons.
+                // The template opens the 24h window; now we send a proper conversational
+                // message so the customer stays 100% inside WhatsApp.
+                const hasDueDateStr = hasDueDate ? `\nDue: *${dueDateFormatted}*` : "";
+                const balanceStr = hasPartialPayment
+                    ? `Outstanding Balance: *₦${bal.toLocaleString()}*`
+                    : `Amount: *₦${sale.totalAmount.toLocaleString()}*`;
+
+                const introText = [
+                    `Hi ${sale.customerName} 👋`,
+                    ``,
+                    `*${businessName}* has sent you an invoice for *${itemsListStr}*.`,
+                    ``,
+                    balanceStr,
+                    `Ref: *${refStr}*${hasDueDateStr}`,
+                    ``,
+                    `How would you like to proceed?`
+                ].join("\n");
+
+                const actionButtons = [
+                    { id: `pay_now:${sale._id}`, title: "Pay with Transfer" }
+                ];
+                if (canRequestExt) {
+                    actionButtons.push({ id: `req_ext:${sale._id}`, title: "Request Extension" });
+                }
+
+                await sendInteractiveButtons(
+                    cleanCustomerPhone,
+                    `Invoice ${refStr}`,
+                    introText,
+                    "",
+                    actionButtons
                 );
             }
 
@@ -897,21 +976,22 @@ const handleCustomerRequestExtension = async (saleId, customerPhone) => {
             return;
         }
 
-        // Save session so we know what invoice extension is being requested
-        await WhatsAppSession.findOneAndUpdate(
-            { whatsappNumber: normalizePhone(customerPhone) },
+        // Save V2 workflow context so we know what invoice extension is being requested
+        const WorkflowQueue = require("../conversation/WorkflowQueue");
+        await WorkflowQueue.enqueue(
+            normalizePhone(customerPhone),
+            sale.businessId?._id || sale.businessId,
+            "customer_extension",
+            "awaiting_duration",
+            "HIGH",
             {
-                type: "customer_extension_duration",
-                data: {
-                    saleId: saleId.toString(),
-                    customerName: sale.customerName,
-                    invoiceNumber: sale.invoiceNumber,
-                    businessId: sale.businessId?._id?.toString(),
-                    merchantPhone: sale.businessId?.whatsappNumber
-                },
-                expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+                saleId: saleId.toString(),
+                customerName: sale.customerName,
+                invoiceNumber: sale.invoiceNumber,
+                businessId: sale.businessId?._id?.toString() || sale.businessId?.toString(),
+                merchantPhone: sale.businessId?.whatsappNumber
             },
-            { upsert: true, new: true }
+            30 // 30 min timeout
         );
 
         const sent = await sendInteractiveButtons(
@@ -1022,23 +1102,24 @@ const handleCustomerExtensionDuration = async (saleId, days, customerPhone, cust
             ? `\n\nReason:\n"${reason}"`
             : `\n\nReason:\nNo reason provided.`;
 
-        // Save session on merchant's number so they can approve/reject
-        await WhatsAppSession.findOneAndUpdate(
-            { whatsappNumber: normalizePhone(merchantPhone) },
+        // Save V2 workflow context on merchant's number so they can approve/reject
+        const WorkflowQueue = require("../conversation/WorkflowQueue");
+        await WorkflowQueue.enqueue(
+            normalizePhone(merchantPhone),
+            business._id,
+            "merchant_extension",
+            "awaiting_decision",
+            "HIGH",
             {
-                type: "merchant_extension_approval",
-                data: {
-                    saleId: saleId.toString(),
-                    customerName: sale.customerName,
-                    customerPhone: normalizePhone(customerPhone),
-                    invoiceNumber: sale.invoiceNumber,
-                    requestedDays: actualDays,
-                    newDueDate: requestedDate.toISOString(),
-                    businessId: business._id.toString()
-                },
-                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h to decide
+                saleId: saleId.toString(),
+                customerName: sale.customerName,
+                customerPhone: normalizePhone(customerPhone),
+                invoiceNumber: sale.invoiceNumber,
+                requestedDays: actualDays,
+                newDueDate: requestedDate.toISOString(),
+                businessId: business._id.toString()
             },
-            { upsert: true, new: true }
+            24 * 60 // 24h timeout
         );
 
         const success = await sendInteractiveButtons(
@@ -1321,13 +1402,17 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
         }
 
         // ── Template Quick Reply: "button" type ─────────────────────────────────────
-        // When a customer taps "Request Extension" or "Pay With Transfer" on the
-        // kreddy_customer_invoice template (outside the 24h window), WhatsApp sends
-        // msgType === "button" with message.button.payload or message.button.text.
+        // When a customer taps a button on the kreddy_customer_invoice template
+        // (outside the 24h window), WhatsApp sends msgType === "button" with payload.
+        //
+        // Two cases:
+        //   1. Legacy template: payload = "pay_now:{saleId}" or "req_ext:{saleId}"
+        //   2. V2 template:     payload = "pay_now" or "req_ext" (static, no saleId)
         if (msgType === "button") {
             const btnPayload = message?.button?.payload || "";
             const btnText = (message?.button?.text || "").toLowerCase().trim();
 
+            // Legacy template: payload contains saleId
             if (btnPayload.startsWith("req_ext:")) {
                 const saleId = btnPayload.split(":")[1];
                 await handleCustomerRequestExtension(saleId, cleanFrom);
@@ -1340,26 +1425,36 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
                 return true;
             }
 
-            const activeSale = await Sale.findOne({
-                deliveredToPhone: cleanFrom,
-                status: { $ne: "paid" },
-                lifecycleStatus: { $in: ["DELIVERED", "VIEWED", "EXTENSION_REQUESTED", "EXTENSION_GRANTED", "EXTENSION_REJECTED", "PARTIALLY_PAID"] }
-            }).sort({ customerDeliveredAt: -1 });
-
-            if (!activeSale) return false;
-
-            if (btnText === "request extension") {
-                await handleCustomerRequestExtension(activeSale._id, cleanFrom);
-                return true;
+            // V2 template: static payload "pay_now" or "req_ext" — resolve sale by phone
+            if (btnPayload === "pay_now" || btnText === "pay with transfer" || btnText === "pay now") {
+                const activeSale = await Sale.findOne({
+                    deliveredToPhone: cleanFrom,
+                    status: { $ne: "paid" },
+                    lifecycleStatus: { $in: ["DELIVERED", "VIEWED", "EXTENSION_REQUESTED", "EXTENSION_GRANTED", "EXTENSION_REJECTED", "PARTIALLY_PAID"] }
+                }).sort({ customerDeliveredAt: -1 });
+                if (activeSale) {
+                    await handleCustomerPayNow(activeSale._id, cleanFrom);
+                    return true;
+                }
+                return false;
             }
 
-            if (btnText === "pay with transfer" || btnText === "pay now") {
-                await handleCustomerPayNow(activeSale._id, cleanFrom);
-                return true;
+            if (btnPayload === "req_ext" || btnText === "request extension") {
+                const activeSale = await Sale.findOne({
+                    deliveredToPhone: cleanFrom,
+                    status: { $ne: "paid" },
+                    lifecycleStatus: { $in: ["DELIVERED", "VIEWED", "EXTENSION_REQUESTED", "EXTENSION_GRANTED", "EXTENSION_REJECTED", "PARTIALLY_PAID"] }
+                }).sort({ customerDeliveredAt: -1 });
+                if (activeSale) {
+                    await handleCustomerRequestExtension(activeSale._id, cleanFrom);
+                    return true;
+                }
+                return false;
             }
 
             return false;
         }
+
 
         // Check for text-based session
         const session = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
@@ -1663,6 +1758,8 @@ const sendCustomerReminderTemplate = async (to, sale, business, sequenceLabel = 
     const formattedAmount = `₦${bal.toLocaleString()} outstanding`;
     const invoiceRef = `#${sale.invoiceNumber}`;
     const businessName = business.displayName || "Your Merchant";
+    const useV2Template = process.env.USE_INVOICE_V2_TEMPLATE === "true";
+    const templateName = useV2Template ? "kreddy_customer_invoice_v2" : "kreddy_customer_invoice";
 
     const components = [];
 
@@ -1694,29 +1791,50 @@ const sendCustomerReminderTemplate = async (to, sale, business, sequenceLabel = 
         ]
     });
 
-    // Button 0: URL → Pay Now (dynamic suffix)
-    components.push({
-        type: "button",
-        sub_type: "url",
-        index: "0",
-        parameters: [{ type: "text", text: `${sale.invoiceNumber}` }]
-    });
-
-    // Button 1: Quick Reply → Request Extension
-    // (only include if customer hasn't maxed out extensions or already requested)
     const canRequestExt = (sale.extensionsCount || 0) < 2
         && sale.lifecycleStatus !== "EXTENSION_REQUESTED";
-    if (canRequestExt) {
+
+    if (useV2Template) {
+        // V2 template: both buttons are Quick Replies — customer stays in WhatsApp
+        // Button 0: Pay with Transfer (static payload "pay_now")
         components.push({
             type: "button",
             sub_type: "quick_reply",
-            index: "1",
-            parameters: [{ type: "payload", payload: `req_ext:${sale._id}` }]
+            index: "0",
+            parameters: [{ type: "payload", payload: "pay_now" }]
         });
+
+        // Button 1: Request Extension (static payload "req_ext") — only if eligible
+        if (canRequestExt) {
+            components.push({
+                type: "button",
+                sub_type: "quick_reply",
+                index: "1",
+                parameters: [{ type: "payload", payload: "req_ext" }]
+            });
+        }
+    } else {
+        // Legacy template: Button 0 is a URL button (opens browser)
+        components.push({
+            type: "button",
+            sub_type: "url",
+            index: "0",
+            parameters: [{ type: "text", text: `${sale.invoiceNumber}` }]
+        });
+
+        // Button 1: Quick Reply → Request Extension (with saleId payload)
+        if (canRequestExt) {
+            components.push({
+                type: "button",
+                sub_type: "quick_reply",
+                index: "1",
+                parameters: [{ type: "payload", payload: `req_ext:${sale._id}` }]
+            });
+        }
     }
 
     try {
-        console.log(`📨 [${sequenceLabel}] Sending kreddy_customer_invoice template to ${cleanTo}...`);
+        console.log(`📨 [${sequenceLabel}] Sending ${templateName} template to ${cleanTo}...`);
         await axios.post(
             `https://graph.facebook.com/v21.0/${phoneId}/messages`,
             {
@@ -1724,7 +1842,7 @@ const sendCustomerReminderTemplate = async (to, sale, business, sequenceLabel = 
                 to: cleanTo,
                 type: "template",
                 template: {
-                    name: "kreddy_customer_invoice",
+                    name: templateName,
                     language: { code: "en" },
                     components
                 }
