@@ -334,8 +334,7 @@ const sendInvoiceTemplateToCustomer = async (to, sale, business, pdfUrl) => {
     const formattedAmount = `₦${sale.totalAmount.toLocaleString()}`;
     const invoiceRef = `#${sale.invoiceNumber}`;
     const businessName = business.displayName || "Our Merchant";
-    const useV2Template = process.env.USE_INVOICE_V2_TEMPLATE === "true";
-    const templateName = useV2Template ? "kreddy_customer_invoice_v2" : "kreddy_customer_invoice";
+    const templateName = "kreddy_customer_invoice_v2";
 
     // Meta requires components in strict order: header → body → buttons
     const components = [];
@@ -1758,8 +1757,7 @@ const sendCustomerReminderTemplate = async (to, sale, business, sequenceLabel = 
     const formattedAmount = `₦${bal.toLocaleString()} outstanding`;
     const invoiceRef = `#${sale.invoiceNumber}`;
     const businessName = business.displayName || "Your Merchant";
-    const useV2Template = process.env.USE_INVOICE_V2_TEMPLATE === "true";
-    const templateName = useV2Template ? "kreddy_customer_invoice_v2" : "kreddy_customer_invoice";
+    const templateName = "kreddy_customer_invoice_v2";
 
     const components = [];
 
