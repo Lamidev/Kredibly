@@ -1383,18 +1383,10 @@ const handleIncoming = async (req, res) => {
                     const remId = buttonId.split(":")[1];
                     const reminder = await Reminder.findById(remId);
                     if (reminder) {
-                        // ── ONE-TIME GUARD: Block duplicate click ──────────────────────
-                        if (reminder.status === "delivered") {
-                            await sendReply(from, `This task has already been marked done, ${bossTitle}! 🥳`);
-                            return;
-                        }
-                        reminder.status = "delivered";
-                        reminder.deliveredAt = new Date();
-                        reminder.error = null;
-                        await reminder.save();
+                        await Reminder.findByIdAndDelete(remId);
                         await sendReply(from, `✅ *Task Completed!* \n\nI've marked the task *"${reminder.description}"* as done. Great job! 🥳`);
                     } else {
-                        await sendReply(from, `I couldn't find that reminder anymore, ${bossTitle}. 🤔`);
+                        await sendReply(from, `This task has already been completed or deleted, ${bossTitle}! 🌟`);
                     }
                     return;
                 }
@@ -1489,12 +1481,10 @@ const handleIncoming = async (req, res) => {
                     const remId = buttonId.split(":")[1];
                     const reminder = await Reminder.findById(remId);
                     if (reminder) {
-                        reminder.status = "delivered";
-                        reminder.deliveredAt = new Date();
-                        await reminder.save();
-                        await sendReply(from, `Got it, ${bossTitle}! I've dismissed and archived that reminder. Let me know if you need anything else! 🫡`);
+                        await Reminder.findByIdAndDelete(remId);
+                        await sendReply(from, `Got it, ${bossTitle}! I've dismissed that reminder. Let me know if you need anything else! 🫡`);
                     } else {
-                        await sendReply(from, `I couldn't find that reminder anymore, ${bossTitle}. 🤔`);
+                        await sendReply(from, `This reminder has already been completed or deleted, ${bossTitle}! 🌟`);
                     }
                     return;
                 }
@@ -1671,6 +1661,14 @@ const handleIncoming = async (req, res) => {
                         sale.dueDate = session.data.date;
                         await sale.save();
                         return await sendReply(from, `🗓️ *Reminder Set!* \n\nUpdated for *${sale.customerName}*.`);
+                    }
+                } else if (session.type === 'delete_reminder_disambiguation') {
+                    const reminder = await Reminder.findById(selected.id);
+                    if (reminder) {
+                        await Reminder.findByIdAndDelete(selected.id);
+                        return await sendReply(from, `🗑️ *Reminder Cancelled!* \n\nI've removed the task *"${reminder.description}"* from your schedule. 🫡`);
+                    } else {
+                        return await sendReply(from, `I couldn't find that reminder anymore, ${bossTitle}. 🤔`);
                     }
                 } else if (session.type === 'draft_disambiguation') {
                     const sale = await Sale.findById(selected.id);
@@ -3769,8 +3767,7 @@ const handleIncoming = async (req, res) => {
                         await sendReply(from, `🔍 I couldn't find any pending reminders for *"${taskTarget || 'that'}"*, ${bossTitle}.`);
                     } else if (matches.length === 1) {
                         const rem = matches[0];
-                        rem.status = "cancelled";
-                        await rem.save();
+                        await Reminder.findByIdAndDelete(rem._id);
                         await sendReply(from, `🗑️ *Reminder Cancelled!* \n\nI've removed the task *"${rem.description}"* from your schedule. 🫡`);
                     } else {
                         let msg = `🤔 I found *${matches.length}* pending reminders that might match. Which one should I cancel?\n\n`;

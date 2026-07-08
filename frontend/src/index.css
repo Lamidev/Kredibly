@@ -1221,28 +1221,21 @@ body.lock-scroll {
         font-size: 1.2rem !important;
     }
 
-    /* ── Workspace: kanban lanes scroll horizontally ── */
+    /* ── Workspace: kanban lanes do not scroll horizontally (tabbed layout) ── */
     .workspace-kanban {
         grid-template-columns: unset !important;
         display: flex !important;
-        flex-direction: row !important;
-        overflow-x: auto !important;
-        scroll-snap-type: x mandatory !important;
-        -webkit-overflow-scrolling: touch !important;
-        gap: 12px !important;
-        padding-bottom: 12px !important;
-        /* Hide scrollbar but keep functionality */
-        scrollbar-width: none;
-    }
-
-    .workspace-kanban::-webkit-scrollbar {
-        display: none;
+        flex-direction: column !important;
+        gap: 16px !important;
+        padding-bottom: 0 !important;
+        overflow-x: hidden !important;
     }
 
     .workspace-kanban > * {
-        flex: 0 0 84vw !important;
-        scroll-snap-align: start !important;
-        max-width: 360px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: unset !important;
+        scroll-snap-align: unset !important;
     }
 
     /* ── Details Drawers: full screen on mobile ── */
