@@ -704,9 +704,8 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
         console.log(`🔔 WhatsApp Session Closed for ${normalizedTo} — Sending paid template message`);
         
         const safeMessage = String(textMessage)
-            .replace(/\r/g, '')        // Keep \n, but remove carriage returns
-            .replace(/\t/g, ' ')       // Strip tabs too
-            .replace(/[^\S\r\n]{2,}/g, ' ') // Collapse multiple horizontal spaces (Meta allows max 4 consecutive)
+            .replace(/[\r\n\t]+/g, ' ')     // Replace all newlines and carriage returns with a space for Meta compatibility
+            .replace(/\s\s+/g, ' ')         // Collapse multiple spaces (Meta allows max 4 consecutive)
             .trim()
             .substring(0, 1024);
 
