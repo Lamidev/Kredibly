@@ -93,8 +93,8 @@ const createDynamicVirtualAccount = async ({ amount, invoiceNumber, merchantName
 
         const cleanInvoice = invoiceNumber.replace(/[^a-zA-Z0-9]/g, '');
         const reference = `KREDINV-${cleanInvoice}-${Date.now().toString().slice(-6)}`;
-        // Expire in 45 minutes to satisfy Nomba API minimum requirements (30 mins is often rejected)
-        const expiryDate = new Date(Date.now() + 45 * 60 * 1000).toISOString();
+        // Expire in 24 hours to give the customer enough time to pay
+        const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
         // 🛡️ SECURITY: Sanitize Name strictly for Banking App compatibility
         let finalAccountName = (merchantName || 'KREDY')
