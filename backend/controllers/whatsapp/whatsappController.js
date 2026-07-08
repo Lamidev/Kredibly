@@ -1044,18 +1044,23 @@ const handleIncoming = async (req, res) => {
                                 tempSession.type === 'customer_extension_reason' ||
                                 tempSession.type === 'collect_partial_payment_amount')) {
                 isForCustomerFlow = true;
+            } else if (/^(pay|payment|transfer|link|invoice)$/i.test(text.trim()) || 
+                       /^(extend|extension|more time)$/i.test(text.trim())) {
+                // If they send a customer command text, route them as customer
+                isForCustomerFlow = true;
             }
         }
 
-        if (!profile || isForCustomerFlow) {
-            // 🧠 KREDDY AI: Check if this is a CUSTOMER who received an invoice
-            const isKnownCustomer = await isCustomerPhone(cleanFrom);
-            if (isKnownCustomer) {
-                const handled = await handleCustomerInbound(from, msgType, message, text);
-                if (handled) return;
-            }
+        // 🧠 CUSTOMER DIRECTIVE: If this phone number is associated with an active unpaid invoice,
+        // prioritize the customer payment/extension flow. This prevents customers from ever
+        // falling through to the merchant AI pipeline and getting addressed by merchant details.
+        const isKnownCustomer = await isCustomerPhone(cleanFrom);
+        if (isKnownCustomer) {
+            const handled = await handleCustomerInbound(from, msgType, message, text);
+            if (handled) return;
+        }
 
-            if (!profile) {
+        if (!profile) {
                 // Pre-launch Phase: Force Registration for all unknown numbers using Meta template with button redirect
                 const welcomeText = `Welcome to Kredibly! I'm Kreddy, your Digital Chief of Staff. I handle sales records, debtors, and automated invoices right here in WhatsApp. I don't have you registered yet. Create your free account in 30 seconds.`;
                 const cleanMsg = welcomeText
@@ -1085,7 +1090,6 @@ const handleIncoming = async (req, res) => {
                 await sendTemplateMessage(from, "kreddy_system_alert", components);
                 return;
             }
-        }
 
         // 🛡️ COST SAVING: Track the 24-hour window
         profile.lastInboundAt = new Date();

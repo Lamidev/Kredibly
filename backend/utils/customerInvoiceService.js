@@ -1299,6 +1299,23 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
             await new Promise(r => setTimeout(r, 1000));
         }
 
+        // ── Step 1.5: Send new checkout buttons for the remaining balance ─────
+        if (!isFullyPaid) {
+            const buttons = [
+                { id: `pay_now:${sale._id}`, title: "Pay Remaining" }
+            ];
+            if ((sale.extensionsCount || 0) < 2) {
+                buttons.push({ id: `req_ext:${sale._id}`, title: "Request Extension" });
+            }
+            await sendInteractiveButtons(
+                cleanCustomerPhone,
+                `Invoice #${sale.invoiceNumber}`,
+                `You still have an outstanding balance of *₦${balance.toLocaleString()}*.\n\nWould you like to pay the remaining balance now or request an extension?`,
+                "",
+                buttons
+            ).catch(err => console.error("⚠️ Failed to send remaining balance buttons:", err.message));
+        }
+
         // ── Step 2: Final PAID PDF — only when fully settled ──────────────────
         if (isFullyPaid) {
             console.log(`📄 Regenerating PAID PDF for Invoice ${sale.invoiceNumber}...`);
@@ -1418,11 +1435,7 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
 
             // V2 template: static payload "pay_now" or "req_ext" — resolve sale by phone
             if (btnPayload === "pay_now" || btnText === "pay with transfer" || btnText === "pay now") {
-                const activeSale = await Sale.findOne({
-                    deliveredToPhone: cleanFrom,
-                    status: { $ne: "paid" },
-                    lifecycleStatus: { $in: ["DELIVERED", "VIEWED", "EXTENSION_REQUESTED", "EXTENSION_GRANTED", "EXTENSION_REJECTED", "PARTIALLY_PAID"] }
-                }).sort({ customerDeliveredAt: -1 });
+                const activeSale = await findActiveCustomerSale(cleanFrom);
                 if (activeSale) {
                     await handleCustomerPayNow(activeSale._id, cleanFrom);
                     return true;
@@ -1431,11 +1444,7 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
             }
 
             if (btnPayload === "req_ext" || btnText === "request extension") {
-                const activeSale = await Sale.findOne({
-                    deliveredToPhone: cleanFrom,
-                    status: { $ne: "paid" },
-                    lifecycleStatus: { $in: ["DELIVERED", "VIEWED", "EXTENSION_REQUESTED", "EXTENSION_GRANTED", "EXTENSION_REJECTED", "PARTIALLY_PAID"] }
-                }).sort({ customerDeliveredAt: -1 });
+                const activeSale = await findActiveCustomerSale(cleanFrom);
                 if (activeSale) {
                     await handleCustomerRequestExtension(activeSale._id, cleanFrom);
                     return true;
@@ -1605,11 +1614,10 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
         }
 
         // Check if this customer has any active invoice delivered to them
-        const activeSale = await Sale.findOne({
-            deliveredToPhone: cleanFrom,
-            status: { $ne: "paid" },
-            lifecycleStatus: { $in: ["DELIVERED", "VIEWED", "EXTENSION_REQUESTED", "EXTENSION_GRANTED", "EXTENSION_REJECTED", "PARTIALLY_PAID"] }
-        }).sort({ customerDeliveredAt: -1 }).populate("businessId");
+        const activeSale = await findActiveCustomerSale(cleanFrom);
+        if (activeSale) {
+            await activeSale.populate("businessId");
+        }
 
         if (activeSale) {
             const bal = activeSale.totalAmount - (activeSale.payments || []).reduce((s, p) => s + p.amount, 0);
@@ -1842,13 +1850,25 @@ const sendCustomerReminderTemplate = async (to, sale, business, sequenceLabel = 
     }
 };
 
-const isCustomerPhone = async (phone) => {
-    const cleanPhone = normalizePhone(phone);
-    const activeSale = await Sale.findOne({
-        deliveredToPhone: cleanPhone,
+const findActiveCustomerSale = async (phone) => {
+    if (!phone) return null;
+    const clean = String(phone).replace(/\D/g, "");
+    const plus = "+" + clean;
+    const alt = clean.startsWith("234") ? "0" + clean.slice(3) : (clean.startsWith("0") ? "234" + clean.slice(1) : null);
+    const formats = [clean, plus, alt, phone].filter(Boolean);
+
+    return await Sale.findOne({
+        $or: [
+            { deliveredToPhone: { $in: formats } },
+            { customerPhone: { $in: formats } }
+        ],
         status: { $ne: "paid" },
         lifecycleStatus: { $in: ["DELIVERED", "VIEWED", "EXTENSION_REQUESTED", "EXTENSION_GRANTED", "EXTENSION_REJECTED", "PARTIALLY_PAID"] }
-    });
+    }).sort({ customerDeliveredAt: -1 });
+};
+
+const isCustomerPhone = async (phone) => {
+    const activeSale = await findActiveCustomerSale(phone);
     return !!activeSale;
 };
 
@@ -1869,6 +1889,7 @@ module.exports = {
     handleMerchantApproveExtension,
     handleMerchantRejectExtension,
     isCustomerPhone,
+    findActiveCustomerSale,
     sendCustomerReminderTemplate,
     sendInteractiveButtons,
     sendInteractiveList,
