@@ -2726,6 +2726,24 @@ const handleIncoming = async (req, res) => {
             let isProcessed = false;
             for (const currentIntent of intentQueue) {
                 const aiResponseItem = currentIntent;
+                if (!aiResponseItem) continue;
+
+                // V3 Intent Guard Policy check
+                const IntentGuard = require("../../conversation/IntentGuard");
+                const guardResult = IntentGuard.validate(aiResponseItem.intent, aiResponseItem.data, profile);
+                if (!guardResult.allowed) {
+                    if (guardResult.fallbackText) {
+                        const ResponseBuilder = require("../../conversation/ResponseBuilder");
+                        await ResponseBuilder.sendText(from, guardResult.fallbackText);
+                    }
+                    isProcessed = true;
+                    continue;
+                }
+
+                if (guardResult.overrideIntent) {
+                    aiResponseItem.intent = guardResult.overrideIntent;
+                }
+
                 const logText = aiResponseItem.data?.transcription || text;
             // 0. SESSION RESPONSES (confirm_session / reject_session)
             if (!isProcessed && aiResponseItem && (aiResponseItem.intent === "confirm_session" || aiResponseItem.intent === "reject_session")) {
@@ -3835,6 +3853,21 @@ const handleIncoming = async (req, res) => {
                             // 🧹 Cascade Delete Reminders
                             const Reminder = require("../../models/Reminder");
                             await Reminder.deleteMany({ saleId: saleToDelete._id });
+
+                            // Socket update to sync dashboard
+                            try {
+                                const { getIO } = require('../../utils/socket');
+                                const io = getIO();
+                                if (io) {
+                                    io.to(profile._id.toString().toLowerCase()).emit('sale_updated', {
+                                        action: "delete",
+                                        saleId: saleToDelete._id,
+                                        invoiceNumber: saleToDelete.invoiceNumber
+                                    });
+                                }
+                            } catch (e) {
+                                console.error("Failed to emit socket update for WhatsApp deletion", e);
+                            }
 
                             // Activity Log
                             await logActivity({

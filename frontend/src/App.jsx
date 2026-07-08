@@ -21,7 +21,11 @@ import Onboarding from "./pages/merchant/onboarding";
 import Dashboard from "./pages/merchant/dashboard";
 import CreateSale from "./pages/merchant/create-sale";
 import InvoicePage from "./pages/merchant/invoice-page";
-import SalesList from "./pages/merchant/sales-list";
+import Workspace from "./pages/merchant/workspace";
+import Customers from "./pages/merchant/customers";
+import Money from "./pages/merchant/money";
+import Tasks from "./pages/merchant/tasks";
+import Kreddy from "./pages/merchant/kreddy";
 import SettingsLayout from "./pages/merchant/settings/SettingsLayout";
 import SettingsIdentityPage from "./pages/merchant/settings/SettingsIdentityPage";
 import SettingsNotificationsPage from "./pages/merchant/settings/SettingsNotificationsPage";
@@ -88,19 +92,23 @@ const App = () => {
           element={user && profile && profile.displayName ? <DashboardLayout /> : <Navigate to={getHomeRedirect()} />}
         >
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/sales" element={<SalesList />} />
-          <Route path="/sales/new" element={<CreateSale />} />
-          <Route path="/debtors" element={<SalesList initialFilter="outstanding" />} />
-          <Route path="/pending-balances" element={<SalesList initialFilter="outstanding" />} />
-          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/workspace" element={<Workspace />} />
+          <Route path="/customers" element={<Customers />} />
+          <Route path="/money" element={<Money />} />
+          <Route path="/tasks" element={<Tasks />} />
+          <Route path="/kreddy" element={<Kreddy />} />
+          
+          {/* Legacy route fallbacks */}
+          <Route path="/sales" element={<Workspace />} />
+          <Route path="/sales/new" element={<Workspace />} />
+          <Route path="/debtors" element={<Workspace />} />
+          <Route path="/pending-balances" element={<Workspace />} />
+          <Route path="/reports" element={<Kreddy />} />
           <Route path="/settings" element={<SettingsLayout />}>
-            <Route index element={<Navigate to="/settings/identity" replace />} />
-            <Route path="identity" element={<SettingsIdentityPage />} />
-            <Route path="notifications" element={<SettingsNotificationsPage />} />
-            <Route path="kreddy" element={<SettingsKreddyPage />} />
+            <Route index element={<SettingsIdentityPage />} />
+            <Route path="identity" element={<Navigate to="/settings" replace />} />
             <Route path="payouts" element={<SettingsPayoutsPage />} />
             <Route path="verification" element={<SettingsVerificationPage />} />
-            <Route path="staff" element={<SettingsStaffPage />} />
             <Route path="plan" element={<SettingsPlanPage />} />
           </Route>
           <Route path="/dashboard/invoice/:id" element={<InvoicePage />} />

@@ -646,6 +646,16 @@ exports.deleteSale = async (req, res) => {
             details: `Deleted invoice #${sale.invoiceNumber} for ${sale.customerName}`
         });
 
+        // Emit socket event for real-time dashboard updates
+        const io = req.app.get("socketio");
+        if (io) {
+            io.to(business._id.toString().toLowerCase()).emit("sale_updated", {
+                action: "delete",
+                saleId: sale._id,
+                invoiceNumber: sale.invoiceNumber
+            });
+        }
+
         res.status(200).json({ success: true, message: "Sale deleted successfully and reminders cleared." });
     } catch (error) {
         res.status(500).json({ message: error.message });

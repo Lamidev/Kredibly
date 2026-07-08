@@ -1,824 +1,565 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSales } from "../../context/SaleContext";
 import { useAuth } from "../../context/AuthContext";
-import { 
-    Plus, Wallet, CheckCircle, ChevronRight, 
-    TrendingUp, Users, MessagesSquare, Trash2, Shield, 
-    ArrowUpRight, Zap, Sparkles, Copy, Mic,
-    Bot, AlertCircle, X, Clock, Activity
-} from "lucide-react";
-import axios from "axios";
+import { AlertCircle, X, TrendingUp, Clock, CheckCircle2, Activity } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
-import { KREDDY_CONFIG } from "../../config";
-import PlanLimitModal from "../../components/payment/PlanLimitModal";
 
-import { createPortal } from "react-dom";
-import { 
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, 
-    Tooltip, ResponsiveContainer, BarChart, Bar, Legend 
-} from 'recharts';
-import { initiateSocketConnection, disconnectSocket, listenToEvent, stopListeningToEvent } from "../../utils/socket";// ⚡ REUSABLE SIMPLE ALERT BANNER TEMPLATE
-// Design uses clean gradient backgrounds, micro-borders, and matches the premium look.
-// If actionButton is not passed, it behaves as a simple warning/alert (no button shown).
-const SimpleAlert = ({ icon, title, message, actionButton, onDismiss }) => {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            style={{
-                background: 'linear-gradient(135deg, rgba(76, 29, 149, 0.05) 0%, rgba(124, 58, 237, 0.02) 100%)',
-                border: '1px solid rgba(124, 58, 237, 0.15)',
-                borderRadius: '24px',
-                padding: '20px 24px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: '20px',
-                marginBottom: '24px',
-                position: 'relative',
-                boxShadow: '0 4px 20px rgba(124, 58, 237, 0.04)'
-            }}
-            className="mobile-stack"
-        >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
-                <div style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '14px',
-                    background: 'rgba(124, 58, 237, 0.15)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--primary)',
-                    flexShrink: 0
-                }}>
-                    {icon || <Sparkles size={20} />}
-                </div>
-                <div style={{ textAlign: 'left' }}>
-                    {title && <h4 style={{ margin: '0 0 4px 0', fontSize: '0.9rem', fontWeight: 900, color: 'var(--primary)' }}>{title}</h4>}
-                    <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 650, color: '#4B5563', lineHeight: 1.5 }}>{message}</p>
-                </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }} className="mobile-full-width">
-                {actionButton}
-                {onDismiss && (
-                    <button
-                        onClick={onDismiss}
-                        style={{
-                            background: 'rgba(0,0,0,0.03)',
-                            border: 'none',
-                            borderRadius: '10px',
-                            padding: '8px',
-                            cursor: 'pointer',
-                            color: '#64748B',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'background 0.2s'
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.06)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.03)'}
-                        title="Dismiss"
-                    >
-                        <X size={14} />
-                    </button>
-                )}
-            </div>
-        </motion.div>
-    );
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const fmt = (n) => `₦${Number(n || 0).toLocaleString()}`;
+
+const timeAgo = (dateStr) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 };
 
+const statusLabel = (sale) => {
+    const lc = sale.lifecycleStatus;
+    if (lc === "EXTENSION_REQUESTED") return { text: "Extension Requested", color: "#F59E0B" };
+    if (lc === "PAID") return { text: "Paid", color: "#10B981" };
+    if (lc === "PARTIALLY_PAID") return { text: "Partial", color: "#6366F1" };
+    if (lc === "DELIVERED") return { text: "Sent — Awaiting", color: "#64748B" };
+    if (lc === "VIEWED") return { text: "Viewed — Awaiting", color: "#3B82F6" };
+    return { text: lc?.replace(/_/g, " ") || sale.status, color: "#94A3B8" };
+};
 
-const Dashboard = () => {
-    const { stats, sales, analytics, fetchSales, fetchStats, fetchAnalytics, loading, deleteSale } = useSales();
-    const { user, profile, updateProfile, checkAuth } = useAuth();
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export default function Dashboard() {
+    const { stats, sales, fetchSales, fetchStats, loading } = useSales();
+    const { profile } = useAuth();
     const navigate = useNavigate();
-    const [whatsappInput, setWhatsappInput] = useState("");
-    const [updatingWhatsapp, setUpdatingWhatsapp] = useState(false);
-    const [activities, setActivities] = useState([]);
-    const [loadingActivities, setLoadingActivities] = useState(false);
-    const [visibleSales, setVisibleSales] = useState(5);
-    const [deleteModal, setDeleteModal] = useState({ show: false, sale: null });
-    const [showLimitModal, setShowLimitModal] = useState(false);
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
-    // Welcome Banner State
-    const [welcomeDismissed, setWelcomeDismissed] = useState(() => localStorage.getItem("kredibly_welcome_dismissed") === "true");
-
-    const handleDismissWelcome = () => {
-        localStorage.setItem("kredibly_welcome_dismissed", "true");
-        setWelcomeDismissed(true);
-    };
-
-    useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 1024);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    const handleCopyDraft = (sale) => {
-        const balance = sale.totalAmount - (sale.payments?.reduce((sum, p) => sum + p.amount, 0) || 0);
-        const link = `${window.location.origin}/i/${sale.invoiceNumber}`;
-        const tone = profile?.assistantSettings?.reminderTemplate || 'friendly';
-        
-        let draft = "";
-        if (tone === 'formal') {
-            draft = `Hi ${sale.customerName}, this is a formal reminder regarding your outstanding balance of ₦${balance.toLocaleString()} with ${profile?.displayName || 'us'}. You can view the details and pay securely here: ${link}`;
-        } else {
-            draft = `Hi ${sale.customerName}, just a friendly nudge from ${profile?.displayName || 'us'} regarding your balance of ₦${balance.toLocaleString()}. You can pay securely here: ${link} - Thank you!`;
-        }
-
-        navigator.clipboard.writeText(draft);
-        toast.success(`Kreddy's ${tone} draft copied!`, {
-            description: "Ready to paste and send on WhatsApp.",
-            icon: <Copy size={16} />
-        });
-    };
+    const [timelineFilter, setTimelineFilter] = useState("all");
+    const [showHealthModal, setShowHealthModal] = useState(false);
 
     useEffect(() => {
         fetchSales();
         fetchStats();
-        fetchAnalytics();
-        fetchActivities();
+    }, []);
 
-        // 🔌 Real-time Socket Setup
-        if (profile?._id) {
-            initiateSocketConnection(profile._id);
-            
-            listenToEvent("sale_updated", (data) => {
-                console.log("⚡ Real-time update received:", data);
-                toast.success(`Money Received! #${data.invoiceNumber || 'Record'} updated: ₦${data.amount?.toLocaleString()} from ${data.customerName || 'Customer'}.`, {
-                    duration: 5000,
-                    icon: '💰'
+    // ── Derived Metrics (all from real data) ────────────────────────────────
+
+    const collectedToday = useMemo(() => {
+        const todayStr = new Date().toDateString();
+        return sales.reduce((sum, sale) => {
+            const paymentsToday = (sale.payments || []).filter(
+                (p) => new Date(p.date || sale.createdAt).toDateString() === todayStr
+            );
+            return sum + paymentsToday.reduce((s, p) => s + p.amount, 0);
+        }, 0);
+    }, [sales]);
+
+    // "Waiting For You" = invoices where merchant needs to act
+    const waitingForYou = useMemo(() => {
+        return sales.filter(
+            (s) =>
+                s.lifecycleStatus === "EXTENSION_REQUESTED" ||
+                s.lifecycleStatus === "PENDING_APPROVAL"
+        );
+    }, [sales]);
+
+    // Overdue = past dueDate and not paid
+    const overdueSales = useMemo(() => {
+        const now = new Date();
+        return sales.filter((s) => {
+            if (s.status === "paid" || s.lifecycleStatus === "PAID") return false;
+            if (!s.dueDate) return false;
+            return new Date(s.dueDate) < now;
+        });
+    }, [sales]);
+
+    // Collection rate: revenue / totalAmount (only where totalAmount > 0)
+    const collectionRate = useMemo(() => {
+        const total = stats?.totalAmount || sales.reduce((s, x) => s + x.totalAmount, 0);
+        const rev = stats?.revenue || 0;
+        if (!total) return null;
+        return Math.round((rev / total) * 100);
+    }, [stats, sales]);
+
+    // Avg payment delay: average days from createdAt to first payment, for paid sales
+    const avgPaymentDelay = useMemo(() => {
+        const paidSales = sales.filter(
+            (s) => s.status === "paid" && s.payments?.length
+        );
+        if (!paidSales.length) return null;
+        const totalDays = paidSales.reduce((sum, s) => {
+            const created = new Date(s.createdAt).getTime();
+            const firstPay = new Date(s.payments[0].date || s.createdAt).getTime();
+            return sum + Math.max(0, (firstPay - created) / (1000 * 60 * 60 * 24));
+        }, 0);
+        return (totalDays / paidSales.length).toFixed(1);
+    }, [sales]);
+
+    // Health status derived from real data
+    const healthStatus = useMemo(() => {
+        if (collectionRate === null) return { label: "No data yet", color: "#94A3B8" };
+        if (overdueSales.length > 3 || collectionRate < 50)
+            return { label: "At Risk", color: "#EF4444" };
+        if (overdueSales.length > 1 || collectionRate < 75)
+            return { label: "Monitor", color: "#F59E0B" };
+        return { label: "Stable", color: "#10B981" };
+    }, [collectionRate, overdueSales]);
+
+    // ── Timeline: built from real recent sales events ────────────────────────
+
+    const timelineEvents = useMemo(() => {
+        const events = [];
+        const recent = [...sales]
+            .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+            .slice(0, 20);
+
+        recent.forEach((sale) => {
+            const name = sale.customerName || "Unknown";
+            const inv = sale.invoiceNumber || "";
+
+            // Invoice creation
+            events.push({
+                id: `${sale._id}-created`,
+                ts: new Date(sale.createdAt),
+                text: `Invoice ${inv} created for ${name}`,
+                subtext: fmt(sale.totalAmount),
+                category: "invoices",
+            });
+
+            // Delivery
+            if (sale.customerDeliveredAt) {
+                events.push({
+                    id: `${sale._id}-delivered`,
+                    ts: new Date(sale.customerDeliveredAt),
+                    text: `Invoice ${inv} sent to ${name}`,
+                    category: "invoices",
                 });
-                
-                // Live Refresh with short delay to allow DB consistency for stats/aggregations
-                setTimeout(() => {
-                    fetchSales();
-                    fetchStats();
-                    fetchAnalytics();
-                    fetchActivities();
-                }, 1000);
-            });
-
-            listenToEvent("activity_updated", (data) => {
-                console.log("⚡ Activity update received:", data);
-                fetchActivities();
-            });
-
-            // 🚀 Trigger Welcome Message if needed (after landing on dashboard)
-            if (profile?.onboardingStep === 4 && profile?.welcomeSent === false) {
-                const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
-                axios.post(`${API_URL}/business/trigger-welcome`, {}, { withCredentials: true })
-                     .then(() => {
-                        // Refresh profile state from backend (now has welcomeSent: true)
-                        if (checkAuth) checkAuth();
-                     })
-                     .catch(err => console.error("Welcome trigger failed", err));
             }
-        }
 
-        return () => {
-            stopListeningToEvent("sale_updated");
-            stopListeningToEvent("activity_updated");
-            disconnectSocket();
-        };
-    }, [profile?._id]);
+            // Payments — skip zero-amount entries (webhook placeholders)
+            (sale.payments || []).filter(p => p.amount > 0).forEach((p, i) => {
+                events.push({
+                    id: `${sale._id}-pay-${i}`,
+                    ts: new Date(p.date || sale.createdAt),
+                    text: `Payment received from ${name}`,
+                    subtext: fmt(p.amount),
+                    category: "payments",
+                });
+            });
 
-    const fetchActivities = async () => {
-        setLoadingActivities(true);
-        try {
-            const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
-            const res = await axios.get(`${API_URL}/business/activity-logs`, { withCredentials: true });
-            if (res.data.success) setActivities(res.data.data);
-        } catch (err) {
-            console.error("Failed to fetch activities");
-        } finally {
-            setLoadingActivities(false);
-        }
-    };
+            // Extension request
+            if (sale.extensionRequestedAt) {
+                events.push({
+                    id: `${sale._id}-ext`,
+                    ts: new Date(sale.extensionRequestedAt),
+                    text: `${name} requested a payment extension`,
+                    category: "tasks",
+                });
+            }
 
+            // Extension approved
+            if (sale.extensionApprovedAt) {
+                events.push({
+                    id: `${sale._id}-extok`,
+                    ts: new Date(sale.extensionApprovedAt),
+                    text: `Extension approved for ${name}`,
+                    category: "tasks",
+                });
+            }
+        });
 
+        return events
+            .sort((a, b) => b.ts - a.ts)
+            .slice(0, 15);
+    }, [sales]);
 
-    const confirmDelete = async () => {
-        try {
-            await deleteSale(deleteModal.sale._id);
-            toast.success("Record deleted successfully");
-            setDeleteModal({ show: false, sale: null });
-        } catch (err) {
-            console.error("Delete record error:", err);
-            toast.error("Failed to delete record");
-            setDeleteModal({ show: false, sale: null });
-        }
-    };
+    const filteredEvents =
+        timelineFilter === "all"
+            ? timelineEvents
+            : timelineEvents.filter((ev) => ev.category === timelineFilter);
 
-    const handleUpdateWhatsapp = async () => {
-        if (!whatsappInput || whatsappInput.length < 10) {
-            return toast.error("Please enter a valid WhatsApp number (e.g. 23480...)");
-        }
-
-        setUpdatingWhatsapp(true);
-        try {
-            await updateProfile({ ...profile, whatsappNumber: whatsappInput });
-            toast.success("WhatsApp number linked! Opening chat...");
-            setWhatsappInput("");
-            
-            // Auto-redirect to WhatsApp to start the conversation
-            setTimeout(() => {
-                window.open(KREDDY_CONFIG.getLink(), '_blank');
-            }, 1000);
-            
-        } catch (err) {
-            console.error("WhatsApp update error:", err);
-            toast.error("Failed to update WhatsApp number");
-        } finally {
-            setUpdatingWhatsapp(false);
-        }
-    };
+    // ── Greeting ─────────────────────────────────────────────────────────────
 
     const greeting = () => {
-        const hour = new Date().getHours();
-        if (hour < 12) return "Good Morning";
-        if (hour < 17) return "Good Afternoon";
+        const h = new Date().getHours();
+        if (h < 12) return "Good Morning";
+        if (h < 17) return "Good Afternoon";
         return "Good Evening";
     };
 
-    if (loading && !sales.length) {
-        return (
-            <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div className="spinner"></div>
-            </div>
-        );
-    }
+    const Skeleton = ({ w = "100%", h = "1.8rem" }) => (
+        <div className="skeleton" style={{ width: w, height: h, borderRadius: "8px" }} />
+    );
 
-    // 'Kreddy Settlements' is now calculated purely by the backend for maximum accuracy
-    const kreddySettlements = stats?.kreddyRevenue || 0;
+    // ── Render ────────────────────────────────────────────────────────────────
 
     return (
-        <div className="animate-fade-in" style={{ paddingBottom: '40px', position: 'relative' }}>
-            {/* Executive Header */}
-            <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
-                <div>
-                    <h1 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.5rem)', fontWeight: 950, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.04em', lineHeight: 1.1 }}>
-                        {greeting()}, <span className="premium-gradient">
-                            {profile?.displayName || (user?.name && !user.name.includes('@') ? user.name.split(' ')[0] : 'Founder')}
-                        </span>.
-                    </h1>
+        <div className="animate-fade-in" style={{ paddingBottom: "60px" }}>
 
-                    {/* Compact Inline Kreddy Status — Sits right under the name greeting */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '10px', marginBottom: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'white', padding: '5px 12px', borderRadius: '100px', border: '1px solid #E2E8F0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', flexShrink: 0 }}>
-                            <div style={{ 
-                                width: '8px', 
-                                height: '8px', 
-                                borderRadius: '50%', 
-                                background: '#10B981', 
-                                animation: 'pulse-green 2s infinite',
-                                flexShrink: 0
-                            }} />
-                            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#1E293B', display: 'flex', alignItems: 'center', gap: '4px', lineHeight: 1 }}>
-                                <Bot size={13} style={{ color: 'var(--primary)', marginTop: '-1px' }} />
-                                {profile?.isKreddyConnected ? 'Kreddy is Online' : 'Kreddy is Ready'}
-                            </span>
-                        </div>
+            {/* Greeting */}
+            <div style={{ marginBottom: "32px" }}>
+                <h1 style={{ fontSize: "1.8rem", fontWeight: 950, color: "#0F172A", marginBottom: "4px", letterSpacing: "-0.04em" }}>
+                    {greeting()}, {profile?.displayName || "Oga"}
+                </h1>
+                <p style={{ color: "var(--text-muted)", fontWeight: 600, fontSize: "0.9rem" }}>
+                    Here is what Kreddy knows about your business right now.
+                </p>
+            </div>
 
-                        <a 
-                            href={profile?.isKreddyConnected 
-                                ? KREDDY_CONFIG.getLink("hi kreddy! im ready to record") 
-                                : KREDDY_CONFIG.getLink("tell me more about kreddy")
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{ 
-                                display: 'inline-flex', 
-                                alignItems: 'center', 
-                                gap: '6px', 
-                                padding: '6px 14px', 
-                                borderRadius: '100px', 
-                                background: profile?.isKreddyConnected ? 'rgba(124, 58, 237, 0.06)' : 'linear-gradient(135deg, #7C3AED, #4C1D95)',
-                                color: profile?.isKreddyConnected ? 'var(--primary)' : 'white', 
-                                fontSize: '0.78rem', 
-                                fontWeight: 800, 
-                                textDecoration: 'none',
-                                transition: 'all 0.2s',
-                                border: profile?.isKreddyConnected ? '1px solid rgba(124, 58, 237, 0.15)' : 'none',
-                                boxShadow: profile?.isKreddyConnected ? 'none' : '0 2px 6px rgba(124, 58, 237, 0.2)',
-                                lineHeight: 1
-                            }}
-                            onMouseEnter={e => {
-                                if (profile?.isKreddyConnected) {
-                                    e.currentTarget.style.background = 'rgba(124, 58, 237, 0.1)';
-                                } else {
-                                    e.currentTarget.style.transform = 'translateY(-1px)';
-                                }
-                            }}
-                            onMouseLeave={e => {
-                                if (profile?.isKreddyConnected) {
-                                    e.currentTarget.style.background = 'rgba(124, 58, 237, 0.06)';
-                                } else {
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                }
-                            }}
-                        >
-                            {profile?.isKreddyConnected ? (
-                                <>Say Hi to Kreddy <MessagesSquare size={12} /></>
-                            ) : (
-                                <>Activate Kreddy <Zap size={11} fill="white" /></>
-                            )}
-                        </a>
+            {/* ── 4 Snapshot Cards ─────────────────────────────────────────── */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "32px" }}>
+
+                {/* 1. Collected Today */}
+                <div style={{ background: "white", border: "1px solid #E2E8F0", borderRadius: "20px", padding: "20px 24px" }}>
+                    <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        Collected Today
+                    </span>
+                    <div style={{ marginTop: "10px" }}>
+                        {loading ? <Skeleton /> : (
+                            <h2 style={{ fontSize: "1.7rem", fontWeight: 950, color: "#0F172A", margin: 0, letterSpacing: "-0.02em" }}>
+                                {fmt(collectedToday)}
+                            </h2>
+                        )}
                     </div>
+                    {!loading && collectedToday === 0 && (
+                        <p style={{ fontSize: "0.75rem", color: "#94A3B8", marginTop: "6px", fontWeight: 600 }}>
+                            No payments recorded today yet
+                        </p>
+                    )}
+                </div>
 
-                    <p className="mobile-hide" style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.95rem' }}>
-                        Here's your business overview.
+                {/* 2. Outstanding */}
+                <div style={{ background: "white", border: "1px solid #E2E8F0", borderRadius: "20px", padding: "20px 24px" }}>
+                    <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        Outstanding
+                    </span>
+                    <div style={{ marginTop: "10px" }}>
+                        {loading ? <Skeleton /> : (
+                            <h2 style={{ fontSize: "1.7rem", fontWeight: 950, color: stats?.outstanding > 0 ? "#EF4444" : "#10B981", margin: 0, letterSpacing: "-0.02em" }}>
+                                {fmt(stats?.outstanding)}
+                            </h2>
+                        )}
+                    </div>
+                    {!loading && stats?.outstanding === 0 && (
+                        <p style={{ fontSize: "0.75rem", color: "#10B981", marginTop: "6px", fontWeight: 700 }}>
+                            All invoices cleared 🎉
+                        </p>
+                    )}
+                </div>
+
+                {/* 3. Waiting For You */}
+                <div
+                    onClick={() => navigate("/workspace")}
+                    style={{
+                        background: waitingForYou.length > 0 ? "#FFFBEB" : "white",
+                        border: `1px solid ${waitingForYou.length > 0 ? "#FDE68A" : "#E2E8F0"}`,
+                        borderRadius: "20px", padding: "20px 24px", cursor: "pointer",
+                        transition: "transform 0.15s"
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                    title="Go to Workspace to act on these"
+                >
+                    <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        Waiting For You
+                    </span>
+                    <div style={{ marginTop: "10px" }}>
+                        {loading ? <Skeleton /> : (
+                            <h2 style={{ fontSize: "1.7rem", fontWeight: 950, color: waitingForYou.length > 0 ? "#D97706" : "#10B981", margin: 0, letterSpacing: "-0.02em" }}>
+                                {waitingForYou.length}
+                            </h2>
+                        )}
+                    </div>
+                    <p style={{ fontSize: "0.75rem", color: "#94A3B8", marginTop: "6px", fontWeight: 600 }}>
+                        {waitingForYou.length === 0
+                            ? "No pending decisions"
+                            : `${waitingForYou.length} invoice${waitingForYou.length > 1 ? "s need" : " needs"} your action`}
                     </p>
                 </div>
 
-                {/* Kreddy Connect CTA — shown in header slot only for new merchants, replaces plan badge */}
-                {profile?.isKreddyConnected === false && !welcomeDismissed && (
-                    <a
-                        href={KREDDY_CONFIG.getLink("tell me more about kreddy")}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={handleDismissWelcome}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '10px 18px',
-                            borderRadius: '14px',
-                            background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)',
-                            color: 'white',
-                            textDecoration: 'none',
-                            fontSize: '0.85rem',
-                            fontWeight: 800,
-                            boxShadow: '0 4px 14px rgba(76,29,149,0.3)',
-                            border: '1px solid rgba(124,58,237,0.3)',
-                            whiteSpace: 'nowrap',
-                            flexShrink: 0
-                        }}
-                    >
-                        <Bot size={16} />
-                        <span>Activate Kreddy</span>
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px rgba(74,222,128,0.8)' }} />
-                    </a>
-                )}
+                {/* 4. Health (clickable) */}
+                <div
+                    onClick={() => setShowHealthModal(true)}
+                    style={{
+                        background: "white", border: "1px solid #E2E8F0",
+                        borderRadius: "20px", padding: "20px 24px", cursor: "pointer",
+                        transition: "transform 0.15s"
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                    title="Click to see health breakdown"
+                >
+                    <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        Business Health
+                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "10px" }}>
+                        <div style={{ width: "9px", height: "9px", borderRadius: "50%", background: healthStatus.color, boxShadow: `0 0 8px ${healthStatus.color}80` }} />
+                        {loading ? <Skeleton w="80px" /> : (
+                            <h2 style={{ fontSize: "1.7rem", fontWeight: 950, color: healthStatus.color, margin: 0, letterSpacing: "-0.02em" }}>
+                                {healthStatus.label}
+                            </h2>
+                        )}
+                    </div>
+                    <p style={{ fontSize: "0.75rem", color: "#94A3B8", marginTop: "6px", fontWeight: 600 }}>
+                        Tap to see breakdown
+                    </p>
+                </div>
+
             </div>
 
-            <style>{`
-                @keyframes pulse-green {
-                    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-                    70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-                    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-                }
-            `}</style>
+            {/* ── Main 2-column grid ───────────────────────────────────────── */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "24px" }}>
 
-            {/* Premium Stats Bento Grid */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
-                gap: '20px',
-                marginBottom: '40px',
-                width: '100%',
-                boxSizing: 'border-box'
-            }}>
-                {/* Lifetime Total 1: Settled Cash */}
-                <motion.div 
-                    whileHover={{ y: -5 }}
-                    style={{ 
-                        padding: '32px', 
-                        borderRadius: '32px', 
-                        border: '1px solid #E2E8F0', 
-                        background: 'white', 
-                        boxShadow: 'var(--shadow-premium)',
-                        position: 'relative',
-                        overflow: 'hidden'
-                    }}
-                >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <div style={{ background: '#ECFDF5', color: '#10B981', padding: '10px', borderRadius: '14px' }}>
-                            <Wallet size={20} strokeWidth={2.5} />
+                {/* Business Timeline */}
+                <div style={{ background: "white", border: "1px solid #E2E8F0", borderRadius: "20px", padding: "24px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "8px" }}>
+                        <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 900, color: "#0F172A" }}>
+                            Business Timeline
+                        </h3>
+                        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                            {["all", "payments", "invoices", "tasks"].map((f) => (
+                                <button
+                                    key={f}
+                                    onClick={() => setTimelineFilter(f)}
+                                    style={{
+                                        border: "none",
+                                        background: timelineFilter === f ? "var(--primary)" : "#F1F5F9",
+                                        color: timelineFilter === f ? "white" : "#64748B",
+                                        padding: "4px 10px", borderRadius: "8px",
+                                        fontSize: "0.7rem", fontWeight: 800,
+                                        cursor: "pointer", textTransform: "capitalize"
+                                    }}
+                                >
+                                    {f}
+                                </button>
+                            ))}
                         </div>
-                        <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#64748B', background: '#F1F5F9', padding: '4px 12px', borderRadius: '100px', letterSpacing: '0.05em' }}>LIFETIME SETTLED</span>
                     </div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Settled Cash</p>
-                    <h2 style={{ fontSize: '2.2rem', fontWeight: 950, color: '#0F172A', letterSpacing: '-0.04em', margin: 0 }}>
-                        ₦{stats?.revenue?.toLocaleString() || 0}
-                    </h2>
-                </motion.div>
 
-                {/* Lifetime Total 2: Outstanding Debt */}
-                <motion.div 
-                    whileHover={{ y: -5 }}
-                    onClick={() => navigate("/sales?status=outstanding")}
-                    style={{ 
-                        padding: '32px', 
-                        borderRadius: '32px', 
-                        border: '1px solid #E2E8F0', 
-                        background: 'white', 
-                        boxShadow: 'var(--shadow-premium)',
-                        cursor: 'pointer'
-                    }}
-                >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <div style={{ background: '#FEF2F2', color: '#EF4444', padding: '10px', borderRadius: '14px' }}>
-                            <Clock size={20} strokeWidth={2.5} />
-                        </div>
-                        <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#64748B', background: '#F1F5F9', padding: '4px 12px', borderRadius: '100px', letterSpacing: '0.05em' }}>OUTSTANDING</span>
-                    </div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Uncollected Debt</p>
-                    <h2 style={{ fontSize: '2.2rem', fontWeight: 950, color: '#EF4444', letterSpacing: '-0.04em', margin: 0 }}>
-                        ₦{stats?.outstanding?.toLocaleString() || 0}
-                    </h2>
-                </motion.div>
-
-                {/* Lifetime Total 3: Kreddy Settlements */}
-                <motion.div 
-                    whileHover={{ y: -5 }}
-                    onClick={() => navigate("/sales?method=paystack")}
-                    style={{ 
-                        padding: '32px', 
-                        borderRadius: '32px', 
-                        border: '1px solid #E2E8F0', 
-                        background: 'white', 
-                        boxShadow: 'var(--shadow-premium)',
-                        cursor: 'pointer',
-                        position: 'relative',
-                        overflow: 'hidden'
-                    }}
-                >
-                    <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', background: 'var(--primary-glow)', filter: 'blur(30px)', opacity: 0.1 }} />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <div style={{ background: '#F5F3FF', color: 'var(--primary)', padding: '10px', borderRadius: '14px' }}>
-                            <Zap size={20} strokeWidth={2.5} fill="currentColor" />
-                        </div>
-                        <span style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--primary)', background: '#F5F3FF', padding: '4px 12px', borderRadius: '100px', letterSpacing: '0.05em' }}>KREDDY SETTLEMENTS</span>
-                    </div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '4px' }}>Invoice Settlements</p>
-                    <h2 className="premium-gradient" style={{ fontSize: '2.2rem', fontWeight: 950, letterSpacing: '-0.04em', margin: 0 }}>
-                        ₦{kreddySettlements.toLocaleString()}
-                    </h2>
-                </motion.div>
-            </div>
-
-            {/* SIMPLIFIED WEEKLY BATTLE CHART */}
-            <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{ 
-                    background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)', 
-                    padding: isMobile ? '24px' : '40px', 
-                    borderRadius: '32px', 
-                    border: '1px solid #E2E8F0', 
-                    marginBottom: 'clamp(2rem, 5vw, 40px)',
-                    boxShadow: 'var(--shadow-premium)',
-                    position: 'relative',
-                    overflow: 'hidden'
-                }}
-            >
-                {/* Visual Flair */}
-                <div style={{ position: 'absolute', top: '-100px', right: '-100px', width: '300px', height: '300px', background: 'var(--primary-glow)', filter: 'blur(100px)', borderRadius: '50%', opacity: 0.1, pointerEvents: 'none' }} />
-
-                <div className="battle-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', flexWrap: 'wrap', gap: '24px' }}>
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                            <div style={{ background: 'var(--primary)', color: 'white', padding: '8px', borderRadius: '12px' }}>
-                                <Activity size={20} strokeWidth={3} />
-                            </div>
-                            <h3 style={{ fontSize: '1.6rem', fontWeight: 950, color: '#0F172A', margin: 0, letterSpacing: '-0.04em' }}>This Week's Battle</h3>
-                        </div>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', fontWeight: 600, marginLeft: '40px' }}>Tracking your collection velocity vs. outstanding targets.</p>
-                    </div>
-                    
-                    {analytics?.summary && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                            <div style={{ textAlign: 'right' }}>
-                                <span style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--primary)', background: '#F5F3FF', padding: '4px 12px', borderRadius: '100px', letterSpacing: '0.05em', marginBottom: '4px', display: 'inline-block' }}>WEEKLY MOMENTUM</span>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'flex-end' }}>
-                                    <h4 style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--primary)', margin: 0, lineHeight: 1 }}>
-                                        {analytics.summary.collectionRate}%
-                                    </h4>
-                                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '4px solid #F1F5F9', borderTopColor: 'var(--primary)', transform: `rotate(${(analytics.summary.collectionRate / 100) * 360}deg)` }} />
+                    {loading ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                            {[1, 2, 3].map(i => (
+                                <div key={i} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                                    <div className="skeleton" style={{ width: "9px", height: "9px", borderRadius: "50%", flexShrink: 0, marginTop: "6px" }} />
+                                    <div style={{ flex: 1 }}>
+                                        <div className="skeleton" style={{ height: "14px", width: "70%", borderRadius: "6px", marginBottom: "6px" }} />
+                                        <div className="skeleton" style={{ height: "10px", width: "40%", borderRadius: "6px" }} />
+                                    </div>
                                 </div>
-                            </div>
+                            ))}
                         </div>
-                    )}
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '40px' }}>
-                    <div style={{ padding: '24px', background: 'rgba(16, 185, 129, 0.04)', borderRadius: '24px', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981' }} />
-                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Money In</span>
-                        </div>
-                        <h4 style={{ fontSize: '1.8rem', fontWeight: 950, color: '#0F172A', margin: 0 }}>₦{analytics?.summary?.moneyIn?.toLocaleString() || 0}</h4>
-                    </div>
-                    <div style={{ padding: '24px', background: 'rgba(239, 68, 68, 0.04)', borderRadius: '24px', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#EF4444' }} />
-                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#DC2626', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Money Outside</span>
-                        </div>
-                        <h4 style={{ fontSize: '1.8rem', fontWeight: 950, color: '#EF4444', margin: 0 }}>₦{analytics?.summary?.moneyOutside?.toLocaleString() || 0}</h4>
-                    </div>
-                </div>
-
-                <div style={{ width: '100%', height: 300, marginTop: '20px' }}>
-                    {!analytics?.daily || analytics.daily.length === 0 ? (
-                        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#CBD5E1', flexDirection: 'column', gap: '12px' }}>
-                            <Activity size={48} strokeWidth={1} />
-                            <p style={{ fontWeight: 600 }}>Analyzing battlefield data...</p>
+                    ) : filteredEvents.length === 0 ? (
+                        <div style={{ textAlign: "center", padding: "32px 0", color: "#94A3B8" }}>
+                            <Activity size={28} style={{ opacity: 0.3, marginBottom: "12px" }} />
+                            <p style={{ margin: 0, fontSize: "0.85rem", fontWeight: 600 }}>
+                                {timelineFilter === "all"
+                                    ? "No business activity yet. Ask Kreddy to record your first sale."
+                                    : `No ${timelineFilter} events yet`}
+                            </p>
                         </div>
                     ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={analytics.daily}>
-                                <defs>
-                                    <linearGradient id="colorIn" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.15}/>
-                                        <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                <XAxis 
-                                    dataKey="date" 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tick={{ fontSize: 11, fontWeight: 700, fill: '#94A3B8' }}
-                                    dy={10}
-                                />
-                                <YAxis 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tick={{ fontSize: 10, fontWeight: 600, fill: '#94A3B8' }}
-                                    tickFormatter={(val) => `₦${val >= 1000 ? (val/1000).toFixed(0) + 'k' : val}`}
-                                />
-                                <Tooltip 
-                                    content={({ active, payload, label }) => {
-                                        if (active && payload && payload.length) {
-                                            return (
-                                                <div className="glass-card" style={{ padding: '16px', border: '1px solid #E2E8F0', boxShadow: 'var(--shadow-premium)' }}>
-                                                    <p style={{ margin: '0 0 8px 0', fontSize: '10px', fontWeight: 900, color: '#94A3B8', textTransform: 'uppercase' }}>{label}</p>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                        <p style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--primary)' }}>In: ₦{payload[0].value.toLocaleString()}</p>
-                                                        <p style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#EF4444' }}>Out: ₦{payload[1].value.toLocaleString()}</p>
-                                                    </div>
-                                                </div>
-                                            );
-                                        }
-                                        return null;
-                                    }}
-                                />
-                                <Area 
-                                    type="monotone" 
-                                    dataKey="Money In" 
-                                    stroke="var(--primary)" 
-                                    strokeWidth={4}
-                                    fillOpacity={1} 
-                                    fill="url(#colorIn)" 
-                                    animationDuration={2000}
-                                />
-                                <Area 
-                                    type="monotone" 
-                                    dataKey="Money Outside" 
-                                    name="Collection Pipeline"
-                                    stroke="#FCA5A5" 
-                                    strokeWidth={3}
-                                    strokeDasharray="8 5"
-                                    fill="transparent"
-                                    animationDuration={2500}
-                                />
-                            </AreaChart>
-                        </ResponsiveContainer>
+                        <div style={{ position: "relative", paddingLeft: "18px", borderLeft: "1px solid #E2E8F0", display: "flex", flexDirection: "column", gap: "20px" }}>
+                            {filteredEvents.map((ev) => (
+                                <div key={ev.id} style={{ position: "relative" }}>
+                                    <div style={{
+                                        position: "absolute", left: "-23px", top: "5px",
+                                        width: "9px", height: "9px", borderRadius: "50%",
+                                        background: ev.category === "payments" ? "#10B981"
+                                            : ev.category === "invoices" ? "var(--primary)"
+                                            : "#F59E0B",
+                                        border: "2px solid white",
+                                        boxShadow: "0 0 0 1px #E2E8F0"
+                                    }} />
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                                        <div>
+                                            <p style={{ margin: 0, fontSize: "0.84rem", fontWeight: 700, color: "#1E293B", lineHeight: 1.4 }}>
+                                                {ev.text}
+                                            </p>
+                                            <span style={{ fontSize: "0.7rem", color: "#94A3B8", fontWeight: 600 }}>
+                                                {timeAgo(ev.ts)}
+                                            </span>
+                                        </div>
+                                        {ev.subtext && (
+                                            <strong style={{ fontSize: "0.82rem", color: "#0F172A", flexShrink: 0, fontWeight: 800 }}>
+                                                {ev.subtext}
+                                            </strong>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     )}
                 </div>
-            </motion.div>
 
-            <div style={{ 
-                display: 'flex', 
-                flexWrap: 'wrap', 
-                gap: '24px', 
-                width: '100%',
-                boxSizing: 'border-box'
-            }}>
-                {/* Left Column: Priority Collection */}
-                <div style={{ flex: '1 1 500px', minWidth: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px', paddingRight: '4px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text)', margin: 0 }}>Recovery Queue</h3>
-                            <span style={{ padding: '4px 10px', background: '#FEF2F2', color: '#EF4444', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 800 }}>{sales.filter(s => s.status !== 'paid').length} PENDING</span>
+                {/* Waiting For You — Action Cards from real data */}
+                <div style={{ background: "white", border: "1px solid #E2E8F0", borderRadius: "20px", padding: "24px" }}>
+                    <h3 style={{ margin: "0 0 6px 0", fontSize: "0.95rem", fontWeight: 900, color: "#0F172A" }}>
+                        Needs Your Attention
+                    </h3>
+                    <p style={{ margin: "0 0 20px 0", fontSize: "0.8rem", color: "#64748B", fontWeight: 600, lineHeight: 1.5 }}>
+                        These are items Kreddy is waiting on your decision before it can continue.
+                    </p>
+
+                    {loading ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                            {[1, 2].map(i => (
+                                <div key={i} className="skeleton" style={{ height: "80px", borderRadius: "16px" }} />
+                            ))}
                         </div>
-                        <Link to="/debtors" style={{ padding: '8px 16px', background: 'var(--background)', color: 'var(--primary)', textDecoration: 'none', borderRadius: '100px', fontWeight: 800, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--border)' }}>
-                            View All Debtors <ChevronRight size={16} />
-                        </Link>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {sales.filter(s => s.status !== 'paid').length === 0 ? (
-                            <div style={{ padding: '80px 20px', textAlign: 'center', background: 'var(--background)', borderRadius: '32px', border: '2px dashed var(--border)', width: '100%' }}>
-                                <div style={{ background: 'white', width: '64px', height: '64px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: 'var(--shadow-premium)' }}>
-                                    <CheckCircle size={32} color="var(--success)" />
-                                </div>
-                                <h4 style={{ fontWeight: 800, color: 'var(--text-muted)' }}>All caught up!</h4>
-                                <p style={{ color: '#94A3B8', fontWeight: 500, marginTop: '8px' }}>Your collection is 100%. No active debtors detected.</p>
-                            </div>
-                        ) : (
-                            sales.filter(s => s.status !== 'paid').slice(0, visibleSales).map(sale => (
-                                <motion.div
+                    ) : waitingForYou.length === 0 && overdueSales.length === 0 ? (
+                        <div style={{ textAlign: "center", padding: "32px 0", color: "#94A3B8" }}>
+                            <CheckCircle2 size={28} color="#10B981" style={{ marginBottom: "12px" }} />
+                            <p style={{ margin: 0, fontSize: "0.85rem", fontWeight: 700, color: "#10B981" }}>
+                                You're all caught up!
+                            </p>
+                            <p style={{ margin: "4px 0 0", fontSize: "0.78rem", color: "#94A3B8", fontWeight: 500 }}>
+                                No pending decisions right now.
+                            </p>
+                        </div>
+                    ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                            {/* Extension requests from real sales */}
+                            {waitingForYou.map((sale) => (
+                                <div
                                     key={sale._id}
-                                    whileHover={{ x: 4, scale: 1.01 }}
-                                    className="dashboard-glass priority-item"
-                                    style={{ 
-                                        padding: '24px', 
-                                        display: 'flex', 
-                                        flexDirection: 'column',
-                                        justifyContent: 'space-between', 
-                                        alignItems: 'flex-start', 
-                                        cursor: 'pointer', 
-                                        borderRadius: '28px', 
-                                        border: '1px solid var(--border)',
-                                        background: 'white',
-                                        width: '100%',
-                                        boxSizing: 'border-box',
-                                        boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
-                                        position: 'relative',
-                                        marginBottom: '12px'
-                                    }}
-                                    onClick={() => navigate(`/dashboard/invoice/${sale.invoiceNumber}`)}
+                                    style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: "16px", padding: "14px 16px", display: "flex", gap: "12px" }}
                                 >
-                                    <div style={{ width: '100%' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                                            <div style={{
-                                                background: 'rgba(245, 158, 11, 0.1)',
-                                                padding: '12px',
-                                                borderRadius: '16px',
-                                                color: 'var(--warning)',
-                                            }}>
-                                                <Clock size={24} strokeWidth={2.5} />
-                                            </div>
-                                            <div style={{ textAlign: 'right' }}>
-                                                <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '2px' }}>Amount Due</p>
-                                                <h4 style={{ fontSize: '1.4rem', fontWeight: 950, color: '#0F172A', margin: 0 }}>₦{(sale.totalAmount - (sale.payments?.reduce((sum, p) => sum + p.amount, 0) || 0)).toLocaleString()}</h4>
-                                            </div>
-                                        </div>
-                                        
-                                        <div style={{ marginBottom: '20px' }}>
-                                            <p style={{ fontWeight: 900, color: '#1E293B', fontSize: '1.1rem', margin: '0 0 4px 0' }}>{sale.customerName || 'Customer'}</p>
-                                            <p style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <span style={{ color: 'var(--primary)', fontWeight: 800 }}>#{sale.invoiceNumber}</span>
-                                                <span>•</span>
-                                                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sale.description || 'Order details...'}</span>
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingTop: '12px', borderTop: '1px solid #F1F5F9', marginTop: 'auto' }}>
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            {(sale.viewCount > 0) && (
-                                                <span style={{ fontSize: '9px', fontWeight: 900, color: 'var(--primary)', background: '#F5F3FF', padding: '4px 10px', borderRadius: '100px', display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-                                                    <Sparkles size={10} fill="var(--primary)" /> VIEWED {sale.viewCount > 1 ? `(${sale.viewCount})` : ""}
-                                                </span>
-                                            )}
-                                            {sale.status === 'partial' && (
-                                                <span style={{ fontSize: '9px', fontWeight: 900, color: '#059669', background: '#ECFDF5', padding: '4px 10px', borderRadius: '100px' }}>PARTIAL</span>
-                                            )}
-                                        </div>
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleCopyDraft(sale);
-                                                }}
-                                                style={{ 
-                                                    width: '36px', height: '36px', borderRadius: '50%', 
-                                                    background: '#F1F5F9', border: 'none', 
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                                    color: 'var(--primary)', cursor: 'pointer' 
-                                                }}
+                                    <AlertCircle size={18} color="#D97706" style={{ flexShrink: 0, marginTop: "2px" }} />
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <h4 style={{ margin: "0 0 3px", fontSize: "0.83rem", fontWeight: 800, color: "#92400E" }}>
+                                            Extension Request — {sale.customerName}
+                                        </h4>
+                                        <p style={{ margin: 0, fontSize: "0.75rem", color: "#B45309", lineHeight: 1.4 }}>
+                                            {sale.invoiceNumber} · {fmt(sale.totalAmount - (sale.payments || []).reduce((s, p) => s + p.amount, 0))} outstanding
+                                            {sale.requestedExtensionDays ? ` · +${sale.requestedExtensionDays} days requested` : ""}
+                                        </p>
+                                        <div style={{ display: "flex", gap: "8px", marginTop: "10px" }}>
+                                            <button
+                                                onClick={() => toast.success(`Extension approved for ${sale.customerName}. Tell Kreddy to confirm.`)}
+                                                style={{ background: "#D97706", color: "white", border: "none", borderRadius: "8px", padding: "6px 12px", fontSize: "0.72rem", fontWeight: 800, cursor: "pointer" }}
                                             >
-                                                <Copy size={16} />
+                                                Approve
                                             </button>
-                                            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-                                                <ChevronRight size={18} strokeWidth={3} />
-                                            </div>
+                                            <button
+                                                onClick={() => toast.info(`Declined. Tell Kreddy to notify ${sale.customerName}.`)}
+                                                style={{ background: "white", border: "1px solid #FDE68A", color: "#92400E", borderRadius: "8px", padding: "6px 12px", fontSize: "0.72rem", fontWeight: 800, cursor: "pointer" }}
+                                            >
+                                                Decline
+                                            </button>
                                         </div>
                                     </div>
-                                </motion.div>
-                            ))
-                        )}
-                        <button 
-                            className="dashboard-glass" 
-                            style={{ width: '100%', padding: '16px', borderRadius: '18px', border: '2px dashed var(--border)', background: 'transparent', color: 'var(--text-muted)', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
-                            onClick={() => {
-                                if (profile?.plan === 'hustler' && (stats?.monthlySalesCount || 0) >= 10) {
-                                    setShowLimitModal(true);
-                                } else {
-                                    navigate('/sales/new');
-                                }
-                            }}
-                        >
-                            <Plus size={18} /> Record New Sale
-                        </button>
-                    </div>
-                </div>
-
-                {/* Right Column: Sidebar Widgets */}
-                <div style={{ flex: '1 1 300px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
-
-                    <div className="dashboard-glass" style={{ padding: '24px', borderRadius: '28px', border: '1px solid var(--border)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <h4 style={{ fontWeight: 900, margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <Activity size={20} color="var(--primary)" /> Activity Feed
-                            </h4>
-                            <div style={{ width: '8px', height: '8px', background: 'var(--success)', borderRadius: '50%' }}></div>
-                        </div>
-
-                        <div className="timeline-track">
-                            {loadingActivities ? (
-                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Analyzing stream...</p>
-                            ) : activities.length === 0 ? (
-                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>No live activity detected.</p>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                                    {activities.slice(0, 5).map((log, index) => (
-                                        <div key={log._id + log.createdAt} style={{ display: 'flex', gap: '16px', position: 'relative' }}>
-                                            <div className="timeline-dot" style={{ borderColor: index === 0 ? 'var(--primary)' : '#E2E8F0', flexShrink: 0 }}></div>
-                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                                <p style={{ 
-                                                    fontSize: '0.85rem', 
-                                                    fontWeight: 700, 
-                                                    color: 'var(--text)', 
-                                                    marginBottom: '4px', 
-                                                    lineHeight: 1.4,
-                                                    overflowWrap: 'anywhere',
-                                                    wordBreak: 'break-word'
-                                                }}>
-                                                    {log.details.replace(/"/g, '')}
-                                                </p>
-                                                {log.originalText && (
-                                                    <div style={{ 
-                                                        background: 'var(--background)', 
-                                                        padding: '8px 12px', 
-                                                        borderRadius: '12px', 
-                                                        marginBottom: '8px', 
-                                                        borderLeft: '3px solid var(--primary)',
-                                                        fontSize: '0.8rem',
-                                                        color: 'var(--text-muted)',
-                                                        fontStyle: 'italic',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '8px'
-                                                    }}>
-                                                        <Mic size={12} color="var(--primary)" />
-                                                        <span>{log.originalText}</span>
-                                                    </div>
-                                                )}
-                                                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                                    {new Date(log.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} • {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {log.action.replace(/_/g, ' ')}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
                                 </div>
-                            )}
-                        </div>
-                    </div>
+                            ))}
 
+                            {/* Overdue invoices */}
+                            {overdueSales.slice(0, 3).map((sale) => (
+                                <div
+                                    key={`overdue-${sale._id}`}
+                                    style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: "16px", padding: "14px 16px", display: "flex", gap: "12px" }}
+                                >
+                                    <Clock size={18} color="#EF4444" style={{ flexShrink: 0, marginTop: "2px" }} />
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <h4 style={{ margin: "0 0 3px", fontSize: "0.83rem", fontWeight: 800, color: "#991B1B" }}>
+                                            Overdue — {sale.customerName}
+                                        </h4>
+                                        <p style={{ margin: 0, fontSize: "0.75rem", color: "#B91C1C", lineHeight: 1.4 }}>
+                                            {sale.invoiceNumber} · {fmt(sale.totalAmount - (sale.payments || []).reduce((s, p) => s + p.amount, 0))} still owed
+                                            {sale.dueDate ? ` · Due ${new Date(sale.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : ""}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {(waitingForYou.length + overdueSales.length) > 4 && (
+                        <button
+                            onClick={() => navigate("/workspace")}
+                            style={{ marginTop: "16px", background: "none", border: "1px solid #E2E8F0", color: "#64748B", borderRadius: "12px", padding: "8px 16px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", width: "100%" }}
+                        >
+                            View all {waitingForYou.length + overdueSales.length} items in Workspace →
+                        </button>
+                    )}
                 </div>
+
             </div>
 
-            {deleteModal.show && createPortal(
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}>
-                    <motion.div 
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="animate-scale-in" 
-                        style={{ padding: '40px', maxWidth: '440px', width: '100%', background: 'white', borderRadius: '32px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}
+            {/* ── Health Center Modal ────────────────────────────────────────── */}
+            <AnimatePresence>
+                {showHealthModal && (
+                    <div
+                        style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.4)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000, padding: "20px" }}
+                        onClick={() => setShowHealthModal(false)}
                     >
-                        <div style={{ background: '#FEF2F2', color: '#EF4444', width: '72px', height: '72px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                            <Trash2 size={32} />
-                        </div>
-                        <h3 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#0F172A', marginBottom: '12px', letterSpacing: '-0.02em' }}>Delete Recording?</h3>
-                        <p style={{ color: '#334155', marginBottom: '32px', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>
-                            You are about to remove the entry for <b>{deleteModal.sale?.customerName}</b>. This will correct your balance but the action cannot be undone.
-                        </p>
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            <button className="btn-secondary" style={{ flex: 1, padding: '16px', borderRadius: '16px', fontWeight: 800, fontSize: '0.95rem' }} onClick={() => setDeleteModal({ show: false, sale: null })}>Keep it</button>
-                            <button style={{ flex: 1, background: '#EF4444', color: 'white', border: 'none', padding: '16px', borderRadius: '16px', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} onClick={confirmDelete}>Delete Record</button>
-                        </div>
-                    </motion.div>
-                </div>,
-                document.body
-            )}
+                        <motion.div
+                            initial={{ scale: 0.92, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.92, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ padding: "32px", maxWidth: "420px", width: "100%", background: "white", borderRadius: "28px", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.2)" }}
+                        >
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+                                <div>
+                                    <h4 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 950, color: "#0F172A" }}>
+                                        Business Health
+                                    </h4>
+                                    <p style={{ margin: "2px 0 0", fontSize: "0.78rem", color: "#64748B", fontWeight: 600 }}>
+                                        Calculated from your real invoice data
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setShowHealthModal(false)}
+                                    style={{ background: "#F1F5F9", border: "none", borderRadius: "50%", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748B" }}
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
 
-            {showLimitModal && (
-                <PlanLimitModal 
-                    isOpen={showLimitModal} 
-                    onClose={() => setShowLimitModal(false)} 
-                    plan={profile?.plan}
-                    feature="sales"
-                />
-            )}
+                            {/* Status badge */}
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "16px", padding: "14px 16px", marginBottom: "16px" }}>
+                                <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: healthStatus.color, boxShadow: `0 0 8px ${healthStatus.color}80` }} />
+                                <span style={{ fontWeight: 900, fontSize: "1rem", color: healthStatus.color }}>{healthStatus.label}</span>
+                            </div>
+
+                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                <div style={{ background: "#F8FAFC", padding: "14px 16px", borderRadius: "14px", border: "1px solid #E2E8F0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <span style={{ fontSize: "0.85rem", fontWeight: 650, color: "#64748B" }}>Collection Rate</span>
+                                    <strong style={{ color: collectionRate >= 75 ? "#10B981" : collectionRate >= 50 ? "#F59E0B" : "#EF4444", fontWeight: 900 }}>
+                                        {collectionRate !== null ? `${collectionRate}%` : "—"}
+                                    </strong>
+                                </div>
+                                <div style={{ background: "#F8FAFC", padding: "14px 16px", borderRadius: "14px", border: "1px solid #E2E8F0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <span style={{ fontSize: "0.85rem", fontWeight: 650, color: "#64748B" }}>Avg Payment Delay</span>
+                                    <strong style={{ color: "#1E293B", fontWeight: 900 }}>
+                                        {avgPaymentDelay !== null ? `${avgPaymentDelay} days` : "—"}
+                                    </strong>
+                                </div>
+                                <div style={{ background: "#F8FAFC", padding: "14px 16px", borderRadius: "14px", border: "1px solid #E2E8F0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <span style={{ fontSize: "0.85rem", fontWeight: 650, color: "#64748B" }}>Overdue Invoices</span>
+                                    <strong style={{ color: overdueSales.length > 0 ? "#EF4444" : "#10B981", fontWeight: 900 }}>
+                                        {overdueSales.length === 0 ? "None" : `${overdueSales.length} overdue`}
+                                    </strong>
+                                </div>
+                                <div style={{ background: "#F8FAFC", padding: "14px 16px", borderRadius: "14px", border: "1px solid #E2E8F0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <span style={{ fontSize: "0.85rem", fontWeight: 650, color: "#64748B" }}>Total Invoices</span>
+                                    <strong style={{ color: "#1E293B", fontWeight: 900 }}>
+                                        {stats?.totalSales || sales.length}
+                                    </strong>
+                                </div>
+                                <div style={{ background: "#F8FAFC", padding: "14px 16px", borderRadius: "14px", border: "1px solid #E2E8F0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <span style={{ fontSize: "0.85rem", fontWeight: 650, color: "#64748B" }}>Total Collected (All Time)</span>
+                                    <strong style={{ color: "#10B981", fontWeight: 900 }}>
+                                        {fmt(stats?.revenue)}
+                                    </strong>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             <style>{`
                 .skeleton {
@@ -830,92 +571,14 @@ const Dashboard = () => {
                     0% { background-position: 200% 0; }
                     100% { background-position: -200% 0; }
                 }
-                .dashboard-glass {
-                    transition: transform 0.2s, box-shadow 0.2s;
-                }
-                .dashboard-glass:hover {
-                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-                }
-                .priority-item:hover {
-                    background: #F8FAFC !important;
-                }
-                .premium-gradient {
-                    background: linear-gradient(135deg, var(--primary) 0%, #7C3AED 100%);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                }
-                .timeline-track {
-                    position: relative;
-                    padding-left: 8px;
-                }
-                .timeline-track::before {
-                    content: '';
-                    position: absolute;
-                    left: 11px;
-                    top: 10px;
-                    bottom: 10px;
-                    width: 1px;
-                    background: #E2E8F0;
-                }
-                .timeline-dot {
-                    width: 8px;
-                    height: 8px;
-                    border-radius: 50%;
-                    background: white;
-                    border: 2px solid #E2E8F0;
-                    position: relative;
-                    z-index: 2;
-                    margin-top: 6px;
-                }
                 .animate-fade-in {
-                    animation: fadeIn 0.5s ease-out;
+                    animation: fadeIn 0.4s ease-out;
                 }
                 @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(10px); }
+                    from { opacity: 0; transform: translateY(8px); }
                     to { opacity: 1; transform: translateY(0); }
-                }
-                @media (max-width: 1024px) {
-                    .dashboard-main-grid {
-                        grid-template-columns: 1fr !important;
-                    }
-                }
-                .btn-primary {
-                    background: var(--primary);
-                    color: white;
-                    border: none;
-                    font-weight: 800;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    transition: all 0.2s;
-                }
-                .btn-secondary {
-                    background: var(--background);
-                    color: var(--text);
-                    border: 1px solid var(--border);
-                    cursor: pointer;
-                }
-                .hover-scale:hover {
-                    transform: scale(1.02);
-                }
-                @media (max-width: 640px) {
-                    .mobile-stack {
-                        flex-direction: column !important;
-                        align-items: flex-start !important;
-                    }
-                    .priority-amount {
-                        width: 100% !important;
-                        justify-content: flex-start !important;
-                        margin-top: 8px !important;
-                        padding-top: 12px !important;
-                        border-top: 1px solid var(--border) !important;
-                        text-align: left !important;
-                    }
                 }
             `}</style>
         </div>
     );
-};
-
-export default Dashboard;
+}

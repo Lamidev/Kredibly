@@ -29,6 +29,14 @@ const RECALL_PATTERNS = [
     /what\s+(was|is)\s+the\s+invoice\s+(amount|price|total)\s+i/i,
 ];
 
+// Patterns that signal the merchant wants to resume/continue their last draft
+const RESUME_PATTERNS = [
+    /continue\s+(that|the|my)?\s*(invoice|draft|sale)/i,
+    /resume\s+(that|the|my)?\s*(invoice|draft|sale)/i,
+    /pick\s+up\s+where\s+we\s+left/i,
+    /continue\s+where\s+we\s+(stopped|left)/i
+];
+
 /**
  * Detect if a message is a temporal recall query.
  * @param {string} text
@@ -37,6 +45,16 @@ const RECALL_PATTERNS = [
 const isRecallQuery = (text) => {
     if (!text) return false;
     return RECALL_PATTERNS.some(p => p.test(text));
+};
+
+/**
+ * Detect if a message is a request to resume the last draft.
+ * @param {string} text
+ * @returns {boolean}
+ */
+const isResumeQuery = (text) => {
+    if (!text) return false;
+    return RESUME_PATTERNS.some(p => p.test(text));
 };
 
 /**
@@ -146,6 +164,20 @@ class ConversationGateway {
             } catch (err) {
                 console.error("🚨 [Gateway] Memory recall check error:", err.message);
                 // Safe fallthrough to AI on any memory error
+            }
+        }
+
+        // 4.5 Pre-AI Workflow Resumption Check (Priority 3+4 — Memory Manager)
+        // If no active workflow, check if the merchant wants to resume the last draft.
+        if (opts.text && isResumeQuery(opts.text) && profile) {
+            console.log(`🧠 [Gateway] Detected resume query: "${opts.text}"`);
+            try {
+                const ConversationMemoryManager = require("./ConversationMemoryManager");
+                const resumed = await ConversationMemoryManager.resumeDraftWorkflow(opts.from, profile, context);
+                console.log(`🧠 [Gateway] resumeDraftWorkflow returned:`, resumed);
+                if (resumed) return true; // Intercepted and resumed successfully
+            } catch (err) {
+                console.error("🚨 [Gateway] Workflow resumption check error:", err.message);
             }
         }
 
