@@ -114,7 +114,7 @@ export default function Money() {
             </div>
 
             {/* 3 Snapshot Cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px", marginBottom: "28px" }}>
+            <div className="money-snap-grid">
 
                 <div style={{ background: "white", border: "1px solid #E2E8F0", borderRadius: "18px", padding: "18px 20px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>

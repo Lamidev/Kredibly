@@ -9,6 +9,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { KREDDY_CONFIG } from "../../config";
 
+// ─── Responsive hook ─────────────────────────────────────────────────────────
+const useIsMobile = () => {
+    const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 640px)").matches);
+    useEffect(() => {
+        const mq = window.matchMedia("(max-width: 640px)");
+        const handler = (e) => setIsMobile(e.matches);
+        mq.addEventListener("change", handler);
+        return () => mq.removeEventListener("change", handler);
+    }, []);
+    return isMobile;
+};
+
+
 const fmt = (n) => `₦${Number(n || 0).toLocaleString()}`;
 const fmtDate = (d) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 const fmtShort = (d) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -23,6 +36,7 @@ const getAvatarGradient = (name) => {
 };
 
 export default function Customers() {
+    const isMobile = useIsMobile();
     const { sales, fetchSales, deleteSale } = useSales();
     const [searchTerm, setSearchTerm] = useState("");
     const [visibleCount, setVisibleCount] = useState(8);
@@ -324,20 +338,29 @@ export default function Customers() {
                                 backdropFilter: selectedInvoice ? 'none' : 'blur(8px)',
                                 zIndex: 10000,
                                 display: 'flex',
-                                justifyContent: 'flex-end',
+                                justifyContent: isMobile ? 'center' : 'flex-end',
+                                alignItems: isMobile ? 'flex-end' : 'stretch',
                                 transition: 'background 0.3s ease, backdrop-filter 0.3s ease'
                             }}
                         >
                             <motion.div
-                                initial={{ x: '100%' }}
-                                animate={{ x: 0 }}
-                                exit={{ x: '100%' }}
-                                transition={{ type: 'spring', damping: 26, stiffness: 220 }}
+                                key="crm-drawer"
+                                initial={isMobile ? { y: '100%' } : { x: '100%' }}
+                                animate={isMobile ? { y: 0 } : { x: 0 }}
+                                exit={isMobile ? { y: '100%' } : { x: '100%' }}
+                                transition={{ type: 'spring', damping: 28, stiffness: 240 }}
                                 onClick={e => e.stopPropagation()}
-                                style={{ width: '100%', maxWidth: '440px', height: '100%', background: 'white', borderLeft: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', overflowY: 'hidden' }}
+                                className="details-drawer"
+                                style={{
+                                    height: isMobile ? '92dvh' : '100%',
+                                    overflowY: 'hidden',
+                                    borderRadius: isMobile ? '20px 20px 0 0' : 0,
+                                    borderLeft: isMobile ? 'none' : '1px solid #E2E8F0',
+                                    borderTop: isMobile ? '1px solid #E2E8F0' : 'none',
+                                }}
                             >
                                 {/* Drawer Header */}
-                                <div style={{ padding: '24px 24px 16px', borderBottom: '1px solid #F1F5F9', flexShrink: 0 }}>
+                                <div className="details-drawer-header" style={{ flexShrink: 0 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                         <div>
                                             <h4 style={{ margin: '0 0 2px', fontSize: '1.1rem', fontWeight: 900, color: '#0F172A' }}>
@@ -354,7 +377,7 @@ export default function Customers() {
                                     </div>
 
                                     {/* Stats grid */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '16px' }}>
+                                    <div className="drawer-summary-grid">
                                         {[
                                             { label: 'Outstanding', value: selectedCustomer.outstanding > 0 ? fmt(selectedCustomer.outstanding) : 'All clear', color: selectedCustomer.outstanding > 0 ? '#EF4444' : '#10B981' },
                                             { label: 'Total Paid', value: fmt(selectedCustomer.totalPaid), color: '#10B981' },
@@ -382,7 +405,7 @@ export default function Customers() {
                                 </div>
 
                                 {/* Tab Content */}
-                                <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
+                                <div className="details-drawer-body" style={{ overflowY: 'auto' }}>
                                     {drawerTab === 'invoices' ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                             {selectedCustomer.invoices
@@ -455,7 +478,7 @@ export default function Customers() {
                                 </div>
 
                                 {/* CTA */}
-                                <div style={{ padding: '16px 24px', borderTop: '1px solid #F1F5F9', flexShrink: 0 }}>
+                                <div className="details-drawer-footer" style={{ flexShrink: 0 }}>
                                     <button
                                         onClick={() => window.open(KREDDY_CONFIG.getLink(`Tell me about ${selectedCustomer.name} — their payment history and outstanding balance`), '_blank', 'noopener,noreferrer')}
                                         style={{
@@ -496,18 +519,34 @@ export default function Customers() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setSelectedInvoice(null)}
-                            style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.4)", backdropFilter: "blur(8px)", zIndex: 10001, display: "flex", justifyContent: "flex-end" }}
+                            style={{
+                                position: "fixed", inset: 0,
+                                background: "rgba(15,23,42,0.4)",
+                                backdropFilter: "blur(8px)",
+                                zIndex: 10001,
+                                display: "flex",
+                                justifyContent: isMobile ? "center" : "flex-end",
+                                alignItems: isMobile ? "flex-end" : "stretch",
+                            }}
                         >
                             <motion.div
-                                initial={{ x: "100%" }}
-                                animate={{ x: 0 }}
-                                exit={{ x: "100%" }}
-                                transition={{ type: "spring", damping: 26, stiffness: 220 }}
+                                key="invoice-drawer"
+                                initial={isMobile ? { y: "100%" } : { x: "100%" }}
+                                animate={isMobile ? { y: 0 } : { x: 0 }}
+                                exit={isMobile ? { y: "100%" } : { x: "100%" }}
+                                transition={{ type: "spring", damping: 28, stiffness: 240 }}
                                 onClick={(e) => e.stopPropagation()}
-                                style={{ width: "100%", maxWidth: "440px", height: "100%", background: "white", borderLeft: "1px solid #E2E8F0", display: "flex", flexDirection: "column", overflowY: "auto" }}
+                                className="details-drawer animate-slide-in"
+                                style={{
+                                    height: isMobile ? "92dvh" : "100%",
+                                    overflowY: "auto",
+                                    borderRadius: isMobile ? "20px 20px 0 0" : 0,
+                                    borderLeft: isMobile ? "none" : "1px solid #E2E8F0",
+                                    borderTop: isMobile ? "1px solid #E2E8F0" : "none",
+                                }}
                             >
                                 {/* Drawer Header */}
-                                <div style={{ padding: "24px 24px 16px", borderBottom: "1px solid #F1F5F9" }}>
+                                <div className="details-drawer-header">
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                                         <div>
                                             <h4 style={{ margin: "0 0 2px", fontSize: "1.1rem", fontWeight: 900, color: "#0F172A" }}>
@@ -528,7 +567,7 @@ export default function Customers() {
                                     </div>
 
                                     {/* Amount summary */}
-                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginTop: "16px" }}>
+                                    <div className="drawer-summary-grid">
                                         {[
                                             { label: "Total", value: fmt(selectedInvoice.totalAmount), color: "#0F172A" },
                                             { label: "Paid", value: fmt((selectedInvoice.payments || []).reduce((s, p) => s + p.amount, 0)), color: "#10B981" },
@@ -556,7 +595,7 @@ export default function Customers() {
                                 </div>
 
                                 {/* Tab Content */}
-                                <div style={{ padding: "20px 24px", flex: 1, overflow: "auto" }}>
+                                <div className="details-drawer-body">
                                     {invoiceTab === "activity" ? (
                                         <div style={{ position: "relative", paddingLeft: "16px", borderLeft: "1px solid #E2E8F0", display: "flex", flexDirection: "column", gap: "18px" }}>
                                             {/* Created event always shows */}
@@ -606,7 +645,7 @@ export default function Customers() {
 
                                 {/* CTA */}
                                 {selectedInvoice.status !== "paid" && selectedInvoice.lifecycleStatus !== "PAID" && (
-                                    <div style={{ padding: "16px 24px", borderTop: "1px solid #F1F5F9" }}>
+                                    <div className="details-drawer-footer">
                                         <button
                                             onClick={() => {
                                                 const msg = `Send reminder to ${selectedInvoice.customerName || selectedCustomer.name} for invoice ${selectedInvoice.invoiceNumber}`;
@@ -685,6 +724,56 @@ export default function Customers() {
                 document.body
             )}
 
+            <style>{`
+                /* Responsive Details Drawer */
+                .details-drawer {
+                    width: 100%;
+                    max-width: 440px;
+                    height: 100%;
+                    background: white;
+                    border-left: 1px solid #E2E8F0;
+                    display: flex;
+                    flex-direction: column;
+                }
+                .details-drawer-header {
+                    padding: 24px 24px 16px;
+                    border-bottom: 1px solid #F1F5F9;
+                }
+                .details-drawer-body {
+                    padding: 20px 24px;
+                    flex: 1;
+                    overflow: auto;
+                }
+                .details-drawer-footer {
+                    padding: 16px 24px;
+                    border-top: 1px solid #F1F5F9;
+                }
+                .drawer-summary-grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr 1fr;
+                    gap: 10px;
+                    margin-top: 16px;
+                }
+
+                @media (max-width: 480px) {
+                    .details-drawer {
+                        max-width: 100% !important;
+                    }
+                    .details-drawer-header {
+                        padding: 20px 16px 14px !important;
+                    }
+                    .details-drawer-body {
+                        padding: 16px 16px !important;
+                    }
+                    .details-drawer-footer {
+                        padding: 14px 16px !important;
+                    }
+                    .drawer-summary-grid {
+                        grid-template-columns: 1fr !important;
+                        gap: 8px !important;
+                    }
+                }
+            `}</style>
         </div>
     );
 }

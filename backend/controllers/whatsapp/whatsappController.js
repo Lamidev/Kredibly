@@ -993,16 +993,9 @@ const handleIncoming = async (req, res) => {
             console.log(`[handleIncoming] Message intercepted and handled by V2 workflow gateway for ${cleanFrom}`);
             return;
         }
-
+        
         // 🚀 Intercept Welcome Greeting (text OR template button tap)
-        const normalizedMsg = text.toLowerCase().replace(/[.,!']/g, "").trim();
-        const welcomeKeywords = [
-            "hi kreddy im ready to record",
-            "who is kreddy",
-            "tell me more about kreddy",
-            "ask me what i can do",
-            "ask me what you can do"
-        ];
+        const normalizedMsg = text.toLowerCase().replace(/[.,!'?]/g, "").trim();
 
         // Button taps from the welcome template come in as msgType === "button"
         // with message.button.payload set to the button's payload string
@@ -1013,27 +1006,21 @@ const handleIncoming = async (req, res) => {
             btnText === "ask me what i can do"
         );
 
-        const isWelcomeGreeting = welcomeKeywords.includes(normalizedMsg) || isWelcomeButtonTap;
+        if (profile && !profile.isKreddyConnected && isWelcomeButtonTap) {
+            // First-time users tapping the template button get the full on-boarding welcome
+            const welcomeText = `Hello *${bossTitle}*,\n\nI'm *Kreddy* — your Digital Chief of Staff.\n\nI've successfully launched your workspace for\n*${profile.displayName}*\nand I'm ready to get to work.\n\nHere is what I can do for you:\n\n*Voice Note:*\n_"Sarah bought a bag for 15k, she paid 5k, remind me Friday for the balance."_\n\n*Picture:*\nSend me a receipt and I'll record it.\n\n*Ask me:*\n_"What is my revenue today?"_\n_"Who owes me money?"_\n\nTalk to me naturally.\n\nLet's get to work.`;
 
-        if (profile && isWelcomeGreeting) {
-            if (!profile.isKreddyConnected) {
-                const welcomeText = `Hello *${bossTitle}*,\n\nI'm *Kreddy* — your Digital Chief of Staff.\n\nI've successfully launched your workspace for\n*${profile.displayName}*\nand I'm ready to get to work.\n\nHere is what I can do for you:\n\n*Voice Note:*\n_"Sarah bought a bag for 15k, she paid 5k, remind me Friday for the balance."_\n\n*Picture:*\nSend me a receipt and I'll record it.\n\n*Ask me:*\n_"What is my revenue today?"_\n_"Who owes me money?"_\n\nTalk to me naturally.\n\nLet's get to work.`;
-                
-                profile.isKreddyConnected = true;
-                profile.welcomeSent = true;
-                profile.lastInboundAt = new Date();
-                await profile.save();
+            profile.isKreddyConnected = true;
+            profile.welcomeSent = true;
+            profile.lastInboundAt = new Date();
+            await profile.save();
 
-                await sendReply(from, welcomeText);
-            } else {
-                const welcomeBackText = `Welcome back, *${bossTitle}*! 🫡\n\nI'm online and ready to record. What's the latest update for *${profile.displayName}*?`;
-                profile.lastInboundAt = new Date();
-                await profile.save();
-
-                await sendReply(from, welcomeBackText);
-            }
+            await sendReply(from, welcomeText);
             return;
         }
+        // All other greetings ("hi", "hi kreddy", "good morning", "morning boss", etc.)
+        // fall through to the AI pipeline which handles them naturally via the
+        // SYSTEM_INSTRUCTION "ABSENCE & WELCOME BACK RULE" based on days since last active.
 
         // 🧠 KREDDY AI: Check if this is a customer-facing message (even if they have a merchant profile)
         let isForCustomerFlow = false;
@@ -2498,8 +2485,10 @@ const handleIncoming = async (req, res) => {
             await sendReply(from, `${wittyGreeting} \n\nI'm *Kreddy*, ${bossRole}. \n\n*What's the plan for today?*\n${statusLabel}: Type *S*\n⏳ *DEBTS*: Type *D*\n💡 *HELP*: Type *HELP*`);
             return;
         } else if (isGreeting && lowerText.split(' ').length <= 3 && profile.welcomeSent) {
-            // Already welcomed? Just let the AI handle it or give a very short "How can I help?"
-            // We skip this block so it falls through to the AI for a natural response.
+            // ✅ Let AI handle returning-user greetings naturally.
+            // The SYSTEM_INSTRUCTION has a full "ABSENCE & WELCOME BACK RULE" that
+            // gives warm, contextual, personalized welcome-backs based on days away.
+            // Falling through to the AI pipeline below.
         } else if (isThanks) {
             const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Partner");
             const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;

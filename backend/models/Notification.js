@@ -34,4 +34,17 @@ const NotificationSchema = new mongoose.Schema({
     }
 });
 
+// 🔌 Real-time sync: Notify dashboard when a new notification/alert is created
+NotificationSchema.post("save", function(doc) {
+    try {
+        const { getIO } = require("../utils/socket");
+        const io = getIO();
+        if (io && doc.businessId) {
+            io.to(doc.businessId.toString().toLowerCase()).emit("notification_created", doc);
+        }
+    } catch (err) {
+        console.error("Error in Notification post-save socket sync:", err);
+    }
+});
+
 module.exports = mongoose.model("Notification", NotificationSchema);
