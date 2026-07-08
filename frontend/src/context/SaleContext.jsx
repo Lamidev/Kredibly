@@ -13,7 +13,7 @@ export const SaleProvider = ({ children }) => {
     const [analytics, setAnalytics] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    // 🔌 Real-time Updates: Handle global payment notifications
+    // 🔌 Real-time Updates: Handle global payment notifications & in-app alerts
     useEffect(() => {
         if (!profile || !profile._id) return;
 
@@ -27,10 +27,17 @@ export const SaleProvider = ({ children }) => {
             fetchStats();
         };
 
+        const handleNotificationCreated = (data) => {
+            console.log("🔌 Real-time Alert Received:", data);
+            window.dispatchEvent(new CustomEvent("refreshNotifications"));
+        };
+
         listenToEvent("sale_updated", handleGlobalSaleUpdate);
+        listenToEvent("notification_created", handleNotificationCreated);
 
         return () => {
             stopListeningToEvent("sale_updated", handleGlobalSaleUpdate);
+            stopListeningToEvent("notification_created", handleNotificationCreated);
         };
     }, [profile?._id]);
 

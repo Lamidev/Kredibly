@@ -2,7 +2,8 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSales } from "../../context/SaleContext";
 import { useAuth } from "../../context/AuthContext";
-import { AlertCircle, X, TrendingUp, Clock, CheckCircle2, Activity } from "lucide-react";
+import { AlertCircle, X, TrendingUp, Clock, CheckCircle2, Activity, Bot, MessageCircle } from "lucide-react";
+import { KREDDY_CONFIG } from "../../config";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
@@ -39,6 +40,11 @@ export default function Dashboard() {
 
     const [timelineFilter, setTimelineFilter] = useState("all");
     const [showHealthModal, setShowHealthModal] = useState(false);
+    const [visibleEvents, setVisibleEvents] = useState(5);
+
+    useEffect(() => {
+        setVisibleEvents(5);
+    }, [timelineFilter]);
 
     useEffect(() => {
         fetchSales();
@@ -112,11 +118,8 @@ export default function Dashboard() {
 
     const timelineEvents = useMemo(() => {
         const events = [];
-        const recent = [...sales]
-            .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-            .slice(0, 20);
 
-        recent.forEach((sale) => {
+        sales.forEach((sale) => {
             const name = sale.customerName || "Unknown";
             const inv = sale.invoiceNumber || "";
 
@@ -171,15 +174,18 @@ export default function Dashboard() {
             }
         });
 
-        return events
-            .sort((a, b) => b.ts - a.ts)
-            .slice(0, 15);
+        return events.sort((a, b) => b.ts - a.ts);
     }, [sales]);
 
-    const filteredEvents =
-        timelineFilter === "all"
+    const filteredEvents = useMemo(() => {
+        return timelineFilter === "all"
             ? timelineEvents
             : timelineEvents.filter((ev) => ev.category === timelineFilter);
+    }, [timelineEvents, timelineFilter]);
+
+    const displayedEvents = useMemo(() => {
+        return filteredEvents.slice(0, visibleEvents);
+    }, [filteredEvents, visibleEvents]);
 
     // ── Greeting ─────────────────────────────────────────────────────────────
 
@@ -199,18 +205,82 @@ export default function Dashboard() {
     return (
         <div className="animate-fade-in" style={{ paddingBottom: "60px" }}>
 
-            {/* Greeting */}
-            <div style={{ marginBottom: "32px" }}>
-                <h1 style={{ fontSize: "1.8rem", fontWeight: 950, color: "#0F172A", marginBottom: "4px", letterSpacing: "-0.04em" }}>
-                    {greeting()}, {profile?.displayName || "Oga"}
-                </h1>
-                <p style={{ color: "var(--text-muted)", fontWeight: 600, fontSize: "0.9rem" }}>
-                    Here is what Kreddy knows about your business right now.
-                </p>
+            {/* Greeting + Kreddy strip */}
+            <div className="kreddy-greeting-row" style={{ marginBottom: "28px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+                {/* Left: Heading */}
+                <div>
+                    <h1 style={{ fontSize: "1.8rem", fontWeight: 950, color: "#0F172A", marginBottom: "4px", letterSpacing: "-0.04em" }}>
+                        {greeting()}, {profile?.displayName || "Oga"}
+                    </h1>
+                    <p style={{ color: "var(--text-muted)", fontWeight: 600, fontSize: "0.9rem", margin: 0 }}>
+                        Here is what Kreddy knows about your business right now.
+                    </p>
+                </div>
+
+                {/* Right: Compact Kreddy pill */}
+                <button
+                    onClick={() => {
+                        const msg = profile?.welcomeSent ? "Hi Kreddy" : "Hello";
+                        window.open(KREDDY_CONFIG.getLink(msg), '_blank', 'noopener,noreferrer');
+                    }}
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        background: "white",
+                        border: "1.5px solid rgba(109,40,217,0.18)",
+                        borderRadius: "40px",
+                        padding: "6px 14px 6px 8px",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        boxShadow: "0 2px 8px rgba(109,40,217,0.08)",
+                        flexShrink: 0,
+                    }}
+                    onMouseEnter={e => {
+                        e.currentTarget.style.background = "#F5F0FF";
+                        e.currentTarget.style.borderColor = "rgba(109,40,217,0.4)";
+                        e.currentTarget.style.transform = "translateY(-1px)";
+                        e.currentTarget.style.boxShadow = "0 4px 14px rgba(109,40,217,0.15)";
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.background = "white";
+                        e.currentTarget.style.borderColor = "rgba(109,40,217,0.18)";
+                        e.currentTarget.style.transform = "none";
+                        e.currentTarget.style.boxShadow = "0 2px 8px rgba(109,40,217,0.08)";
+                    }}
+                >
+                    {/* Mini avatar */}
+                    <div style={{ position: "relative", flexShrink: 0 }}>
+                        <div style={{
+                            width: "28px", height: "28px",
+                            borderRadius: "50%",
+                            background: "linear-gradient(135deg, #6D28D9, #7C3AED)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                            <Bot size={14} color="white" />
+                        </div>
+                        <span style={{
+                            position: "absolute", bottom: 0, right: 0,
+                            width: "8px", height: "8px", borderRadius: "50%",
+                            background: "#10B981", border: "1.5px solid white",
+                            animation: "kreddy-pulse 2s infinite"
+                        }} />
+                    </div>
+                    {/* Label */}
+                    <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#4C1D95", whiteSpace: "nowrap" }}>
+                        {profile?.welcomeSent ? "Message Kreddy" : "Say hi to Kreddy 👋"}
+                    </span>
+                </button>
             </div>
+            <style>{`
+                @keyframes kreddy-pulse {
+                    0%, 100% { opacity: 1; transform: scale(1); }
+                    50% { opacity: 0.7; transform: scale(1.3); }
+                }
+            `}</style>
 
             {/* ── 4 Snapshot Cards ─────────────────────────────────────────── */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "32px" }}>
+            <div className="dash-snap-grid">
 
                 {/* 1. Collected Today */}
                 <div style={{ background: "white", border: "1px solid #E2E8F0", borderRadius: "20px", padding: "20px 24px" }}>
@@ -311,7 +381,7 @@ export default function Dashboard() {
             </div>
 
             {/* ── Main 2-column grid ───────────────────────────────────────── */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "24px" }}>
+            <div className="dash-main-grid">
 
                 {/* Business Timeline */}
                 <div style={{ background: "white", border: "1px solid #E2E8F0", borderRadius: "20px", padding: "24px" }}>
@@ -351,7 +421,7 @@ export default function Dashboard() {
                                 </div>
                             ))}
                         </div>
-                    ) : filteredEvents.length === 0 ? (
+                    ) : displayedEvents.length === 0 ? (
                         <div style={{ textAlign: "center", padding: "32px 0", color: "#94A3B8" }}>
                             <Activity size={28} style={{ opacity: 0.3, marginBottom: "12px" }} />
                             <p style={{ margin: 0, fontSize: "0.85rem", fontWeight: 600 }}>
@@ -361,35 +431,65 @@ export default function Dashboard() {
                             </p>
                         </div>
                     ) : (
-                        <div style={{ position: "relative", paddingLeft: "18px", borderLeft: "1px solid #E2E8F0", display: "flex", flexDirection: "column", gap: "20px" }}>
-                            {filteredEvents.map((ev) => (
-                                <div key={ev.id} style={{ position: "relative" }}>
-                                    <div style={{
-                                        position: "absolute", left: "-23px", top: "5px",
-                                        width: "9px", height: "9px", borderRadius: "50%",
-                                        background: ev.category === "payments" ? "#10B981"
-                                            : ev.category === "invoices" ? "var(--primary)"
-                                            : "#F59E0B",
-                                        border: "2px solid white",
-                                        boxShadow: "0 0 0 1px #E2E8F0"
-                                    }} />
-                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
-                                        <div>
-                                            <p style={{ margin: 0, fontSize: "0.84rem", fontWeight: 700, color: "#1E293B", lineHeight: 1.4 }}>
-                                                {ev.text}
-                                            </p>
-                                            <span style={{ fontSize: "0.7rem", color: "#94A3B8", fontWeight: 600 }}>
-                                                {timeAgo(ev.ts)}
-                                            </span>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                            <div style={{ position: "relative", paddingLeft: "18px", borderLeft: "1px solid #E2E8F0", display: "flex", flexDirection: "column", gap: "20px" }}>
+                                {displayedEvents.map((ev) => (
+                                    <div key={ev.id} style={{ position: "relative" }}>
+                                        <div style={{
+                                            position: "absolute", left: "-23px", top: "5px",
+                                            width: "9px", height: "9px", borderRadius: "50%",
+                                            background: ev.category === "payments" ? "#10B981"
+                                                : ev.category === "invoices" ? "var(--primary)"
+                                                : "#F59E0B",
+                                            border: "2px solid white",
+                                            boxShadow: "0 0 0 1px #E2E8F0"
+                                        }} />
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                                            <div>
+                                                <p style={{ margin: 0, fontSize: "0.84rem", fontWeight: 700, color: "#1E293B", lineHeight: 1.4 }}>
+                                                    {ev.text}
+                                                </p>
+                                                <span style={{ fontSize: "0.7rem", color: "#94A3B8", fontWeight: 600 }}>
+                                                    {timeAgo(ev.ts)}
+                                                </span>
+                                            </div>
+                                            {ev.subtext && (
+                                                <strong style={{ fontSize: "0.82rem", color: "#0F172A", flexShrink: 0, fontWeight: 800 }}>
+                                                    {ev.subtext}
+                                                </strong>
+                                            )}
                                         </div>
-                                        {ev.subtext && (
-                                            <strong style={{ fontSize: "0.82rem", color: "#0F172A", flexShrink: 0, fontWeight: 800 }}>
-                                                {ev.subtext}
-                                            </strong>
-                                        )}
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
+
+                            {filteredEvents.length > visibleEvents && (
+                                <button
+                                    onClick={() => setVisibleEvents(prev => prev + 5)}
+                                    style={{
+                                        background: "white",
+                                        border: "1px solid #E2E8F0",
+                                        color: "var(--primary)",
+                                        borderRadius: "12px",
+                                        padding: "8px 16px",
+                                        fontSize: "0.78rem",
+                                        fontWeight: 800,
+                                        cursor: "pointer",
+                                        marginTop: "8px",
+                                        transition: "all 0.2s"
+                                    }}
+                                    onMouseEnter={e => {
+                                        e.currentTarget.style.borderColor = "var(--primary)";
+                                        e.currentTarget.style.background = "#F9F5FF";
+                                    }}
+                                    onMouseLeave={e => {
+                                        e.currentTarget.style.borderColor = "#E2E8F0";
+                                        e.currentTarget.style.background = "white";
+                                    }}
+                                >
+                                    Load More Activity
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>

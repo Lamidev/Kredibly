@@ -1,23 +1,45 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSales } from "../../context/SaleContext";
-import { CheckCircle, Clock, Trash2, Plus, AlertCircle } from "lucide-react";
+import { CheckCircle, Clock, Trash2, Plus, AlertCircle, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import axios from "axios";
+import { listenToEvent, stopListeningToEvent } from "../../utils/socket";
 
-// ─── Persistence ──────────────────────────────────────────────────────────────
-
-const LS_KEY = "kredibly_tasks_v1";
-const loadTasks = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]"); } catch { return []; } };
-const saveTasks = (list) => localStorage.setItem(LS_KEY, JSON.stringify(list));
+const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Tasks() {
     const { sales, fetchSales } = useSales();
-    const [manualTasks, setManualTasks] = useState(loadTasks);
+    const [dbReminders, setDbReminders] = useState([]);
     const [newText, setNewText] = useState("");
 
-    useEffect(() => { fetchSales(); }, []);
-    useEffect(() => { saveTasks(manualTasks); }, [manualTasks]);
+    const fetchReminders = async () => {
+        try {
+            const res = await axios.get(`${API_URL}/business/reminders`, { withCredentials: true });
+            if (res.data.success) {
+                // Filter only standalone tasks/reminders (exclude customer auto payment reminders)
+                const tasksOnly = res.data.data.filter(r => r.recipientType === "merchant");
+                setDbReminders(tasksOnly);
+            }
+        } catch (err) {
+            console.error("Failed to fetch reminders", err);
+        }
+    };
+
+    useEffect(() => {
+        fetchSales();
+        fetchReminders();
+
+        const handleSocketTaskUpdate = () => {
+            fetchReminders();
+        };
+
+        listenToEvent("task_updated", handleSocketTaskUpdate);
+        return () => {
+            stopListeningToEvent("task_updated", handleSocketTaskUpdate);
+        };
+    }, []);
 
     // Auto-generate tasks from real sales data (overdue, extension requests)
     const autoTasks = useMemo(() => {
@@ -53,27 +75,69 @@ export default function Tasks() {
         return items;
     }, [sales]);
 
-    const handleAdd = (e) => {
+    const handleAdd = async (e) => {
         e.preventDefault();
         if (!newText.trim()) return;
-        const task = { id: Date.now(), text: newText.trim(), done: false, createdAt: new Date().toISOString() };
-        const updated = [task, ...manualTasks];
-        setManualTasks(updated);
-        setNewText("");
-        toast.success("Task added");
+
+        try {
+            const payload = {
+                description: newText.trim(),
+                type: "task",
+                triggerDate: new Date().toISOString(), // Default trigger date is immediately set so it shows on the list
+            };
+
+            const res = await axios.post(`${API_URL}/business/reminders`, payload, { withCredentials: true });
+            if (res.data.success) {
+                setDbReminders(prev => [res.data.data, ...prev]);
+                setNewText("");
+                toast.success("Task added! 🚀");
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to add task");
+        }
     };
 
-    const handleToggle = (id) => {
-        setManualTasks(manualTasks.map(t => t.id === id ? { ...t, done: !t.done } : t));
+    const handleToggle = async (id, currentStatus) => {
+        const nextStatus = currentStatus === "delivered" ? "pending" : "delivered";
+        try {
+            const res = await axios.put(`${API_URL}/business/reminders/${id}`, { status: nextStatus }, { withCredentials: true });
+            if (res.data.success) {
+                setDbReminders(prev => prev.map(r => r._id === id ? res.data.data : r));
+                toast.success(nextStatus === "delivered" ? "Task marked done! 🎉" : "Task marked pending.");
+            }
+        } catch (err) {
+            toast.error("Failed to update task");
+        }
     };
 
-    const handleDelete = (id) => {
-        setManualTasks(manualTasks.filter(t => t.id !== id));
-        toast.success("Task removed");
+    const handleDelete = async (id) => {
+        try {
+            const res = await axios.delete(`${API_URL}/business/reminders/${id}`, { withCredentials: true });
+            if (res.data.success) {
+                setDbReminders(prev => prev.filter(r => r._id !== id));
+                toast.success("Task deleted");
+            }
+        } catch (err) {
+            toast.error("Failed to delete task");
+        }
     };
 
-    const pending = manualTasks.filter(t => !t.done);
-    const done = manualTasks.filter(t => t.done);
+    const pending = dbReminders.filter(t => {
+        if (t.status === "delivered") return false;
+        // Auto-complete/hide tasks whose trigger date is older than 24 hours (so old reminders don't stack up as pending)
+        if (t.triggerDate && new Date(t.triggerDate) < new Date(Date.now() - 24 * 60 * 60 * 1000)) {
+            return false;
+        }
+        return true;
+    });
+    
+    const done = dbReminders.filter(t => {
+        if (t.status === "delivered") return true;
+        if (t.triggerDate && new Date(t.triggerDate) < new Date(Date.now() - 24 * 60 * 60 * 1000)) {
+            return true;
+        }
+        return false;
+    });
 
     return (
         <div style={{ paddingBottom: "60px" }} className="animate-fade-in">
@@ -152,7 +216,7 @@ export default function Tasks() {
                     )}
                 </div>
 
-                {/* Manual Tasks */}
+                {/* Manual Tasks (Now real backend reminders) */}
                 <div style={{ background: "white", border: "1px solid #E2E8F0", borderRadius: "20px", padding: "22px" }}>
                     <h3 style={{ margin: "0 0 6px", fontSize: "0.95rem", fontWeight: 900, color: "#0F172A" }}>
                         My Tasks
@@ -163,10 +227,10 @@ export default function Tasks() {
                         )}
                     </h3>
                     <p style={{ margin: "0 0 16px", fontSize: "0.78rem", color: "#64748B", fontWeight: 600 }}>
-                        Personal reminders and follow-ups you've added.
+                        Personal reminders and follow-ups synced with Kreddy on WhatsApp.
                     </p>
 
-                    {manualTasks.length === 0 ? (
+                    {dbReminders.length === 0 ? (
                         <p style={{ textAlign: "center", fontSize: "0.8rem", color: "#CBD5E1", padding: "28px 0", fontWeight: 600 }}>
                             Add your first task above ↑
                         </p>
@@ -174,7 +238,7 @@ export default function Tasks() {
                         <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>
                             {/* Pending first */}
                             {pending.map((task) => (
-                                <TaskRow key={task.id} task={task} onToggle={handleToggle} onDelete={handleDelete} />
+                                <TaskRow key={task._id} task={task} onToggle={handleToggle} onDelete={handleDelete} />
                             ))}
                             {/* Divider if both exist */}
                             {pending.length > 0 && done.length > 0 && (
@@ -183,7 +247,7 @@ export default function Tasks() {
                                 </div>
                             )}
                             {done.map((task) => (
-                                <TaskRow key={task.id} task={task} onToggle={handleToggle} onDelete={handleDelete} />
+                                <TaskRow key={task._id} task={task} onToggle={handleToggle} onDelete={handleDelete} />
                             ))}
                         </div>
                     )}
@@ -200,24 +264,45 @@ export default function Tasks() {
 }
 
 function TaskRow({ task, onToggle, onDelete }) {
+    const triggerDateFriendly = useMemo(() => {
+        if (!task.triggerDate) return "";
+        const dateObj = new Date(task.triggerDate);
+        return dateObj.toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true
+        });
+    }, [task.triggerDate]);
+
+    const isDone = task.status === "delivered";
+
     return (
         <div style={{
             display: "flex", alignItems: "center", gap: "12px",
             background: "white", border: "1px solid #E2E8F0",
             borderRadius: "14px", padding: "12px 16px",
-            opacity: task.done ? 0.6 : 1, transition: "all 0.25s ease",
+            opacity: isDone ? 0.6 : 1, transition: "all 0.25s ease",
             boxShadow: "0 2px 6px rgba(0,0,0,0.01)"
         }}>
             <button
-                onClick={() => onToggle(task.id)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: task.done ? "#10B981" : "#CBD5E1", flexShrink: 0, padding: 0, display: "flex", alignItems: "center" }}
+                onClick={() => onToggle(task._id, task.status)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: isDone ? "#10B981" : "#CBD5E1", flexShrink: 0, padding: 0, display: "flex", alignItems: "center" }}
             >
-                <CheckCircle size={20} fill={task.done ? "#10B981" : "none"} />
+                <CheckCircle size={20} fill={isDone ? "#10B981" : "none"} />
             </button>
-            <p style={{ margin: 0, fontSize: "0.83rem", fontWeight: 700, color: "#1E293B", flex: 1, textDecoration: task.done ? "line-through" : "none", lineHeight: 1.4 }}>
-                {task.text}
-            </p>
-            <button onClick={() => onDelete(task.id)} style={{ background: "none", border: "none", color: "#EF4444", opacity: 0.6, cursor: "pointer", padding: 4, flexShrink: 0, transition: "opacity 0.2s" }}
+            <div style={{ flex: 1 }}>
+                <p style={{ margin: 0, fontSize: "0.83rem", fontWeight: 700, color: "#1E293B", textDecoration: isDone ? "line-through" : "none", lineHeight: 1.4 }}>
+                    {task.description}
+                </p>
+                {task.triggerDate && !isDone && (
+                    <p style={{ margin: "2px 0 0", fontSize: "0.68rem", color: "#64748B", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}>
+                        <Clock size={10} /> Notify: {triggerDateFriendly} {task.recurrence !== "none" ? `(${task.recurrence})` : ""}
+                    </p>
+                )}
+            </div>
+            <button onClick={() => onDelete(task._id)} style={{ background: "none", border: "none", color: "#EF4444", opacity: 0.6, cursor: "pointer", padding: 4, flexShrink: 0, transition: "opacity 0.2s" }}
                 onMouseEnter={e => e.currentTarget.style.opacity = 1}
                 onMouseLeave={e => e.currentTarget.style.opacity = 0.6}
             >

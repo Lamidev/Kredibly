@@ -1041,3 +1041,271 @@ body.lock-scroll {
     background: #E2E8F0;
     border-radius: 10px;
 }
+
+/* ═══════════════════════════════════════════════════════
+   📱 MOBILE-FIRST — Merchant Dashboard Responsive System
+   Breakpoints: ≤640px (phone), ≤768px (small tablet)
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Shared layout tokens ───────────────────────────── */
+.dash-snap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.dash-main-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+}
+
+.money-snap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+}
+
+/* ── Details Drawer (shared Workspace + CRM) ─────────── */
+.details-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 3000;
+    display: flex;
+    justify-content: flex-end;
+    align-items: stretch;
+}
+
+.details-drawer {
+    width: 100%;
+    max-width: 440px;
+    height: 100%;
+    background: white;
+    border-left: 1px solid #E2E8F0;
+    display: flex;
+    flex-direction: column;
+}
+
+.details-drawer-header {
+    padding: 24px 24px 16px;
+    border-bottom: 1px solid #F1F5F9;
+    flex-shrink: 0;
+}
+
+.details-drawer-body {
+    padding: 20px 24px;
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.details-drawer-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #F1F5F9;
+    flex-shrink: 0;
+}
+
+.drawer-summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+/* ── Workspace Kanban ────────────────────────────────── */
+.workspace-kanban {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(260px, 1fr));
+    gap: 16px;
+    align-items: start;
+}
+
+/* ── CRM Customer Grid ───────────────────────────────── */
+.crm-customer-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ── Tasks ───────────────────────────────────────────── */
+.task-action-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* ══════════════════════════════
+   ≤ 768px — Tablet tweaks
+   ══════════════════════════════ */
+@media (max-width: 768px) {
+    .dash-snap-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .money-snap-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .workspace-kanban {
+        grid-template-columns: repeat(2, 1fr);
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 8px;
+    }
+
+    .workspace-kanban > * {
+        scroll-snap-align: start;
+        min-width: 260px;
+    }
+}
+
+/* ══════════════════════════════
+   ≤ 640px — Phone (primary target)
+   ══════════════════════════════ */
+@media (max-width: 640px) {
+
+    /* Content body — tighter padding */
+    .content-body {
+        padding: 20px 14px !important;
+    }
+
+    /* ── Dashboard stat cards: 2 col ── */
+    .dash-snap-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+        margin-bottom: 20px !important;
+    }
+
+    .dash-snap-grid > div {
+        padding: 14px 14px !important;
+        border-radius: 16px !important;
+    }
+
+    .dash-snap-grid h2 {
+        font-size: 1.3rem !important;
+    }
+
+    /* ── Dashboard main 2-col → 1-col ── */
+    .dash-main-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+
+    /* ── Kreddy greeting pill wraps nicely ── */
+    .kreddy-greeting-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+    }
+
+    /* ── Money stat grid: 2-col → keep 2-col, shrink padding ── */
+    .money-snap-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+
+    .money-snap-grid > div {
+        padding: 14px 14px !important;
+    }
+
+    .money-snap-grid h2 {
+        font-size: 1.2rem !important;
+    }
+
+    /* ── Workspace: kanban lanes scroll horizontally ── */
+    .workspace-kanban {
+        grid-template-columns: unset !important;
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        scroll-snap-type: x mandatory !important;
+        -webkit-overflow-scrolling: touch !important;
+        gap: 12px !important;
+        padding-bottom: 12px !important;
+        /* Hide scrollbar but keep functionality */
+        scrollbar-width: none;
+    }
+
+    .workspace-kanban::-webkit-scrollbar {
+        display: none;
+    }
+
+    .workspace-kanban > * {
+        flex: 0 0 84vw !important;
+        scroll-snap-align: start !important;
+        max-width: 360px !important;
+    }
+
+    /* ── Details Drawers: full screen on mobile ── */
+    .details-drawer-backdrop {
+        align-items: flex-end !important; /* slide up from bottom on mobile */
+    }
+
+    .details-drawer {
+        max-width: 100% !important;
+        width: 100% !important;
+        height: 92dvh !important;
+        border-left: none !important;
+        border-top: 1px solid #E2E8F0 !important;
+        border-radius: 20px 20px 0 0 !important;
+    }
+
+    .details-drawer-header {
+        padding: 18px 16px 14px !important;
+    }
+
+    .details-drawer-body {
+        padding: 14px 16px !important;
+    }
+
+    .details-drawer-footer {
+        padding: 12px 16px !important;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    /* Summary grid inside drawer: 3-col → 2-col */
+    .drawer-summary-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+    }
+
+    /* ── CRM Customer cards ── */
+    .crm-customer-grid {
+        gap: 10px !important;
+    }
+
+    .crm-customer-card {
+        border-radius: 16px !important;
+        padding: 14px !important;
+    }
+
+    /* ── Task action buttons wrap cleanly ── */
+    .task-action-row {
+        justify-content: flex-start !important;
+    }
+
+    /* ── Receipt rows in Money page ── */
+    .receipt-row {
+        padding: 10px 12px !important;
+        border-radius: 10px !important;
+    }
+
+    .receipt-row p {
+        font-size: 0.78rem !important;
+    }
+
+    /* ── Overdue / attention cards ── */
+    .attention-card {
+        border-radius: 14px !important;
+        padding: 12px 14px !important;
+    }
+}

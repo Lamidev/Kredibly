@@ -273,3 +273,86 @@ exports.triggerWelcome = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+// ─── Task / Reminder Endpoints ────────────────────────────────────────────────
+exports.getReminders = async (req, res) => {
+    try {
+        const Reminder = require("../../models/Reminder");
+        const profile = await BusinessProfile.findOne({ ownerId: req.user._id });
+        if (!profile) return res.status(404).json({ success: false, message: "Profile not found" });
+
+        const reminders = await Reminder.find({ businessId: profile._id })
+            .sort({ createdAt: -1 })
+            .limit(100);
+
+        res.status(200).json({ success: true, data: reminders });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+exports.createReminder = async (req, res) => {
+    try {
+        const Reminder = require("../../models/Reminder");
+        const profile = await BusinessProfile.findOne({ ownerId: req.user._id });
+        if (!profile) return res.status(404).json({ success: false, message: "Profile not found" });
+
+        const { description, triggerDate, type = "task", recurrence = "none", priority = "normal" } = req.body;
+        if (!description) return res.status(400).json({ success: false, message: "Description is required" });
+
+        const reminder = await Reminder.create({
+            businessId: profile._id,
+            whatsappNumber: profile.whatsappNumber,
+            description,
+            type,
+            triggerDate: triggerDate ? new Date(triggerDate) : new Date(Date.now() + 60 * 60000), // Default to 1 hour
+            recurrence,
+            priority,
+            status: "pending"
+        });
+
+        res.status(201).json({ success: true, data: reminder });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+exports.updateReminder = async (req, res) => {
+    try {
+        const Reminder = require("../../models/Reminder");
+        const profile = await BusinessProfile.findOne({ ownerId: req.user._id });
+        if (!profile) return res.status(404).json({ success: false, message: "Profile not found" });
+
+        const { id } = req.params;
+        const { status, description, triggerDate, priority } = req.body;
+
+        const reminder = await Reminder.findOne({ _id: id, businessId: profile._id });
+        if (!reminder) return res.status(404).json({ success: false, message: "Reminder not found" });
+
+        if (status !== undefined) reminder.status = status;
+        if (description !== undefined) reminder.description = description;
+        if (triggerDate !== undefined) reminder.triggerDate = new Date(triggerDate);
+        if (priority !== undefined) reminder.priority = priority;
+
+        await reminder.save();
+        res.status(200).json({ success: true, data: reminder });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+exports.deleteReminder = async (req, res) => {
+    try {
+        const Reminder = require("../../models/Reminder");
+        const profile = await BusinessProfile.findOne({ ownerId: req.user._id });
+        if (!profile) return res.status(404).json({ success: false, message: "Profile not found" });
+
+        const { id } = req.params;
+        const reminder = await Reminder.findOneAndDelete({ _id: id, businessId: profile._id });
+        if (!reminder) return res.status(404).json({ success: false, message: "Reminder not found" });
+
+        res.status(200).json({ success: true, message: "Reminder deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

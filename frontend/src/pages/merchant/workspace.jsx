@@ -6,6 +6,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { KREDDY_CONFIG } from "../../config";
 
+// ─── Responsive hook ─────────────────────────────────────────────────────────
+const useIsMobile = () => {
+    const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 640px)").matches);
+    useEffect(() => {
+        const mq = window.matchMedia("(max-width: 640px)");
+        const handler = (e) => setIsMobile(e.matches);
+        mq.addEventListener("change", handler);
+        return () => mq.removeEventListener("change", handler);
+    }, []);
+    return isMobile;
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const fmt = (n) => `₦${Number(n || 0).toLocaleString()}`;
@@ -39,6 +51,7 @@ const getStatusLabel = (sale) => {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Workspace() {
+    const isMobile = useIsMobile();
     const { sales, fetchSales, deleteSale, loading } = useSales();
     const [search, setSearch] = useState("");
     const [selected, setSelected] = useState(null);
@@ -134,7 +147,7 @@ export default function Workspace() {
             </div>
 
             {/* Lanes */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "20px", alignItems: "flex-start" }}>
+            <div className="workspace-kanban">
                 {LANE_CONFIG.map(({ key, label, hint, icon: IconComponent }) => {
                     const items = lanes[key] || [];
                     return (
@@ -261,18 +274,29 @@ export default function Workspace() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setSelected(null)}
-                            style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.4)", backdropFilter: "blur(8px)", zIndex: 10000, display: "flex", justifyContent: "flex-end" }}
+                            className="details-drawer-backdrop"
+                            style={{
+                                alignItems: isMobile ? "flex-end" : "stretch",
+                            }}
                         >
                             <motion.div
-                                initial={{ x: "100%" }}
-                                animate={{ x: 0 }}
-                                exit={{ x: "100%" }}
-                                transition={{ type: "spring", damping: 26, stiffness: 220 }}
+                                key="workspace-drawer"
+                                initial={isMobile ? { y: "100%" } : { x: "100%" }}
+                                animate={isMobile ? { y: 0 } : { x: 0 }}
+                                exit={isMobile ? { y: "100%" } : { x: "100%" }}
+                                transition={{ type: "spring", damping: 28, stiffness: 240 }}
                                 onClick={(e) => e.stopPropagation()}
-                                style={{ width: "100%", maxWidth: "440px", height: "100%", background: "white", borderLeft: "1px solid #E2E8F0", display: "flex", flexDirection: "column", overflowY: "auto" }}
+                                className="details-drawer"
+                                style={{
+                                    height: isMobile ? "92dvh" : "100%",
+                                    overflowY: "auto",
+                                    borderRadius: isMobile ? "20px 20px 0 0" : 0,
+                                    borderLeft: isMobile ? "none" : "1px solid #E2E8F0",
+                                    borderTop: isMobile ? "1px solid #E2E8F0" : "none",
+                                }}
                             >
                                 {/* Drawer Header */}
-                                <div style={{ padding: "24px 24px 16px", borderBottom: "1px solid #F1F5F9" }}>
+                                <div className="details-drawer-header">
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                                         <div>
                                             <h4 style={{ margin: "0 0 2px", fontSize: "1.1rem", fontWeight: 900, color: "#0F172A" }}>
@@ -293,7 +317,7 @@ export default function Workspace() {
                                     </div>
 
                                     {/* Amount summary */}
-                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginTop: "16px" }}>
+                                    <div className="drawer-summary-grid">
                                         {[
                                             { label: "Total", value: fmt(selected.totalAmount), color: "#0F172A" },
                                             { label: "Paid", value: fmt((selected.payments || []).reduce((s, p) => s + p.amount, 0)), color: "#10B981" },
@@ -321,7 +345,7 @@ export default function Workspace() {
                                 </div>
 
                                 {/* Tab Content */}
-                                <div style={{ padding: "20px 24px", flex: 1, overflow: "auto" }}>
+                                <div className="details-drawer-body">
                                     {activeTab === "activity" ? (
                                         <div style={{ position: "relative", paddingLeft: "16px", borderLeft: "1px solid #E2E8F0", display: "flex", flexDirection: "column", gap: "18px" }}>
                                             {/* Created event always shows */}
@@ -371,7 +395,7 @@ export default function Workspace() {
 
                                 {/* CTA */}
                                 {selected.status !== "paid" && selected.lifecycleStatus !== "PAID" && (
-                                    <div style={{ padding: "16px 24px", borderTop: "1px solid #F1F5F9" }}>
+                                    <div className="details-drawer-footer">
                                         <button
                                             onClick={() => openTalkToKreddy(selected)}
                                             style={{
@@ -448,10 +472,27 @@ export default function Workspace() {
             )}
 
             <style>{`
-                .animate-fade-in { animation: fadeIn 0.3s ease-out; }
-                @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-                .skeleton { background: linear-gradient(90deg, #F1F5F9 25%, #F8FAFC 50%, #F1F5F9 75%); background-size: 200% 100%; animation: sk 1.5s infinite; }
-                @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+                .workspace-kanban { /* Kanban styles */ }
+                .details-drawer-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); zIndex: 1000; }
+                .details-drawer {
+                    width: 100%;
+                    max-width: 440px;
+                    height: 100%;
+                    background: white;
+                    border-left: 1px solid #E2E8F0;
+                    display: flex;
+                    flex-direction: column;
+                }
+                @media (max-width: 480px) {
+                    .details-drawer {
+                        max-width: 100% !important;
+                        height: 90% !important;
+                        margin-top: auto;
+                        border-top-left-radius: 20px;
+                        border-top-right-radius: 20px;
+                    }
+                    .details-drawer-backdrop { align-items: flex-end; }
+                }
             `}</style>
         </div>
     );

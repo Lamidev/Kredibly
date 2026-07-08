@@ -93,4 +93,20 @@ const ReminderSchema = new mongoose.Schema({
 // High-speed lookup for the per-minute Reminders Worker
 ReminderSchema.index({ status: 1, triggerDate: 1 });
 
+// 🔌 Real-time sync: Notify dashboard on any reminder updates (Mark Done, Snooze, etc.)
+ReminderSchema.post("save", function(doc) {
+    try {
+        const { getIO } = require("../utils/socket");
+        const io = getIO();
+        if (io && doc.businessId) {
+            io.to(doc.businessId.toString().toLowerCase()).emit("task_updated", {
+                action: "save",
+                data: doc
+            });
+        }
+    } catch (err) {
+        console.error("Error in Reminder post-save socket sync:", err);
+    }
+});
+
 module.exports = mongoose.model("Reminder", ReminderSchema);
