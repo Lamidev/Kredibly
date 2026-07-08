@@ -442,33 +442,39 @@ export default function Workspace() {
                                 </div>
 
                                 {/* CTA */}
-                                {selected.status !== "paid" && selected.lifecycleStatus !== "PAID" && (
-                                    <div className="details-drawer-footer">
-                                        <button
-                                            onClick={() => openTalkToKreddy(selected)}
-                                            style={{
-                                                width: "100%",
-                                                background: "#4C1D95",
-                                                color: "white",
-                                                border: "none",
-                                                borderRadius: "14px",
-                                                padding: "13px",
-                                                fontWeight: 800,
-                                                fontSize: "0.88rem",
-                                                cursor: "pointer",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                gap: "8px",
-                                                transition: "background 0.2s ease"
-                                            }}
-                                            onMouseEnter={e => e.currentTarget.style.background = "#3B1670"}
-                                            onMouseLeave={e => e.currentTarget.style.background = "#4C1D95"}
-                                        >
-                                            <MessageCircle size={17} /> Send Reminder via Kreddy
-                                        </button>
-                                    </div>
-                                )}
+                                {(() => {
+                                    const paid = (selected.payments || []).reduce((s, p) => s + p.amount, 0);
+                                    const bal = selected.totalAmount - paid;
+                                    const isCleared = bal <= 0 || selected.status === "paid" || selected.lifecycleStatus === "PAID";
+                                    if (isCleared) return null;
+                                    return (
+                                        <div className="details-drawer-footer">
+                                            <button
+                                                onClick={() => openTalkToKreddy(selected)}
+                                                style={{
+                                                    width: "100%",
+                                                    background: "#4C1D95",
+                                                    color: "white",
+                                                    border: "none",
+                                                    borderRadius: "14px",
+                                                    padding: "13px",
+                                                    fontWeight: 800,
+                                                    fontSize: "0.88rem",
+                                                    cursor: "pointer",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    gap: "8px",
+                                                    transition: "background 0.2s ease"
+                                                }}
+                                                onMouseEnter={e => e.currentTarget.style.background = "#3B1670"}
+                                                onMouseLeave={e => e.currentTarget.style.background = "#4C1D95"}
+                                            >
+                                                <MessageCircle size={17} /> Send Reminder via Kreddy
+                                            </button>
+                                        </div>
+                                    );
+                                })()}
                             </motion.div>
                         </motion.div>
                     )}

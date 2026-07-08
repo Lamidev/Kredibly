@@ -1026,23 +1026,24 @@ const handleIncoming = async (req, res) => {
         let isForCustomerFlow = false;
         if (msgType === "interactive") {
             const buttonId = message?.interactive?.button_reply?.id || "";
-            if (buttonId.startsWith("pay_now:") || buttonId.startsWith("req_ext:") || 
+            if (buttonId.startsWith("pay_now:") || buttonId.startsWith("pay_full:") || buttonId.startsWith("pay_part:") || buttonId.startsWith("req_ext:") || 
                 buttonId.startsWith("ext_3days:") || buttonId.startsWith("ext_1week:") || buttonId.startsWith("ext_custom:")) {
                 isForCustomerFlow = true;
             }
         } else if (msgType === "button") {
             const btnPayload = message?.button?.payload || "";
             const btnText = (message?.button?.text || "").toLowerCase().trim();
-            if (btnPayload.startsWith("pay_now:") || btnPayload.startsWith("req_ext:") ||
-                btnText === "request extension" || btnText === "pay with transfer" || btnText === "pay now") {
+            if (btnPayload.startsWith("pay_now:") || btnPayload.startsWith("pay_full:") || btnPayload.startsWith("pay_part:") || btnPayload.startsWith("req_ext:") ||
+                btnText === "request extension" || btnText === "pay with transfer" || btnText === "pay now" || btnText === "full payment" || btnText === "partial payment") {
                 isForCustomerFlow = true;
             }
         } else {
-            // Check if they are in the middle of a customer extension request session
+            // Check if they are in the middle of a customer extension request or payment session
             const tempSession = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom });
             if (tempSession && (tempSession.type === 'customer_extension_duration' || 
                                 tempSession.type === 'customer_extension_custom_date' || 
-                                tempSession.type === 'customer_extension_reason')) {
+                                tempSession.type === 'customer_extension_reason' ||
+                                tempSession.type === 'collect_partial_payment_amount')) {
                 isForCustomerFlow = true;
             }
         }

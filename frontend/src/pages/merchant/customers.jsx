@@ -644,36 +644,42 @@ export default function Customers() {
                                 </div>
 
                                 {/* CTA */}
-                                {selectedInvoice.status !== "paid" && selectedInvoice.lifecycleStatus !== "PAID" && (
-                                    <div className="details-drawer-footer">
-                                        <button
-                                            onClick={() => {
-                                                const msg = `Send reminder to ${selectedInvoice.customerName || selectedCustomer.name} for invoice ${selectedInvoice.invoiceNumber}`;
-                                                window.open(KREDDY_CONFIG.getLink(msg), "_blank", "noopener,noreferrer");
-                                            }}
-                                            style={{
-                                                width: "100%",
-                                                background: "var(--primary)",
-                                                color: "white",
-                                                border: "none",
-                                                borderRadius: "14px",
-                                                padding: "13px",
-                                                fontWeight: 800,
-                                                fontSize: "0.88rem",
-                                                cursor: "pointer",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                gap: "8px",
-                                                transition: "background 0.2s ease"
-                                            }}
-                                            onMouseEnter={e => e.currentTarget.style.background = "#3B1670"}
-                                            onMouseLeave={e => e.currentTarget.style.background = "var(--primary)"}
-                                        >
-                                            <MessageCircle size={17} /> Send Reminder via Kreddy
-                                        </button>
-                                    </div>
-                                )}
+                                {(() => {
+                                    const paid = (selectedInvoice.payments || []).reduce((s, p) => s + p.amount, 0);
+                                    const bal = selectedInvoice.totalAmount - paid;
+                                    const isCleared = bal <= 0 || selectedInvoice.status === "paid" || selectedInvoice.lifecycleStatus === "PAID";
+                                    if (isCleared) return null;
+                                    return (
+                                        <div className="details-drawer-footer">
+                                            <button
+                                                onClick={() => {
+                                                    const msg = `Send reminder to ${selectedInvoice.customerName || selectedCustomer.name} for invoice ${selectedInvoice.invoiceNumber}`;
+                                                    window.open(KREDDY_CONFIG.getLink(msg), "_blank", "noopener,noreferrer");
+                                                }}
+                                                style={{
+                                                    width: "100%",
+                                                    background: "var(--primary)",
+                                                    color: "white",
+                                                    border: "none",
+                                                    borderRadius: "14px",
+                                                    padding: "13px",
+                                                    fontWeight: 800,
+                                                    fontSize: "0.88rem",
+                                                    cursor: "pointer",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    gap: "8px",
+                                                    transition: "background 0.2s ease"
+                                                }}
+                                                onMouseEnter={e => e.currentTarget.style.background = "#3B1670"}
+                                                onMouseLeave={e => e.currentTarget.style.background = "var(--primary)"}
+                                            >
+                                                <MessageCircle size={17} /> Send Reminder via Kreddy
+                                            </button>
+                                        </div>
+                                    );
+                                })()}
                             </motion.div>
                         </motion.div>
                     )}
