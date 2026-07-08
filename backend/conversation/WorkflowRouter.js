@@ -6,7 +6,7 @@
  */
 
 const WorkflowRegistry = require("./WorkflowRegistry");
-const MessageDispatcher = require("./MessageDispatcher");
+const ResponseBuilder = require("./ResponseBuilder");
 
 class WorkflowRouter {
     /**
@@ -38,7 +38,7 @@ class WorkflowRouter {
                 await workflowContext.save();
                 
                 const cancelMsg = manifest.cancel.message || "Workflow cancelled.";
-                await MessageDispatcher.send(opts.from, cancelMsg);
+                await ResponseBuilder.sendText(opts.from, cancelMsg);
                 return true;
             } else if (manifest.cancel.behaviour === "confirm") {
                 // Set step to await cancel confirmation
@@ -46,7 +46,7 @@ class WorkflowRouter {
                 workflowContext.step = "awaiting_cancel_confirm";
                 await workflowContext.save();
 
-                await MessageDispatcher.send(opts.from, "Are you sure you want to cancel? Reply 'yes' to cancel or 'no' to keep going.");
+                await ResponseBuilder.sendText(opts.from, "Are you sure you want to cancel? Reply 'yes' to cancel or 'no' to keep going.");
                 return true;
             }
         }
@@ -58,7 +58,7 @@ class WorkflowRouter {
                 await workflowContext.cancelWorkflow("merchant_cancelled");
                 await workflowContext.save();
                 const cancelMsg = manifest.cancel.message || "Workflow cancelled.";
-                await MessageDispatcher.send(opts.from, cancelMsg);
+                await ResponseBuilder.sendText(opts.from, cancelMsg);
                 return true;
             } else {
                 // Resume previous step
@@ -67,7 +67,7 @@ class WorkflowRouter {
                 delete workflowContext.data._prevStep;
                 workflowContext.markModified("data");
                 await workflowContext.save();
-                await MessageDispatcher.send(opts.from, "Continuing where we left off!");
+                await ResponseBuilder.sendText(opts.from, "Continuing where we left off!");
                 return true;
             }
         }
@@ -84,7 +84,7 @@ class WorkflowRouter {
             const validation = WorkflowValidator.validate(text, buttonId, stepConfig);
             if (!validation.isValid) {
                 const feedback = stepConfig.validation?.errorMessage || validation.feedback || "Invalid input. Please try again.";
-                await MessageDispatcher.send(opts.from, feedback);
+                await ResponseBuilder.sendText(opts.from, feedback);
                 return true; // Intercepted and handled
             }
         }
@@ -98,7 +98,7 @@ class WorkflowRouter {
             // On crash, tell merchant, cancel workflow, fallback to free conversation
             await workflowContext.cancelWorkflow("handler_crash");
             await workflowContext.save();
-            await MessageDispatcher.send(opts.from, "Oops! Something went wrong in my brain while processing that request. I've cancelled this flow so you can try again.");
+            await ResponseBuilder.sendText(opts.from, "Oops! Something went wrong in my brain while processing that request. I've cancelled this flow so you can try again.");
             return true;
         }
     }

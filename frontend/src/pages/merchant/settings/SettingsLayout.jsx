@@ -1,11 +1,19 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
-import { SettingsProvider } from '../../../context/SettingsContext';
+import { Outlet, NavLink } from 'react-router-dom';
+import { SettingsProvider, useSettings } from '../../../context/SettingsContext';
 import CheckoutModal from '../../../components/payment/CheckoutModal';
 import PasswordConfirmModal from '../../../components/payment/PasswordConfirmModal';
-import { useSettings } from '../../../context/SettingsContext';
 import { toast } from 'sonner';
 import axios from 'axios';
+import {
+    User as UserIcon,
+    Bell,
+    MessageCircle,
+    CreditCard,
+    Shield,
+    Building2,
+    Zap
+} from 'lucide-react';
 
 /**
  * Inner wrapper that can access the SettingsContext
@@ -57,7 +65,7 @@ const SettingsModals = () => {
 const SettingsLayout = () => {
     return (
         <SettingsProvider>
-            <div className="animate-fade-in" style={{ maxWidth: '860px' }}>
+            <div className="animate-fade-in" style={{ maxWidth: '860px', paddingBottom: '60px' }}>
                 <Outlet />
             </div>
             <SettingsModals />

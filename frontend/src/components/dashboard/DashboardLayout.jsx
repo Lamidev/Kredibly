@@ -16,6 +16,7 @@ import {
     LogOut,
     User as UserIcon,
     MessagesSquare,
+    MessageCircle,
     RefreshCcw,
     AlertTriangle,
     ArrowRight,
@@ -24,7 +25,10 @@ import {
     Bot,
     Zap,
     UserCheck,
-    Activity
+    Activity,
+    CheckCircle,
+    Wallet,
+    Wifi
 } from 'lucide-react';
 import { KREDDY_CONFIG } from '../../config';
 import { useSales } from '../../context/SaleContext';
@@ -136,6 +140,63 @@ const DashboardLayout = () => {
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [showLimitModal, setShowLimitModal] = useState(false);
 
+    // V3 OS Cockpit States
+    const [commandText, setCommandText] = useState("");
+    const [showQuickCapture, setShowQuickCapture] = useState(false);
+    const [placeholderIndex, setPlaceholderIndex] = useState(0);
+    const [kreddyLastSynced, setKreddyLastSynced] = useState(new Date());
+
+    const PLACEHOLDERS = [
+        "Create invoice...",
+        "Who still owes me?",
+        "Show today's collections",
+        "Add fuel expense",
+        "Find Rebecca",
+        "Call David tomorrow..."
+    ];
+
+    // Context-aware prefill messages per page
+    const KREDDY_CONTEXT_MESSAGES = {
+        '/dashboard':  'Give me today\'s business summary.',
+        '/customers':  'Show me customers that haven\'t paid this week.',
+        '/workspace':  'Help me finish today\'s work.',
+        '/tasks':      'What tasks need my attention today?',
+        '/money':      'Show me this week\'s cashflow.',
+        '/kreddy':     'Give me a morning brief for today.',
+    };
+
+    const talkToKreddy = (customText) => {
+        const contextMsg = customText ||
+            KREDDY_CONTEXT_MESSAGES[location.pathname] ||
+            'Hi Kreddy';
+        const url = KREDDY_CONFIG.getLink(contextMsg);
+        window.open(url, '_blank', 'noopener,noreferrer');
+        setKreddyLastSynced(new Date());
+    };
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setPlaceholderIndex(prev => (prev + 1) % PLACEHOLDERS.length);
+        }, 4000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Update last-synced display every 30s
+    useEffect(() => {
+        const tick = setInterval(() => setKreddyLastSynced(prev => prev), 30000);
+        return () => clearInterval(tick);
+    }, []);
+
+    const commandPlaceholder = `Ask or tell Kreddy: "${PLACEHOLDERS[placeholderIndex]}"`;
+
+    const handleCommandSubmit = (e) => {
+        if (e.key === 'Enter' && commandText.trim()) {
+            // Hand off the typed command directly to Kreddy via WhatsApp
+            talkToKreddy(commandText.trim());
+            setCommandText("");
+        }
+    };
+
     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
     useEffect(() => {
@@ -209,26 +270,15 @@ const DashboardLayout = () => {
     const kycVerified = profile?.kyc?.verified === true;
 
     const navItems = [
-        { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, end: true },
-        { label: 'Ledger (Sales)', path: '/sales', icon: FileText, activeIfMatch: ['/sales'] },
-        { label: 'Money Outside', path: '/debtors', icon: Users, activeIfMatch: ['/debtors'] },
-        { 
-            label: 'Reports', 
-            path: profile?.plan === 'hustler' && profile?.planStatus !== 'trialing' ? '#' : '/reports', 
-            icon: BarChart3,
-            onClick: (e) => {
-                if (profile?.plan === 'hustler' && profile?.planStatus !== 'trialing') {
-                    e.preventDefault();
-                    setShowLimitModal(true);
-                }
-            }
-        },
+        { label: 'Mission Control', path: '/dashboard', icon: LayoutDashboard, end: true },
+        { label: 'Customers', path: '/customers', icon: Users, activeIfMatch: ['/customers'] },
+        { label: 'Workspace', path: '/workspace', icon: FileText, activeIfMatch: ['/workspace'] },
+        { label: 'Money', path: '/money', icon: Wallet, activeIfMatch: ['/money'] },
+        { label: 'Tasks', path: '/tasks', icon: CheckCircle, activeIfMatch: ['/tasks'] },
+        { label: 'Kreddy', path: '/kreddy', icon: Bot, activeIfMatch: ['/kreddy'] },
         { label: 'Payouts', path: '/settings/payouts', icon: CreditCard, activeIfMatch: ['/settings/payouts'] },
-        { label: 'Verification', path: '/settings/verification', icon: Shield, activeIfMatch: ['/settings/verification'], badge: !kycVerified ? 'unverified' : null },
-        { label: 'Staff', path: '/settings/staff', icon: UserCheck, activeIfMatch: ['/settings/staff'] },
-        { label: 'Kreddy AI', path: '/settings/kreddy', icon: Bot, activeIfMatch: ['/settings/kreddy'] },
-        { label: 'Notifications', path: '/settings/notifications', icon: Bell, activeIfMatch: ['/settings/notifications'] },
-        { label: 'Plan', path: '/settings/plan', icon: Zap, activeIfMatch: ['/settings/plan'] },
+        { label: 'Verification', path: '/settings/verification', icon: Shield, activeIfMatch: ['/settings/verification'] },
+        { label: 'Plan', path: '/settings/plan', icon: Zap, activeIfMatch: ['/settings/plan'] }
     ];
 
     return (
@@ -272,23 +322,6 @@ const DashboardLayout = () => {
                         className="lg:hidden"
                     >
                         <X size={18} strokeWidth={3} />
-                    </button>
-                </div>
-
-                <div style={{ padding: '0 24px 20px' }}>
-                    <button 
-                        onClick={() => {
-                            if (profile?.plan === 'hustler' && (stats?.monthlySalesCount || 0) >= 10) {
-                                setShowLimitModal(true);
-                            } else {
-                                navigate('/sales/new');
-                                setIsSidebarOpen(false);
-                            }
-                        }}
-                        className="btn-primary"
-                        style={{ width: '100%', padding: '14px', borderRadius: '14px', fontSize: '0.9rem' }}
-                    >
-                        <Plus size={20} strokeWidth={3} /> New Invoice
                     </button>
                 </div>
 
@@ -357,63 +390,11 @@ const DashboardLayout = () => {
                 </nav>
 
                 <div className="sidebar-footer" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {/* Plan Badge — clickable, navigates to plan settings */}
-                    <div
-                        onClick={() => navigate('/settings/plan')}
-                        style={{
-                            padding: '12px 16px',
-                            borderRadius: '14px',
-                            background: profile?.planStatus === 'inactive' ? '#F1F5F9' :
-                                        profile?.planStatus === 'past_due' ? '#FEF2F2' :
-                                        profile?.plan === 'chairman' ? 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)' :
-                                        profile?.plan === 'oga' ? 'linear-gradient(135deg, var(--primary) 0%, #7C3AED 100%)' :
-                                        '#F8FAFC',
-                            color: profile?.planStatus === 'inactive' ? '#64748B' :
-                                   profile?.planStatus === 'past_due' ? '#EF4444' :
-                                   profile?.plan === 'hustler' ? '#64748B' : 'white',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            cursor: 'pointer',
-                            border: profile?.planStatus === 'inactive' ? '1px solid #E2E8F0' :
-                                    profile?.planStatus === 'past_due' ? '1px solid rgba(239,68,68,0.2)' :
-                                    '1px solid rgba(255,255,255,0.1)',
-                            transition: 'opacity 0.2s',
-                            marginBottom: '4px'
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-                        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-                    >
-                        <div style={{
-                            width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
-                            background: profile?.planStatus === 'past_due' ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.2)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                            {profile?.planStatus === 'past_due' ? <AlertTriangle size={16} /> :
-                             profile?.plan === 'chairman' ? <Shield size={16} /> :
-                             profile?.plan === 'oga' ? <Zap size={16} fill="white" /> :
-                             <Activity size={16} />}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', opacity: 0.75, letterSpacing: '0.06em', margin: 0, lineHeight: 1 }}>
-                                {profile?.planStatus === 'trialing' ? 'Active Trial' :
-                                 profile?.planStatus === 'past_due' ? 'Plan Expired' :
-                                 profile?.planStatus === 'inactive' ? 'Hustler Mode' : 'Account Status'}
-                            </p>
-                            <p style={{ fontSize: '0.9rem', fontWeight: 900, letterSpacing: '0.02em', margin: '3px 0 0', lineHeight: 1 }}>
-                                {profile?.plan?.toUpperCase() || 'HUSTLER'}
-                                {profile?.isFoundingMember && <span style={{ marginLeft: '6px', fontSize: '0.65rem', color: '#4ADE80' }}>★</span>}
-                            </p>
-                        </div>
-                    </div>
                     <NavLink
-                        to="/settings/identity"
+                        to="/settings"
                         className={() => {
-                            const isOnSettings = location.pathname.startsWith('/settings');
-                            return `nav-item-premium footer-item ${isOnSettings && ![
-                                '/settings/payouts','/settings/verification','/settings/staff',
-                                '/settings/kreddy','/settings/notifications','/settings/plan'
-                            ].some(p => location.pathname.startsWith(p)) ? 'active' : ''}`;
+                            const isOnSettings = location.pathname === '/settings';
+                            return `nav-item-premium footer-item ${isOnSettings ? 'active' : ''}`;
                         }}
                         onClick={() => setIsSidebarOpen(false)}
                     >
@@ -430,7 +411,7 @@ const DashboardLayout = () => {
 
             {/* Main Content Area */}
             <main className="main-content-layout">
-                <header className="top-header">
+                <header className="top-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <button
                             onClick={() => setIsSidebarOpen(true)}
@@ -440,6 +421,8 @@ const DashboardLayout = () => {
                             <Menu size={24} />
                         </button>
                     </div>
+
+
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         {/* Mobile Logo */}
@@ -627,6 +610,65 @@ const DashboardLayout = () => {
                 </div>,
                 document.body
             )}
+
+            {/* ➕ Floating Quick Capture Menu */}
+            <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000 }}>
+                {showQuickCapture && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                        style={{
+                            position: 'absolute',
+                            bottom: '64px',
+                            right: 0,
+                            background: 'white',
+                            border: '1px solid #E2E8F0',
+                            borderRadius: '20px',
+                            padding: '8px',
+                            width: '180px',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '4px'
+                        }}
+                    >
+                        <button onClick={() => { setShowQuickCapture(false); talkToKreddy(); }} style={{ background: 'none', border: 'none', padding: '10px 14px', borderRadius: '12px', textAlign: 'left', fontWeight: 700, fontSize: '0.85rem', color: '#1E293B', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <MessageCircle size={16} color="#10B981" /> Talk to Kreddy
+                        </button>
+                        <button onClick={() => { setShowQuickCapture(false); navigate('/workspace'); }} style={{ background: 'none', border: 'none', padding: '10px 14px', borderRadius: '12px', textAlign: 'left', fontWeight: 700, fontSize: '0.85rem', color: '#1E293B', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Plus size={16} /> Record Sale
+                        </button>
+                        <button onClick={() => { setShowQuickCapture(false); navigate('/money'); }} style={{ background: 'none', border: 'none', padding: '10px 14px', borderRadius: '12px', textAlign: 'left', fontWeight: 700, fontSize: '0.85rem', color: '#1E293B', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <CreditCard size={16} /> Expense
+                        </button>
+                        <button onClick={() => { setShowQuickCapture(false); navigate('/tasks'); }} style={{ background: 'none', border: 'none', padding: '10px 14px', borderRadius: '12px', textAlign: 'left', fontWeight: 700, fontSize: '0.85rem', color: '#1E293B', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <CheckCircle size={16} /> Task
+                        </button>
+                    </motion.div>
+                )}
+                <button
+                    onClick={() => setShowQuickCapture(!showQuickCapture)}
+                    style={{
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, var(--primary) 0%, #7C3AED 100%)',
+                        color: 'white',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        boxShadow: '0 8px 24px rgba(124,58,237,0.3)',
+                        transition: 'transform 0.2s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                    <Plus size={24} strokeWidth={3} style={{ transform: showQuickCapture ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s' }} />
+                </button>
+            </div>
 
             <PlanLimitModal 
                 isOpen={showLimitModal}
