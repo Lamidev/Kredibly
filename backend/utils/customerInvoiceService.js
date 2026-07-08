@@ -19,6 +19,7 @@ const Reminder = require("../models/Reminder");
 const Notification = require("../models/Notification");
 const WhatsAppSession = require("../models/WhatsAppSession");
 const PaymentSession = require("../models/PaymentSession");
+const VirtualAccount = require("../models/VirtualAccount");
 const { generatePaymentConfirmationCard } = require("./receiptGenerator");
 const { generateAndUploadInvoicePDF } = require("./pdfGenerator");
 const { logActivity } = require("./activityLogger");
@@ -834,6 +835,22 @@ const handleCustomerPayFull = async (saleId, customerPhone) => {
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
         });
 
+        // Persist VirtualAccount (so the webhook processor finds it)
+        await VirtualAccount.create({
+            businessId: sale.businessId?._id || sale.businessId,
+            saleId,
+            invoiceNumber: sale.invoiceNumber,
+            accountNumber: dva.accountNumber,
+            bankName: dva.bankName,
+            provider: 'nomba',
+            reference: dva.reference,
+            accountName: dva.accountName,
+            amount: dvaAmount,
+            baseAmount: bal,
+            status: 'active',
+            expiresAt: new Date(dva.expiresAt)
+        });
+
         // V2: Structured payment card
         const expiryTime = new Date(dva.expiresAt);
         const expiryStr = expiryTime.toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit", hour12: true });
@@ -1490,6 +1507,22 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
                     nombaAccountName: dva.accountName,
                     nombaExpiresAt: new Date(dva.expiresAt),
                     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+                });
+
+                // Persist VirtualAccount (so the webhook processor finds it)
+                await VirtualAccount.create({
+                    businessId: partSale.businessId?._id || partSale.businessId,
+                    saleId,
+                    invoiceNumber: partSale.invoiceNumber,
+                    accountNumber: dva.accountNumber,
+                    bankName: dva.bankName,
+                    provider: 'nomba',
+                    reference: dva.reference,
+                    accountName: dva.accountName,
+                    amount: dvaAmount,
+                    baseAmount: parsedAmount,
+                    status: 'active',
+                    expiresAt: new Date(dva.expiresAt)
                 });
 
                 // V2: Structured payment card for partial payment

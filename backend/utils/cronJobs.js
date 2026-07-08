@@ -658,13 +658,57 @@ const scheduleUpcomingNudges = () => {
 const schedulePaymentSessionExpiry = () => {
     cron.schedule("*/30 * * * *", async () => {
         try {
-            const result = await PaymentSession.updateMany(
-                { status: "pending", expiresAt: { $lte: new Date() } },
-                { $set: { status: "expired" } }
-            );
-            if (result.modifiedCount > 0) {
-                console.log(`⏰ [PaymentSession] Expired ${result.modifiedCount} stale session(s).`);
+            const expiredSessions = await PaymentSession.find({
+                status: "pending",
+                expiresAt: { $lte: new Date() }
+            }).populate("saleId");
+
+            if (expiredSessions.length === 0) return;
+
+            const { sendWhatsAppMessage } = require("../controllers/whatsapp/whatsappController");
+            const VirtualAccount = require("../models/VirtualAccount");
+
+            for (const session of expiredSessions) {
+                // 1. Mark session as expired
+                session.status = "expired";
+                await session.save();
+
+                // 2. Mark matching VirtualAccount as expired
+                if (session.nombaReference) {
+                    await VirtualAccount.findOneAndUpdate(
+                        { reference: session.nombaReference, status: "active" },
+                        { $set: { status: "expired" } }
+                    );
+                }
+
+                // 3. Notify the customer
+                const customerPhone = session.customerPhone;
+                if (customerPhone) {
+                    const sale = session.saleId;
+                    const customerName = sale?.customerName || "Customer";
+                    const invoiceNumber = sale?.invoiceNumber || "your invoice";
+                    const alertMsg = [
+                        `⚠️ *Payment Account Expired*`,
+                        ``,
+                        `Hello, the virtual bank account generated for Invoice *#${invoiceNumber}* has expired.`,
+                        ``,
+                        `*To pay this invoice now:*`,
+                        `1️⃣ Scroll up to the original invoice message in this chat.`,
+                        `2️⃣ Tap the *[Pay with Transfer]* button (or simply reply *"pay"* to this message).`,
+                        `3️⃣ Kreddy will instantly generate a new virtual bank account for you.`,
+                        ``,
+                        `*Need more time?*`,
+                        `You can tap the *[Request Extension]* button on the original message to ask the merchant for a new due date.`
+                    ].join('\n');
+                    
+                    const { sendCustomerMessageWithFallback } = require("./customerInvoiceService");
+                    await sendCustomerMessageWithFallback(customerPhone, alertMsg, customerName, invoiceNumber).catch(err => {
+                        console.error(`⚠️ Failed to send DVA expiry alert to ${customerPhone}:`, err.message);
+                    });
+                }
             }
+
+            console.log(`⏰ [PaymentSession] Expired and notified ${expiredSessions.length} stale session(s).`);
         } catch (err) {
             console.error("Cron Error (PaymentSession Expiry):", err.message);
         }
