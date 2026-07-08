@@ -98,15 +98,14 @@ export default function Tasks() {
     };
 
     const handleToggle = async (id, currentStatus) => {
-        const nextStatus = currentStatus === "delivered" ? "pending" : "delivered";
         try {
-            const res = await axios.put(`${API_URL}/business/reminders/${id}`, { status: nextStatus }, { withCredentials: true });
+            const res = await axios.delete(`${API_URL}/business/reminders/${id}`, { withCredentials: true });
             if (res.data.success) {
-                setDbReminders(prev => prev.map(r => r._id === id ? res.data.data : r));
-                toast.success(nextStatus === "delivered" ? "Task marked done! 🎉" : "Task marked pending.");
+                setDbReminders(prev => prev.filter(r => r._id !== id));
+                toast.success("Task completed! 🎉");
             }
         } catch (err) {
-            toast.error("Failed to update task");
+            toast.error("Failed to complete task");
         }
     };
 
@@ -129,14 +128,6 @@ export default function Tasks() {
             return false;
         }
         return true;
-    });
-    
-    const done = dbReminders.filter(t => {
-        if (t.status === "delivered") return true;
-        if (t.triggerDate && new Date(t.triggerDate) < new Date(Date.now() - 24 * 60 * 60 * 1000)) {
-            return true;
-        }
-        return false;
     });
 
     return (
@@ -230,23 +221,13 @@ export default function Tasks() {
                         Personal reminders and follow-ups synced with Kreddy on WhatsApp.
                     </p>
 
-                    {dbReminders.length === 0 ? (
+                    {pending.length === 0 ? (
                         <p style={{ textAlign: "center", fontSize: "0.8rem", color: "#CBD5E1", padding: "28px 0", fontWeight: 600 }}>
                             Add your first task above ↑
                         </p>
                     ) : (
                         <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>
-                            {/* Pending first */}
                             {pending.map((task) => (
-                                <TaskRow key={task._id} task={task} onToggle={handleToggle} onDelete={handleDelete} />
-                            ))}
-                            {/* Divider if both exist */}
-                            {pending.length > 0 && done.length > 0 && (
-                                <div style={{ fontSize: "0.7rem", color: "#CBD5E1", fontWeight: 700, textAlign: "center", padding: "4px 0" }}>
-                                    — Completed —
-                                </div>
-                            )}
-                            {done.map((task) => (
                                 <TaskRow key={task._id} task={task} onToggle={handleToggle} onDelete={handleDelete} />
                             ))}
                         </div>

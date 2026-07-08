@@ -300,16 +300,55 @@ exports.createReminder = async (req, res) => {
         const { description, triggerDate, type = "task", recurrence = "none", priority = "normal" } = req.body;
         if (!description) return res.status(400).json({ success: false, message: "Description is required" });
 
+        // 1. Natural Language Date/Time Extraction via chrono-node
+        const chrono = require("chrono-node");
+        let resolvedTriggerDate = triggerDate ? new Date(triggerDate) : null;
+        let finalDescription = description;
+
+        // Parse date from description
+        const parsedDate = chrono.parseDate(description, new Date(), { forwardDate: true });
+        if (parsedDate) {
+            resolvedTriggerDate = parsedDate;
+            
+            // Clean up the date text from the description
+            const parsedResults = chrono.parse(description, new Date(), { forwardDate: true });
+            if (parsedResults && parsedResults.length > 0) {
+                const dateText = parsedResults[0].text;
+                finalDescription = description.replace(dateText, "").replace(/\s+/g, " ").trim();
+                if (!finalDescription) {
+                    finalDescription = description;
+                }
+            }
+        }
+
+        if (!resolvedTriggerDate) {
+            resolvedTriggerDate = new Date(Date.now() + 60 * 60000); // Default to 1 hour
+        }
+
         const reminder = await Reminder.create({
             businessId: profile._id,
             whatsappNumber: profile.whatsappNumber,
-            description,
+            description: finalDescription,
             type,
-            triggerDate: triggerDate ? new Date(triggerDate) : new Date(Date.now() + 60 * 60000), // Default to 1 hour
+            triggerDate: resolvedTriggerDate,
             recurrence,
             priority,
             status: "pending"
         });
+
+        // 2. WhatsApp Notification to the Merchant
+        if (profile.whatsappNumber) {
+            try {
+                const MessageDispatcher = require("../../conversation/MessageDispatcher");
+                const bossTitle = profile.assistantSettings?.preferredName || "Boss";
+                const FriendlyDate = resolvedTriggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                const successMsg = `🚀 *Task Added from Dashboard!*\n\nI've scheduled a reminder for *"${finalDescription}"* at exactly *${FriendlyDate}*.`;
+                
+                await MessageDispatcher.send(profile.whatsappNumber, successMsg);
+            } catch (wErr) {
+                console.error("🚨 Error sending dashboard-to-WhatsApp task creation notification:", wErr.message);
+            }
+        }
 
         res.status(201).json({ success: true, data: reminder });
     } catch (error) {
@@ -325,6 +364,13 @@ exports.updateReminder = async (req, res) => {
 
         const { id } = req.params;
         const { status, description, triggerDate, priority } = req.body;
+
+        if (status === "delivered") {
+            // Delete reminder completely if status is set to delivered (marked done)
+            const reminder = await Reminder.findOneAndDelete({ _id: id, businessId: profile._id });
+            if (!reminder) return res.status(404).json({ success: false, message: "Reminder not found" });
+            return res.status(200).json({ success: true, message: "Reminder completed and removed successfully" });
+        }
 
         const reminder = await Reminder.findOne({ _id: id, businessId: profile._id });
         if (!reminder) return res.status(404).json({ success: false, message: "Reminder not found" });

@@ -109,4 +109,22 @@ ReminderSchema.post("save", function(doc) {
     }
 });
 
+// 🔌 Real-time sync: Notify dashboard when a reminder is deleted or completed
+ReminderSchema.post("findOneAndDelete", function(doc) {
+    if (doc) {
+        try {
+            const { getIO } = require("../utils/socket");
+            const io = getIO();
+            if (io && doc.businessId) {
+                io.to(doc.businessId.toString().toLowerCase()).emit("task_updated", {
+                    action: "delete",
+                    data: doc
+                });
+            }
+        } catch (err) {
+            console.error("Error in Reminder post-delete socket sync:", err);
+        }
+    }
+});
+
 module.exports = mongoose.model("Reminder", ReminderSchema);

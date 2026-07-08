@@ -370,48 +370,23 @@ const sendInvoiceTemplateToCustomer = async (to, sale, business, pdfUrl) => {
     const canRequestExt = (sale.extensionsCount || 0) < 2
         && sale.lifecycleStatus !== "EXTENSION_REQUESTED";
 
-    if (useV2Template) {
-        // V2 template: both buttons are Quick Replies — customer stays in WhatsApp
-        // Button 0: Pay with Transfer (static payload "pay_now")
+    // V2 template: both buttons are Quick Replies — customer stays in WhatsApp
+    // Button 0: Pay with Transfer (static payload "pay_now")
+    components.push({
+        type: "button",
+        sub_type: "quick_reply",
+        index: "0",
+        parameters: [{ type: "payload", payload: "pay_now" }]
+    });
+
+    // Button 1: Request Extension (static payload "req_ext") — only if eligible
+    if (canRequestExt) {
         components.push({
             type: "button",
             sub_type: "quick_reply",
-            index: "0",
-            parameters: [{ type: "payload", payload: "pay_now" }]
+            index: "1",
+            parameters: [{ type: "payload", payload: "req_ext" }]
         });
-
-        // Button 1: Request Extension (static payload "req_ext") — only if eligible
-        if (canRequestExt) {
-            components.push({
-                type: "button",
-                sub_type: "quick_reply",
-                index: "1",
-                parameters: [{ type: "payload", payload: "req_ext" }]
-            });
-        }
-    } else {
-        // Legacy template: Button 0 is a URL button (opens browser — V1 behaviour)
-        // Kreddy's follow-up interactive message below is the real V2 entry point.
-        components.push({
-            type: "button",
-            sub_type: "url",
-            index: "0",
-            parameters: [
-                { type: "text", text: `${sale.invoiceNumber}` }
-            ]
-        });
-
-        // Button 1: Quick Reply → Request Extension (with saleId in payload)
-        if (canRequestExt) {
-            components.push({
-                type: "button",
-                sub_type: "quick_reply",
-                index: "1",
-                parameters: [
-                    { type: "payload", payload: `req_ext:${sale._id}` }
-                ]
-            });
-        }
     }
 
     try {
@@ -1792,43 +1767,23 @@ const sendCustomerReminderTemplate = async (to, sale, business, sequenceLabel = 
     const canRequestExt = (sale.extensionsCount || 0) < 2
         && sale.lifecycleStatus !== "EXTENSION_REQUESTED";
 
-    if (useV2Template) {
-        // V2 template: both buttons are Quick Replies — customer stays in WhatsApp
-        // Button 0: Pay with Transfer (static payload "pay_now")
+    // V2 template: both buttons are Quick Replies — customer stays in WhatsApp
+    // Button 0: Pay with Transfer (static payload "pay_now")
+    components.push({
+        type: "button",
+        sub_type: "quick_reply",
+        index: "0",
+        parameters: [{ type: "payload", payload: "pay_now" }]
+    });
+
+    // Button 1: Request Extension (static payload "req_ext") — only if eligible
+    if (canRequestExt) {
         components.push({
             type: "button",
             sub_type: "quick_reply",
-            index: "0",
-            parameters: [{ type: "payload", payload: "pay_now" }]
+            index: "1",
+            parameters: [{ type: "payload", payload: "req_ext" }]
         });
-
-        // Button 1: Request Extension (static payload "req_ext") — only if eligible
-        if (canRequestExt) {
-            components.push({
-                type: "button",
-                sub_type: "quick_reply",
-                index: "1",
-                parameters: [{ type: "payload", payload: "req_ext" }]
-            });
-        }
-    } else {
-        // Legacy template: Button 0 is a URL button (opens browser)
-        components.push({
-            type: "button",
-            sub_type: "url",
-            index: "0",
-            parameters: [{ type: "text", text: `${sale.invoiceNumber}` }]
-        });
-
-        // Button 1: Quick Reply → Request Extension (with saleId payload)
-        if (canRequestExt) {
-            components.push({
-                type: "button",
-                sub_type: "quick_reply",
-                index: "1",
-                parameters: [{ type: "payload", payload: `req_ext:${sale._id}` }]
-            });
-        }
     }
 
     try {

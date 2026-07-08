@@ -56,6 +56,7 @@ export default function Workspace() {
     const [search, setSearch] = useState("");
     const [selected, setSelected] = useState(null);
     const [activeTab, setActiveTab] = useState("activity"); // 'activity' | 'payments'
+    const [selectedLane, setSelectedLane] = useState("waitingForMe");
 
     useEffect(() => { fetchSales(); }, []);
 
@@ -146,9 +147,56 @@ export default function Workspace() {
                 />
             </div>
 
+            {/* Mobile Tab Selector */}
+            {isMobile && (
+                <div style={{ display: "flex", background: "#F1F5F9", borderRadius: "14px", padding: "4px", gap: "4px", marginBottom: "20px" }}>
+                    {LANE_CONFIG.map(({ key, label }) => {
+                        const items = lanes[key] || [];
+                        const isActive = selectedLane === key;
+                        return (
+                            <button
+                                key={key}
+                                onClick={() => setSelectedLane(key)}
+                                style={{
+                                    flex: 1,
+                                    background: isActive ? "white" : "transparent",
+                                    color: isActive ? "#0F172A" : "#64748B",
+                                    border: "none",
+                                    borderRadius: "10px",
+                                    padding: "10px 4px",
+                                    fontSize: "0.75rem",
+                                    fontWeight: isActive ? 800 : 600,
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    gap: "2px",
+                                    boxShadow: isActive ? "0 2px 6px rgba(0,0,0,0.05)" : "none",
+                                    transition: "all 0.2s ease"
+                                }}
+                            >
+                                <span style={{ whiteSpace: "nowrap" }}>
+                                    {key === "waitingForMe" ? "Action" : key === "waitingCustomer" ? "Waiting" : "Done"}
+                                </span>
+                                <span style={{
+                                    fontSize: "0.65rem",
+                                    background: isActive ? "#EDE9FE" : "#E2E8F0",
+                                    color: isActive ? "#4C1D95" : "#475569",
+                                    padding: "1px 6px",
+                                    borderRadius: "10px",
+                                    fontWeight: 800
+                                }}>
+                                    {items.length}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+
             {/* Lanes */}
             <div className="workspace-kanban">
-                {LANE_CONFIG.map(({ key, label, hint, icon: IconComponent }) => {
+                {LANE_CONFIG.filter(({ key }) => !isMobile || selectedLane === key).map(({ key, label, hint, icon: IconComponent }) => {
                     const items = lanes[key] || [];
                     return (
                         <div key={key} style={{ background: "#F8FAFC", borderRadius: "24px", padding: "20px", border: "1px solid #E2E8F0", display: "flex", flexDirection: "column", gap: "16px" }}>
