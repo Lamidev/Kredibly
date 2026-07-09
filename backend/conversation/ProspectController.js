@@ -69,25 +69,50 @@ class ProspectController {
             return true;
         }
 
+        // Demo Start
         if (buttonId === "prospect_demo_start" || normalizedText === "see demo" || normalizedText === "demo") {
-            prospect.demoState = "demo_running";
-            // Save starting timestamp to lastInteraction for time spent calculation
+            prospect.demoState = "demo_ask_phone";
             prospect.lastInteraction = new Date();
             await prospect.save();
 
-            const promptText = `👤 *You:*\n_Rebecca bought shoes for ₦25,000._\n\n🤖 *Me (Kreddy):*\n_Perfect. Invoice created. Sending it to Rebecca..._`;
+            const promptText = `👤 *You:*\n_Rebecca bought shoes for ₦25,000._\n\n🤖 *Me (Kreddy):*\n_Got it! I've created the invoice for Rebecca. What is her WhatsApp number so I can deliver it?_`;
             
             await MessageDispatcher.sendButtons(
                 from,
-                "Demo - Step 1 of 2",
+                "Demo - Step 1 of 3",
                 promptText,
                 "",
-                [{ id: "prospect_demo_continue", title: "See What Happens Next" }]
+                [
+                    { id: "prospect_demo_provide_num", title: "Provide Number" },
+                    { id: "prospect_demo_notnow", title: "Cancel" }
+                ]
             );
             return true;
         }
 
-        if (buttonId === "prospect_demo_continue" || normalizedText === "see what happens next") {
+        // Demo Step 2: Provide Phone Number
+        if (buttonId === "prospect_demo_provide_num" || (prospect.demoState === "demo_ask_phone" && normalizedText !== "")) {
+            prospect.demoState = "demo_confirm_send";
+            prospect.lastInteraction = new Date();
+            await prospect.save();
+
+            const promptText = `🤖 *Me (Kreddy):*\n_Ready to send the ₦25,000 invoice for shoes to Rebecca (+234 803 000 1234). Should I go ahead and deliver it?_`;
+
+            await MessageDispatcher.sendButtons(
+                from,
+                "Demo - Step 2 of 3",
+                promptText,
+                "",
+                [
+                    { id: "prospect_demo_send_goahead", title: "Yes, Send It" },
+                    { id: "prospect_demo_notnow", title: "Cancel" }
+                ]
+            );
+            return true;
+        }
+
+        // Demo Step 3: Go Ahead / Send
+        if (buttonId === "prospect_demo_send_goahead" || (prospect.demoState === "demo_confirm_send" && normalizedText !== "")) {
             const now = new Date();
             const demoStart = prospect.lastInteraction || now;
             const diffSec = Math.max(1, Math.round((now - demoStart) / 1000));
@@ -130,15 +155,31 @@ class ProspectController {
                 );
                 return true;
 
-            case "demo_running":
-                // If they type anything while demo is running, guide them to continue
-                const runGuide = `Click the button below to see the rest of the magic, or type "Start" to reset.`;
+            case "demo_ask_phone":
+                const askPhoneGuide = `Please type Rebecca's phone number or tap "Provide Number" to provide a mock number.`;
                 await MessageDispatcher.sendButtons(
                     from,
-                    "Demo In Progress",
-                    runGuide,
+                    "Demo - Step 1 of 3",
+                    askPhoneGuide,
                     "",
-                    [{ id: "prospect_demo_continue", title: "See What Happens Next" }]
+                    [
+                        { id: "prospect_demo_provide_num", title: "Provide Number" },
+                        { id: "prospect_demo_notnow", title: "Cancel" }
+                    ]
+                );
+                return true;
+
+            case "demo_confirm_send":
+                const confirmSendGuide = `Should I send the invoice to Rebecca? Tap "Yes, Send It" to see what happens next.`;
+                await MessageDispatcher.sendButtons(
+                    from,
+                    "Demo - Step 2 of 3",
+                    confirmSendGuide,
+                    "",
+                    [
+                        { id: "prospect_demo_send_goahead", title: "Yes, Send It" },
+                        { id: "prospect_demo_notnow", title: "Cancel" }
+                    ]
                 );
                 return true;
 
