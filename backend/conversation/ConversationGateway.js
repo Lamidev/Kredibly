@@ -111,16 +111,18 @@ class ConversationGateway {
         const cleanFrom = opts.cleanFrom;
 
         // 0. Resolve Conversation Identity Role
-        let role = "PROSPECT_DEMO";
         const { isCustomerPhone } = require("../utils/customerInvoiceService");
         const isCustomer = await isCustomerPhone(cleanFrom);
 
         const lowerText = String(opts.text || "").toLowerCase().trim();
         const isDemoIntent = lowerText.includes("how kredibly works") || lowerText.includes("how kreddy works") || lowerText.includes("see how kredibly works") || lowerText.includes("see how kreddy works");
 
-        if (profile) {
+        let role = "PROSPECT_DEMO";
+        if (isDemoIntent) {
+            role = "PROSPECT_DEMO";
+        } else if (profile) {
             role = "MERCHANT";
-        } else if (isCustomer && !isDemoIntent) {
+        } else if (isCustomer) {
             role = "CUSTOMER";
         }
 
