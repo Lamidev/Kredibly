@@ -110,6 +110,31 @@ class ConversationGateway {
     static async receive(message, profile, opts) {
         const cleanFrom = opts.cleanFrom;
 
+        // 0. Resolve Conversation Identity Role
+        let role = "PROSPECT_DEMO";
+        const { isCustomerPhone } = require("../utils/customerInvoiceService");
+        const isCustomer = await isCustomerPhone(cleanFrom);
+
+        if (profile) {
+            role = "MERCHANT";
+        } else if (isCustomer) {
+            role = "CUSTOMER";
+        }
+
+        // 1. Route based on resolved Conversation Mode
+        if (role === "PROSPECT_DEMO") {
+            const ProspectController = require("./ProspectController");
+            const handled = await ProspectController.handle(message, cleanFrom, opts);
+            if (handled) {
+                return true;
+            }
+        }
+
+        if (role === "CUSTOMER") {
+            // Handled by WhatsAppController customer session/inbound webhook pipeline
+            return false;
+        }
+
         // 1. Load or initialize ConversationContext for user
         let context = await ConversationContext.findOne({ whatsappNumber: cleanFrom });
         if (!context) {

@@ -743,6 +743,41 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
     }
 };
 
+const sendWhatsAppImage = async (to, imageUrl, caption = "") => {
+    try {
+        const phoneId = process.env.WHATSAPP_PHONE_ID || process.env.PHONE_ID;
+        const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN || process.env.ACCESS_TOKEN;
+
+        if (!accessToken || !phoneId) return false;
+
+        let cleanTo = String(to).replace(/\D/g, ''); 
+        if (cleanTo.startsWith('0') && cleanTo.length === 11) {
+            cleanTo = '234' + cleanTo.slice(1);
+        }
+
+        await axios.post(
+            `https://graph.facebook.com/v21.0/${phoneId}/messages`,
+            {
+                messaging_product: "whatsapp",
+                to: cleanTo,
+                type: "image",
+                image: {
+                    link: imageUrl,
+                    caption: caption
+                }
+            },
+            {
+                headers: { Authorization: `Bearer ${accessToken}` },
+                timeout: 15000
+            }
+        );
+        return true;
+    } catch (err) {
+        console.error("❌ sendWhatsAppImage Error:", err.response?.data || err.message);
+        return false;
+    }
+};
+
 const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName, customText, bossTitle = 'Boss', sessionTextMsg = null) => {
     try {
         const cleanTo = String(to).replace(/\D/g, '');
@@ -776,12 +811,10 @@ const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName,
                 message = `💰 *Payment Received!*\n\nHigh power, ${bossTitle}! You just received a payment of *₦${amount.toLocaleString()}* for Invoice #${invoiceNumber} from *${customerName}*.\n\n${customText}\n\nYour Kredibly ledger has been updated automatically!`;
             }
             
-            // Append receipt URL if absent
-            if (!message.includes('usekredibly.com/r/')) {
-                message += `\n\n🔗 *VIEW RECEIPT:*\nhttps://usekredibly.com/r/${invoiceNumber}`;
-            }
-
-            return await sendReply(normalizedTo, message);
+            // In V2, we don't append a naked URL. We send using ResponseBuilder which wraps the URL in a CTA button.
+            const receiptUrl = `https://usekredibly.com/r/${invoiceNumber}`;
+            const ResponseBuilder = require("../../conversation/ResponseBuilder");
+            return await ResponseBuilder.sendText(normalizedTo, message + `\n\n${receiptUrl}`, { buttonTitle: "View Receipt" });
         }
 
         // Window Closed: Use official Paid Template
@@ -2472,7 +2505,7 @@ const handleIncoming = async (req, res) => {
         const isGreeting = /^hi|^hello|^hey|^h\b|^yo\b|kreddy/i.test(lowerText);
         const isThanks = /thanks|thank you|merci|jazak|nice/i.test(lowerText);
         
-        if (isGreeting && lowerText.split(' ').length <= 3 && !profile.welcomeSent) {
+        if (isGreeting && lowerText.split(' ').length <= 3 && !profile.firstMerchantGreetingSent) {
             const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Partner");
             const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;
             
@@ -2481,16 +2514,52 @@ const handleIncoming = async (req, res) => {
             const bossRole = plan === "chairman" ? "your Digital Chief of Staff" : "your Kredibly partner";
 
             // Mark welcome as sent so this never triggers again
-            profile.welcomeSent = true;
+            profile.firstMerchantGreetingSent = true;
             await profile.save();
 
             await sendReply(from, `${wittyGreeting} \n\nI'm *Kreddy*, ${bossRole}. \n\n*What's the plan for today?*\n${statusLabel}: Type *S*\n⏳ *DEBTS*: Type *D*\n💡 *HELP*: Type *HELP*`);
             return;
-        } else if (isGreeting && lowerText.split(' ').length <= 3 && profile.welcomeSent) {
-            // ✅ Let AI handle returning-user greetings naturally.
-            // The SYSTEM_INSTRUCTION has a full "ABSENCE & WELCOME BACK RULE" that
-            // gives warm, contextual, personalized welcome-backs based on days away.
-            // Falling through to the AI pipeline below.
+        } else if (isGreeting && lowerText.split(' ').length <= 3 && profile.firstMerchantGreetingSent) {
+            // Context-aware returning greetings based on time of day and stats (fast, cost-saving)
+            const Sale = require("../../models/Sale");
+            const lagosTime = new Date().toLocaleString("en-US", { timeZone: "Africa/Lagos", hour: "numeric", hour12: false });
+            const hour = parseInt(lagosTime);
+
+            const businessName = profile.displayName || "Partner";
+
+            let greeting = "";
+            try {
+                if (hour >= 5 && hour < 12) {
+                    // Morning stats: Unpaid invoices count
+                    const unpaidCount = await Sale.countDocuments({ businessId: profile._id, lifecycleStatus: { $ne: "PAID" } });
+                    if (unpaidCount === 0) {
+                        greeting = `Good morning, ${businessName}! ☀️\n\nYou have no unpaid invoices today. Everything is up to date! What would you like to do?`;
+                    } else if (unpaidCount === 1) {
+                        greeting = `Good morning, ${businessName}! ☀️\n\nYou have 1 unpaid invoice today. What would you like to do?`;
+                    } else {
+                        greeting = `Good morning, ${businessName}! ☀️\n\nYou have ${unpaidCount} unpaid invoices today. What would you like to do?`;
+                    }
+                } else if (hour >= 12 && hour < 17) {
+                    // Afternoon stats: Extension requests count
+                    const extensionRequests = await Sale.countDocuments({ businessId: profile._id, lifecycleStatus: "EXTENSION_REQUESTED" });
+                    if (extensionRequests === 0) {
+                        greeting = `Welcome back, ${businessName}! 🌤️\n\nWhat can I do for you this afternoon?`;
+                    } else if (extensionRequests === 1) {
+                        greeting = `Welcome back, ${businessName}! 🌤️\n\nOne customer has requested more time to pay. What would you like to do?`;
+                    } else {
+                        greeting = `Welcome back, ${businessName}! 🌤️\n\n${extensionRequests} customers have requested more time to pay. What would you like to do?`;
+                    }
+                } else {
+                    // Evening stats: generic good night
+                    greeting = `Welcome back, ${businessName}! 🌙\n\nEverything looks good today. How can I help you?`;
+                }
+            } catch (statsErr) {
+                console.error("⚠️ Failed to load stats for context greeting:", statsErr.message);
+                greeting = `Hi ${businessName}! 😊 Kreddy is standing by! What do you need me for today?`;
+            }
+
+            await sendReply(from, greeting);
+            return;
         } else if (isThanks) {
             const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Partner");
             const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;

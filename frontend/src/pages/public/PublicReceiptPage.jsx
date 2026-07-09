@@ -366,7 +366,9 @@ const PublicReceiptPage = () => {
                                 <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px dashed #E2E8F0' }}>
                                     <div>
                                         <p style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Payment Received</p>
-                                        <p style={{ fontSize: '11px', color: '#94A3B8', margin: 0 }}>{new Date(p.date).toLocaleDateString()} ({p.method})</p>
+                                        <p style={{ fontSize: '11px', color: '#94A3B8', margin: 0 }}>
+                                            {new Date(p.date).toLocaleDateString("en-GB", { timeZone: "Africa/Lagos", day: '2-digit', month: '2-digit', year: 'numeric' })} at {new Date(p.date).toLocaleTimeString("en-US", { timeZone: "Africa/Lagos", hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase()} ({p.method})
+                                        </p>
                                     </div>
                                     <span style={{ fontSize: '14px', fontWeight: 800, color: '#10B981' }}>+ ₦{p.amount.toLocaleString()}</span>
                                 </div>
@@ -545,7 +547,9 @@ const PublicReceiptPage = () => {
                                     <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#ECFDF5', borderRadius: '12px', border: '1px solid #D1FAE5' }}>
                                         <div>
                                             <p style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', margin: '0 0 2px 0' }}>Payment Received</p>
-                                            <p style={{ fontSize: '11px', color: '#64748B', margin: 0 }}>{new Date(p.date).toLocaleDateString()} • {p.method}</p>
+                                            <p style={{ fontSize: '11px', color: '#64748B', margin: 0 }}>
+                                                {new Date(p.date).toLocaleDateString("en-GB", { timeZone: "Africa/Lagos", day: '2-digit', month: '2-digit', year: 'numeric' })} at {new Date(p.date).toLocaleTimeString("en-US", { timeZone: "Africa/Lagos", hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase()} • {p.method}
+                                            </p>
                                         </div>
                                         <span style={{ fontSize: '15px', fontWeight: 800, color: '#10B981' }}>₦{p.amount.toLocaleString()}</span>
                                     </div>

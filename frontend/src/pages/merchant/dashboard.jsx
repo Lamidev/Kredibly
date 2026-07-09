@@ -220,7 +220,7 @@ export default function Dashboard() {
                 {/* Right: Compact Kreddy pill */}
                 <button
                     onClick={() => {
-                        const msg = profile?.welcomeSent ? "Hi Kreddy" : "Hello";
+                        const msg = profile?.firstMerchantGreetingSent ? "Hi Kreddy" : "Hello";
                         window.open(KREDDY_CONFIG.getLink(msg), '_blank', 'noopener,noreferrer');
                     }}
                     style={{
@@ -268,7 +268,7 @@ export default function Dashboard() {
                     </div>
                     {/* Label */}
                     <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#4C1D95", whiteSpace: "nowrap" }}>
-                        {profile?.welcomeSent ? "Message Kreddy" : "Say hi to Kreddy 👋"}
+                        {profile?.firstMerchantGreetingSent ? "Open Kreddy" : "Open WhatsApp"}
                     </span>
                 </button>
             </div>

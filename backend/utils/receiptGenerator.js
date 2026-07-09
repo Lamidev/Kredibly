@@ -75,7 +75,8 @@ const generatePaymentConfirmationCard = async ({
         const finalDate = date || new Date();
         
         const formattedAmount = Number(amountPaid || 0).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        const formattedDate = new Date(finalDate).toLocaleDateString("en-NG", {
+        const formattedDate = new Date(finalDate).toLocaleString("en-NG", {
+            timeZone: "Africa/Lagos",
             day: "2-digit",
             month: "2-digit",
             year: "numeric",
@@ -97,68 +98,68 @@ const generatePaymentConfirmationCard = async ({
         }
 
         const svgString = `
-<svg width="500" height="660" viewBox="0 0 500 660" xmlns="http://www.w3.org/2000/svg">
-
+<svg width="500" height="670" viewBox="0 0 500 670" xmlns="http://www.w3.org/2000/svg">
+ 
   <!-- Background -->
-  <rect width="500" height="660" fill="#F9FAFB"/>
-
+  <rect width="500" height="670" fill="#F9FAFB"/>
+ 
   <!-- Light grey header -->
   <rect x="0" y="0" width="500" height="195" fill="#F3F4F6"/>
-
+ 
   <!-- Logo -->
   ${logoBase64 ? `<image href="${logoBase64}" x="165" y="22" width="170" height="46" preserveAspectRatio="xMidYMid meet"/>` : `<text x="250" y="55" fill="#111827" font-size="22" font-weight="800" text-anchor="middle">KREDIBLY</text>`}
-
+ 
   <!-- Business name + receipt label -->
   <text x="250" y="97" fill="#374151" font-size="13" font-weight="600" text-anchor="middle">Akinbyte Technologies Limited</text>
   <text x="250" y="115" fill="#6B7280" font-size="11" font-weight="500" text-anchor="middle" letter-spacing="0.5">E-receipt</text>
-
+ 
   <!-- Amount -->
   <text x="250" y="170" fill="#111827" font-size="34" font-weight="800" text-anchor="middle">&#x20A6;${formattedAmount}</text>
-
+ 
   <!-- Section label -->
   <text x="250" y="222" fill="#9CA3AF" font-size="10" font-weight="700" text-anchor="middle" letter-spacing="1.5">PAYMENT DETAILS</text>
-
+ 
   <!-- Dashed card -->
-  <rect x="25" y="240" width="450" height="310" rx="14" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="1.5" stroke-dasharray="6,5"/>
-
+  <rect x="25" y="240" width="450" height="335" rx="14" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="1.5" stroke-dasharray="6,5"/>
+ 
   <!-- Row: Status -->
   <text x="45" y="278" fill="#6B7280" font-size="12" font-weight="500">Status</text>
   <rect x="350" y="262" width="86" height="22" rx="11" fill="#ECFDF5"/>
   <text x="393" y="277" fill="#10B981" font-size="11" font-weight="700" text-anchor="middle">Successful</text>
   <line x1="40" y1="296" x2="460" y2="296" stroke="#F3F4F6" stroke-width="1"/>
-
+ 
   <!-- Row: Payment Method -->
   ${renderDetailsRow("Payment Method", finalMethod, 325)}
   <line x1="40" y1="341" x2="460" y2="341" stroke="#F3F4F6" stroke-width="1"/>
-
+ 
   <!-- Row: Invoice Number -->
   ${renderDetailsRow("Invoice Number", invoiceNumber, 370)}
   <line x1="40" y1="386" x2="460" y2="386" stroke="#F3F4F6" stroke-width="1"/>
-
+ 
   <!-- Row: Paid To -->
   ${renderDetailsRow("Paid To", finalBusinessName, 415, 26)}
   <line x1="40" y1="431" x2="460" y2="431" stroke="#F3F4F6" stroke-width="1"/>
-
+ 
   <!-- Row: Paid By -->
   ${renderDetailsRow("Paid By", finalCustomerName, 460, 26)}
   <line x1="40" y1="476" x2="460" y2="476" stroke="#F3F4F6" stroke-width="1"/>
-
+ 
   <!-- Row: Date -->
   ${renderDetailsRow("Date", formattedDate, 505)}
   <line x1="40" y1="521" x2="460" y2="521" stroke="#F3F4F6" stroke-width="1"/>
-
+ 
   <!-- Row: Reference -->
   ${renderDetailsRow("Reference", reference || "N/A", 551, 22)}
-
+ 
   <!-- Footer date -->
-  <text x="250" y="590" fill="#9CA3AF" font-size="11" font-weight="400" text-anchor="middle">${formattedDate}</text>
-
+  <text x="250" y="595" fill="#9CA3AF" font-size="11" font-weight="400" text-anchor="middle">${formattedDate}</text>
+ 
   <!-- Divider -->
-  <line x1="80" y1="607" x2="420" y2="607" stroke="#E5E7EB" stroke-width="1"/>
-
+  <line x1="80" y1="615" x2="420" y2="615" stroke="#E5E7EB" stroke-width="1"/>
+ 
   <!-- Support email -->
-  <text x="250" y="630" fill="#9CA3AF" font-size="10" font-weight="400" text-anchor="middle">Questions? Contact us at <tspan fill="#4F46E5" font-weight="600">support@usekredibly.com</tspan></text>
-
+  <text x="250" y="638" fill="#9CA3AF" font-size="10" font-weight="400" text-anchor="middle">Questions? Contact us at <tspan fill="#4F46E5" font-weight="600">support@usekredibly.com</tspan></text>
+ 
 </svg>
 `.trim();
 

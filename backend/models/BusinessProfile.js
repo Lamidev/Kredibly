@@ -174,7 +174,7 @@ const BusinessProfileSchema = new mongoose.Schema({
         type: Date,
         default: null
     },
-    welcomeSent: {
+    firstMerchantGreetingSent: {
         type: Boolean,
         default: false
     },
