@@ -471,8 +471,7 @@ const LandingPage = () => {
                                         borderRadius: '40px',
                                         overflow: 'hidden',
                                         lineHeight: 0,
-                                        paddingTop: '32px',
-                                        backgroundColor: '#F6F6F6'
+                                        backgroundColor: 'transparent'
                                     }}>
                                         <img
                                             src={kreddyWhatsapp}
@@ -497,19 +496,19 @@ const LandingPage = () => {
                                     style={{
                                         background: 'white',
                                         borderRadius: '100px',
-                                        padding: '12px 32px 12px 12px',
+                                        padding: '8px 24px 8px 8px',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '14px',
+                                        gap: '10px',
                                         boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)'
                                     }}
                                 >
-                                    <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#FCE7F3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#DB2777', fontSize: '18px' }}>
+                                    <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#FCE7F3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#DB2777', fontSize: '15px' }}>
                                         MN
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        <span style={{ fontWeight: 800, fontSize: '16.5px', color: '#0F172A', lineHeight: 1.2 }}>Received 20k</span>
-                                        <span style={{ color: '#64748B', fontSize: '14px', fontWeight: 500 }}>from Mama Ngozi</span>
+                                        <span style={{ fontWeight: 800, fontSize: '14.5px', color: '#0F172A', lineHeight: 1.2 }}>Received 20k</span>
+                                        <span style={{ color: '#64748B', fontSize: '12px', fontWeight: 500 }}>from Mama Ngozi</span>
                                     </div>
                                 </motion.div>
 
@@ -541,6 +540,8 @@ const LandingPage = () => {
                                    </div>
                                 </motion.div>
 
+
+
                                 {/* Floating Bubble 3: Overlapping logos */}
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
@@ -550,26 +551,26 @@ const LandingPage = () => {
                                     style={{
                                         background: 'white',
                                         borderRadius: '100px',
-                                        padding: '12px 16px',
+                                        padding: '8px 12px',
                                         display: 'flex',
                                         alignItems: 'center',
                                         boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)'
                                     }}
                                 >
-                                    <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3, border: '3px solid white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                                        <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+                                    <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3, border: '2px solid white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                                        <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
                                             <path d="M20 2 L36 10 L36 30 L20 38 L4 30 L4 10 Z" fill="#7C3AED" />
                                             <path d="M20 12 L28 16 L20 20 L16 18 M28 24 L20 28 L12 24 L12 16" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
                                     </div>
-                                    <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, border: '3px solid white', marginLeft: '-18px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                                        <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+                                    <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, border: '2px solid white', marginLeft: '-14px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                                        <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
                                             <circle cx="20" cy="20" r="14" stroke="#10B981" strokeWidth="8" />
                                             <rect x="2" y="15" width="12" height="10" fill="#1E3A8A" rx="2" />
                                         </svg>
                                     </div>
-                                    <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, border: '3px solid white', marginLeft: '-18px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                                        <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+                                    <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, border: '2px solid white', marginLeft: '-14px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                                        <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
                                             <path d="M20 4 L36 20 L20 36 L4 20 Z" stroke="#F97316" strokeWidth="4" />
                                             <path d="M20 12 L28 20 L20 28 L12 20 Z" stroke="#F97316" strokeWidth="4" />
                                             <rect x="18" y="18" width="4" height="4" fill="#F97316" />
@@ -1197,21 +1198,21 @@ const LandingPage = () => {
                 .floating-bubble-1 {
                     position: absolute;
                     top: 20px;
-                    left: -16%; /* Shifted to left to keep more of it outside the phone body */
+                    left: -26%; /* Pushed outward to keep most of it outside the phone body */
                     z-index: 25; /* Higher than dynamic island (20) to cover it */
                     animation: float-1 5s ease-in-out infinite;
                 }
                 .floating-bubble-2 {
                     position: absolute;
                     top: 22px; /* Really close to dynamic island */
-                    right: -15%;
+                    right: -23%; /* Pushed outward so only a tiny bit overlaps the phone frame */
                     z-index: 10;
                     animation: float-2 6s ease-in-out infinite;
                 }
                 .floating-bubble-3 {
                     position: absolute;
                     bottom: 18%;
-                    left: -10%;
+                    left: -18%; /* Pushed outward slightly */
                     z-index: 10;
                     animation: float-3 7s ease-in-out infinite;
                 }
@@ -1236,20 +1237,20 @@ const LandingPage = () => {
                     .phone-mockup { transform: scale(1); max-width: 100% !important; }
                     .floating-bubble-1 {
                         top: 15px !important;
-                        left: -25px !important; /* Shifted to left so part of it hangs outside the phone body */
+                        left: -40px !important; /* Pushed outward further */
                         z-index: 25 !important;
                         animation: float-1-mobile 5s ease-in-out infinite !important;
                         transform-origin: left center !important;
                     }
                     .floating-bubble-2 {
                         top: 15px !important;
-                        right: -10px !important;
+                        right: -30px !important; /* Pushed outward further */
                         animation: float-2-mobile 6s ease-in-out infinite !important;
                         transform-origin: right center !important;
                     }
                     .floating-bubble-3 {
                         bottom: 12% !important;
-                        left: -10px !important;
+                        left: -25px !important; /* Pushed outward further */
                         animation: float-3-mobile 7s ease-in-out infinite !important;
                         transform-origin: left center !important;
                     }

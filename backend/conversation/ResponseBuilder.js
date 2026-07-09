@@ -53,20 +53,17 @@ class ResponseBuilder {
         return await MessageDispatcher.send(to, text);
     }
 
-    /**
-     * Send interactive button messages, routing them through MessageDispatcher.
-     */
     static async sendInteractiveButtons(to, header, body, footer, buttons, url = null) {
         if (!body || !buttons?.length) return false;
 
-        const { sendInteractiveButtons } = require("../utils/customerInvoiceService");
-        
-        // If a URL is present, use the custom interactive CTA button sender
+        // If a URL is present, use the native interactive CTA button sender
         if (url) {
-            return await sendInteractiveButtons(to, header, body, footer, buttons, url);
+            const { sendInteractiveCTAUrlButton } = require("../utils/customerInvoiceService");
+            return await sendInteractiveCTAUrlButton(to, header, body, footer, buttons[0].title, url);
         }
 
-        return await MessageDispatcher.sendButtons(to, header, body, footer, buttons);
+        const { sendInteractiveButtons } = require("../utils/customerInvoiceService");
+        return await sendInteractiveButtons(to, header, body, footer, buttons);
     }
 
     /**

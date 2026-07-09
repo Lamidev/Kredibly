@@ -115,9 +115,12 @@ class ConversationGateway {
         const { isCustomerPhone } = require("../utils/customerInvoiceService");
         const isCustomer = await isCustomerPhone(cleanFrom);
 
+        const lowerText = String(opts.text || "").toLowerCase().trim();
+        const isDemoIntent = lowerText.includes("how kredibly works") || lowerText.includes("how kreddy works") || lowerText.includes("see how kredibly works") || lowerText.includes("see how kreddy works");
+
         if (profile) {
             role = "MERCHANT";
-        } else if (isCustomer) {
+        } else if (isCustomer && !isDemoIntent) {
             role = "CUSTOMER";
         }
 

@@ -60,7 +60,7 @@ exports.initializeNombaAccount = async (req, res) => {
         let amountToCharge = requestedAmount;
         let gatewayFee = 0;
 
-        const absorbFee = business?.prefersGatewayFeeAbsorption !== false;
+        const absorbFee = business?.prefersGatewayFeeAbsorption !== false && business?.prefersGatewayFeeAbsorption !== "false";
         if (!absorbFee) {
             amountToCharge = FINANCIAL_CONFIG.calculateGrossAmount(requestedAmount);
             gatewayFee = amountToCharge - requestedAmount;
@@ -458,6 +458,15 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 customText += `\n\n⚡ *Kreddy Note:* Even while I'm off-duty, your money is still moving! Subscribe now to get your full AI briefings and debt recovery back.\n🔗 https://usekredibly.com/settings`;
             }
 
+            // 🧠 KREDDY AI: Notify customer via WhatsApp first (and generate the receipt image card)
+            let receiptImageUrl = null;
+            try {
+                const { notifyCustomerPaymentReceived } = require('../../utils/customerInvoiceService');
+                receiptImageUrl = await notifyCustomerPaymentReceived(sale._id, creditAmount);
+            } catch (custNotifyErr) {
+                console.error("Customer payment notify error:", custNotifyErr.message);
+            }
+
             // Only fire the generic alert when overpayment interactive buttons weren't already sent
             if (customText !== null) {
                 const { sendWhatsAppPaymentAlert } = require('../whatsapp/whatsappController');
@@ -468,16 +477,9 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                     sale.customerName || payer,
                     customText,
                     business.displayName || 'Chief',
-                    ""
+                    "",
+                    receiptImageUrl
                 ).catch(err => console.error('❌ WhatsApp Payment Alert Failed:', err.message));
-            }
-
-            // 🧠 KREDDY AI: Notify customer via WhatsApp too
-            try {
-                const { notifyCustomerPaymentReceived } = require('../../utils/customerInvoiceService');
-                await notifyCustomerPaymentReceived(sale._id, creditAmount);
-            } catch (custNotifyErr) {
-                console.error("Customer payment notify error:", custNotifyErr.message);
             }
         }
 

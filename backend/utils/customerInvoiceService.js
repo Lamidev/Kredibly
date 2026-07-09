@@ -230,6 +230,52 @@ const sendInteractiveButtons = async (to, headerText, bodyText, footerText, butt
 };
 
 /**
+ * Send an interactive message with a native CTA URL button (opens a web browser link).
+ */
+const sendInteractiveCTAUrlButton = async (to, headerText, bodyText, footerText, buttonTitle, url) => {
+    const { phoneId, accessToken } = getWACredentials();
+    if (!accessToken || !phoneId) return false;
+    const cleanTo = normalizePhone(to);
+
+    const payload = {
+        messaging_product: "whatsapp",
+        to: cleanTo,
+        type: "interactive",
+        interactive: {
+            type: "cta_url",
+            header: headerText ? {
+                type: "text",
+                text: headerText.replace(/[\*_~`#]/g, "").substring(0, 60)
+            } : undefined,
+            body: { text: bodyText.substring(0, 1024) },
+            footer: footerText ? { text: footerText.substring(0, 60) } : undefined,
+            action: {
+                name: "cta_url",
+                parameters: {
+                    display_text: String(buttonTitle).substring(0, 20),
+                    url: url
+                }
+            }
+        }
+    };
+
+    if (!payload.interactive.header) delete payload.interactive.header;
+    if (!payload.interactive.footer) delete payload.interactive.footer;
+
+    try {
+        await axios.post(
+            `https://graph.facebook.com/v21.0/${phoneId}/messages`,
+            payload,
+            { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 10000 }
+        );
+        return true;
+    } catch (err) {
+        console.error("❌ sendInteractiveCTAUrlButton Error:", err.response?.data || err.message);
+        return false;
+    }
+};
+
+/**
  * Send an interactive message with a list (up to 10 options).
  * Used when more than 3 options are needed, e.g., task reminders.
  */
@@ -774,7 +820,7 @@ const handleCustomerPayFull = async (saleId, customerPhone) => {
         );
 
         // Determine DVA amount — gross up if merchant doesn't absorb fees
-        const absorbFees = business?.prefersGatewayFeeAbsorption !== false;
+        const absorbFees = business?.prefersGatewayFeeAbsorption !== false && business?.prefersGatewayFeeAbsorption !== "false";
         const dvaAmount = FINANCIAL_CONFIG.calculateGrossAmount(bal, absorbFees);
 
         // Generate DVA
@@ -1252,6 +1298,13 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
                     ? `✅ Payment received! Invoice *#${sale.invoiceNumber}* is now fully settled.`
                     : `✅ Partial payment of ₦${amountPaid.toLocaleString()} received for Invoice *#${sale.invoiceNumber}*.\n\nOutstanding: *₦${balance.toLocaleString()}*`;
                 await sendImage(cleanCustomerPhone, cardUrl, cardCaption);
+
+                if (!isFullyPaid && business?.whatsappNumber) {
+                    const cleanMerchantPhone = normalizePhone(business.whatsappNumber);
+                    const merchantCardCaption = `✅ Partial payment of ₦${amountPaid.toLocaleString()} received for Invoice *#${sale.invoiceNumber}* from *${sale.customerName}*.\n\nOutstanding: *₦${balance.toLocaleString()}*`;
+                    await sendImage(cleanMerchantPhone, cardUrl, merchantCardCaption);
+                }
+
                 // Small delay before next message
                 await new Promise(r => setTimeout(r, 1500));
             }
@@ -1262,6 +1315,12 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
                 ? `✅ Payment confirmed! Thank you, ${sale.customerName}. Your payment of ₦${amountPaid.toLocaleString()} for Invoice #${sale.invoiceNumber} has been received. The invoice is now fully paid.`
                 : `✅ Partial payment received. Thank you, ${sale.customerName}. ₦${amountPaid.toLocaleString()} received for Invoice #${sale.invoiceNumber}.\n\nOutstanding balance: ₦${balance.toLocaleString()}`;
             await sendText(cleanCustomerPhone, msg);
+
+            if (!isFullyPaid && business?.whatsappNumber) {
+                const cleanMerchantPhone = normalizePhone(business.whatsappNumber);
+                const merchantMsg = `✅ Partial payment received from *${sale.customerName}*. ₦${amountPaid.toLocaleString()} received for Invoice #${sale.invoiceNumber}.\n\nOutstanding balance: ₦${balance.toLocaleString()}`;
+                await sendText(cleanMerchantPhone, merchantMsg);
+            }
             await new Promise(r => setTimeout(r, 1000));
         }
 
@@ -1311,8 +1370,10 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
         }
 
         console.log(`📩 Payment confirmation sent to customer ${customerPhone} for Invoice #${sale.invoiceNumber}`);
+        return cardUrl;
     } catch (err) {
         console.error("❌ notifyCustomerPaymentReceived Error:", err.message);
+        return null;
     }
 };
 
@@ -1461,7 +1522,7 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
                 if (!partSale) return false;
 
                 const business = partSale.businessId;
-                const absorbFees = business?.prefersGatewayFeeAbsorption !== false;
+                const absorbFees = business?.prefersGatewayFeeAbsorption !== false && business?.prefersGatewayFeeAbsorption !== "false";
                 const dvaAmount = FINANCIAL_CONFIG.calculateGrossAmount(parsedAmount, absorbFees);
 
                 await PaymentSession.updateMany(
@@ -1572,6 +1633,7 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
             // Move to reason collection step
             session.type = "customer_extension_reason";
             session.data.newDueDate = parsedDate.toISOString();
+            session.markModified("data");
             await session.save();
 
             await sendText(cleanFrom, `Got it. Would you like to tell the merchant why you're requesting this extension?\n\n(Reply with your reason, or type *skip* to skip)`);
@@ -1871,6 +1933,7 @@ module.exports = {
     findActiveCustomerSale,
     sendCustomerReminderTemplate,
     sendInteractiveButtons,
+    sendInteractiveCTAUrlButton,
     sendInteractiveList,
     sendDocument,
     sendImage,

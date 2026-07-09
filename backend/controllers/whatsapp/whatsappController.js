@@ -693,10 +693,16 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
         const now = new Date();
         const isWindowOpen = profile?.lastInboundAt && (now - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
 
-        if (isWindowOpen && !invoiceNumber) {
+        if (isWindowOpen) {
             console.log(`💡 WhatsApp Session Open for ${normalizedTo} — Sending free session message`);
             // Format as a bold message with person's title
             let sessionText = `*${finalTitle}!* 🔔\n\n${textMessage}`;
+            if (invoiceNumber) {
+                const link = `https://usekredibly.com/i/${invoiceNumber}`;
+                sessionText += `\n\n${link}`;
+                const ResponseBuilder = require("../../conversation/ResponseBuilder");
+                return await ResponseBuilder.sendText(normalizedTo, sessionText, { buttonTitle: "View Invoice" });
+            }
             return await sendReply(normalizedTo, sessionText);
         }
 
@@ -778,7 +784,7 @@ const sendWhatsAppImage = async (to, imageUrl, caption = "") => {
     }
 };
 
-const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName, customText, bossTitle = 'Boss', sessionTextMsg = null) => {
+const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName, customText, bossTitle = 'Boss', sessionTextMsg = null, receiptImageUrl = null) => {
     try {
         const cleanTo = String(to).replace(/\D/g, '');
         let normalizedTo = cleanTo;
@@ -803,22 +809,18 @@ const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName,
         const isWindowOpen = profile?.lastInboundAt && (now - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
 
         if (isWindowOpen) {
-            console.log(`💡 WhatsApp Session Open for ${normalizedTo} — Sending free payment session message`);
+            console.log(`💡 WhatsApp Session Open for ${normalizedTo} — Sending free payment session message without button`);
             
             let message = sessionTextMsg;
             if (!message) {
-                // Formatting it similarly to the template for consistency
                 message = `💰 *Payment Received!*\n\nHigh power, ${bossTitle}! You just received a payment of *₦${amount.toLocaleString()}* for Invoice #${invoiceNumber} from *${customerName}*.\n\n${customText}\n\nYour Kredibly ledger has been updated automatically!`;
             }
             
-            // In V2, we don't append a naked URL. We send using ResponseBuilder which wraps the URL in a CTA button.
-            const receiptUrl = `https://usekredibly.com/r/${invoiceNumber}`;
-            const ResponseBuilder = require("../../conversation/ResponseBuilder");
-            return await ResponseBuilder.sendText(normalizedTo, message + `\n\n${receiptUrl}`, { buttonTitle: "View Receipt" });
+            return await sendReply(normalizedTo, message);
         }
 
         // Window Closed: Use official Paid Template
-        console.log(`🔔 WhatsApp Session Closed for ${normalizedTo} — Sending paid payment template [kreddy_payment_alert]`);
+        console.log(`🔔 WhatsApp Session Closed for ${normalizedTo} — Sending paid payment template [kreddy_payment_alert] with image header`);
 
         // 🛡️ Variable Hardening: Ensure no 'undefined' or 'null' hits the Meta API
         const safeAmount = String(amount || '0.00').substring(0, 60);
@@ -844,16 +846,17 @@ const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName,
             }
         ];
 
-        // 🚀 SMART DYNAMIC BUTTON ROUTING
-        // Aligning with sendWhatsAppAlert logic: send the full path as the variable
-        const buttonPath = invoiceNumber ? `r/${invoiceNumber}` : `dashboard`;
-
+        // 🖼️ Pass receipt image directly to the template header if available
+        const headerImageLink = receiptImageUrl || `https://usekredibly.com/krediblyrevamped.png`;
         components.push({
-            type: "button",
-            sub_type: "url",
-            index: "0",
+            type: "header",
             parameters: [
-                { type: "text", text: buttonPath }
+                {
+                    type: "image",
+                    image: {
+                        link: headerImageLink
+                    }
+                }
             ]
         });
 
@@ -985,6 +988,12 @@ const handleIncoming = async (req, res) => {
         if (processedMessages.has(messageId)) return;
         processedMessages.add(messageId);
 
+        // 🛡️ INTERCEPT NATIVE CTA URL BUTTON ACTIONS: User clicked receipt url button, no server response needed.
+        if (text === "cta_url_open" || message?.interactive?.button_reply?.id === "cta_url_open" || message?.button?.payload === "cta_url_open") {
+            console.log(`[handleIncoming] CTA URL Open button click intercepted. Skipping response.`);
+            return;
+        }
+
         const cleanFrom = cleanPhone(from);
         const plusFrom = '+' + cleanFrom;
         const altFrom = cleanFrom.startsWith('234') ? '0' + cleanFrom.slice(3) : null;
@@ -1087,8 +1096,11 @@ const handleIncoming = async (req, res) => {
         // 🧠 CUSTOMER DIRECTIVE: If this phone number is associated with an active unpaid invoice,
         // prioritize the customer payment/extension flow. This prevents customers from ever
         // falling through to the merchant AI pipeline and getting addressed by merchant details.
+        const demoCheckText = String(text || "").toLowerCase().trim();
+        const isDemoIntent = demoCheckText.includes("how kredibly works") || demoCheckText.includes("how kreddy works") || demoCheckText.includes("see how kredibly works") || demoCheckText.includes("see how kreddy works");
+
         const isKnownCustomer = await isCustomerPhone(cleanFrom);
-        if (isKnownCustomer) {
+        if (isKnownCustomer && !isDemoIntent) {
             const handled = await handleCustomerInbound(from, msgType, message, text);
             if (handled) return;
         }
@@ -1638,6 +1650,58 @@ const handleIncoming = async (req, res) => {
                     }
                     return;
                 }
+            }
+
+            // 🗑️ Invoice deletion disambiguation selection
+            if (session.type === 'merchant_delete_invoice_selection') {
+                let cleanInput = text.toUpperCase().replace(/[#]/g, "").trim();
+                if (!cleanInput.startsWith("KR-")) {
+                    cleanInput = "KR-" + cleanInput;
+                }
+
+                const matchedInvoices = session.data.matches;
+                const saleToDelete = await Sale.findOne({
+                    businessId: profile._id,
+                    invoiceNumber: cleanInput
+                });
+
+                if (!saleToDelete || !matchedInvoices.includes(saleToDelete._id.toString())) {
+                    await sendReply(from, `🔍 I couldn't find a matching invoice with ID *${cleanInput}* from the matches. Please type the exact Invoice ID (e.g. *KR-WJFD-EYUK*).`);
+                    return;
+                }
+
+                // Delete from DB
+                await Sale.deleteOne({ _id: saleToDelete._id });
+                await WhatsAppSession.deleteOne({ _id: session._id });
+
+                // 🧹 Cascade Delete Reminders
+                await Reminder.deleteMany({ saleId: saleToDelete._id });
+
+                // Socket update to sync dashboard
+                try {
+                    const { getIO } = require('../../utils/socket');
+                    const io = getIO();
+                    if (io) {
+                        io.to(profile._id.toString().toLowerCase()).emit('sale_updated', {
+                            action: "delete",
+                            saleId: saleToDelete._id,
+                            invoiceNumber: saleToDelete.invoiceNumber
+                        });
+                    }
+                } catch (e) {
+                    console.error("Failed to emit socket update for WhatsApp deletion", e);
+                }
+
+                // Activity Log
+                await logActivity({
+                    businessId: profile._id,
+                    action: "SALE_DELETED_WHATSAPP",
+                    entityType: "SALE",
+                    details: `Merchant deleted invoice #${saleToDelete.invoiceNumber} for ${saleToDelete.customerName} via Kreddy.`
+                });
+
+                await sendReply(from, `*Record Deleted!* \n\nI've removed the invoice *#${saleToDelete.invoiceNumber}* for *${saleToDelete.customerName}* and cancelled all scheduled reminders for it.`);
+                return;
             }
 
             // 🌅 WAKE-UP FLOW: Intercept pending morning summary session
@@ -3818,7 +3882,8 @@ const handleIncoming = async (req, res) => {
 
                     let filter = {
                         businessId: profile._id,
-                        status: "pending"
+                        recipientType: "merchant",
+                        status: { $in: ["pending", "snoozed"] }
                     };
 
                     if (taskTarget && taskTarget.toLowerCase() !== "task" && taskTarget.toLowerCase() !== "reminder") {
@@ -3943,6 +4008,17 @@ const handleIncoming = async (req, res) => {
                                 msg += `• *#${m.invoiceNumber}* (${m.customerName})\n`;
                             });
                             msg += `\nPlease type the exact Invoice ID.`;
+
+                            await WhatsAppSession.findOneAndUpdate(
+                                { whatsappNumber: cleanFrom },
+                                {
+                                    type: 'merchant_delete_invoice_selection',
+                                    data: { matches: matches.map(m => m._id.toString()) },
+                                    expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+                                },
+                                { upsert: true }
+                            );
+
                             await sendReply(from, msg);
                         }
                     }
