@@ -39,7 +39,7 @@ class ProspectController {
         const normalizedText = text.toLowerCase().trim();
 
         // Global Reset / Nurture trigger: Reset demo if they type "Start" or send the prefilled phrase
-        if (normalizedText === "start" || normalizedText === "restart" || normalizedText.includes("how kredibly works") || normalizedText === "hello" || normalizedText === "hi kreddy") {
+        if (normalizedText === "start" || normalizedText === "restart" || normalizedText.includes("how kredibly works") || normalizedText.includes("how kreddy works") || normalizedText === "hello" || normalizedText === "hi kreddy") {
             prospect.demoState = "welcome";
             await prospect.save();
         }

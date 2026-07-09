@@ -148,7 +148,7 @@ app.get("/api/health-check", (req, res) => {
 // 4. Redirects (WhatsApp Short-links)
 app.get("/r/:id", (req, res) => {
   const frontendUrl = process.env.FRONTEND_URL || 'https://usekredibly.com';
-  res.redirect(`${frontendUrl}/i/${req.params.id}`);
+  res.redirect(`${frontendUrl}/r/${req.params.id}`);
 });
 
 // 4. Routes

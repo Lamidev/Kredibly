@@ -88,7 +88,10 @@ export default function Tasks() {
 
             const res = await axios.post(`${API_URL}/business/reminders`, payload, { withCredentials: true });
             if (res.data.success) {
-                setDbReminders(prev => [res.data.data, ...prev]);
+                setDbReminders(prev => {
+                    if (prev.some(r => r._id === res.data.data._id)) return prev;
+                    return [res.data.data, ...prev];
+                });
                 setNewText("");
                 toast.success("Task added! 🚀");
             }
