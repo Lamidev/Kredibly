@@ -49,14 +49,34 @@ class ProspectController {
             prospect.demoState = "waiting_for_signup";
             await prospect.save();
 
-            // Send URL as an interactive button link (so it's not a naked link)
-            await MessageDispatcher.sendButtons(
-                from,
-                "Create Workspace",
-                "Tap the button below to register and start using Kreddy with your customers.",
-                "",
-                [{ id: "prospect_cta_register", title: "Open Signup Link" }]
-            );
+            const { sendWhatsAppTemplate } = require("../../controllers/whatsapp/whatsappController");
+
+            const bodyText = "Fantastic! Ready to run your business with Kreddy? Tap the button below to create your free account on the browser and activate your workspace in 30 seconds.";
+            const cleanMsg = bodyText
+                .replace(/[\r\n\t]+/g, ' ')
+                .replace(/\s\s+/g, ' ')
+                .trim()
+                .substring(0, 1024);
+
+            const components = [
+                {
+                    type: "body",
+                    parameters: [
+                        { type: "text", text: "Partner" },
+                        { type: "text", text: cleanMsg }
+                    ]
+                },
+                {
+                    type: "button",
+                    sub_type: "url",
+                    index: "0",
+                    parameters: [
+                        { type: "text", text: "signup" }
+                    ]
+                }
+            ];
+
+            await sendWhatsAppTemplate(from, "kreddy_system_alert", components);
             return true;
         }
 
