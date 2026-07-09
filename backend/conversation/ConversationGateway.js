@@ -117,8 +117,18 @@ class ConversationGateway {
         const lowerText = String(opts.text || "").toLowerCase().trim();
         const isDemoIntent = lowerText.includes("how kredibly works") || lowerText.includes("how kreddy works") || lowerText.includes("see how kredibly works") || lowerText.includes("see how kreddy works");
 
+        // Check if user is in an active prospect demo session
+        const Prospect = require("../models/Prospect");
+        const prospect = await Prospect.findOne({ phoneNumber: cleanFrom });
+        const buttonId = message?.interactive?.button_reply?.id || 
+                         message?.interactive?.list_reply?.id || 
+                         message?.button?.payload || 
+                         null;
+        const isProspectButton = buttonId && buttonId.startsWith("prospect_demo_");
+        const isDemoInProgress = prospect && ["welcome", "demo_ask_phone", "demo_confirm_send"].includes(prospect.demoState);
+
         let role = "PROSPECT_DEMO";
-        if (isDemoIntent) {
+        if (isDemoIntent || isProspectButton || isDemoInProgress) {
             role = "PROSPECT_DEMO";
         } else if (profile) {
             role = "MERCHANT";
@@ -129,7 +139,7 @@ class ConversationGateway {
         // 1. Route based on resolved Conversation Mode
         if (role === "PROSPECT_DEMO") {
             const ProspectController = require("./ProspectController");
-            const handled = await ProspectController.handle(message, cleanFrom, opts);
+            const handled = await ProspectController.handle(message, cleanFrom, { ...opts, profile });
             if (handled) {
                 return true;
             }
