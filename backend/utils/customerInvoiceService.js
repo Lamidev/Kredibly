@@ -496,40 +496,6 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
                     sale.customerName,
                     sale.invoiceNumber
                 );
-            } else {
-                // Step 2b: V2 — Follow up immediately with interactive buttons.
-                // The template opens the 24h window; now we send a proper conversational
-                // message so the customer stays 100% inside WhatsApp.
-                const hasDueDateStr = hasDueDate ? `\nDue: *${dueDateFormatted}*` : "";
-                const balanceStr = hasPartialPayment
-                    ? `Outstanding Balance: *₦${bal.toLocaleString()}*`
-                    : `Amount: *₦${sale.totalAmount.toLocaleString()}*`;
-
-                const introText = [
-                    `Hi ${sale.customerName} 👋`,
-                    ``,
-                    `*${businessName}* has sent you an invoice for *${itemsListStr}*.`,
-                    ``,
-                    balanceStr,
-                    `Ref: *${refStr}*${hasDueDateStr}`,
-                    ``,
-                    `How would you like to proceed?`
-                ].join("\n");
-
-                const actionButtons = [
-                    { id: `pay_now:${sale._id}`, title: "Pay with Transfer" }
-                ];
-                if (canRequestExt) {
-                    actionButtons.push({ id: `req_ext:${sale._id}`, title: "Request Extension" });
-                }
-
-                await sendInteractiveButtons(
-                    cleanCustomerPhone,
-                    `Invoice ${refStr}`,
-                    introText,
-                    "",
-                    actionButtons
-                );
             }
 
         } else {
