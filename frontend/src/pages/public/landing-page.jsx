@@ -278,7 +278,7 @@ const LandingPage = () => {
                 }} />
 
                 <header style={{
-                    padding: 'calc(clamp(80px, 10vw, 110px) + env(safe-area-inset-top, 0px)) 24px clamp(2rem, 6vw, 70px)',
+                    padding: 'calc(clamp(110px, 12vw, 140px) + env(safe-area-inset-top, 0px)) 24px clamp(2rem, 6vw, 70px)',
                     maxWidth: '1400px',
                     margin: '0 auto',
                     textAlign: 'center',
@@ -300,7 +300,7 @@ const LandingPage = () => {
                         letterSpacing: '-0.06em',
                         fontFamily: 'var(--font-heading)'
                     }}>
-                        <span style={{ display: 'block', marginBottom: '16px' }}>Your Personal AI Business Assistant,</span>
+                        <span style={{ display: 'block', marginBottom: '16px' }}>Your Personal AI Business Assistant.</span>
                         <div style={{ 
                             color: 'var(--primary)', 
                             position: 'relative', 
@@ -330,7 +330,7 @@ const LandingPage = () => {
                         marginInline: 'auto',
                         fontWeight: 400
                     }}>
-                        Unlock automated invoicing, debt tracking, and instant payments with <b>Kreddy</b>, your AI-powered assistant on WhatsApp, making running your merchant business simpler and more intuitive.
+                        Unlock automated invoicing, debt tracking, and instant payments with <b>Kreddy</b>, your AI-powered assistant on WhatsApp, making running your business simpler and more intuitive.
                     </p>
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                         <a
@@ -339,16 +339,16 @@ const LandingPage = () => {
                             rel="noopener noreferrer"
                             className="btn-magnetic"
                             style={{
-                                padding: '18px 36px',
-                                fontSize: '1.2rem',
-                                borderRadius: '14px',
+                                padding: '14px 28px',
+                                fontSize: '1.05rem',
+                                borderRadius: '12px',
                                 background: 'var(--primary)',
                                 color: '#FFFFFF',
                                 fontWeight: 600,
                                 cursor: 'pointer',
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '12px',
+                                gap: '10px',
                                 transition: 'all 0.2s ease',
                                 textDecoration: 'none',
                                 boxShadow: '0 8px 24px rgba(109, 40, 217, 0.25)'
