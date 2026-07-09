@@ -5,6 +5,7 @@ import {
     Menu, X, ChevronDown, Sparkles, LayoutDashboard, CreditCard, User, Building2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { KREDDY_CONFIG } from "../../config";
 
 const PublicNavbar = () => {
     const navigate = useNavigate();
@@ -92,7 +93,7 @@ const PublicNavbar = () => {
                     {/* Actions */}
                     <div className="nav-actions">
                         <Link to="/auth/login" className="btn-desktop" style={{ 
-                            padding: '10px 20px', borderRadius: '100px',
+                            padding: '10px 20px', borderRadius: '12px',
                             color: '#0F172A', fontSize: '0.92rem', fontWeight: 800, textDecoration: 'none', transition: '0.2s',
                             border: '1px solid rgba(15, 23, 42, 0.1)',
                             background: 'rgba(255,255,255,0.5)',
@@ -100,13 +101,19 @@ const PublicNavbar = () => {
                         }}>
                             Login
                         </Link>
-                        <Link to="/auth/register" className="btn-desktop" style={{ 
-                            padding: '10px 24px', borderRadius: '100px', background: 'var(--primary)',
-                            color: 'white', fontSize: '0.9rem', fontWeight: 700, textDecoration: 'none',
-                            boxShadow: '0 4px 12px rgba(76, 29, 149, 0.2)'
-                        }}>
-                            Start Free Trial
-                        </Link>
+                        <a 
+                            href={KREDDY_CONFIG.getLink("Hi Kreddy\nI'd like to see how Kredibly works.")}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-desktop" 
+                            style={{ 
+                                padding: '10px 24px', borderRadius: '12px', background: 'var(--primary)',
+                                color: 'white', fontSize: '0.9rem', fontWeight: 700, textDecoration: 'none',
+                                boxShadow: '0 4px 12px rgba(76, 29, 149, 0.2)'
+                            }}
+                        >
+                            Try Kreddy
+                        </a>
                         <button 
                             onClick={() => setIsMobileMenuOpen(true)} 
                             className="mobile-menu-toggle"
@@ -165,11 +172,19 @@ const PublicNavbar = () => {
                                     <div style={{ padding: '24px', borderTop: '1px solid rgba(0,0,0,0.05)', background: 'rgba(255,255,255,0.1)' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                             <Link to="/auth/login" onClick={() => setIsMobileMenuOpen(false)} style={{ 
-                                                width: '100%', padding: '16px', borderRadius: '16px', background: 'white', border: '1px solid #E2E8F0', textAlign: 'center', textDecoration: 'none', color: '#0F172A', fontWeight: 800, fontSize: 'clamp(0.85rem, 3.5vw, 0.95rem)'
+                                                width: '100%', padding: '16px', borderRadius: '12px', background: 'white', border: '1px solid #E2E8F0', textAlign: 'center', textDecoration: 'none', color: '#0F172A', fontWeight: 800, fontSize: 'clamp(0.85rem, 3.5vw, 0.95rem)'
                                             }}>Login</Link>
-                                            <Link to="/auth/register" onClick={() => setIsMobileMenuOpen(false)} style={{ 
-                                                width: '100%', padding: '16px', borderRadius: '16px', background: 'var(--primary)', textAlign: 'center', textDecoration: 'none', color: 'white', fontWeight: 800, fontSize: 'clamp(0.85rem, 3.5vw, 0.95rem)', boxShadow: '0 10px 20px -5px rgba(76, 29, 149, 0.3)' 
-                                            }}>Start Free Trial</Link>
+                                            <a 
+                                                href={KREDDY_CONFIG.getLink("Hi Kreddy\nI'd like to see how Kredibly works.")}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                onClick={() => setIsMobileMenuOpen(false)}
+                                                style={{ 
+                                                    width: '100%', padding: '16px', borderRadius: '12px', background: 'var(--primary)', textAlign: 'center', textDecoration: 'none', color: 'white', fontWeight: 800, fontSize: 'clamp(0.85rem, 3.5vw, 0.95rem)', boxShadow: '0 10px 20px -5px rgba(76, 29, 149, 0.3)' 
+                                                }}
+                                            >
+                                                Try Kreddy
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
