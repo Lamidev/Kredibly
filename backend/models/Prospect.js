@@ -18,7 +18,7 @@ const ProspectSchema = new mongoose.Schema({
     },
     demoState: {
         type: String,
-        enum: ["welcome", "demo_running", "demo_completed", "waiting_for_signup", "nurture"],
+        enum: ["welcome", "demo_ask_phone", "demo_confirm_send", "demo_running", "demo_completed", "waiting_for_signup", "nurture"],
         default: "welcome"
     },
     demoCompleted: {
