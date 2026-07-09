@@ -75,7 +75,7 @@ class ProspectController {
             prospect.lastInteraction = new Date();
             await prospect.save();
 
-            const promptText = `👤 *You:*\n_Rebecca bought shoes for ₦25,000._\n\n🤖 *Me (Kreddy):*\n_Got it! I've created the invoice for Rebecca. What is her WhatsApp number so I can deliver it?_`;
+            const promptText = `👤 *You:*\n_Rebecca bought shoes for ₦25,000._\n\n🤖 *Kreddy:*\n_Invoice created._\n\n_Let's deliver it._`;
             
             await MessageDispatcher.sendButtons(
                 from,
@@ -83,20 +83,20 @@ class ProspectController {
                 promptText,
                 "",
                 [
-                    { id: "prospect_demo_provide_num", title: "Provide Number" },
+                    { id: "prospect_demo_provide_num", title: "Deliver Invoice" },
                     { id: "prospect_demo_notnow", title: "Cancel" }
                 ]
             );
             return true;
         }
 
-        // Demo Step 2: Provide Phone Number
+        // Demo Step 2: Deliver Invoice
         if (buttonId === "prospect_demo_provide_num" || (prospect.demoState === "demo_ask_phone" && normalizedText !== "")) {
             prospect.demoState = "demo_confirm_send";
             prospect.lastInteraction = new Date();
             await prospect.save();
 
-            const promptText = `🤖 *Me (Kreddy):*\n_Ready to send the ₦25,000 invoice for shoes to Rebecca (+234 803 000 1234). Should I go ahead and deliver it?_`;
+            const promptText = `📲 *Rebecca (Customer)*\n_WhatsApp Number: +234 803 000 1234_\n\n_Ready to send?_`;
 
             await MessageDispatcher.sendButtons(
                 from,
@@ -104,14 +104,14 @@ class ProspectController {
                 promptText,
                 "",
                 [
-                    { id: "prospect_demo_send_goahead", title: "Yes, Send It" },
+                    { id: "prospect_demo_send_goahead", title: "Yes, Send" },
                     { id: "prospect_demo_notnow", title: "Cancel" }
                 ]
             );
             return true;
         }
 
-        // Demo Step 3: Go Ahead / Send
+        // Demo Step 3: Yes, Send
         if (buttonId === "prospect_demo_send_goahead" || (prospect.demoState === "demo_confirm_send" && normalizedText !== "")) {
             const now = new Date();
             const demoStart = prospect.lastInteraction || now;
@@ -123,7 +123,7 @@ class ProspectController {
             prospect.timeSpent = (prospect.timeSpent || 0) + diffSec;
             await prospect.save();
 
-            const completionText = `👤 *Rebecca (Customer):*\n_Payment made._\n\n🎉 *Payment Received!*\n_₦25,000 has been verified and swept to your bank. Rebecca has received her receipt._\n\nThat's how easy running your business can be. Ready to use Kreddy with your own customers?`;
+            const completionText = `👤 *Rebecca:*\n_"Thanks! I've just paid."_\n\n🎉 *Payment Received*\n_₦25,000 verified._\n_Money swept to your bank._\n_Receipt delivered automatically._\n\n━━━━━━━━━━━━━━\n*Today's Business*\n\nCollected Today: *₦25,000*\nOutstanding: *₦0*\n━━━━━━━━━━━━━━\n\n_Imagine running every sale this way._`;
             
             await MessageDispatcher.sendButtons(
                 from,
@@ -156,28 +156,28 @@ class ProspectController {
                 return true;
 
             case "demo_ask_phone":
-                const askPhoneGuide = `Please type Rebecca's phone number or tap "Provide Number" to provide a mock number.`;
+                const askPhoneGuide = `Tap "Deliver Invoice" to send the invoice to Rebecca.`;
                 await MessageDispatcher.sendButtons(
                     from,
                     "Demo - Step 1 of 3",
                     askPhoneGuide,
                     "",
                     [
-                        { id: "prospect_demo_provide_num", title: "Provide Number" },
+                        { id: "prospect_demo_provide_num", title: "Deliver Invoice" },
                         { id: "prospect_demo_notnow", title: "Cancel" }
                     ]
                 );
                 return true;
 
             case "demo_confirm_send":
-                const confirmSendGuide = `Should I send the invoice to Rebecca? Tap "Yes, Send It" to see what happens next.`;
+                const confirmSendGuide = `Tap "Yes, Send" to deliver the invoice to Rebecca.`;
                 await MessageDispatcher.sendButtons(
                     from,
                     "Demo - Step 2 of 3",
                     confirmSendGuide,
                     "",
                     [
-                        { id: "prospect_demo_send_goahead", title: "Yes, Send It" },
+                        { id: "prospect_demo_send_goahead", title: "Yes, Send" },
                         { id: "prospect_demo_notnow", title: "Cancel" }
                     ]
                 );
