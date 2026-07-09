@@ -1322,12 +1322,25 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
             const pdfUrl = await generateAndUploadInvoicePDF(sale, business);
             if (pdfUrl) {
                 sale = await Sale.findByIdAndUpdate(saleId, { pdfUrl }, { new: true }).populate("businessId");
+                
+                // Send to customer
                 await sendDocument(
                     cleanCustomerPhone,
                     sale.pdfUrl,
                     `Receipt-${sale.invoiceNumber}.pdf`,
                     `🧾 *Official Receipt from ${businessName}*\nInvoice #${sale.invoiceNumber} — Fully Settled`
                 );
+
+                // Send to merchant copy
+                if (business.whatsappNumber) {
+                    const cleanMerchantPhone = normalizePhone(business.whatsappNumber);
+                    await sendDocument(
+                        cleanMerchantPhone,
+                        sale.pdfUrl,
+                        `Receipt-${sale.invoiceNumber}.pdf`,
+                        `🧾 *Paid Invoice Receipt (Merchant Copy)*\nInvoice #${sale.invoiceNumber} from ${sale.customerName} is fully paid!`
+                    );
+                }
             }
         }
 

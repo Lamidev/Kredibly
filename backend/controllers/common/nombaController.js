@@ -184,9 +184,10 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
 
         const business = sale.businessId;
 
-        // ✅ The invoice ALWAYS logs the base amount the DVA was generated for.
-        // This represents the invoice debt, regardless of what was actually transferred.
-        const creditAmount = vaRecord.baseAmount || amount;
+        // Calculate the base (net) equivalent amount actually paid
+        const creditAmount = (vaRecord.amount > 0) 
+            ? Math.round(amount * (vaRecord.baseAmount / vaRecord.amount)) 
+            : amount;
 
         // Determine payment scenario for merchant notification
         const tolerance = 5; // ₦5 tolerance for floating point / rounding edge cases

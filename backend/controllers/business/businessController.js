@@ -17,33 +17,31 @@ const triggerWelcomeMessage = async (profile) => {
     try {
         const { sendWhatsAppAlert } = require("../whatsapp/whatsappController");
         
-        const planName = profile.plan.charAt(0).toUpperCase() + profile.plan.slice(1);
-        const bossTitle = profile.displayName || (profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Boss"));
-        const personalizedName = profile.assistantSettings?.preferredName || bossTitle;
+        const planDefaultTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Partner");
+        const personalizedName = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;
 
-        const { sendWhatsAppTemplate } = require("../whatsapp/whatsappController");
+        const welcomeUpdate = `Welcome to Kredibly! Your WhatsApp workspace is set up and connected. I'm ready to record your sales and help collect your payments. To see what I can do, just reply "HELP" or type "S" to view your stats.`;
+
         const components = [
             {
                 type: "body",
                 parameters: [
                     { type: "text", text: String(personalizedName).substring(0, 60) },
-                    { type: "text", text: String(profile.displayName).substring(0, 60) }
+                    { type: "text", text: String(welcomeUpdate).substring(0, 1024) }
                 ]
             },
             {
-                // Quick Reply button — index 0 = first button on the template.
-                // Button payload must match what the backend intercepts in whatsappController.js.
                 type: "button",
-                sub_type: "quick_reply",
+                sub_type: "url",
                 index: "0",
                 parameters: [
-                    { type: "payload", payload: "ask_me_what_i_can_do" }
+                    { type: "text", text: "dashboard" }
                 ]
             }
         ];
 
-        // Send to Merchant using official Meta template
-        await sendWhatsAppTemplate(profile.whatsappNumber, "kreddy_welcome_new_users", components);
+        // Send to Merchant using official Meta Utility template to save costs
+        await sendWhatsAppTemplate(profile.whatsappNumber, "kreddy_system_alert", components);
 
         // Send to Staff
         if (profile.staffNumbers && profile.staffNumbers.length > 0) {
@@ -109,19 +107,21 @@ exports.updateProfile = async (req, res) => {
             if (req.body.onboardingStep === 4) profile.onboardingStep = 4;
             await profile.save();
 
+            // Promote prospect if applicable
+            const { promoteProspect } = require("../../utils/prospectPromotion");
+            await promoteProspect(profile);
+
             // 🚀 SMART TRIAL LOGIC (June 1st Launch Aware)
             const trialDurationDays = 14;
             const trialStartDate = now < LAUNCH_DATE ? LAUNCH_DATE : now;
             const expiryDate = new Date(trialStartDate);
             expiryDate.setDate(expiryDate.getDate() + trialDurationDays);
 
-            // Trigger Kreddy Welcome and set Trial Expiry when onboarding hits Step 4
-            if (wasIncomplete && profile.onboardingStep === 4 && !profile.welcomeSent) {
+            // Set Trial Expiry when onboarding hits Step 4
+            if (wasIncomplete && profile.onboardingStep === 4 && !profile.firstMerchantGreetingSent) {
                 profile.trialExpiresAt = expiryDate;
-                profile.welcomeSent = true;
-                profile.isKreddyConnected = true; // Prevent duplicate connection welcome
+                profile.firstMerchantGreetingSent = false;
                 await profile.save();
-                triggerWelcomeMessage(profile).catch(err => console.error("Auto Welcome Fail:", err));
             }
         } else {
             // ... (Creation logic)
@@ -150,11 +150,13 @@ exports.updateProfile = async (req, res) => {
             });
             await profile.save();
 
+            // Promote prospect if applicable
+            const { promoteProspect } = require("../../utils/prospectPromotion");
+            await promoteProspect(profile);
+
             if (profile.onboardingStep === 4) {
-                profile.welcomeSent = true;
-                profile.isKreddyConnected = true; // Prevent duplicate connection welcome
+                profile.firstMerchantGreetingSent = false;
                 await profile.save();
-                triggerWelcomeMessage(profile).catch(err => console.error("Auto Welcome Fail:", err));
             }
         }
         res.status(200).json({ success: true, data: profile });
@@ -256,7 +258,7 @@ exports.triggerWelcome = async (req, res) => {
         const profile = await BusinessProfile.findOne({ ownerId: req.user._id });
         if (!profile) return res.status(404).json({ success: false, message: "Profile not found" });
 
-        if (profile.welcomeSent) {
+        if (profile.firstMerchantGreetingSent) {
             return res.status(200).json({ success: true, message: "Welcome already sent" });
         }
 
@@ -264,8 +266,7 @@ exports.triggerWelcome = async (req, res) => {
         await triggerWelcomeMessage(profile);
 
         // Update flag
-        profile.welcomeSent = true;
-        profile.isKreddyConnected = true; // 🛡️ Prevent redundant "Intro" message when they first reply
+        profile.firstMerchantGreetingSent = true;
         await profile.save();
 
         res.status(200).json({ success: true, message: "Welcome triggered" });

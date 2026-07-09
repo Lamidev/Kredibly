@@ -190,3 +190,55 @@ WorkflowEventBus.subscribe("WorkflowCompleted", async (payload) => {
         console.error("🚨 [Subscriber] Error saving completed draft to memory:", err);
     }
 });
+
+// ==========================================
+// Event: ProspectPromoted
+// ==========================================
+// Sets up ConversationContext and ConversationMemory for the promoted merchant.
+
+WorkflowEventBus.subscribe("ProspectPromoted", async (payload) => {
+    const { profile, prospect } = payload;
+    if (!profile || !profile.whatsappNumber) return;
+
+    const cleanFrom = profile.whatsappNumber;
+    const businessId = profile._id;
+
+    try {
+        const ConversationContext = require("../models/ConversationContext");
+        const ConversationMemory = require("../models/ConversationMemory");
+
+        // 1. Ensure ConversationContext is set up for the new merchant workspace
+        let context = await ConversationContext.findOne({ whatsappNumber: cleanFrom });
+        if (context) {
+            context.businessId = businessId;
+            // Reset to free conversation if they were in the middle of prospect demo
+            if (context.workflowId === "prospect_demo" || context.mode === "active_workflow") {
+                context.mode = "free_conversation";
+                context.workflowId = null;
+                context.step = null;
+                context.data = {};
+            }
+            await context.save();
+        } else {
+            context = new ConversationContext({
+                whatsappNumber: cleanFrom,
+                businessId: businessId,
+                mode: "free_conversation"
+            });
+            await context.save();
+        }
+
+        // 2. Ensure ConversationMemory exists
+        let memory = await ConversationMemory.findOne({ businessId: businessId });
+        if (!memory) {
+            memory = new ConversationMemory({
+                businessId: businessId,
+                exchanges: []
+            });
+            await memory.save();
+        }
+        console.log(`🚀 [Subscriber] Converted Conversation Context & Memory for promoted merchant workspace: ${businessId}`);
+    } catch (err) {
+        console.error("🚨 [Subscriber] Error handling ProspectPromoted event:", err);
+    }
+});

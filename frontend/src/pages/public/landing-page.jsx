@@ -37,6 +37,7 @@ import PublicFooter from "../../components/public/PublicFooter";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 import kreddyWhatsapp from "../../assets/kreddy-whatsapp.jpg";
+import { KREDDY_CONFIG } from "../../config";
 
 /**
  * PhraseFlip — replaces the old Typewriter.
@@ -288,34 +289,9 @@ const LandingPage = () => {
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8 }}
-                >
-                    <div style={{ 
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        marginBottom: '24px',
-                        background: 'white',
-                        padding: '10px 24px',
-                        borderRadius: '100px',
-                        border: '1px solid rgba(76, 29, 149, 0.15)',
-                        boxShadow: '0 8px 16px rgba(76, 29, 149, 0.08)'
-                    }}>
-                        <span style={{ 
-                            fontSize: 'clamp(0.65rem, 2.5vw, 0.85rem)',
-                            fontWeight: 700, 
-                            color: 'var(--primary)',
-                            letterSpacing: '0.08em',
-                            textTransform: 'uppercase',
-                        }}>The Intelligent Assistant for Every Merchant</span>
-                    </div>
-
-                    <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
                     style={{ textAlign: 'center', maxWidth: '1000px', margin: '0 auto', position: 'relative', zIndex: 10 }}
                 >
-
+ 
                     <h1 style={{ 
                         fontSize: 'clamp(3.2rem, 9vw, 5.5rem)', 
                         fontWeight: 950, 
@@ -324,7 +300,7 @@ const LandingPage = () => {
                         letterSpacing: '-0.06em',
                         fontFamily: 'var(--font-heading)'
                     }}>
-                        <span style={{ display: 'block', marginBottom: '16px' }}>Send invoices. Get paid.</span>
+                        <span style={{ display: 'block', marginBottom: '16px' }}>Your Personal AI Business Assistant,</span>
                         <div style={{ 
                             color: 'var(--primary)', 
                             position: 'relative', 
@@ -338,14 +314,13 @@ const LandingPage = () => {
                             overflow: 'hidden',
                         }}>
                              <PhraseFlip phrases={[
-                                "Without lifting a finger.",
-                                "While you focus on selling.",
-                                "Straight to your bank.",
-                                // "With Kreddy AI."
+                                "On WhatsApp.",
+                                "Send invoices.",
+                                "Collect payments.",
                             ]} />
                         </div>
                     </h1>
-
+ 
                     <p style={{  
                         fontSize: 'clamp(1.1rem, 3vw, 1.4rem)', 
                         color: '#4B5563', 
@@ -355,47 +330,45 @@ const LandingPage = () => {
                         marginInline: 'auto',
                         fontWeight: 400
                     }}>
-                        The ultimate AI-powered assistant for modern commerce. Speak to <b>Kreddy AI</b> to log sales, deliver professional invoices instantly on WhatsApp, handle automated due-date extensions, and sweep money straight to your bank account with zero fees.
+                        Unlock automated invoicing, debt tracking, and instant payments with <b>Kreddy</b>, your AI-powered assistant on WhatsApp, making running your merchant business simpler and more intuitive.
                     </p>
-                    <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center' }}>
-                        <Link to="/auth/register" className="btn-primary btn-magnetic" style={{ padding: '20px 40px', fontSize: '1.1rem', borderRadius: '18px' }}>
-                            Get Started <ArrowRight size={20} />
-                        </Link>
-                        <button
-                            onClick={() => scrollToSection('how-it-works')}
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <a
+                            href={KREDDY_CONFIG.getLink("Hi Kreddy\nI'd like to see how Kredibly works.")}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-magnetic"
                             style={{
-                                padding: '20px 40px',
-                                fontSize: '1.1rem',
-                                borderRadius: '18px',
-                                background: 'transparent',
-                                border: '1.5px solid rgba(76, 29, 149, 0.25)',
-                                color: '#0F172A',
+                                padding: '18px 36px',
+                                fontSize: '1.2rem',
+                                borderRadius: '14px',
+                                background: 'var(--primary)',
+                                color: '#FFFFFF',
                                 fontWeight: 600,
                                 cursor: 'pointer',
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '8px',
+                                gap: '12px',
                                 transition: 'all 0.2s ease',
-                                fontFamily: 'inherit',
-                                letterSpacing: '-0.01em'
+                                textDecoration: 'none',
+                                boxShadow: '0 8px 24px rgba(109, 40, 217, 0.25)'
                             }}
                             onMouseEnter={e => {
-                                e.currentTarget.style.borderColor = 'var(--primary)';
-                                e.currentTarget.style.color = 'var(--primary)';
-                                e.currentTarget.style.background = 'rgba(76, 29, 149, 0.04)';
+                                e.currentTarget.style.background = '#6D28D9';
+                                e.currentTarget.style.transform = 'translateY(-1px)';
                             }}
                             onMouseLeave={e => {
-                                e.currentTarget.style.borderColor = 'rgba(76, 29, 149, 0.25)';
-                                e.currentTarget.style.color = '#0F172A';
-                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.background = 'var(--primary)';
+                                e.currentTarget.style.transform = 'none';
                             }}
                         >
-                            <MessageCircle size={18} />
-                            Meet Kreddy
-                        </button>
+                            <svg viewBox="0 0 24 24" width="28" height="28" fill="white" style={{ flexShrink: 0 }}>
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.458 5.704 1.459h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413" />
+                            </svg>
+                            <span style={{ letterSpacing: "-0.01em" }}>Try Kreddy Now</span>
+                        </a>
                     </div>
                 </motion.div>
-            </motion.div>
             </header>
             </section>
 
