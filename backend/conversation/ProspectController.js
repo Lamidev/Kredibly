@@ -44,6 +44,23 @@ class ProspectController {
             await prospect.save();
         }
 
+        // Cancel/exit keyword handler
+        const isCancelPhrase = ["exit", "cancel", "stop", "quit", "leave"].includes(normalizedText);
+        if (isCancelPhrase) {
+            prospect.demoState = "nurture";
+            await prospect.save();
+
+            if (opts.profile) {
+                const exitText = `Demo exited. Welcome back, *${opts.bossTitle || "Boss"}*!\n\nHow can I help you manage your business today?`;
+                await MessageDispatcher.send(from, exitText);
+                return true;
+            } else {
+                const nurtureText = `No worries.\n\nWhenever you're ready, just type *Start* and I'll help you launch your business.`;
+                await MessageDispatcher.send(from, nurtureText);
+                return true;
+            }
+        }
+
         // 2. Button Action overrides (Global button handlers for prospects)
         if (buttonId === "prospect_demo_register" || normalizedText === "create workspace") {
             prospect.demoState = "waiting_for_signup";
@@ -59,6 +76,12 @@ class ProspectController {
         if (buttonId === "prospect_demo_notnow" || normalizedText === "not now") {
             prospect.demoState = "nurture";
             await prospect.save();
+
+            if (opts.profile) {
+                const exitText = `Demo exited. Welcome back, *${opts.bossTitle || "Boss"}*!\n\nHow can I help you manage your business today?`;
+                await MessageDispatcher.send(from, exitText);
+                return true;
+            }
 
             const nurtureText = `No worries.\n\nWhenever you're ready, just type *Start* and I'll help you launch your business.`;
             await MessageDispatcher.send(from, nurtureText);
@@ -121,6 +144,12 @@ class ProspectController {
 
             const completionText = `👤 *Rebecca:*\n_"Thanks! I've just paid."_\n\n🎉 *Payment Received*\n_₦25,000 verified._\n_Money swept to your bank._\n_Receipt delivered automatically._\n\n━━━━━━━━━━━━━━\n*Today's Business*\n\nCollected Today: *₦25,000*\nOutstanding: *₦0*\n━━━━━━━━━━━━━━\n\n_Imagine running every sale this way._`;
             
+            if (opts.profile) {
+                const welcomeBackMsg = `${completionText}\n\n━━━━━━━━━━━━━━\n*Demo Completed!* Welcome back to your workspace. How can I help you record sales or check records today?`;
+                await MessageDispatcher.send(from, welcomeBackMsg);
+                return true;
+            }
+
             await MessageDispatcher.sendButtons(
                 from,
                 "Demo - Completed",
@@ -139,6 +168,21 @@ class ProspectController {
             case "welcome":
                 // Send the welcome message & options
                 const welcomeText = `Welcome 👋\n\nI'm *Kreddy*, your AI business assistant.\n\nI help businesses record sales, send invoices, follow up on unpaid customers, and collect payments directly from WhatsApp.\n\nWould you like a quick demo?`;
+                
+                if (opts.profile) {
+                    await MessageDispatcher.sendButtons(
+                        from,
+                        "Kreddy Demo",
+                        welcomeText,
+                        "No account required to try",
+                        [
+                            { id: "prospect_demo_start", title: "Start Demo" },
+                            { id: "prospect_demo_notnow", title: "Cancel" }
+                        ]
+                    );
+                    return true;
+                }
+
                 await MessageDispatcher.sendButtons(
                     from,
                     "Kreddy Demo",
