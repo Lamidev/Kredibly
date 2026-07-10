@@ -1539,7 +1539,8 @@ const LandingPage = () => {
                 borderBottom: '1px solid #F1F5F9',
                 minHeight: '100vh',
                 display: 'flex',
-                alignItems: 'center'
+                alignItems: 'center',
+                paddingTop: 'env(safe-area-inset-top)'
             }}>
                 <div style={{
                     position: 'absolute',
@@ -1557,7 +1558,7 @@ const LandingPage = () => {
                 }} />
 
                 <header style={{
-                    padding: 'clamp(80px, 9vh, 120px) 24px clamp(1.5rem, 4vw, 50px)',
+                    padding: 'clamp(100px, 10vh, 120px) 24px clamp(1.5rem, 4vw, 50px)',
                     maxWidth: '1400px',
                     margin: '0 auto',
                     position: 'relative',
