@@ -1730,7 +1730,7 @@ const LandingPage = () => {
                                     </div>
                                 </motion.div>
 
-                                {/* Floating Bubbles */}
+                                {/* Floating Bubbles - Same position on all devices */}
                                 <motion.div
                                     initial={{ opacity: 0, x: -30, y: 20 }}
                                     animate={{ opacity: 1, x: 0, y: 0 }}
@@ -1959,7 +1959,7 @@ const LandingPage = () => {
                                     </div>
                                 </motion.div>
 
-                                {/* Floating bubbles */}
+                                {/* Floating bubbles - Same position on all devices */}
                                 <motion.div
                                     initial={{ opacity: 0, x: -30, y: 20 }}
                                     whileInView={{ opacity: 1, x: 0, y: 0 }}
@@ -2650,7 +2650,7 @@ const LandingPage = () => {
                     }
                 }
 
-                /* Hero responsive styles */
+                /* Hero responsive styles - Keep floating bubbles in same position */
                 @media (max-width: 992px) {
                     .hero-container {
                         grid-template-columns: 1fr !important;
@@ -2697,22 +2697,7 @@ const LandingPage = () => {
                         top: 12px !important;
                         border-radius: 18px !important;
                     }
-                    .floating-bubble-1 {
-                        top: 8% !important;
-                        left: -38px !important;
-                        z-index: 25 !important;
-                        transform: scale(0.6);
-                    }
-                    .floating-bubble-2 {
-                        top: 5% !important;
-                        right: -36px !important;
-                        transform: scale(0.6);
-                    }
-                    .floating-bubble-3 {
-                        bottom: 8% !important;
-                        left: -30px !important;
-                        transform: scale(0.6);
-                    }
+                    /* Floating bubbles stay in same position - no overrides */
                 }
 
                 @media (max-width: 480px) {
@@ -2746,21 +2731,7 @@ const LandingPage = () => {
                         top: 10px !important;
                         border-radius: 16px !important;
                     }
-                    .floating-bubble-1 {
-                        transform: scale(0.45);
-                        left: -34px !important;
-                        top: 6% !important;
-                    }
-                    .floating-bubble-2 {
-                        transform: scale(0.45);
-                        right: -32px !important;
-                        top: 4% !important;
-                    }
-                    .floating-bubble-3 {
-                        transform: scale(0.45);
-                        left: -26px !important;
-                        bottom: 6% !important;
-                    }
+                    /* Floating bubbles stay in same position - no overrides */
                     /* Increase button size on mobile */
                     .btn-magnetic {
                         padding: clamp(12px, 2.5vw, 16px) clamp(22px, 4vw, 32px) !important;
@@ -2779,6 +2750,7 @@ const LandingPage = () => {
                     margin: 0 auto;
                 }
 
+                /* All floating bubbles use the same position on all devices */
                 .floating-bubble-1 {
                     position: absolute;
                     top: 10%;
@@ -2815,16 +2787,16 @@ const LandingPage = () => {
                 }
 
                 @keyframes float-1-mobile {
-                    0%, 100% { transform: scale(0.6) translateY(0); }
-                    50% { transform: scale(0.6) translateY(-8px); }
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-8px); }
                 }
                 @keyframes float-2-mobile {
-                    0%, 100% { transform: scale(0.6) translateY(0); }
-                    50% { transform: scale(0.6) translateY(-6px); }
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-6px); }
                 }
                 @keyframes float-3-mobile {
-                    0%, 100% { transform: scale(0.6) translateY(0); }
-                    50% { transform: scale(0.6) translateY(-7px); }
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-7px); }
                 }
                 
                 .pulse-dot-landing {
