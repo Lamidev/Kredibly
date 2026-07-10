@@ -484,7 +484,7 @@ const Onboarding = () => {
                                                 onChange={e => setWhatsappNumber(e.target.value)} 
                                             />
                                         </div>
-                                        <p style={{ fontSize: '0.8rem', color: '#0F172A', marginTop: '8px', fontWeight: 400 }}>Kreddy will be be able to communicate with you through your Whatsapp number.</p>
+                                        <p style={{ fontSize: '0.8rem', color: '#0F172A', marginTop: '8px', fontWeight: 400 }}>Kreddy will be able to communicate with you through your whatsapp number.</p>
                                     </div>
                                     <div style={{ display: 'flex', gap: '16px' }}>
                                         <button onClick={nextStep} className="btn-primary" style={{ flex: 1, height: '64px', fontSize: '1.1rem' }}>Next: Payout Details <Landmark size={20} /></button>
