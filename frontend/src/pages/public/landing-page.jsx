@@ -1302,32 +1302,22 @@
 import React, { useState, useEffect } from "react";
 import {
     useNavigate,
-    useLocation,
-    Link } from "react-router-dom";
+    useLocation
+} from "react-router-dom";
 import {
     Zap,
     ArrowRight,
-    MessageCircle,
     Sparkles,
     ShieldCheck, X,
     Check,
-    LayoutDashboard,
-    CreditCard,
-    Users,
     Smartphone,
-    TrendingUp,
-    FileText,
     Lock,
     Calendar,
-    Clock,
     Wallet,
     BadgeCheck,
     Plus,
     Minus,
-    ChevronDown,
     Monitor,
-    Tablet,
-    Layout,
     Bell,
     Star,
     Mic
@@ -1336,7 +1326,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import PublicNavbar from "../../components/public/PublicNavbar";
 import PublicFooter from "../../components/public/PublicFooter";
 import { useAuth } from "../../context/AuthContext";
-import { toast } from "sonner";
 import kreddyWhatsapp from "../../assets/kreddy-whatsapp.jpg";
 import { KREDDY_CONFIG } from "../../config";
 
@@ -1503,14 +1492,6 @@ const LandingPage = () => {
     const location = useLocation();
     const [showInstallBanner, setShowInstallBanner] = useState(false);
 
-    const scrollToSection = (sectionId) => {
-        const element = document.getElementById(sectionId);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-            window.history.pushState("", document.title, window.location.pathname + window.location.search);
-        }
-    };
-
     useEffect(() => {
         document.title = "Kredibly | AI Business Assistant for Invoicing, Payments & Receivables";
         
@@ -1576,7 +1557,7 @@ const LandingPage = () => {
                 }} />
 
                 <header style={{
-                    padding: 'clamp(70px, 8vh, 120px) 24px clamp(1.5rem, 4vw, 50px)',
+                    padding: 'clamp(80px, 9vh, 120px) 24px clamp(1.5rem, 4vw, 50px)',
                     maxWidth: '1400px',
                     margin: '0 auto',
                     position: 'relative',
@@ -1603,7 +1584,7 @@ const LandingPage = () => {
                             }}
                         >
                             <h1 style={{ 
-                                fontSize: 'clamp(1.8rem, 5vw, 4.2rem)', 
+                                fontSize: 'clamp(2rem, 5vw, 4.2rem)', 
                                 fontWeight: 950, 
                                 lineHeight: 1.05, 
                                 marginBottom: '16px',
@@ -1620,7 +1601,7 @@ const LandingPage = () => {
                                     alignItems: 'center', 
                                     justifyContent: 'flex-start',
                                     width: '100%',
-                                    fontSize: 'clamp(1rem, 4.5vw, 3rem)',
+                                    fontSize: 'clamp(2rem, 4.5vw, 3rem)',
                                     fontFamily: 'var(--font-heading)',
                                     overflow: 'hidden',
                                     marginTop: '4px'
@@ -1651,8 +1632,8 @@ const LandingPage = () => {
                                     rel="noopener noreferrer"
                                     className="btn-magnetic"
                                     style={{
-                                        padding: 'clamp(8px, 0.8vw, 12px) clamp(14px, 1.5vw, 24px)',
-                                        fontSize: 'clamp(0.7rem, 0.8vw, 0.9rem)',
+                                        padding: 'clamp(10px, 1vw, 14px) clamp(18px, 2vw, 28px)',
+                                        fontSize: 'clamp(0.75rem, 0.9vw, 0.95rem)',
                                         borderRadius: '10px',
                                         background: 'var(--primary)',
                                         color: '#FFFFFF',
@@ -1674,7 +1655,7 @@ const LandingPage = () => {
                                         e.currentTarget.style.transform = 'none';
                                     }}
                                 >
-                                    <svg viewBox="0 0 24 24" width="clamp(16px, 1.5vw, 22px)" height="clamp(16px, 1.5vw, 22px)" fill="white" style={{ flexShrink: 0 }}>
+                                    <svg viewBox="0 0 24 24" width="clamp(18px, 1.8vw, 24px)" height="clamp(18px, 1.8vw, 24px)" fill="white" style={{ flexShrink: 0 }}>
                                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.458 5.704 1.459h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413" />
                                     </svg>
                                     <span style={{ letterSpacing: "-0.01em" }}>Try Kreddy Now</span>
@@ -1749,7 +1730,7 @@ const LandingPage = () => {
                                     </div>
                                 </motion.div>
 
-                                {/* Floating Bubbles */}
+                                {/* Floating Bubbles - Same position on all devices */}
                                 <motion.div
                                     initial={{ opacity: 0, x: -30, y: 20 }}
                                     animate={{ opacity: 1, x: 0, y: 0 }}
@@ -1978,7 +1959,7 @@ const LandingPage = () => {
                                     </div>
                                 </motion.div>
 
-                                {/* Floating bubbles */}
+                                {/* Floating bubbles - Same position on all devices */}
                                 <motion.div
                                     initial={{ opacity: 0, x: -30, y: 20 }}
                                     whileInView={{ opacity: 1, x: 0, y: 0 }}
@@ -2669,7 +2650,7 @@ const LandingPage = () => {
                     }
                 }
 
-                /* Hero responsive styles */
+                /* Hero responsive styles - Keep floating bubbles in same position */
                 @media (max-width: 992px) {
                     .hero-container {
                         grid-template-columns: 1fr !important;
@@ -2679,7 +2660,7 @@ const LandingPage = () => {
                     .hero-left {
                         order: 1;
                         text-align: center;
-                        padding-top: 12px;
+                        padding-top: 20px;
                     }
                     .hero-left p {
                         margin-left: auto !important;
@@ -2710,30 +2691,13 @@ const LandingPage = () => {
                     .phone-mockup > div:last-child {
                         border-radius: 34px !important;
                     }
-                    /* Smaller dynamic island on tablet */
                     .phone-mockup > div:first-child {
                         width: 80px !important;
                         height: 22px !important;
                         top: 12px !important;
                         border-radius: 18px !important;
                     }
-                    /* Move bubbles further outside - only tiny bit inside */
-                    .floating-bubble-1 {
-                        top: 8% !important;
-                        left: -38px !important;
-                        z-index: 25 !important;
-                        transform: scale(0.6);
-                    }
-                    .floating-bubble-2 {
-                        top: 5% !important;
-                        right: -36px !important;
-                        transform: scale(0.6);
-                    }
-                    .floating-bubble-3 {
-                        bottom: 8% !important;
-                        left: -30px !important;
-                        transform: scale(0.6);
-                    }
+                    /* Floating bubbles stay in same position - no overrides */
                 }
 
                 @media (max-width: 480px) {
@@ -2742,17 +2706,17 @@ const LandingPage = () => {
                         padding-top: 0px;
                     }
                     .hero-left {
-                        padding-top: 20px;
+                        padding-top: 28px;
                     }
                     .hero-left h1 {
-                        font-size: clamp(1.6rem, 8vw, 2.2rem) !important;
+                        font-size: clamp(1.8rem, 8vw, 2.4rem) !important;
                     }
                     .hero-left p {
-                        font-size: 0.85rem !important;
-                        margin-bottom: 18px !important;
+                        font-size: 0.88rem !important;
+                        margin-bottom: 20px !important;
                     }
                     .phone-mockup-wrapper {
-                        max-width: 200px !important;
+                        max-width: 210px !important;
                     }
                     .phone-mockup {
                         border-radius: 38px !important;
@@ -2761,28 +2725,21 @@ const LandingPage = () => {
                     .phone-mockup > div:last-child {
                         border-radius: 32px !important;
                     }
-                    /* Even smaller dynamic island on mobile */
                     .phone-mockup > div:first-child {
                         width: 70px !important;
                         height: 20px !important;
                         top: 10px !important;
                         border-radius: 16px !important;
                     }
-                    /* Move bubbles almost entirely outside - only tiny edge inside */
-                    .floating-bubble-1 {
-                        transform: scale(0.45);
-                        left: -34px !important;
-                        top: 6% !important;
+                    /* Floating bubbles stay in same position - no overrides */
+                    /* Increase button size on mobile */
+                    .btn-magnetic {
+                        padding: clamp(12px, 2.5vw, 16px) clamp(22px, 4vw, 32px) !important;
+                        font-size: clamp(0.85rem, 2.5vw, 1rem) !important;
                     }
-                    .floating-bubble-2 {
-                        transform: scale(0.45);
-                        right: -32px !important;
-                        top: 4% !important;
-                    }
-                    .floating-bubble-3 {
-                        transform: scale(0.45);
-                        left: -26px !important;
-                        bottom: 6% !important;
+                    .btn-magnetic svg {
+                        width: clamp(20px, 4vw, 26px) !important;
+                        height: clamp(20px, 4vw, 26px) !important;
                     }
                 }
 
@@ -2793,6 +2750,7 @@ const LandingPage = () => {
                     margin: 0 auto;
                 }
 
+                /* All floating bubbles use the same position on all devices */
                 .floating-bubble-1 {
                     position: absolute;
                     top: 10%;
@@ -2829,16 +2787,16 @@ const LandingPage = () => {
                 }
 
                 @keyframes float-1-mobile {
-                    0%, 100% { transform: scale(0.6) translateY(0); }
-                    50% { transform: scale(0.6) translateY(-8px); }
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-8px); }
                 }
                 @keyframes float-2-mobile {
-                    0%, 100% { transform: scale(0.6) translateY(0); }
-                    50% { transform: scale(0.6) translateY(-6px); }
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-6px); }
                 }
                 @keyframes float-3-mobile {
-                    0%, 100% { transform: scale(0.6) translateY(0); }
-                    50% { transform: scale(0.6) translateY(-7px); }
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-7px); }
                 }
                 
                 .pulse-dot-landing {
