@@ -68,11 +68,88 @@ const sendText = async (to, text) => {
 };
 
 /**
+ * Sends a WhatsApp native contact card for "Kreddy AI" so the recipient can
+ * save it with one tap. Once saved, "Kreddy AI" appears in their chat header
+ * and notification banners for all future messages.
+ * Fire-and-forget: errors are silently swallowed so they never block delivery.
+ */
+const sendKreddyContactCard = async (to) => {
+    try {
+        const { phoneId, accessToken } = getWACredentials();
+        if (!accessToken || !phoneId) return;
+
+        const cleanTo = normalizePhone(to);
+        const waId = (process.env.WHATSAPP_PHONE_NUMBER || "").replace(/\D/g, '') || cleanTo;
+
+        await axios.post(
+            `https://graph.facebook.com/v21.0/${phoneId}/messages`,
+            {
+                messaging_product: "whatsapp",
+                to: cleanTo,
+                type: "contacts",
+                contacts: [
+                    {
+                        name: {
+                            formatted_name: "Kreddy AI",
+                            first_name: "Kreddy",
+                            last_name: "AI"
+                        },
+                        org: {
+                            company: "Kredibly",
+                            title: "AI Business Partner"
+                        },
+                        phones: [
+                            {
+                                phone: process.env.WHATSAPP_PHONE_NUMBER || `+${waId}`,
+                                type: "WORK",
+                                wa_id: waId
+                            }
+                        ],
+                        urls: [
+                            { url: "https://usekredibly.com", type: "WORK" }
+                        ]
+                    }
+                ]
+            },
+            {
+                headers: { Authorization: `Bearer ${accessToken}` },
+                timeout: 10000
+            }
+        );
+        console.log(`📇 Kreddy AI contact card sent to customer ${cleanTo}`);
+    } catch (err) {
+        console.warn(`⚠️ Contact card send failed for ${to}:`, err?.response?.data || err.message);
+    }
+};
+
+/**
  * Sends a message to a customer with automatic template fallback if the 24-hour window is closed.
  */
 const sendCustomerMessageWithFallback = async (to, text, customerName, invoiceNumber = null) => {
+    const cleanTo = normalizePhone(to);
+    const WhatsAppSession = require("../models/WhatsAppSession");
+
+    // Check if customer's 24-hour window is active
+    const activeSession = await WhatsAppSession.findOne({ whatsappNumber: cleanTo, type: "customer_active_window" });
+    const isWindowOpen = !!activeSession;
+
+    if (isWindowOpen && invoiceNumber) {
+        // Window open: send free-form message with a native CTA URL button (no template)
+        const invoiceUrl = `${process.env.FRONTEND_URL || "https://usekredibly.com"}/i/${invoiceNumber}`;
+        const bodyText = String(text);
+        const success = await sendInteractiveCTAUrlButton(
+            cleanTo,
+            `Invoice #${invoiceNumber}`,
+            bodyText,
+            "",
+            "View Invoice",
+            invoiceUrl
+        );
+        if (success) return true;
+    }
+
     if (invoiceNumber) {
-        // ALWAYS use template message for invoice links to avoid naked links
+        // ALWAYS use template message for invoice links when window is closed
         const templateName = 'kreddy_system_alert';
         const cleanMsg = String(text)
             .replace(/[\r\n\t]+/g, ' ')
@@ -100,9 +177,11 @@ const sendCustomerMessageWithFallback = async (to, text, customerName, invoiceNu
         return await sendTemplateMsg(to, templateName, components);
     }
 
-    // For other messages (e.g. no invoice link), send text and fallback to simple alert template if needed
-    const success = await sendText(to, text);
-    if (success) return true;
+    // For other messages (e.g. no invoice link)
+    if (isWindowOpen) {
+        const success = await sendText(to, text);
+        if (success) return true;
+    }
 
     console.log(`⚠️ Free-form message failed to deliver to customer ${to}. Attempting template fallback (kreddy_simple_alert)...`);
     const templateName = 'kreddy_simple_alert';
@@ -1202,12 +1281,34 @@ const handleMerchantApproveExtension = async (saleId, sessionData) => {
         }
 
         const newDueDateStr = newDate.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+
+        // 1️⃣ Send approval notification to customer
         await sendCustomerMessageWithFallback(
             customerPhone,
             `Hi ${customerName}, your payment extension request for Invoice #${invoiceNumber} has been approved. Please make sure to clear the invoice on or before the new due date: ${newDueDateStr}.`,
             customerName,
             invoiceNumber
         );
+
+        // 2️⃣ Follow-up with action buttons so "Check below for more details" is fulfilled
+        if (sale) {
+            const bal = sale.totalAmount - (sale.payments || []).reduce((s, p) => s + p.amount, 0);
+            const cleanCustomerPhone = customerPhone.startsWith('+') ? customerPhone.slice(1) : customerPhone;
+            const buttons = [
+                { id: `pay_now:${saleId}`, title: "Pay with Transfer" }
+            ];
+            // Offer another extension only if they haven't maxed out
+            if ((sale.extensionsCount || 1) < 2) {
+                buttons.push({ id: `req_ext:${saleId}`, title: "Request Extension" });
+            }
+            await sendInteractiveButtons(
+                cleanCustomerPhone,
+                `Invoice #${invoiceNumber}`,
+                `Your new due date is *${newDueDateStr}*.\n\nOutstanding balance: *₦${bal.toLocaleString()}*\n\nHow would you like to proceed?`,
+                "",
+                buttons
+            ).catch(e => console.warn("⚠️ Follow-up buttons failed:", e.message));
+        }
 
         return { success: true };
     } catch (err) {
@@ -1386,6 +1487,14 @@ const handleCustomerInbound = async (from, msgType, message, text) => {
     try {
         const cleanFrom = normalizePhone(from);
         const lowerText = (text || "").toLowerCase().trim();
+
+        // Refresh/upsert customer's 24-hour active window session
+        const WhatsAppSession = require("../models/WhatsAppSession");
+        await WhatsAppSession.findOneAndUpdate(
+            { whatsappNumber: cleanFrom, type: "customer_active_window" },
+            { expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+            { upsert: true, new: true }
+        );
 
         // Check for interactive button reply
         if (msgType === "interactive") {
@@ -1769,6 +1878,9 @@ const sendChaseToCustomer = async (saleId, businessId, customText = null) => {
                 entityId: sale._id,
                 details: `On-demand reminder sent to customer ${cleanCustomerPhone} for Invoice #${sale.invoiceNumber}`
             });
+
+            // Send Kreddy AI contact card so the customer sees "Kreddy AI" in chat header
+            sendKreddyContactCard(cleanCustomerPhone).catch(() => {});
 
             // Notify merchant on WhatsApp that the reminder has been sent directly
             const merchantPhone = business.whatsappNumber;

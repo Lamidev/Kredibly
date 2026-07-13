@@ -227,9 +227,9 @@ const extractInfoRobust = (text, context = {}) => {
         }
     }
 
-    if (lower.includes("draft") || lower.includes("message for")) {
-        result.intent = "draft_reminder";
-        result.data.reply = "I'm on it, Chief! 🫡 Let me draft a sharp message you can send to your customer...";
+    if (lower.includes("draft") || lower.includes("message for") || lower.includes("send reminder") || lower.includes("remind them") || lower.includes("nudge") || lower.includes("chase")) {
+        result.intent = "send_reminder";
+        result.data.reply = "On it! Let me send that reminder directly to your customer...";
     } else if (lower.includes("remind") || lower.includes("reminder") || lower.includes("due") || 
                (lower.includes("i have") && (lower.includes("meeting") || lower.includes("session") || lower.includes("appointment") || lower.includes("call")))) {
         // Detect reminders: explicit ("remind me") OR implicit ("I have a meeting by 7pm")
@@ -486,13 +486,16 @@ const sendReadReceipt = async (messageId) => {
                 messaging_product: "whatsapp",
                 status: "read",
                 message_id: messageId,
+                typing_indicator: {
+                    type: "text"
+                }
             },
             {
                 headers: { Authorization: `Bearer ${accessToken}` },
             }
         );
     } catch (error) {
-        // Silent error for read receipts
+        // Silent error for read receipts/typing indicator
     }
 };
 
@@ -949,6 +952,74 @@ const parseSpokenPhoneNumber = (text) => {
     return converted;
 };
 
+function getWelcomeMessage(bossTitle) {
+    return `👋 Hi ${bossTitle}!\nI'm Kreddy, your AI business partner.\nFrom here, you can simply chat naturally.\nExamples:\n• "Create an invoice for Chinedu..."\n• "Who still owes me?"\n• "Record a payment..."\n• "How much did I collect today?"\n• "Remind me to go to the gym by 4pm"\nI'm ready whenever you are.`;
+}
+
+/**
+ * Sends a WhatsApp native contact card for "Kreddy AI" to a phone number.
+ * When the recipient taps "Save Contact", "Kreddy AI" will appear in the
+ * chat header and notification banners for all future messages — even before
+ * Meta business verification is complete.
+ */
+const sendKreddyContactCard = async (to) => {
+    try {
+        const phoneId = process.env.WHATSAPP_PHONE_ID || process.env.PHONE_ID;
+        const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN || process.env.ACCESS_TOKEN;
+        const kreddyNumber = process.env.WHATSAPP_PHONE_NUMBER || (phoneId ? undefined : null);
+
+        if (!accessToken || !phoneId) return;
+
+        let cleanTo = String(to).replace(/\D/g, '');
+        if (cleanTo.startsWith('0') && cleanTo.length === 11) {
+            cleanTo = '234' + cleanTo.slice(1);
+        }
+
+        // Build the wa_id from env phone number if available
+        const waId = (process.env.WHATSAPP_PHONE_NUMBER || "").replace(/\D/g, '') || cleanTo;
+
+        await axios.post(
+            `https://graph.facebook.com/v21.0/${phoneId}/messages`,
+            {
+                messaging_product: "whatsapp",
+                to: cleanTo,
+                type: "contacts",
+                contacts: [
+                    {
+                        name: {
+                            formatted_name: "Kreddy AI",
+                            first_name: "Kreddy",
+                            last_name: "AI"
+                        },
+                        org: {
+                            company: "Kredibly",
+                            title: "AI Business Partner"
+                        },
+                        phones: [
+                            {
+                                phone: process.env.WHATSAPP_PHONE_NUMBER || `+${waId}`,
+                                type: "WORK",
+                                wa_id: waId
+                            }
+                        ],
+                        urls: [
+                            { url: "https://usekredibly.com", type: "WORK" }
+                        ]
+                    }
+                ]
+            },
+            {
+                headers: { Authorization: `Bearer ${accessToken}` },
+                timeout: 10000
+            }
+        );
+        console.log(`📇 Kreddy AI contact card sent to ${cleanTo}`);
+    } catch (err) {
+        // Non-critical — log and continue silently
+        console.warn(`⚠️ Contact card send failed for ${to}:`, err?.response?.data || err.message);
+    }
+};
+
 const handleIncoming = async (req, res) => {
     let from = null; // 🛡️ Initialize for catch block safety
 
@@ -1048,15 +1119,15 @@ const handleIncoming = async (req, res) => {
         );
 
         if (profile && !profile.isKreddyConnected && isWelcomeButtonTap) {
-            // First-time users tapping the template button get the full on-boarding welcome
-            const welcomeText = `Hello *${bossTitle}*,\n\nI'm *Kreddy* — your Digital Chief of Staff.\n\nI've successfully launched your workspace for\n*${profile.displayName}*\nand I'm ready to get to work.\n\nHere is what I can do for you:\n\n*Voice Note:*\n_"Sarah bought a bag for 15k, she paid 5k, remind me Friday for the balance."_\n\n*Picture:*\nSend me a receipt and I'll record it.\n\n*Ask me:*\n_"What is my revenue today?"_\n_"Who owes me money?"_\n\nTalk to me naturally.\n\nLet's get to work.`;
-
             profile.isKreddyConnected = true;
             profile.welcomeSent = true;
+            profile.firstMerchantGreetingSent = true;
             profile.lastInboundAt = new Date();
             await profile.save();
 
-            await sendReply(from, welcomeText);
+            await sendReply(from, getWelcomeMessage(bossTitle));
+            // Send contact card so "Kreddy AI" appears in their chat header once saved
+            sendKreddyContactCard(from).catch(() => {});
             return;
         }
         // All other greetings ("hi", "hi kreddy", "good morning", "morning boss", etc.)
@@ -1215,23 +1286,14 @@ const handleIncoming = async (req, res) => {
         }
 
         if (isFirstTime) {
-            const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Partner");
-            const bossTitleToUse = profile.assistantSettings?.preferredName || profile.displayName || whatsappProfileName || planDefaultTitle;
-            
-            // Initial save of preferred name if found
             if (whatsappProfileName && !profile.assistantSettings?.preferredName) {
                 if (!profile.assistantSettings) profile.assistantSettings = {};
                 profile.assistantSettings.preferredName = whatsappProfileName;
                 await profile.save();
             }
 
-            const introMsg = `*Connected, ${bossTitleToUse}.* 🫡\n\nI'm Kreddy — your Digital Chief of Staff. I'll call you *${bossTitleToUse}* for now, but say _"Kreddy, call me [name]"_ anytime to change it.\n\nHere's what I can do:\n\n🎤 *Voice Note:* _"Sarah bought a bag for 15k, she paid 5k, remind me Friday for the balance."_\n\n📸 *Picture:* Send a receipt photo and I'll log it for you.\n\n💬 *Ask anything:* _"What do I have planned today?"_\n\nTalk to me like a real person — let's get to work. 💰`;
-            await sendReply(from, introMsg);
-            
-            // If they just said a basic greeting, stop here. Otherwise, keep processing the payload.
-            if (["hi", "hello", "hey", "start", "test"].includes(text.toLowerCase())) {
-                return;
-            }
+            await sendReply(from, getWelcomeMessage(bossTitle));
+            return;
         }
 
         // Determine a meaningful description for the activity stream (Text only for now)
@@ -1288,30 +1350,48 @@ const handleIncoming = async (req, res) => {
                         await sendReply(from, `I couldn't locate that invoice anymore. It may have been deleted.`);
                         return;
                     }
-                    await sendReply(from, `Sending payment reminder to *${sale.customerName}* (+${sale.customerPhone})...`);
+                    await sendReply(from, `On it! Sending payment reminder directly to *${sale.customerName}*... 🛡️`);
                     const result = await sendChaseToCustomer(saleId, profile._id);
                     if (result.success) {
-                        await sendReply(from, `✅ Done! The reminder has been sent to *${sale.customerName}*. I'll monitor for their response and keep you updated! 🛡️`);
+                        await sendReply(from, `✅ *Reminder Sent!* I've delivered the payment reminder directly to *${sale.customerName}*. I'll keep you posted on their response. 💪`);
                     } else {
-                        const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-                        const link = `${APP_URL}/i/${sale.invoiceNumber}`;
-                        const draft = `Hello ${sale.customerName},\n\nThis is a friendly reminder about your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\nPlease tap the link below to view and pay your invoice:\n${link}`;
-                        await sendReply(from, `⚠️ I had trouble sending the reminder to their WhatsApp automatically. Here is the draft to send manually instead:\n\n${draft}`);
+                        // No phone on file — ask merchant to provide it
+                        await WhatsAppSession.findOneAndUpdate(
+                            { whatsappNumber: cleanFrom },
+                            {
+                                type: 'collect_chase_phone',
+                                data: { saleId },
+                                expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+                            },
+                            { upsert: true }
+                        );
+                        await sendReply(from, `⚠️ I don't have *${sale.customerName}'s* WhatsApp number on file. What's their number? I'll send the reminder as soon as you give me it.`);
                     }
                     return;
                 } else if (buttonId.startsWith("copy_draft_only:")) {
+                    // V2: "Copy Draft" is gone — redirect to direct send
                     const saleId = buttonId.split(":")[1];
                     const sale = await Sale.findById(saleId);
                     if (!sale) {
                         await sendReply(from, `I couldn't find the invoice details anymore. 🤔`);
                         return;
                     }
-                    const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-                    const link = `${APP_URL}/i/${sale.invoiceNumber}`;
-                    const draft = `Hello ${sale.customerName},\n\nThis is a friendly reminder about your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\nPlease tap the link below to view and pay your invoice:\n${link}`;
-                    
-                    await sendReply(from, `📝 *Draft for ${sale.customerName}* (Copy the message below):`);
-                    await sendReply(from, draft);
+                    await sendReply(from, `On it! Sending payment reminder directly to *${sale.customerName}*... 🛡️`);
+                    const chaseResult = await sendChaseToCustomer(saleId, profile._id);
+                    if (chaseResult.success) {
+                        await sendReply(from, `✅ *Reminder Sent!* I've delivered the payment reminder directly to *${sale.customerName}*. I'll keep you posted on their response. 💪`);
+                    } else {
+                        await WhatsAppSession.findOneAndUpdate(
+                            { whatsappNumber: cleanFrom },
+                            {
+                                type: 'collect_chase_phone',
+                                data: { saleId },
+                                expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+                            },
+                            { upsert: true }
+                        );
+                        await sendReply(from, `⚠️ I don't have *${sale.customerName}'s* WhatsApp number on file. What's their number? I'll send the reminder straight away.`);
+                    }
                     return;
                 } else if (buttonId.startsWith("add_chase_phone:")) {
                     const saleId = buttonId.split(":")[1];
@@ -1603,6 +1683,45 @@ const handleIncoming = async (req, res) => {
         }
 
         if (session) {
+            // ⏳ pending_reminder_time: task is known, waiting for time
+            if (session.type === 'pending_reminder_time') {
+                const parsedDate = chrono.parseDate(text, new Date(), { timezone: "Africa/Lagos" });
+                if (!parsedDate || parsedDate <= new Date()) {
+                    await sendReply(from, `I couldn't parse that time. Please try something like _"4pm today"_, _"tomorrow 9am"_, or _"Friday 3pm"_. 🗓️`);
+                    return;
+                }
+                if ((parsedDate.getTime() - new Date().getTime()) < 5 * 60 * 1000) {
+                    await sendReply(from, `That time is too close — give me at least 5 minutes and I'll have it set.`);
+                    return;
+                }
+
+                const { taskDescription, reminderType, recurrence } = session.data;
+                await WhatsAppSession.deleteOne({ _id: session._id });
+
+                const descLower = String(taskDescription).toLowerCase();
+                let priority = "normal";
+                if (/rent|salary|salaries|invoice|pay|loan|fee|bill|tax|settle|debt|owe|client|customer|contract/i.test(descLower)) priority = "high";
+                else if (/milk|grocery|groceries|parcel|package|errand|shop|store|buy|laundry|clean|barber/i.test(descLower)) priority = "low";
+
+                await Reminder.create({
+                    businessId: profile._id,
+                    whatsappNumber: cleanFrom,
+                    description: taskDescription,
+                    triggerDate: parsedDate,
+                    type: reminderType || "task",
+                    recurrence: recurrence || "none",
+                    priority
+                });
+
+                if (!profile.monthlyUsage) profile.monthlyUsage = { reminders: 0, voiceNotes: 0, images: 0, lastReset: new Date() };
+                profile.monthlyUsage.reminders = (profile.monthlyUsage.reminders || 0) + 1;
+                await profile.save();
+
+                const friendlyDate = parsedDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                await sendReply(from, `✅ Done! I've scheduled a reminder for *"${taskDescription}"* at *${friendlyDate}*. I'll alert you right on time. 🛡️`);
+                return;
+            }
+
             // ⚡ Reschedule ignored task reminder session handler
             if (session.type === 'merchant_task_reschedule') {
                 const parsedDate = chrono.parseDate(text);
@@ -1775,31 +1894,30 @@ const handleIncoming = async (req, res) => {
                     const sale = await Sale.findById(selected.id);
                     if (sale) {
                         await WhatsAppSession.deleteOne({ _id: session._id });
-                        const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
                         const customerPhone = sale.customerPhone || sale.deliveredToPhone;
 
                         if (customerPhone) {
-                            await sendInteractiveButtons(
-                                from,
-                                "Invoice Reminder",
-                                `I found an active invoice for *${sale.customerName}* (Owes ₦${bal.toLocaleString()}) with phone *+${customerPhone}*.\n\nWould you like me to send a friendly reminder directly to their WhatsApp?`,
-                                "",
-                                [
-                                    { id: `send_chase_now:${sale._id}`, title: "✅ Send Reminder" },
-                                    { id: `copy_draft_only:${sale._id}`, title: "📝 Copy Draft" }
-                                ]
-                            );
+                            // V2: Send directly
+                            await sendReply(from, `On it! Sending payment reminder directly to *${sale.customerName}*... 🛡️`);
+                            const disambigResult = await sendChaseToCustomer(sale._id, profile._id);
+                            if (disambigResult.success) {
+                                await sendReply(from, `✅ *Reminder Sent!* I've delivered the nudge directly to *${sale.customerName}*. I'll keep you posted. 💪`);
+                            } else {
+                                await WhatsAppSession.findOneAndUpdate(
+                                    { whatsappNumber: cleanFrom },
+                                    { type: 'collect_chase_phone', data: { saleId: sale._id }, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+                                    { upsert: true }
+                                );
+                                await sendReply(from, `⚠️ I had trouble reaching *${sale.customerName}*. What's their WhatsApp number? I'll send the reminder right away.`);
+                            }
                         } else {
-                            await sendInteractiveButtons(
-                                from,
-                                "Missing Customer Number",
-                                `I found an active invoice for *${sale.customerName}* (Owes ₦${bal.toLocaleString()}), but I don't have their WhatsApp number.\n\nWould you like to add their number to send a direct reminder, or just copy the draft?`,
-                                "",
-                                [
-                                    { id: `add_chase_phone:${sale._id}`, title: "📱 Add Phone" },
-                                    { id: `copy_draft_only:${sale._id}`, title: "📝 Copy Draft" }
-                                ]
+                            // No phone — collect it
+                            await WhatsAppSession.findOneAndUpdate(
+                                { whatsappNumber: cleanFrom },
+                                { type: 'collect_chase_phone', data: { saleId: sale._id }, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+                                { upsert: true }
                             );
+                            await sendReply(from, `I found the invoice for *${sale.customerName}*, but I don't have their WhatsApp number yet. What's it?`);
                         }
                         return;
                     }
@@ -2261,12 +2379,21 @@ const handleIncoming = async (req, res) => {
                     }
                 } else if (session.type === 'alarm_confirmation') {
                     const { saleId, customerName } = session.data;
+                    await WhatsAppSession.deleteOne({ _id: session._id });
                     const sale = await Sale.findById(saleId);
                     if (sale && sale.status !== 'paid') {
-                        const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-                        const paymentLink = `${FRONTEND_URL}/i/${sale.publicSlug || sale.invoiceNumber}`;
-                        const nudgeDraft = `Hi ${customerName}, this is a friendly nudge from ${profile.displayName} regarding your balance of ₦${bal.toLocaleString()}. You can pay here: ${paymentLink}`;
-                        return await sendReply(from, `*Draft Reminder ready:* \n\n"${nudgeDraft}"`);
+                        await sendReply(from, `On it! Sending payment reminder directly to *${customerName}*... 🛡️`);
+                        const alarmChaseResult = await sendChaseToCustomer(saleId, profile._id);
+                        if (alarmChaseResult.success) {
+                            return await sendReply(from, `✅ *Done!* I've sent the payment reminder directly to *${customerName}*. I'll keep you posted. 💪`);
+                        } else {
+                            await WhatsAppSession.findOneAndUpdate(
+                                { whatsappNumber: cleanFrom },
+                                { type: 'collect_chase_phone', data: { saleId }, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+                                { upsert: true }
+                            );
+                            return await sendReply(from, `⚠️ I don't have *${customerName}'s* WhatsApp number on file. What's their number? I'll send the reminder straight away.`);
+                        }
                     }
                 } else if (session.type === 'collect_sale_info') {
                     const { customerName, totalAmount, paidAmount, item, intent, dueDate, invoiceType } = session.data;
@@ -2426,6 +2553,11 @@ const handleIncoming = async (req, res) => {
                                 }
                             );
                         } else {
+                            // ✅ Fully paid — cancel all pending debt reminders so the cron never re-fires
+                            await Reminder.updateMany(
+                                { saleId: sale._id, status: { $in: ["pending", "delivered"] }, type: { $in: ["debt", "payment"] } },
+                                { status: "cancelled" }
+                            );
                             msg += `*${sale.customerName}* is now fully paid up! 💎 Dashboard updated.`;
                             await WhatsAppSession.deleteOne({ _id: session._id });
                         }
@@ -2446,9 +2578,9 @@ const handleIncoming = async (req, res) => {
                         return;
                     }
                 } else if (session.type === 'alarm_confirmation') {
-                    // Handle 'Yes' for Alarms
+                    // Handle 'Yes' for Alarms — V2: Send directly, no drafts
                     if (['yes', 'y', 'confirm', 'correct', 'true', 'sure'].includes(lowerText)) {
-                        const { saleId, debtorMsg, customerName } = session.data;
+                        const { saleId, customerName } = session.data;
                         await WhatsAppSession.deleteOne({ _id: session._id });
 
                         const sale = await Sale.findById(saleId);
@@ -2459,18 +2591,21 @@ const handleIncoming = async (req, res) => {
                         }
                         
                         if (sale) {
-                            // Focus on DRAFTING only (Per strategic update)
-                            const paymentLink = `${FRONTEND_URL}/i/${sale.publicSlug || sale.invoiceNumber}`;
-                            const nudgeDraft = `Hi ${customerName}, this is a friendly nudge from ${profile.displayName} regarding your balance of ₦${(sale.totalAmount - sale.paidAmount).toLocaleString()} for ${sale.description}. You can view the details and pay securely here: ${paymentLink}`;
-                            
-                            return await sendReply(from, `📝 *Draft Reminder for ${customerName}* (Copy & Send): \n\n_"${nudgeDraft}"_ \n\n🛡️ *Kreddy Tip:* Personal messages from you convert 4x better than automated ones!`);
+                            await sendReply(from, `On it! Sending payment reminder directly to *${customerName}*... 🛡️`);
+                            const alarmResult = await sendChaseToCustomer(sale._id, profile._id);
+                            if (alarmResult.success) {
+                                return await sendReply(from, `✅ *Reminder Sent!* I've delivered the payment reminder directly to *${customerName}*. I'll keep you posted on their response. 💪`);
+                            } else {
+                                await WhatsAppSession.findOneAndUpdate(
+                                    { whatsappNumber: cleanFrom },
+                                    { type: 'collect_chase_phone', data: { saleId: sale._id }, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+                                    { upsert: true }
+                                );
+                                return await sendReply(from, `⚠️ I don't have *${customerName}'s* WhatsApp number on file. What's their number? I'll send the reminder straight away.`);
+                            }
                         } else {
                             return await sendReply(from, `🤔 I couldn't locate that record anymore. It might have been deleted.`);
                         }
-                    }
-                    // Fast-path for simple confirmations
-                    if (['yes', 'y', 'correct', 'confirm', 'sure', 'true'].includes(lowerText)) {
-                        // Logic will be handled by confirm_session intent
                     }
                 } else if (session.type === 'manual_alias_tagging') {
                     console.log(`🏷️ Handling manual_alias_tagging for ${cleanFrom} with input: "${text}"`);
@@ -2570,18 +2705,12 @@ const handleIncoming = async (req, res) => {
         const isThanks = /thanks|thank you|merci|jazak|nice/i.test(lowerText);
         
         if (isGreeting && lowerText.split(' ').length <= 3 && !profile.firstMerchantGreetingSent) {
-            const planDefaultTitle = plan === "chairman" ? "Chairman" : (plan === "oga" ? "Oga" : "Partner");
-            const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;
-            
-            const wittyGreeting = await generateWittyIntro("greeting", { bossTitle });
-            const statusLabel = plan === "chairman" ? "📊 *EMPIRE STATUS*" : "📊 *STATS*";
-            const bossRole = plan === "chairman" ? "your Digital Chief of Staff" : "your Kredibly partner";
-
-            // Mark welcome as sent so this never triggers again
             profile.firstMerchantGreetingSent = true;
+            profile.isKreddyConnected = true;
+            profile.welcomeSent = true;
             await profile.save();
 
-            await sendReply(from, `${wittyGreeting} \n\nI'm *Kreddy*, ${bossRole}. \n\n*What's the plan for today?*\n${statusLabel}: Type *S*\n⏳ *DEBTS*: Type *D*\n💡 *HELP*: Type *HELP*`);
+            await sendReply(from, getWelcomeMessage(bossTitle));
             return;
         } else if (isGreeting && lowerText.split(' ').length <= 3 && profile.firstMerchantGreetingSent) {
             // Context-aware returning greetings based on time of day and stats (fast, cost-saving)
@@ -2852,6 +2981,70 @@ const handleIncoming = async (req, res) => {
                 const aiResponseItem = currentIntent;
                 if (!aiResponseItem) continue;
 
+                // Intercept onboarding session responses if it's not a command/task intent
+                if (session && (session.type === 'onboarding_business_type' || 
+                                session.type === 'onboarding_customers_type' || 
+                                session.type === 'onboarding_preferred_name')) {
+                    
+                    const isCommandIntent = !["general_chat", "confirm_session", "reject_session"].includes(aiResponseItem.intent);
+                    if (isCommandIntent) {
+                        // User sent a new command, silently discard onboarding session
+                        console.log(`Onboarding session discarded because user sent command intent: ${aiResponseItem.intent}`);
+                        await WhatsAppSession.deleteOne({ _id: session._id });
+                        session = null; // Clear from memory
+                    } else {
+                        // Handle onboarding input (cleanly structured, no emojis)
+                        if (session.type === 'onboarding_business_type') {
+                            const businessType = text.trim();
+                            profile.businessType = businessType;
+                            await profile.save();
+                            
+                            await WhatsAppSession.findOneAndUpdate(
+                                { whatsappNumber: cleanFrom },
+                                {
+                                    type: 'onboarding_customers_type',
+                                    data: {},
+                                    expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+                                },
+                                { upsert: true }
+                            );
+                            await sendReply(from, "Nice. Who are your typical customers?\n\nIndividuals?\nBusinesses?\nBoth?");
+                        } else if (session.type === 'onboarding_customers_type') {
+                            const choice = text.trim().toLowerCase();
+                            let customersType = "Both";
+                            if (choice.includes("individual")) customersType = "Individuals";
+                            else if (choice.includes("business")) customersType = "Businesses";
+                            else if (choice.includes("both")) customersType = "Both";
+                            
+                            profile.customersType = customersType;
+                            await profile.save();
+                            
+                            await WhatsAppSession.findOneAndUpdate(
+                                { whatsappNumber: cleanFrom },
+                                {
+                                    type: 'onboarding_preferred_name',
+                                    data: {},
+                                    expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+                                },
+                                { upsert: true }
+                            );
+                            await sendReply(from, "Perfect. How should I address you?\n\nDaniel?\nBoss?\nChief?");
+                        } else if (session.type === 'onboarding_preferred_name') {
+                            const preferredName = text.trim();
+                            if (!profile.assistantSettings) profile.assistantSettings = {};
+                            profile.assistantSettings.preferredName = preferredName;
+                            profile.firstTaskCompleted = true;
+                            profile.onboardingStep = 4;
+                            await profile.save();
+                            
+                            await WhatsAppSession.deleteOne({ _id: session._id });
+                            await sendReply(from, `Got it, ${preferredName}. Let's keep going!`);
+                        }
+                        isProcessed = true;
+                        break; // exit loop
+                    }
+                }
+
                 // V3 Intent Guard Policy check
                 const IntentGuard = require("../../conversation/IntentGuard");
                 const guardResult = IntentGuard.validate(aiResponseItem.intent, aiResponseItem.data, profile);
@@ -2905,16 +3098,25 @@ const handleIncoming = async (req, res) => {
                                 isProcessed = true;
                             }
                          } else if (session.type === 'alarm_confirmation') {
-                            const { saleId, customerName } = session.data;
-                            const sale = await Sale.findById(saleId);
-                            if (sale && sale.status !== 'paid') {
-                                const paymentLink = `${FRONTEND_URL}/i/${sale.publicSlug || sale.invoiceNumber}`;
-                                const nudgeDraft = `Hi ${customerName}, this is a friendly nudge from ${profile.displayName} regarding your balance of ₦${(sale.totalAmount - sale.paidAmount).toLocaleString()}. You can pay here: ${paymentLink}`;
-                                await sendReply(from, aiResponseItem.data?.reply || `📝 *Draft Reminder ready!* \n\n_"${nudgeDraft}"_`);
-                                await WhatsAppSession.deleteOne({ _id: session._id });
-                                isProcessed = true;
-                            }
-                         }
+                             const { saleId, customerName } = session.data;
+                             const sale = await Sale.findById(saleId);
+                             if (sale && sale.status !== 'paid') {
+                                 await WhatsAppSession.deleteOne({ _id: session._id });
+                                 await sendReply(from, `On it! Sending payment reminder directly to *${customerName}*... 🛡️`);
+                                 const aiConfirmChaseResult = await sendChaseToCustomer(saleId, profile._id);
+                                 if (aiConfirmChaseResult.success) {
+                                     await sendReply(from, `✅ *Reminder Sent!* I've delivered the payment reminder directly to *${customerName}*. I'll keep you posted. 💪`);
+                                 } else {
+                                     await WhatsAppSession.findOneAndUpdate(
+                                         { whatsappNumber: cleanFrom },
+                                         { type: 'collect_chase_phone', data: { saleId }, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+                                         { upsert: true }
+                                     );
+                                     await sendReply(from, `⚠️ I don't have *${customerName}'s* WhatsApp number on file. What's their number? I'll send the reminder straight away.`);
+                                 }
+                                 isProcessed = true;
+                             }
+                          }
                          // Add more session types as needed...
                      }
                  }
@@ -3253,7 +3455,8 @@ const handleIncoming = async (req, res) => {
                         }
                     }
                     isProcessed = true;
-                } else if (aiResponseItem && aiResponseItem.intent === "draft_reminder") {
+                } else if (aiResponseItem && (aiResponseItem.intent === "draft_reminder" || aiResponseItem.intent === "send_reminder")) {
+                    // V2: Kreddy sends directly — no more drafts
                     const searchName = (aiResponseItem.data.customerName || "").replace(/\s+/g, ' ').trim();
                     const matches = await Sale.find({
                         businessId: profile._id,
@@ -3262,16 +3465,34 @@ const handleIncoming = async (req, res) => {
                     });
 
                     if (matches.length === 0) {
-                        await sendReply(from, `🤔 I couldn't find an active debt for *${searchName || 'them'}* to draft a message for.`);
+                        await sendReply(from, `🤔 I couldn't find an active debt for *${searchName || 'them'}*. Check the name and try again.`);
                     } else if (matches.length === 1) {
                         const sale = matches[0];
-                        const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-                        const link = `${APP_URL}/i/${sale.invoiceNumber}`;
-                        const draft = `Hi ${sale.customerName}, this is a friendly reminder for your balance of ₦${bal.toLocaleString()} with ${profile.displayName}. You can view and pay here: ${link}`;
-                        await sendReply(from, `📝 *Draft for ${sale.customerName}:* (Copy the message below to forward it) 🚀`);
-                        await sendReply(from, draft);
+                        const customerPhone = sale.customerPhone || sale.deliveredToPhone;
+                        if (customerPhone) {
+                            await sendReply(from, `On it! Sending payment reminder directly to *${sale.customerName}*... 🛡️`);
+                            const directResult = await sendChaseToCustomer(sale._id, profile._id);
+                            if (directResult.success) {
+                                await sendReply(from, `✅ *Reminder Sent!* I've delivered the payment nudge directly to *${sale.customerName}*. I'll keep you posted on their response. 💪`);
+                            } else {
+                                await WhatsAppSession.findOneAndUpdate(
+                                    { whatsappNumber: cleanFrom },
+                                    { type: 'collect_chase_phone', data: { saleId: sale._id }, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+                                    { upsert: true }
+                                );
+                                await sendReply(from, `⚠️ I had trouble reaching *${sale.customerName}*. What's their WhatsApp number? I'll send the reminder straight away.`);
+                            }
+                        } else {
+                            // No phone yet — collect it
+                            await WhatsAppSession.findOneAndUpdate(
+                                { whatsappNumber: cleanFrom },
+                                { type: 'collect_chase_phone', data: { saleId: sale._id }, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+                                { upsert: true }
+                            );
+                            await sendReply(from, `I found an active invoice for *${sale.customerName}*, but I don't have their WhatsApp number yet. What's it?`);
+                        }
                     } else {
-                        let reply = `🤔 I found *${matches.length}* people named *${searchName}*. Which one should I draft for?\n\n`;
+                        let reply = `🤔 I found *${matches.length}* people named *${searchName}*. Which one should I send to?\n\n`;
                         matches.forEach((m, i) => {
                             const bal = m.totalAmount - m.payments.reduce((s,p)=>s+p.amount, 0);
                             reply += `${i+1}. *${m.customerName}* (Owes ₦${bal.toLocaleString()})\n`;
@@ -3280,7 +3501,7 @@ const handleIncoming = async (req, res) => {
                             { whatsappNumber: cleanFrom },
                             {
                                 type: 'draft_disambiguation',
-                                data: { options: matches.map(m => ({ id: m._id, name: m.customerName })) },
+                                data: { options: matches.map(m => ({ id: m._id, name: m.customerName })), isReminder: true },
                                 expiresAt: new Date(Date.now() + 5 * 60 * 1000)
                             },
                             { upsert: true }
@@ -3305,9 +3526,22 @@ const handleIncoming = async (req, res) => {
                     const reminderType = data.reminderType || aiResponseItem.reminderType || "task";
                     const recurrence = data.recurrence || aiResponseItem.recurrence || "none";
                     
-                    if (!reminderDateStr || !taskDescription) {
+                    if (!reminderDateStr && !taskDescription) {
                         console.warn(`⚠️ Partial Reminder Captured: Date=${reminderDateStr}, Task=${taskDescription}`);
-                        await sendReply(from, `I have the task, but I'm not sure *when* you want the reminder. Try: _'Remind me to call Kola by 4pm'_`);
+                        await sendReply(from, `I need a bit more detail! Try: _'Remind me to call Kola by 4pm'_ or _'Remind me to pay rent tomorrow 9am'_`);
+                    } else if (taskDescription && !reminderDateStr) {
+                        // Task known, time missing — store task and ask for time only
+                        console.log(`⏳ Reminder task captured, waiting for time: "${taskDescription}"`);
+                        await WhatsAppSession.findOneAndUpdate(
+                            { whatsappNumber: cleanFrom },
+                            {
+                                type: 'pending_reminder_time',
+                                data: { taskDescription, reminderType, recurrence: recurrence || 'none' },
+                                expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+                            },
+                            { upsert: true }
+                        );
+                        await sendReply(from, `Got it! I've noted the task: *"${taskDescription}"*. 📝\n\nWhen should I remind you? _(e.g. "4pm today", "tomorrow 9am", "Friday 10am")_`);
                     } else {
                         const triggerDate = new Date(reminderDateStr);
                         if (isNaN(triggerDate.getTime())) {
@@ -3780,7 +4014,7 @@ const handleIncoming = async (req, res) => {
                     
                     const searchName = (aiResponseItem.data.customerName || aiResponseItem.customerName || "").replace(/\s+/g, ' ').trim();
                     if (!searchName || searchName.toLowerCase() === "customer") {
-                        await sendReply(from, `Who do you want to draft this for, ${bossTitle}? Please mention the customer's name.`);
+                        await sendReply(from, `Who should I send the reminder to, ${bossTitle}? Please mention the customer's name.`);
                         isProcessed = true;
                         continue;
                     }
@@ -3794,7 +4028,7 @@ const handleIncoming = async (req, res) => {
                     if (matches.length === 0) {
                         await sendReply(from, `I couldn't find an active debt for *${searchName}*, ${bossTitle}.`);
                     } else if (matches.length > 1) {
-                        let disambigMsg = `🤔 I found *${matches.length}* people named *${searchName}*. Which one should I draft this for?\n\n`;
+                        let disambigMsg = `🤔 I found *${matches.length}* people named *${searchName}*. Which one should I send the reminder to?\n\n`;
                         matches.forEach((opt, i) => {
                             const bal = opt.totalAmount - opt.payments.reduce((s,p)=>s+p.amount, 0);
                             disambigMsg += `${i + 1}. *${opt.customerName}* (Owes ₦${bal.toLocaleString()})\n`;
@@ -3807,7 +4041,7 @@ const handleIncoming = async (req, res) => {
                                 type: 'draft_disambiguation',
                                 data: { 
                                     options: matches.map(m => ({ id: m._id, name: m.customerName })),
-                                    isReminder: aiResponseItem.intent.includes("reminder")
+                                    isReminder: true
                                 },
                                 expiresAt: new Date(Date.now() + 5 * 60 * 1000)
                             },
@@ -3815,32 +4049,30 @@ const handleIncoming = async (req, res) => {
                         );
                         await sendReply(from, disambigMsg);
                     } else {
+                        // V2: Send directly — no "Copy Draft" option
                         const sale = matches[0];
-                        const bal = sale.totalAmount - sale.payments.reduce((s,p)=>s+p.amount, 0);
                         const customerPhone = sale.customerPhone || sale.deliveredToPhone;
-
                         if (customerPhone) {
-                            await sendInteractiveButtons(
-                                from,
-                                "Invoice Reminder",
-                                `I found an active invoice for *${sale.customerName}* (Owes ₦${bal.toLocaleString()}) with phone *+${customerPhone}*.\n\nWould you like me to send a friendly reminder directly to their WhatsApp?`,
-                                "",
-                                [
-                                    { id: `send_chase_now:${sale._id}`, title: "✅ Send Reminder" },
-                                    { id: `copy_draft_only:${sale._id}`, title: "📝 Copy Draft" }
-                                ]
-                            );
+                            await sendReply(from, `On it! Sending payment reminder directly to *${sale.customerName}*... 🛡️`);
+                            const sendResult = await sendChaseToCustomer(sale._id, profile._id);
+                            if (sendResult.success) {
+                                await sendReply(from, `✅ *Reminder Sent!* I've delivered the payment nudge directly to *${sale.customerName}*. I'll keep you posted. 💪`);
+                            } else {
+                                await WhatsAppSession.findOneAndUpdate(
+                                    { whatsappNumber: cleanFrom },
+                                    { type: 'collect_chase_phone', data: { saleId: sale._id }, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+                                    { upsert: true }
+                                );
+                                await sendReply(from, `⚠️ I had trouble reaching *${sale.customerName}*. What's their WhatsApp number? I'll send the reminder right away.`);
+                            }
                         } else {
-                            await sendInteractiveButtons(
-                                from,
-                                "Missing Customer Number",
-                                `I found an active invoice for *${sale.customerName}* (Owes ₦${bal.toLocaleString()}), but I don't have their WhatsApp number.\n\nWould you like to add their number to send a direct reminder, or just copy the draft?`,
-                                "",
-                                [
-                                    { id: `add_chase_phone:${sale._id}`, title: "📱 Add Phone" },
-                                    { id: `copy_draft_only:${sale._id}`, title: "📝 Copy Draft" }
-                                ]
+                            // No phone on file — collect it
+                            await WhatsAppSession.findOneAndUpdate(
+                                { whatsappNumber: cleanFrom },
+                                { type: 'collect_chase_phone', data: { saleId: sale._id }, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+                                { upsert: true }
                             );
+                            await sendReply(from, `I found an active invoice for *${sale.customerName}*, but I don't have their WhatsApp number yet. What's it?`);
                         }
                     }
                     isProcessed = true;
@@ -4059,6 +4291,29 @@ const handleIncoming = async (req, res) => {
                     }
                     isProcessed = true;
                 }
+            }
+
+            // Progressive onboarding trigger: Check if first task was just completed
+            const taskIntents = ["create_reminder", "send_reminder", "update_record"];
+            const wasTask = intentQueue.some(item => taskIntents.includes(item?.intent));
+            const wasInvoiceCreated = session && session.type === "collect_sale_info" && isConfirmation;
+
+            if ((wasTask || wasInvoiceCreated) && profile && !profile.firstTaskCompleted && !profile.businessType) {
+                profile.firstTaskCompleted = true;
+                await profile.save();
+
+                setTimeout(async () => {
+                    await WhatsAppSession.findOneAndUpdate(
+                        { whatsappNumber: cleanFrom },
+                        {
+                            type: 'onboarding_business_type',
+                            data: {},
+                            expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+                        },
+                        { upsert: true }
+                    );
+                    await sendReply(from, "Before we continue, what kind of business do you run?");
+                }, 1500);
             }
         }
     }

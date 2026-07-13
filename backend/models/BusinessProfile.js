@@ -178,6 +178,18 @@ const BusinessProfileSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    businessType: {
+        type: String,
+        default: ""
+    },
+    customersType: {
+        type: String,
+        default: ""
+    },
+    firstTaskCompleted: {
+        type: Boolean,
+        default: false
+    },
     createdAt: {
         type: Date,
         default: Date.now
