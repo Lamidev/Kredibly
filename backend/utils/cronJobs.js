@@ -470,12 +470,21 @@ const scheduleProactiveFollowUps = () => {
             });
 
             for (const reminder of pastReminders) {
-                 await BackgroundJob.create({
-                    type: "DEBT_NUDGE",
-                    businessId: reminder.businessId,
-                    status: "pending",
-                    data: { type: "proactive_followup", reminderId: reminder._id, whatsappNumber: reminder.whatsappNumber }
-                });
+                 // 🛡️ DEDUP CHECK: Check if a proactive followup job has already been queued for this reminder
+                 const existing = await BackgroundJob.findOne({
+                     type: "DEBT_NUDGE",
+                     "data.type": "proactive_followup",
+                     "data.reminderId": reminder._id.toString()
+                 });
+
+                 if (!existing) {
+                     await BackgroundJob.create({
+                        type: "DEBT_NUDGE",
+                        businessId: reminder.businessId,
+                        status: "pending",
+                        data: { type: "proactive_followup", reminderId: reminder._id, whatsappNumber: reminder.whatsappNumber }
+                    });
+                 }
             }
         } catch (error) { console.error("Cron Error (Follow-up Queuer):", error); }
     });
@@ -497,12 +506,22 @@ const schedulePastDueEscalations = () => {
 
             for (const sale of overdueSales) {
                 if (!sale.businessId || sale.businessId.plan === "hustler" || !sale.businessId.whatsappNumber) continue;
-                await BackgroundJob.create({
+
+                // 🛡️ DEDUP CHECK: Check if a past due escalation job has already been queued for this sale
+                const existing = await BackgroundJob.findOne({
                     type: "DEBT_NUDGE",
-                    businessId: sale.businessId._id,
-                    status: "pending",
-                    data: { type: "past_due_escalation", saleId: sale._id, whatsappNumber: sale.businessId.whatsappNumber }
+                    "data.type": "past_due_escalation",
+                    "data.saleId": sale._id.toString()
                 });
+
+                if (!existing) {
+                    await BackgroundJob.create({
+                        type: "DEBT_NUDGE",
+                        businessId: sale.businessId._id,
+                        status: "pending",
+                        data: { type: "past_due_escalation", saleId: sale._id, whatsappNumber: sale.businessId.whatsappNumber }
+                    });
+                }
             }
         } catch (error) { console.error("Cron Error (Escalation Queuer):", error); }
     }, { timezone: "Africa/Lagos" });

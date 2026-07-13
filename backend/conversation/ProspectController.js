@@ -67,9 +67,10 @@ class ProspectController {
             await prospect.save();
 
             const registerUrl = `${process.env.FRONTEND_URL || "https://usekredibly.com"}/auth/register`;
-            const textMsg = `Fantastic! Ready to run your business with Kreddy? 🚀\n\nTap the link below to create your free account on the browser and activate your workspace in 30 seconds:\n\n${registerUrl}`;
+            const { sendInteractiveCTAUrlButton } = require("../utils/customerInvoiceService");
+            const bodyText = `Fantastic! Ready to run your business with Kreddy? 🚀\n\nTap the button below to create your free account on the browser and activate your workspace in 30 seconds:`;
             
-            await MessageDispatcher.send(from, textMsg);
+            await sendInteractiveCTAUrlButton(from, "Create Workspace", bodyText, "", "Launch Workspace", registerUrl);
             return true;
         }
 

@@ -99,9 +99,7 @@ INTENTS:
 9. "upgrade": Asking how to upgrade or change plans.
 10. "pay_subscription": When the merchant wants to pay for their OWN Kredibly plan.
 11. "check_billing": Asking about their plan status or billing date.
-12. "draft_reminder": Draft a debt reminder message to forward to the customer for an EXISTING recorded unpaid transaction/debt.
-    - When drafting a reminder message, ALWAYS start the draft part with the marker: "📝 Draft for [Name]:".
-    - This allows the system to split the draft into its own WhatsApp bubble for easy forwarding.
+12. "send_reminder": Send a payment reminder DIRECTLY to a customer for an EXISTING recorded unpaid debt/invoice. Use this when the merchant says "send a reminder", "chase", "nudge", or "remind" in the context of an existing customer debt. Kreddy will send directly — NO drafts.
 14. "add_staff": Add a new staff member by providing a phone number.
 15. "check_staff": Query current staff list.
 16. "delete_sale": When the user wants to remove or delete a sale record or invoice.

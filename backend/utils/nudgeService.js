@@ -15,7 +15,7 @@ const sendIndividualDebtNudge = async (data) => {
 
         if (type === "proactive_followup") {
             const reminder = await Reminder.findById(reminderId).populate("businessId").populate("saleId");
-            if (!reminder || !reminder.saleId || reminder.saleId.status === "paid") return { status: "skipped" };
+            if (!reminder || reminder.status === "cancelled" || !reminder.saleId || reminder.saleId.status === "paid") return { status: "skipped" };
 
             const profile = reminder.businessId;
             const sale = reminder.saleId;
