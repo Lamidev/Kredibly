@@ -1271,7 +1271,7 @@ const handleMerchantApproveExtension = async (saleId, sessionData) => {
             $inc: { extensionsCount: 1 }
         });
 
-        // Cancel old customer reminders and reschedule
+        // Cancel old customer reminders and reschedule from new due date
         await cancelCustomerReminders(saleId);
 
         const sale = await Sale.findById(saleId);
@@ -1281,33 +1281,38 @@ const handleMerchantApproveExtension = async (saleId, sessionData) => {
         }
 
         const newDueDateStr = newDate.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+        const cleanCustomerPhone = normalizePhone(customerPhone);
 
-        // 1️⃣ Send approval notification to customer
-        await sendCustomerMessageWithFallback(
-            customerPhone,
-            `Hi ${customerName}, your payment extension request for Invoice #${invoiceNumber} has been approved. Please make sure to clear the invoice on or before the new due date: ${newDueDateStr}.`,
-            customerName,
-            invoiceNumber
-        );
+        // ✅ Send ONE clean message — no "check below" pattern
+        // If the customer's 24h window is open, send interactive buttons directly.
+        // If window is closed (e.g. merchant approved hours later), fall back to template.
+        const WhatsAppSession = require("../models/WhatsAppSession");
+        const activeSession = await WhatsAppSession.findOne({ whatsappNumber: cleanCustomerPhone, type: "customer_active_window" });
 
-        // 2️⃣ Follow-up with action buttons so "Check below for more details" is fulfilled
-        if (sale) {
+        if (activeSession && sale) {
             const bal = sale.totalAmount - (sale.payments || []).reduce((s, p) => s + p.amount, 0);
-            const cleanCustomerPhone = customerPhone.startsWith('+') ? customerPhone.slice(1) : customerPhone;
             const buttons = [
                 { id: `pay_now:${saleId}`, title: "Pay with Transfer" }
             ];
-            // Offer another extension only if they haven't maxed out
             if ((sale.extensionsCount || 1) < 2) {
                 buttons.push({ id: `req_ext:${saleId}`, title: "Request Extension" });
             }
             await sendInteractiveButtons(
                 cleanCustomerPhone,
-                `Invoice #${invoiceNumber}`,
-                `Your new due date is *${newDueDateStr}*.\n\nOutstanding balance: *₦${bal.toLocaleString()}*\n\nHow would you like to proceed?`,
+                `✅ Extension Approved! — Invoice #${invoiceNumber}`,
+                `Great news, ${customerName}! Your extension request has been approved.\n\nYour new due date is *${newDueDateStr}*.\nOutstanding balance: *₦${bal.toLocaleString()}*\n\nHow would you like to proceed?`,
                 "",
                 buttons
-            ).catch(e => console.warn("⚠️ Follow-up buttons failed:", e.message));
+            ).catch(e => console.warn("⚠️ Extension approval buttons failed:", e.message));
+        } else {
+            // Window closed — use template fallback (no "check below" button)
+            const approvalText = `Hi ${customerName}, your payment extension request for Invoice #${invoiceNumber} has been approved. Your new due date is ${newDueDateStr}. Please ensure payment is made by then.`;
+            await sendCustomerMessageWithFallback(
+                customerPhone,
+                approvalText,
+                customerName,
+                null  // null = no invoice URL button appended
+            );
         }
 
         return { success: true };
@@ -1316,6 +1321,7 @@ const handleMerchantApproveExtension = async (saleId, sessionData) => {
         return { success: false };
     }
 };
+
 
 /**
  * Handle merchant rejecting a customer extension request.

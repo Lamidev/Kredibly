@@ -113,7 +113,7 @@ INTENTS:
     - "what number did I type just now?"
     These are NEVER "check_debt" — the merchant is recalling their own recent actions, NOT querying who owes money.
 19. "set_preferred_name": When the user asks to be called a specific name (e.g., "From now call me Papa").
-20. "list_sales": When the user asks for "all sales", "show me everything", "history", "what I sold today", or "everything recorded". 
+20. "list_sales": When the user asks for "all sales", "show me everything", "history", "what I sold today", "everything recorded", or asks specifically for paid/unpaid invoice lists (like "what are the paid invoices?"). 
 21. "check_performance": When the user asks "how much did I make today?", "any payments today?", "daily summary", "what is my today revenue?".
 22. "confirm_session": User is confirming the action in the Active Session.
 23. "reject_session": User is rejecting the action in the Active Session.
@@ -145,6 +145,8 @@ REQUIRED JSON OUTPUT:
     ],
     "reminderDate": "ISO Timestamp in UTC",
     "dueDate": "ISO Timestamp in UTC (For sales)",
+    "targetDate": "yesterday" | "today" | "ISO Date String",
+    "paidStatus": "paid" | "unpaid",
     "reminderType": "debt" | "task" | "meeting" | "personal",
     "priority": "high" | "normal" | "low" (Inferred from task description. Financial obligations, salaries, rent, invoices, client commitments are 'high'. Personal errands, pick ups are 'low'. Default is 'normal'. Never ask the user.),
     "taskDescription": "Extract the specific activity. MUST NOT BE EMPTY for create_reminder.",
@@ -203,6 +205,7 @@ REQUIRED JSON OUTPUT:
     "reminderDate": "ISO Timestamp in UTC",
     "dueDate": "ISO Timestamp in UTC (For sales)",
     "targetDate": "yesterday" | "today" | "ISO Date String",
+    "paidStatus": "paid" | "unpaid",
     "reminderType": "debt" | "task" | "meeting" | "personal",
     "priority": "high" | "normal" | "low" (Inferred from task description. Financial obligations, salaries, rent, invoices, client commitments are 'high'. Personal errands, pick ups are 'low'. Default is 'normal'. Never ask the user.),
     "taskDescription": "Extract the specific activity. MUST NOT BE EMPTY for create_reminder.",

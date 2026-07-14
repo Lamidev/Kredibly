@@ -157,20 +157,11 @@ const scheduleRemindersWorker = () => {
                         }
 
                         // ── CONTEXT-AWARE INTELLIGENT REMINDER GUARD ───────────────────
-                        // Do not remind if:
-                        // 1. Extension was approved within last 24h
-                        // 2. Customer made a partial payment in last 12h
-                        // 3. Extension is currently pending decision
-                        const recentExtension = sale.extensionApprovedAt && 
-                            (Date.now() - new Date(sale.extensionApprovedAt).getTime()) < (24 * 60 * 60 * 1000);
+                        const { shouldSendReminder } = require("./nudgeService");
+                        const guardResult = await shouldSendReminder(sale._id);
 
-                        const recentPartialPayment = sale.payments?.length > 0 &&
-                            (Date.now() - new Date(sale.payments[sale.payments.length - 1].date).getTime()) < (12 * 60 * 60 * 1000);
-
-                        const extensionPending = sale.lifecycleStatus === "EXTENSION_REQUESTED";
-
-                        if (recentExtension || recentPartialPayment || extensionPending) {
-                            console.log(`🧠 Context Guard: Silently skipping reminder #${acquired.reminderSequence} for Invoice #${sale.invoiceNumber} (D: ${sale.dueDate}, Bal: ₦${bal.toLocaleString()}).`);
+                        if (!guardResult.send) {
+                            console.log(`🧠 Context Guard: Silently skipping reminder #${acquired.reminderSequence} for Invoice #${sale.invoiceNumber} (D: ${sale.dueDate}, Bal: ₦${bal.toLocaleString()}). Reason: ${guardResult.reason}`);
                             acquired.status = "delivered"; // Mark handled
                             acquired.deliveredAt = new Date();
                             await acquired.save();
@@ -291,6 +282,53 @@ const scheduleRemindersWorker = () => {
                     acquired.deliveredAt = customerSuccess ? new Date() : undefined;
                     acquired.error = customerSuccess ? null : "Customer reminder delivery failed";
                     await acquired.save();
+
+                    if (customerSuccess && acquired.saleId) {
+                        try {
+                            const getNextCollectionCheckDate = () => {
+                                const now = new Date();
+                                const formatter = new Intl.DateTimeFormat("en-US", {
+                                    timeZone: "Africa/Lagos",
+                                    hour: "numeric",
+                                    hour12: false
+                                });
+                                const lagosHour = parseInt(formatter.format(now), 10);
+
+                                const target = new Date();
+                                if (lagosHour < 12) {
+                                    // Today at 6:00 PM Lagos (17:00 UTC)
+                                    target.setUTCHours(17, 0, 0, 0);
+                                    if (target <= now) {
+                                        target.setDate(target.getDate() + 1);
+                                    }
+                                } else {
+                                    // Tomorrow at 8:30 AM Lagos (7:30 UTC)
+                                    target.setDate(target.getDate() + 1);
+                                    target.setUTCHours(7, 30, 0, 0);
+                                }
+                                return target;
+                            };
+
+                            const sale = acquired.saleId;
+                            const bal = sale.totalAmount - (sale.payments?.reduce((s, p) => s + p.amount, 0) || 0);
+
+                            const Reminder = require("../models/Reminder");
+                            await Reminder.create({
+                                businessId: acquired.businessId._id,
+                                whatsappNumber: acquired.whatsappNumber,
+                                description: `Collection Check: ${sale.customerName} (₦${bal.toLocaleString()})`,
+                                type: "debt",
+                                triggerDate: getNextCollectionCheckDate(),
+                                status: "pending",
+                                saleId: sale._id,
+                                recipientType: "merchant"
+                            });
+                            console.log(`⏰ Collection Check scheduled for merchant on Invoice #${sale.invoiceNumber}`);
+                        } catch (ccErr) {
+                            console.error("Error scheduling Collection Check:", ccErr.message);
+                        }
+                    }
+
                     continue; // Skip merchant notification logic below
                 }
                 // ─── END CUSTOMER REMINDER ─────────────────────────────────────
@@ -302,7 +340,6 @@ const scheduleRemindersWorker = () => {
                 if (acquired.saleId) {
                     const sale = acquired.saleId;
                     const bal = sale.totalAmount - (sale.payments?.reduce((s, p) => s + p.amount, 0) || 0);
-                    const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
                     
                     if (bal <= 0) {
                         acquired.status = "delivered";
@@ -310,7 +347,29 @@ const scheduleRemindersWorker = () => {
                         continue;
                     }
 
-                    msg = `*Payment Reminder:* Collect ₦${bal.toLocaleString()} from *${sale.customerName}* for ${acquired.description || 'Invoice'}.`;
+                    // 🚀 Kredibly V2: Intercept collection check reminders to trigger interactive buttons nudge
+                    console.log(`⏰ Intercepting collection check reminder [${acquired._id}] to send interactive buttons to merchant...`);
+                    const { sendIndividualDebtNudge } = require("./nudgeService");
+                    const nudgeRes = await sendIndividualDebtNudge({
+                        type: "proactive_followup",
+                        saleId: sale._id,
+                        reminderId: acquired._id,
+                        profileId: acquired.businessId._id,
+                        whatsappNumber: acquired.whatsappNumber
+                    });
+                    
+                    let success = nudgeRes.status === "completed";
+                    
+                    if (success) {
+                        acquired.status = "delivered";
+                        acquired.deliveredAt = new Date();
+                        acquired.error = null;
+                    } else {
+                        acquired.status = "failed";
+                        acquired.error = nudgeRes.error || "Collection Check dispatch failed";
+                    }
+                    await acquired.save();
+                    continue;
                 }
 
                 console.log(`⏰ Processing Reminder [${acquired._id}] for ${title} (${acquired.whatsappNumber})...`);
@@ -466,6 +525,7 @@ const scheduleProactiveFollowUps = () => {
                 status: "delivered",
                 type: "debt",
                 saleId: { $ne: null },
+                recipientType: "customer",
                 deliveredAt: { $gte: rangeStart, $lte: rangeEnd }
             });
 

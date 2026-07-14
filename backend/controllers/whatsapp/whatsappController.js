@@ -1406,6 +1406,86 @@ const handleIncoming = async (req, res) => {
                     );
                     await sendReply(from, `What's the customer's WhatsApp number for this reminder?`);
                     return;
+
+                // ── V2 Collection Check: Merchant taps "Yes, Paid" ───────────
+                } else if (buttonId.startsWith("m_paid:")) {
+                    const saleId = buttonId.split(":")[1];
+                    const sale = await Sale.findById(saleId);
+                    if (!sale) {
+                        await sendReply(from, `I couldn't locate that invoice anymore. It may have been deleted.`);
+                        return;
+                    }
+                    const bal = sale.totalAmount - (sale.payments || []).reduce((sum, p) => sum + p.amount, 0);
+                    if (bal > 0) {
+                        sale.payments.push({ amount: bal, method: "WhatsApp Collection Check (Confirm Paid)", date: new Date() });
+                    }
+                    sale.lifecycleStatus = "PAID";
+                    await sale.save();
+
+                    // Clean up session and cancel future customer reminders
+                    await WhatsAppSession.deleteOne({ whatsappNumber: cleanFrom, type: "recovery_followup" });
+                    await Reminder.deleteMany({ saleId: sale._id, recipientType: "customer", status: "pending" });
+
+                    await sendReply(from, `✅ *Confirmed Paid!*\n\nI've updated Invoice *#${sale.invoiceNumber}* to *PAID* and cancelled all future reminders for *${sale.customerName}*. Your records are up to date. 💪`);
+
+                    // Notify customer of payment confirmation if phone on file
+                    const confirmedPhone = sale.customerPhone || sale.deliveredToPhone;
+                    if (confirmedPhone) {
+                        const cleanConfirmedPhone = String(confirmedPhone).replace(/\D/g, '');
+                        const businessName = profile.displayName || "Your Merchant";
+                        await sendReply(cleanConfirmedPhone, `Hello ${sale.customerName}, payment of *₦${bal.toLocaleString()}* has been received and confirmed for Invoice *#${sale.invoiceNumber}* by *${businessName}*. Thank you! 🙏`);
+                    }
+                    return;
+
+                // ── V2 Collection Check: Merchant taps "Remind Customer" ──────
+                } else if (buttonId.startsWith("m_remind:")) {
+                    const saleId = buttonId.split(":")[1];
+                    const sale = await Sale.findById(saleId);
+                    if (!sale) {
+                        await sendReply(from, `I couldn't locate that invoice anymore.`);
+                        return;
+                    }
+                    await WhatsAppSession.deleteOne({ whatsappNumber: cleanFrom, type: "recovery_followup" });
+                    await sendReply(from, `On it! Sending payment reminder directly to *${sale.customerName}*... 🛡️`);
+                    const mRemindResult = await sendChaseToCustomer(saleId, profile._id);
+                    if (mRemindResult.success) {
+                        await sendReply(from, `✅ *Reminder Sent!* I've delivered the payment nudge directly to *${sale.customerName}*. I'll keep you posted on their response. 💪`);
+                    } else {
+                        await WhatsAppSession.findOneAndUpdate(
+                            { whatsappNumber: cleanFrom },
+                            { type: 'collect_chase_phone', data: { saleId }, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+                            { upsert: true }
+                        );
+                        await sendReply(from, `⚠️ I don't have *${sale.customerName}'s* WhatsApp number on file. What's their number? I'll send the reminder as soon as you give me it.`);
+                    }
+                    return;
+
+                // ── V2 Collection Check: Merchant taps "Snooze 24h" ──────────
+                } else if (buttonId.startsWith("m_snooze:")) {
+                    const saleId = buttonId.split(":")[1];
+                    const sale = await Sale.findById(saleId);
+                    if (!sale) {
+                        await sendReply(from, `I couldn't find the invoice details.`);
+                        return;
+                    }
+                    await WhatsAppSession.deleteOne({ whatsappNumber: cleanFrom, type: "recovery_followup" });
+
+                    const snoozebal = sale.totalAmount - (sale.payments || []).reduce((sum, p) => sum + p.amount, 0);
+                    const nextTrigger = new Date(Date.now() + 24 * 60 * 60 * 1000);
+                    await Reminder.create({
+                        businessId: profile._id,
+                        whatsappNumber: cleanFrom,
+                        description: `Collection Check: ${sale.customerName} (₦${snoozebal.toLocaleString()})`,
+                        type: "debt",
+                        triggerDate: nextTrigger,
+                        status: "pending",
+                        saleId: sale._id,
+                        recipientType: "merchant"
+                    });
+                    const snoozeFriendly = nextTrigger.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                    await sendReply(from, `Understood, ${bossTitle}! 😴 I've snoozed the follow-up for *${sale.customerName}* for 24 hours (until *${snoozeFriendly}*). I'll check back in then.`);
+                    return;
+
                 } else if (buttonId.startsWith("ext_approve:")) {
                     const saleId = buttonId.split(":")[1];
                     const extSession = await WhatsAppSession.findOne({ whatsappNumber: cleanFrom, type: "merchant_extension_approval" });
@@ -2724,7 +2804,7 @@ const handleIncoming = async (req, res) => {
             try {
                 if (hour >= 5 && hour < 12) {
                     // Morning stats: Unpaid invoices count
-                    const unpaidCount = await Sale.countDocuments({ businessId: profile._id, lifecycleStatus: { $ne: "PAID" } });
+                    const unpaidCount = await Sale.countDocuments({ businessId: profile._id, status: { $ne: "paid" } });
                     if (unpaidCount === 0) {
                         greeting = `Good morning, ${businessName}! ☀️\n\nYou have no unpaid invoices today. Everything is up to date! What would you like to do?`;
                     } else if (unpaidCount === 1) {
@@ -2804,7 +2884,7 @@ const handleIncoming = async (req, res) => {
             // Fetch last 5 sales to give Kreddy a "memory" of what they sell
             const lastSales = await Sale.find({ businessId: profile._id }).sort({ createdAt: -1 }).limit(5).select('customerName items totalAmount');
             const businessInsight = lastSales.length > 0 
-                ? `Recent Activity: ${lastSales.map(s => `${s.customerName} bought ${(s.items || []).map(item => item.description).join(', ')} (₦${s.totalAmount.toLocaleString()})`).join('; ')}`
+                ? `Recent Activity: ${lastSales.map(s => `${s.customerName} bought ${(s.items || []).map(item => item.name).join(', ')} (₦${s.totalAmount.toLocaleString()})`).join('; ')}`
                 : "No recent transactions found. They are just starting out.";
 
             const preferredTone = profile.assistantSettings?.reminderTemplate || "friendly";
@@ -3400,7 +3480,7 @@ const handleIncoming = async (req, res) => {
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "list_sales") {
                     // 📜 FULL HISTORY: Show all sales, categorized
-                    const target = (aiResponseItem.data?.targetDate || "").toLowerCase();
+                    const target = String(aiResponseItem.data?.targetDate || "").toLowerCase();
                     let filter = { businessId: profile._id };
                     let dateLabel = "Recent";
 
@@ -3421,10 +3501,26 @@ const handleIncoming = async (req, res) => {
                         dateLabel = new Date(target).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' }) + " Records";
                     }
 
+                    // Filter by paidStatus if present
+                    if (aiResponseItem.data?.paidStatus === "paid") {
+                        filter.status = "paid";
+                        dateLabel = "Paid " + dateLabel;
+                    } else if (aiResponseItem.data?.paidStatus === "unpaid") {
+                        filter.status = { $ne: "paid" };
+                        dateLabel = "Unpaid " + dateLabel;
+                    }
+
                     const sales = await Sale.find(filter).sort({ createdAt: -1 }).limit(15);
                     
                     if (sales.length === 0) {
-                        const emptyMsg = target ? `Boss, I couldn't find any sales recorded for *${target}*. 🤷‍♂️` : "Boss, the records are empty! Let's record your first sale today. 🚀";
+                        let emptyMsg = "Boss, the records are empty! Let's record your first sale today. 🚀";
+                        if (aiResponseItem.data?.paidStatus === "paid") {
+                            emptyMsg = `Boss, I couldn't find any *paid* sales recorded ${target ? `for *${target}*` : 'recently'}. 🤷‍♂️`;
+                        } else if (aiResponseItem.data?.paidStatus === "unpaid") {
+                            emptyMsg = `Boss, I couldn't find any *unpaid* sales recorded ${target ? `for *${target}*` : 'recently'}. 🤷‍♂️`;
+                        } else if (target) {
+                            emptyMsg = `Boss, I couldn't find any sales recorded for *${target}*. 🤷‍♂️`;
+                        }
                         await sendReply(from, emptyMsg);
                     } else {
                         const wittyIntro = await generateWittyIntro("list_sales", { bossTitle, extra: `${dateLabel} records` });
@@ -3718,7 +3814,7 @@ const handleIncoming = async (req, res) => {
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "check_schedule") {
                     // 📋 NEW: CHECK SCHEDULE - Show user their pending reminders/tasks
-                    const target = (aiResponseItem.data?.targetDate || "today").toLowerCase();
+                    const target = String(aiResponseItem.data?.targetDate || "today").toLowerCase();
                     let startDate = new Date();
                     let endDate = new Date();
                     let dateLabel = "Today";
@@ -3833,7 +3929,7 @@ const handleIncoming = async (req, res) => {
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "check_performance") {
                     // 💰 PERFORMANCE CHECK: "How much did I make today/yesterday?"
-                    const target = (aiResponseItem.data?.targetDate || "today").toLowerCase();
+                    const target = String(aiResponseItem.data?.targetDate || "today").toLowerCase();
                     
                     let startDate = new Date();
                     let endDate = new Date();
