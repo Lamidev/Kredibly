@@ -202,4 +202,38 @@ const sendIndividualDebtNudge = async (data) => {
     }
 };
 
-module.exports = { sendIndividualDebtNudge };
+/**
+ * Centralized reminder protection guard.
+ * Validates whether it is safe and appropriate to send a customer reminder.
+ * @param {string} saleId - The ID of the Sale invoice.
+ * @returns {Promise<Object>} - { send: boolean, reason?: string }
+ */
+const shouldSendReminder = async (saleId) => {
+    try {
+        const Sale = require("../models/Sale");
+        const sale = await Sale.findById(saleId);
+
+        if (!sale) return { send: false, reason: "Invoice not found" };
+        if (sale.status === "paid") return { send: false, reason: "Already paid" };
+        if (sale.lifecycleStatus === "PAID") return { send: false, reason: "Lifecycle paid" };
+        if (sale.lifecycleStatus === "EXTENSION_REQUESTED") return { send: false, reason: "Extension pending" };
+        if (sale.lifecycleStatus === "EXTENSION_GRANTED") return { send: false, reason: "Extension active — reminder paused" };
+
+        const hoursSinceLast = sale.lastCustomerReminderAt
+            ? (Date.now() - new Date(sale.lastCustomerReminderAt)) / 3600000
+            : Infinity;
+        if (hoursSinceLast < 20) return { send: false, reason: "Reminder sent too recently" };
+
+        const recentPayment = sale.payments?.find(p =>
+            (Date.now() - new Date(p.date)) < 86400000
+        );
+        if (recentPayment) return { send: false, reason: "Recent payment detected" };
+
+        return { send: true };
+    } catch (err) {
+        console.error("shouldSendReminder guard error:", err);
+        return { send: false, reason: err.message };
+    }
+};
+
+module.exports = { sendIndividualDebtNudge, shouldSendReminder };
