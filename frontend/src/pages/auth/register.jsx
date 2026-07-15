@@ -30,6 +30,7 @@ const Register = () => {
 
     try {
       await registerUser(formData.name, formData.email, formData.password);
+      localStorage.setItem("kredibly_pending_email", formData.email); // used by verify-email resend
       toast.success("Account created! Please check your email for verification.");
       navigate("/auth/verify-email");
     } catch (err) {

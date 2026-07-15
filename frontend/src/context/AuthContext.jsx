@@ -193,6 +193,17 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const resendVerificationCode = async (email) => {
+        try {
+            setError(null);
+            const res = await axios.post(`${API_URL}/auth/resend-verification`, { email });
+            return res.data;
+        } catch (err) {
+            setError(err.response?.data?.message || "Failed to resend code");
+            throw err;
+        }
+    };
+
     const forgotPassword = async (email) => {
         try {
             setError(null);
@@ -286,7 +297,7 @@ export const AuthProvider = ({ children }) => {
     return (
         <AuthContext.Provider value={{
             user, profile, loading, error,
-            login, registerUser, verifyEmail, logout, updateProfile, checkAuth,
+            login, registerUser, verifyEmail, resendVerificationCode, logout, updateProfile, checkAuth,
             forgotPassword, resetPassword,
             subscribeToPushNotifications, unsubscribeFromPushNotifications
         }}>
@@ -305,6 +316,7 @@ export const useAuth = () => {
         login: async () => {},
         registerUser: async () => {},
         verifyEmail: async () => {},
+        resendVerificationCode: async () => {},
         logout: () => {},
         updateProfile: async () => {},
         checkAuth: async () => {},

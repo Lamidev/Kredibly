@@ -1,14 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
-import { ArrowLeft, RefreshCcw } from "lucide-react";
+import { RefreshCcw, Loader2 } from "lucide-react";
 
 const VerifyEmail = () => {
     const [code, setCode] = useState("");
     const [loading, setLoading] = useState(false);
-    const { verifyEmail } = useAuth();
+    const [resending, setResending] = useState(false);
+    const [cooldown, setCooldown] = useState(0);
+    const { verifyEmail, resendVerificationCode } = useAuth();
     const navigate = useNavigate();
+
+    // Tick the cooldown countdown
+    useEffect(() => {
+        if (cooldown <= 0) return;
+        const timer = setTimeout(() => setCooldown(c => c - 1), 1000);
+        return () => clearTimeout(timer);
+    }, [cooldown]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -23,6 +32,29 @@ const VerifyEmail = () => {
             toast.error(errorMessage);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleResend = async () => {
+        if (cooldown > 0 || resending) return;
+
+        // Email is saved to localStorage by register.jsx on successful registration
+        const registeredEmail = localStorage.getItem("kredibly_pending_email");
+        if (!registeredEmail) {
+            toast.error("We couldn't find your email. Please go back and register again.");
+            return;
+        }
+
+        setResending(true);
+        try {
+            await resendVerificationCode(registeredEmail);
+            toast.success("New code sent! Check your inbox (and spam folder).");
+            setCooldown(60);
+        } catch (err) {
+            const msg = err.response?.data?.message || "Failed to resend. Try again shortly.";
+            toast.error(msg);
+        } finally {
+            setResending(false);
         }
     };
 
@@ -79,10 +111,29 @@ const VerifyEmail = () => {
 
             <div style={{ textAlign: 'center', marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #F3F4F6' }}>
                 <button
-                    style={{ background: 'none', border: 'none', color: '#000000', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', margin: '0 auto' }}
-                    onClick={() => toast.info("New code sent!")}
+                    style={{ 
+                        background: 'none', 
+                        border: 'none', 
+                        color: cooldown > 0 ? '#94A3B8' : '#000000',
+                        fontWeight: 600, 
+                        cursor: cooldown > 0 || resending ? 'not-allowed' : 'pointer', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        gap: '8px', 
+                        margin: '0 auto',
+                        opacity: cooldown > 0 ? 0.6 : 1,
+                        transition: 'all 0.2s'
+                    }}
+                    onClick={handleResend}
+                    disabled={cooldown > 0 || resending}
                 >
-                    <RefreshCcw size={18} /> Resend verification code
+                    {resending 
+                        ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Sending...</>
+                        : cooldown > 0
+                            ? `Resend in ${cooldown}s`
+                            : <><RefreshCcw size={18} /> Resend verification code</>
+                    }
                 </button>
                 <Link to="/auth/login" style={{ display: 'block', marginTop: '16px', color: '#6B7280', textDecoration: 'none', fontWeight: 500, fontSize: '0.9rem' }}>
                     Sign in with another account
@@ -93,19 +144,11 @@ const VerifyEmail = () => {
 };
 
 const styles = `
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   @media (max-width: 640px) {
-    .input-field {
-      height: 52px !important;
-      font-size: 0.95rem !important;
-    }
-    .verify-code-input {
-      height: 60px !important;
-      font-size: 1.2rem !important;
-    }
-    .btn-primary {
-      height: 56px !important;
-      font-size: 1rem !important;
-    }
+    .input-field { height: 52px !important; font-size: 0.95rem !important; }
+    .verify-code-input { height: 60px !important; font-size: 1.2rem !important; }
+    .btn-primary { height: 56px !important; font-size: 1rem !important; }
   }
 `;
 
