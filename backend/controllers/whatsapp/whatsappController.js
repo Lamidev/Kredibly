@@ -1051,10 +1051,9 @@ const handleIncoming = async (req, res) => {
         console.log(`📩 Message from ${whatsappProfileName} (${from}): "${text}"`);
         res.sendStatus(200); // ⚡ Acknowledge Meta early to prevent retries
 
-        // Send Read Receipt (The "Blue Ticks")
+        // Send Read Receipt (The "Blue Ticks") + Thinking Bubble for ALL message types
         await sendReadReceipt(messageId);
-        // Note: Typing indicator is not supported by WhatsApp Cloud API (v15+)
-        // await sendTypingIndicator(from);
+        sendTypingIndicator(from); // Fire-and-forget: shows bubble for text, voice, image, interactive
 
         if (processedMessages.has(messageId)) return;
         processedMessages.add(messageId);
@@ -1798,6 +1797,42 @@ const handleIncoming = async (req, res) => {
                 await profile.save();
 
                 const friendlyDate = parsedDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                await sendReply(from, `✅ Done! I've scheduled a reminder for *"${taskDescription}"* at *${friendlyDate}*. I'll alert you right on time. 🛡️`);
+                return;
+            }
+
+            // ⏳ pending_reminder_task: time is known, waiting for task description
+            if (session.type === 'pending_reminder_task') {
+                const taskDescription = text.trim();
+                if (!taskDescription) {
+                    await sendReply(from, `Please tell me what task or activity I should remind you about.`);
+                    return;
+                }
+
+                const { triggerDate: triggerDateStr, reminderType, recurrence } = session.data;
+                const triggerDate = new Date(triggerDateStr);
+                await WhatsAppSession.deleteOne({ _id: session._id });
+
+                const descLower = taskDescription.toLowerCase();
+                let priority = "normal";
+                if (/rent|salary|salaries|invoice|pay|loan|fee|bill|tax|settle|debt|owe|client|customer|contract/i.test(descLower)) priority = "high";
+                else if (/milk|grocery|groceries|parcel|package|errand|shop|store|buy|laundry|clean|barber/i.test(descLower)) priority = "low";
+
+                await Reminder.create({
+                    businessId: profile._id,
+                    whatsappNumber: cleanFrom,
+                    description: taskDescription,
+                    triggerDate,
+                    type: reminderType || "task",
+                    recurrence: recurrence || "none",
+                    priority
+                });
+
+                if (!profile.monthlyUsage) profile.monthlyUsage = { reminders: 0, voiceNotes: 0, images: 0, lastReset: new Date() };
+                profile.monthlyUsage.reminders = (profile.monthlyUsage.reminders || 0) + 1;
+                await profile.save();
+
+                const friendlyDate = triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
                 await sendReply(from, `✅ Done! I've scheduled a reminder for *"${taskDescription}"* at *${friendlyDate}*. I'll alert you right on time. 🛡️`);
                 return;
             }
@@ -3638,6 +3673,26 @@ const handleIncoming = async (req, res) => {
                             { upsert: true }
                         );
                         await sendReply(from, `Got it! I've noted the task: *"${taskDescription}"*. 📝\n\nWhen should I remind you? _(e.g. "4pm today", "tomorrow 9am", "Friday 10am")_`);
+                    } else if (reminderDateStr && !taskDescription) {
+                        // Time known, task missing — store time and ask for task/description
+                        const triggerDate = new Date(reminderDateStr);
+                        if (isNaN(triggerDate.getTime())) {
+                            await sendReply(from, `I have the time, but it isn't clear enough for me to schedule it. Please try again with a specific date and time.`);
+                        } else if (triggerDate <= new Date()) {
+                            await sendReply(from, "I hear you, but you can't set a reminder for the past! 😅 Give me a future time.");
+                        } else {
+                            await WhatsAppSession.findOneAndUpdate(
+                                { whatsappNumber: cleanFrom },
+                                {
+                                    type: 'pending_reminder_task',
+                                    data: { triggerDate: triggerDate.toISOString(), reminderType, recurrence: recurrence || 'none' },
+                                    expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+                                },
+                                { upsert: true }
+                            );
+                            const friendlyDate = triggerDate.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                            await sendReply(from, `Got it! I have the time set for *${friendlyDate}*. ⏰\n\nWhat task or meeting should I schedule for you?`);
+                        }
                     } else {
                         const triggerDate = new Date(reminderDateStr);
                         if (isNaN(triggerDate.getTime())) {

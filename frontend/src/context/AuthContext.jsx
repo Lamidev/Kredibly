@@ -18,7 +18,41 @@ export const AuthProvider = ({ children }) => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        // Automatically attach Bearer token to all outgoing requests if present
+        const reqInterceptor = axios.interceptors.request.use(
+            (config) => {
+                const token = localStorage.getItem("kredibly_token");
+                if (token && !config.headers["Authorization"]) {
+                    config.headers["Authorization"] = `Bearer ${token}`;
+                }
+                return config;
+            },
+            (error) => Promise.reject(error)
+        );
+
+        // Handle expired/unauthorized token globally
+        const resInterceptor = axios.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                const status = error.response?.status;
+                if (status === 401 || status === 403) {
+                    console.warn("🔐 Session expired or unauthorized. Logging out...");
+                    setUser(null);
+                    setProfile(null);
+                    localStorage.removeItem("kredibly_user");
+                    localStorage.removeItem("kredibly_profile");
+                    localStorage.removeItem("kredibly_token");
+                }
+                return Promise.reject(error);
+            }
+        );
+
         checkAuth();
+
+        return () => {
+            axios.interceptors.request.eject(reqInterceptor);
+            axios.interceptors.response.eject(resInterceptor);
+        };
     }, []);
 
     const checkAuth = async () => {
