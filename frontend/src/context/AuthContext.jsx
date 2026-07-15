@@ -18,7 +18,41 @@ export const AuthProvider = ({ children }) => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        // Automatically attach Bearer token to all outgoing requests if present
+        const reqInterceptor = axios.interceptors.request.use(
+            (config) => {
+                const token = localStorage.getItem("kredibly_token");
+                if (token && !config.headers["Authorization"]) {
+                    config.headers["Authorization"] = `Bearer ${token}`;
+                }
+                return config;
+            },
+            (error) => Promise.reject(error)
+        );
+
+        // Handle expired/unauthorized token globally
+        const resInterceptor = axios.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                const status = error.response?.status;
+                if (status === 401 || status === 403) {
+                    console.warn("🔐 Session expired or unauthorized. Logging out...");
+                    setUser(null);
+                    setProfile(null);
+                    localStorage.removeItem("kredibly_user");
+                    localStorage.removeItem("kredibly_profile");
+                    localStorage.removeItem("kredibly_token");
+                }
+                return Promise.reject(error);
+            }
+        );
+
         checkAuth();
+
+        return () => {
+            axios.interceptors.request.eject(reqInterceptor);
+            axios.interceptors.response.eject(resInterceptor);
+        };
     }, []);
 
     const checkAuth = async () => {
@@ -159,6 +193,17 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const resendVerificationCode = async (email) => {
+        try {
+            setError(null);
+            const res = await axios.post(`${API_URL}/auth/resend-verification`, { email });
+            return res.data;
+        } catch (err) {
+            setError(err.response?.data?.message || "Failed to resend code");
+            throw err;
+        }
+    };
+
     const forgotPassword = async (email) => {
         try {
             setError(null);
@@ -252,7 +297,7 @@ export const AuthProvider = ({ children }) => {
     return (
         <AuthContext.Provider value={{
             user, profile, loading, error,
-            login, registerUser, verifyEmail, logout, updateProfile, checkAuth,
+            login, registerUser, verifyEmail, resendVerificationCode, logout, updateProfile, checkAuth,
             forgotPassword, resetPassword,
             subscribeToPushNotifications, unsubscribeFromPushNotifications
         }}>
@@ -271,6 +316,7 @@ export const useAuth = () => {
         login: async () => {},
         registerUser: async () => {},
         verifyEmail: async () => {},
+        resendVerificationCode: async () => {},
         logout: () => {},
         updateProfile: async () => {},
         checkAuth: async () => {},

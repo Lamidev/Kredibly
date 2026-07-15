@@ -163,9 +163,15 @@ const generatePaymentConfirmationCard = async ({
 </svg>
 `.trim();
 
+        const cleanInvoice = (invoiceNumber || "inv").replace(/[^a-zA-Z0-9-]/g, "_");
+        const cleanRef = (reference || "ref").replace(/[^a-zA-Z0-9-]/g, "_");
+        const publicId = `kredibly/receipts/${cleanInvoice}_${cleanRef}`;
+
         const base64Data = Buffer.from(svgString).toString("base64");
         const uploadResult = await cloudinary.uploader.upload(`data:image/svg+xml;base64,${base64Data}`, {
             resource_type: "image",
+            public_id: publicId,
+            overwrite: true,
             format: "png"
         });
 

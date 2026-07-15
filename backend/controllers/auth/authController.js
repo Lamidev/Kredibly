@@ -338,10 +338,48 @@ const deletePushSubscription = async (req, res) => {
   }
 };
 
+// Resend Verification Code
+const resendVerificationCode = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+
+    // Generic response to prevent user enumeration
+    if (!user || user.isVerified) {
+      return res.status(200).json({ success: true, message: "If this email exists and is unverified, a new code has been sent." });
+    }
+
+    // ⏱️ Rate limit: block resend if a code was issued within the last 60 seconds
+    const sixtySecondsAgo = Date.now() - 60 * 1000;
+    if (user.verificationTokenExpiresAt && new Date(user.verificationTokenExpiresAt).getTime() > sixtySecondsAgo + (24 * 60 * 60 * 1000 - 60 * 1000)) {
+      return res.status(429).json({ success: false, message: "Please wait 60 seconds before requesting a new code." });
+    }
+
+    // Generate a fresh 6-digit code
+    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+    user.verificationToken = newCode;
+    user.verificationTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000;
+    await user.save();
+
+    sendVerificationEmail(user.email, newCode)
+      .catch(err => console.error("Background Email Error (Resend Verification):", err.message));
+
+    res.status(200).json({ success: true, message: "A new verification code has been sent to your email." });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   register,
   login,
   verifyEmail,
+  resendVerificationCode,
   logout,
   checkAuth,
   forgotPassword,
