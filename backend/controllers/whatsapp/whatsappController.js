@@ -9,6 +9,7 @@ const Feedback = require("../../models/Feedback");
 const CustomerAlias = require("../../models/CustomerAlias");
 const axios = require("axios");
 const chrono = require("chrono-node");
+const { logUsage } = require("../../utils/usageTracker");
 const { logActivity } = require("../../utils/activityLogger");
 const { processMessageWithAI, processAudioWithAI, processImageWithAI } = require("../../utils/aiService");
 const { getPlanPrice } = require("../../config/pricing");
@@ -723,20 +724,9 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
         ];
 
         // 🚀 DYNAMIC TEMPLATE SELECTION
-        // If we have an invoice, use the template WITH the button.
-        // If not, use the SIMPLE template (No button).
-        const templateName = invoiceNumber ? 'kreddy_system_alert' : 'kreddy_simple_alert';
-
-        if (invoiceNumber) {
-            components.push({
-                type: "button",
-                sub_type: "url",
-                index: "0",
-                parameters: [
-                    { type: "text", text: `i/${invoiceNumber}` }
-                ]
-            });
-        }
+        // Kredibly V2: Always use the simple alert template (no browser/URL button templates)
+        // to keep interactions conversational on WhatsApp.
+        const templateName = 'kreddy_simple_alert';
         
         return await sendTemplateMessage(normalizedTo, templateName, components);
     } catch (err) {
@@ -780,7 +770,44 @@ const sendWhatsAppImage = async (to, imageUrl, caption = "") => {
     }
 };
 
-const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName, customText, bossTitle = 'Boss', sessionTextMsg = null, receiptImageUrl = null) => {
+const sendWhatsAppDocument = async (to, pdfUrl, filename, caption = "") => {
+    try {
+        const phoneId = process.env.WHATSAPP_PHONE_ID || process.env.PHONE_ID;
+        const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN || process.env.ACCESS_TOKEN;
+
+        if (!accessToken || !phoneId) return false;
+
+        let cleanTo = String(to).replace(/\D/g, ''); 
+        if (cleanTo.startsWith('0') && cleanTo.length === 11) {
+            cleanTo = '234' + cleanTo.slice(1);
+        }
+
+        await axios.post(
+            `https://graph.facebook.com/v21.0/${phoneId}/messages`,
+            {
+                messaging_product: "whatsapp",
+                recipient_type: "individual",
+                to: cleanTo,
+                type: "document",
+                document: {
+                    link: pdfUrl,
+                    filename: filename,
+                    caption: caption
+                }
+            },
+            {
+                headers: { Authorization: `Bearer ${accessToken}` },
+                timeout: 15000
+            }
+        );
+        return true;
+    } catch (err) {
+        console.error("❌ sendWhatsAppDocument Error:", err.response?.data || err.message);
+        return false;
+    }
+};
+
+const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName, customText, bossTitle = 'Boss', sessionTextMsg = null, receiptImageUrl = null, pdfUrl = null) => {
     try {
         const cleanTo = String(to).replace(/\D/g, '');
         let normalizedTo = cleanTo;
@@ -805,8 +832,23 @@ const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName,
         const isWindowOpen = profile?.lastInboundAt && (now - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
 
         if (isWindowOpen) {
-            console.log(`💡 WhatsApp Session Open for ${normalizedTo} — Sending free payment session message without button`);
+            console.log(`💡 WhatsApp Session Open for ${normalizedTo} — Sending free payment session message with direct media attachment`);
             
+            if (pdfUrl) {
+                await sendWhatsAppDocument(
+                    normalizedTo,
+                    pdfUrl,
+                    `Receipt-${invoiceNumber}.pdf`,
+                    `🧾 *Paid Invoice Receipt (Merchant Copy)*\nInvoice #${invoiceNumber} from ${customerName} is fully paid!`
+                );
+            } else if (receiptImageUrl) {
+                await sendWhatsAppImage(
+                    normalizedTo,
+                    receiptImageUrl,
+                    `✅ Payment Received! Invoice *#${invoiceNumber}* from *${customerName}*`
+                );
+            }
+
             let message = sessionTextMsg;
             if (!message) {
                 message = `💰 *Payment Received!*\n\nHigh power, ${bossTitle}! You just received a payment of *₦${amount.toLocaleString()}* for Invoice #${invoiceNumber} from *${customerName}*.\n\n${customText}\n\nYour Kredibly ledger has been updated automatically!`;
@@ -816,7 +858,7 @@ const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName,
         }
 
         // Window Closed: Use official Paid Template
-        console.log(`🔔 WhatsApp Session Closed for ${normalizedTo} — Sending paid payment template [kreddy_payment_alert] with image header`);
+        console.log(`🔔 WhatsApp Session Closed for ${normalizedTo} — Selecting paid payment template`);
 
         // 🛡️ Variable Hardening: Ensure no 'undefined' or 'null' hits the Meta API
         const safeAmount = String(amount || '0.00').substring(0, 60);
@@ -842,21 +884,38 @@ const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName,
             }
         ];
 
-        // 🖼️ Pass receipt image directly to the template header if available
-        const headerImageLink = receiptImageUrl || `https://usekredibly.com/krediblyrevamped.png`;
-        components.push({
-            type: "header",
-            parameters: [
-                {
-                    type: "image",
-                    image: {
-                        link: headerImageLink
-                    }
-                }
-            ]
-        });
+        let templateName = 'kreddy_payment_alert';
 
-        const success = await sendTemplateMessage(normalizedTo, 'kreddy_payment_alert', components);
+        if (pdfUrl) {
+            templateName = 'kreddy_payment_alert_pdf';
+            components.push({
+                type: "header",
+                parameters: [
+                    {
+                        type: "document",
+                        document: {
+                            link: pdfUrl,
+                            filename: `Receipt-${invoiceNumber}.pdf`
+                        }
+                    }
+                ]
+            });
+        } else if (receiptImageUrl) {
+            templateName = 'kreddy_payment_alert_image';
+            components.push({
+                type: "header",
+                parameters: [
+                    {
+                        type: "image",
+                        image: {
+                            link: receiptImageUrl
+                        }
+                    }
+                ]
+            });
+        }
+
+        const success = await sendTemplateMessage(normalizedTo, templateName, components);
         if (!success) {
             console.error(`❌ Meta Template rejection for ${normalizedTo}. Check template name and variables.`);
         }

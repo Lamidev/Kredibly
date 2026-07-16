@@ -8,6 +8,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { KREDDY_CONFIG } from "../../config";
+import { useAuth } from "../../context/AuthContext";
 
 // ─── Responsive hook ─────────────────────────────────────────────────────────
 const useIsMobile = () => {
@@ -36,6 +37,7 @@ const getAvatarGradient = (name) => {
 };
 
 export default function Customers() {
+    const { profile } = useAuth();
     const isMobile = useIsMobile();
     const { sales, fetchSales, deleteSale } = useSales();
     const [searchTerm, setSearchTerm] = useState("");
@@ -165,13 +167,66 @@ export default function Customers() {
     return (
         <div style={{ paddingBottom: '60px' }} className="animate-fade-in">
             {/* Page Title */}
-            <div style={{ marginBottom: '32px' }}>
-                <h1 style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--text)', marginBottom: '4px', letterSpacing: '-0.04em' }}>
-                    Customers CRM
-                </h1>
-                <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.9rem' }}>
-                    Observe trust ratios, outstanding balances, and Kreddy's relationship memory logs.
-                </p>
+            <div style={{ marginBottom: '32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                <div>
+                    <h1 style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--text)', marginBottom: '4px', letterSpacing: '-0.04em' }}>
+                        Customers CRM
+                    </h1>
+                    <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.9rem', margin: 0 }}>
+                        Observe trust ratios, outstanding balances, and Kreddy's relationship memory logs.
+                    </p>
+                </div>
+                <button
+                    onClick={() => {
+                        const msg = profile?.firstMerchantGreetingSent ? "Hi Kreddy" : "Hello";
+                        window.open(KREDDY_CONFIG.getLink(msg), '_blank', 'noopener,noreferrer');
+                    }}
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        background: "white",
+                        border: "1.5px solid rgba(109,40,217,0.18)",
+                        borderRadius: "40px",
+                        padding: "6px 14px 6px 8px",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        boxShadow: "0 2px 8px rgba(109,40,217,0.08)",
+                        flexShrink: 0,
+                    }}
+                    onMouseEnter={e => {
+                        e.currentTarget.style.background = "#F5F0FF";
+                        e.currentTarget.style.borderColor = "rgba(109,40,217,0.4)";
+                        e.currentTarget.style.transform = "translateY(-1px)";
+                        e.currentTarget.style.boxShadow = "0 4px 14px rgba(109,40,217,0.15)";
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.background = "white";
+                        e.currentTarget.style.borderColor = "rgba(109,40,217,0.18)";
+                        e.currentTarget.style.transform = "none";
+                        e.currentTarget.style.boxShadow = "0 2px 8px rgba(109,40,217,0.08)";
+                    }}
+                >
+                    <div style={{ position: "relative", flexShrink: 0 }}>
+                        <div style={{
+                            width: "28px", height: "28px",
+                            borderRadius: "50%",
+                            background: "linear-gradient(135deg, #6D28D9, #7C3AED)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                            <Bot size={14} color="white" />
+                        </div>
+                        <span style={{
+                            position: "absolute", bottom: 0, right: 0,
+                            width: "8px", height: "8px", borderRadius: "50%",
+                            background: "#10B981", border: "1.5px solid white",
+                            animation: "kreddy-pulse 2s infinite"
+                        }} />
+                    </div>
+                    <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#4C1D95", whiteSpace: "nowrap" }}>
+                        {profile?.firstMerchantGreetingSent ? "Open Kreddy" : "Open WhatsApp"}
+                    </span>
+                </button>
             </div>
 
             {/* Quick Search */}

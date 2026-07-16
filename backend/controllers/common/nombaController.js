@@ -183,11 +183,6 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
 
         const business = sale.businessId;
 
-        // Calculate the base (net) equivalent amount actually paid
-        const creditAmount = (vaRecord.amount > 0) 
-            ? Math.round(amount * (vaRecord.baseAmount / vaRecord.amount)) 
-            : amount;
-
         // Determine payment scenario for merchant notification
         const tolerance = 5; // ₦5 tolerance for floating point / rounding edge cases
         const diff = amount - vaRecord.amount; // positive = overpaid, negative = underpaid
@@ -197,6 +192,23 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
 
         // Calculate expected new status based on payments
         const totalPaidSoFar = sale.payments.reduce((sum, p) => sum + p.amount, 0);
+
+        // Calculate the base (net) equivalent amount actually paid
+        let creditAmount = (vaRecord.amount > 0) 
+            ? Math.round(amount * (vaRecord.baseAmount / vaRecord.amount)) 
+            : amount;
+
+        const remainingBeforeThis = sale.totalAmount - totalPaidSoFar;
+
+        // Apply overpayment cap: if customer overpaid, record only the actual remaining balance
+        // to fully settle the invoice (balance becomes exactly 0) and avoid negative ledger balances.
+        if (creditAmount > remainingBeforeThis) {
+            creditAmount = remainingBeforeThis;
+        } else if (Math.abs(remainingBeforeThis - creditAmount) <= tolerance) {
+            // Apply ₦5 tolerance check for exact/near-exact payments
+            creditAmount = remainingBeforeThis;
+        }
+
         const newTotalPaid = totalPaidSoFar + creditAmount;
         let newStatus = 'unpaid';
         if (newTotalPaid >= sale.totalAmount) {
@@ -206,8 +218,9 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
         }
 
         // 🔐 Update Sale Ledger atomically — push payment AND update status in one query
+        // Deduplicate check relies on externalReference (Nomba transactionId)
         const updatedSale = await Sale.findOneAndUpdate(
-            { _id: sale._id, "payments.reference": { $ne: accountReference } },
+            { _id: sale._id, "payments.externalReference": { $ne: transactionReference } },
             { 
                 $push: { payments: { amount: creditAmount, method: 'Nomba', reference: accountReference, externalReference: transactionReference, date: new Date() } },
                 $set: { status: newStatus }
@@ -249,9 +262,20 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
         const totalPaid = updatedSale.payments.reduce((sum, p) => sum + p.amount, 0);
         const balanceRemaining = Math.max(0, sale.totalAmount - totalPaid);
 
-        // ⚡ REAL-TIME SOCKET UPDATE (Public Invoice Page + Merchant Dashboard)
-        const { getIO } = require('../../utils/socket');
-        const io = getIO();
+        // 🔔 Create In-App Notification for Merchant Dashboard
+        try {
+            const Notification = require('../../models/Notification');
+            await Notification.create({
+                businessId: business._id,
+                title: 'Payment Confirmed',
+                message: `Received ₦${creditAmount.toLocaleString()} from ${sale.customerName} on Invoice #${sale.invoiceNumber}.`,
+                type: 'sale',
+                saleId: sale._id
+            });
+        } catch (notifErr) {
+            console.error("⚠️ Failed to create in-app notification:", notifErr.message);
+        }
+
         if (io) {
             const payload = {
                 saleId: sale._id,
@@ -266,7 +290,9 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
 
             // Emit to business room (merchant dashboard)
             if (business && business._id) {
-                io.to(business._id.toString().toLowerCase()).emit('sale_updated', payload);
+                const businessRoom = business._id.toString().toLowerCase();
+                io.to(businessRoom).emit('sale_updated', payload);
+                io.to(businessRoom).emit('notification_created', { businessId: business._id });
             }
         }
 
@@ -334,13 +360,20 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
 
                         // WHATSAPP SETTLEMENT CONFIRMATION
                         if (business.whatsappNumber) {
-                            let alertMsg = `*Settlement Alert, ${business.displayName}!*\n\nI've swept *₦${sweepAmount.toLocaleString()}* from the *${sale.customerName}* payment to your *${settlement.bankDetails.accountName}* bank account.`;
-                            
-                            if (business.planStatus === 'inactive' || business.planStatus === 'cancelled') {
-                                alertMsg += `\n\n*Note:* Even while your plan is paused, your settlements still go through. Subscribe now to get your full AI reports back.\nhttps://usekredibly.com/login?redirect=/settings`;
+                            const freshBusiness = await BusinessProfile.findById(business._id);
+                            const isWindowOpenNow = freshBusiness?.lastInboundAt && (new Date() - new Date(freshBusiness.lastInboundAt)) < 24 * 60 * 60 * 1000;
+
+                            if (isWindowOpenNow) {
+                                let alertMsg = `*Settlement Alert, ${business.displayName}!*\n\nI've swept *₦${sweepAmount.toLocaleString()}* from the *${sale.customerName}* payment to your *${settlement.bankDetails.accountName}* bank account.`;
+                                
+                                if (business.planStatus === 'inactive' || business.planStatus === 'cancelled') {
+                                    alertMsg += `\n\n*Note:* Even while your plan is paused, your settlements still go through. Subscribe now to get your full AI reports back.\nhttps://usekredibly.com/login?redirect=/settings`;
+                                }
+                                
+                                await sendWhatsAppAlert(business.whatsappNumber, business.displayName, alertMsg);
+                            } else {
+                                console.log(`🔕 Auto-Sweep SUCCESS notification skipped for closed-window merchant ${business.whatsappNumber} (combined in initial payment alert)`);
                             }
-                            
-                            await sendWhatsAppAlert(business.whatsappNumber, business.displayName, alertMsg);
                         }
                     } catch (sweepErr) {
                         console.error(`❌ Auto-Sweep FAILED for Settlement ${settlement._id}:`, sweepErr.message);
@@ -350,8 +383,8 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                         await settlement.save();
 
                         if (business.whatsappNumber) {
-                            const { sendReply } = require('../whatsapp/whatsappController');
-                            await sendReply(business.whatsappNumber, `*Settlement Issue, ${business.displayName}!*\n\nI tried to sweep *₦${sweepAmount.toLocaleString()}* to your bank but it failed.\n\nReason: ${sweepErr.message}\n\nThe funds are safe in your Kredibly wallet. I'll retry shortly or check your dashboard.`);
+                            const failMsg = `*Settlement Issue, ${business.displayName}!*\n\nI tried to sweep *₦${sweepAmount.toLocaleString()}* to your bank but it failed.\n\nReason: ${sweepErr.message}\n\nThe funds are safe in your Kredibly wallet. I'll retry shortly or check your dashboard.`;
+                            await sendWhatsAppAlert(business.whatsappNumber, business.displayName, failMsg);
                         }
                     }
                 }, 20000);
@@ -363,6 +396,7 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
 
         // 📱 WHATSAPP PAYMENT NOTIFICATION — contextual message based on payment scenario
         if (business.whatsappNumber) {
+            const isMerchantWindowOpen = !!(business.lastInboundAt && (new Date() - new Date(business.lastInboundAt)) < 24 * 60 * 60 * 1000);
             let customText = "";
 
             if (isExact) {
@@ -374,7 +408,6 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
             } else if (isUnderpaid) {
                 // Customer paid less than expected — notify both parties
                 const shortfall = Math.abs(diff);
-                const bossTitle = business.assistantSettings?.preferredName || business.displayName || "Boss";
                 customText = `*Payment Received — Shortfall Detected*\n\n${sale.customerName} transferred *₦${amount.toLocaleString()}* for Invoice #${sale.invoiceNumber}.\n\nThe invoice expected *₦${vaRecord.amount.toLocaleString()}* — they are short by *₦${shortfall.toLocaleString()}*.\n\nI've updated the invoice. Outstanding balance is now *₦${balanceRemaining.toLocaleString()}*. I'll continue monitoring for the remaining payment.`;
 
             } else if (isOverpaid) {
@@ -450,6 +483,13 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 customText += `\n\n⚡ *Kreddy Note:* Even while I'm off-duty, your money is still moving! Subscribe now to get your full AI briefings and debt recovery back.\n🔗 https://usekredibly.com/settings`;
             }
 
+            // ⚡ COMBINED TEMPLATE NOTIFICATION (If window is closed, append auto-sweep info to the customText variable)
+            if (customText !== null && !isMerchantWindowOpen) {
+                const sweepAmount = FINANCIAL_CONFIG.calculateNetAmount(amount);
+                const bankName = business.bankDetails?.accountName || business.displayName || "your bank account";
+                customText += `\n\n⚡ Auto-Sweep Settlement: ₦${sweepAmount.toLocaleString()} has been pushed to your ${bankName} account.`;
+            }
+
             // 🧠 KREDDY AI: Notify customer via WhatsApp first (and generate the receipt image card)
             let receiptImageUrl = null;
             try {
@@ -457,6 +497,14 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 receiptImageUrl = await notifyCustomerPaymentReceived(sale._id, creditAmount);
             } catch (custNotifyErr) {
                 console.error("Customer payment notify error:", custNotifyErr.message);
+            }
+
+            // Fetch the freshly updated sale to get the generated PDF URL
+            let freshSale = null;
+            try {
+                freshSale = await Sale.findById(sale._id);
+            } catch (findErr) {
+                console.error("Error fetching fresh sale for PDF url:", findErr.message);
             }
 
             // Only fire the generic alert when overpayment interactive buttons weren't already sent
@@ -470,7 +518,8 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                     customText,
                     business.displayName || 'Chief',
                     "",
-                    receiptImageUrl
+                    receiptImageUrl,
+                    freshSale?.pdfUrl || null
                 ).catch(err => console.error('❌ WhatsApp Payment Alert Failed:', err.message));
             }
         }

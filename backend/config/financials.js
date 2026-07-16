@@ -15,7 +15,7 @@ const FINANCIAL_CONFIG = {
         },
         EMTL_STAMP_DUTY: 50,         // Government Electronic Money Transfer Levy
         MIN_INSTANT_SWEEP: 0,        // All payments swept instantly
-        DVA_FEE_CAP: 1000            // Maximum Nomba will charge on DVA collection
+        DVA_FEE_CAP: 150             // Maximum Nomba will charge on DVA collection (capped at ₦150)
     },
     
     getTransferFee: (amount) => {
@@ -29,25 +29,24 @@ const FINANCIAL_CONFIG = {
         if (absorbFees) return netAmount;
         
         let gross;
-        // Nomba charges MAX(10, MIN(1000, 1% of Gross))
-        if (netAmount <= 1000) {
+        // Nomba charges MAX(10, MIN(150, 1% of Gross))
+        if (netAmount <= 990) {
             gross = netAmount + 10;
-        } else if (netAmount >= 100000) {
-            gross = netAmount + 1000;
+        } else if (netAmount >= 14850) {
+            gross = netAmount + 150;
         } else {
             gross = netAmount / (1 - FINANCIAL_CONFIG.NOMBA.DVA_PERCENTAGE);
         }
 
-        // 🎯 PROFESSIONAL ROUNDING: Always end with '0' for a clean invoice look (e.g., 5052 -> 5050)
-        // We use ceil to ensure we cover all potential kobo fees.
-        return Math.ceil(gross / 10) * 10;
+        // 🎯 PROFESSIONAL ROUNDING: Round UP to the nearest ₦5 to keep numbers clean and attractive (ends in 0 or 5)
+        return Math.ceil(gross / 5) * 5;
     },
 
     // Helper to calculate how much lands in the merchant's virtual wallet after DVA fees
     calculateNetAmount: (grossAmount) => {
-        // Nomba takes MAX(10, MIN(1000, 1% of gross))
+        // Nomba takes MAX(10, MIN(150, 1% of gross))
         const percentageFee = grossAmount * FINANCIAL_CONFIG.NOMBA.DVA_PERCENTAGE;
-        const actualDvaFee = Math.min(1000, Math.max(10, percentageFee));
+        const actualDvaFee = Math.min(FINANCIAL_CONFIG.NOMBA.DVA_FEE_CAP, Math.max(10, percentageFee));
         
         // This is what lands in the Kredibly wallet and is swept instantly.
         const net = grossAmount - actualDvaFee;

@@ -43,6 +43,32 @@ const normalizePhone = (num) => {
 };
 
 /**
+ * Send a typing indicator (thinking bubble) to a customer.
+ */
+const sendTypingIndicator = async (to) => {
+    try {
+        const { phoneId, accessToken } = getWACredentials();
+        if (!accessToken || !phoneId) return;
+        const cleanTo = normalizePhone(to);
+
+        await axios.post(
+            `https://graph.facebook.com/v21.0/${phoneId}/messages`,
+            {
+                messaging_product: "whatsapp",
+                recipient_type: "individual",
+                to: cleanTo,
+                sender_action: "typing_on",
+            },
+            {
+                headers: { Authorization: `Bearer ${accessToken}` },
+            }
+        );
+    } catch (err) {
+        // Silent fallback
+    }
+};
+
+/**
  * Send a plain text message to a WhatsApp number.
  */
 const sendText = async (to, text) => {
@@ -804,6 +830,7 @@ const cancelCustomerReminders = async (saleId) => {
  */
 const handleCustomerPayNow = async (saleId, customerPhone) => {
     try {
+        await sendTypingIndicator(customerPhone);
         const sale = await Sale.findById(saleId).populate("businessId");
         if (!sale) return;
 
@@ -837,6 +864,7 @@ const handleCustomerPayNow = async (saleId, customerPhone) => {
  */
 const handleCustomerPayFull = async (saleId, customerPhone) => {
     try {
+        await sendTypingIndicator(customerPhone);
         const sale = await Sale.findById(saleId).populate("businessId");
         if (!sale) return;
 
@@ -937,6 +965,7 @@ const handleCustomerPayFull = async (saleId, customerPhone) => {
  */
 const handleCustomerPayPart = async (saleId, customerPhone) => {
     try {
+        await sendTypingIndicator(customerPhone);
         const sale = await Sale.findById(saleId).populate("businessId");
         if (!sale) return;
 
@@ -976,6 +1005,7 @@ const handleCustomerPayPart = async (saleId, customerPhone) => {
  */
 const handleCustomerRequestExtension = async (saleId, customerPhone) => {
     try {
+        await sendTypingIndicator(customerPhone);
         const sale = await Sale.findById(saleId).populate("businessId");
         if (!sale) return;
 
@@ -1098,6 +1128,7 @@ const handleCustomerCustomDate = async (saleId, customerPhone, sale) => {
  */
 const handleCustomerExtensionDuration = async (saleId, days, customerPhone, customerName, reason = null, newDueDateOverride = null) => {
     try {
+        await sendTypingIndicator(customerPhone);
         const sale = await Sale.findById(saleId).populate("businessId");
         if (!sale) return;
 
@@ -1336,7 +1367,22 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
 
         const cleanCustomerPhone = normalizePhone(customerPhone);
 
+        // Fetch customer session window status
+        const WhatsAppSession = require("../models/WhatsAppSession");
+        const activeSession = await WhatsAppSession.findOne({ whatsappNumber: cleanCustomerPhone, type: "customer_active_window" });
+        const isCustomerWindowOpen = !!activeSession;
+
+        // ── Pre-generate PDF for full payments so link is ready for fallbacks ──
+        if (isFullyPaid && !sale.pdfUrl) {
+            console.log(`📄 Regenerating PAID PDF for Invoice ${sale.invoiceNumber} before notifications...`);
+            const pdfUrl = await generateAndUploadInvoicePDF(sale, business);
+            if (pdfUrl) {
+                sale = await Sale.findByIdAndUpdate(saleId, { pdfUrl }, { new: true }).populate("businessId");
+            }
+        }
+
         // ── Step 1: Branded payment confirmation card (image) ──────────────────
+        let cardUrl = null;
         try {
             const VirtualAccount = require("../models/VirtualAccount");
             const va = await VirtualAccount.findOne({ saleId: sale._id }).sort({ createdAt: -1 });
@@ -1344,7 +1390,7 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
                 ? sale.payments[sale.payments.length - 1] 
                 : null;
 
-            const cardUrl = await generatePaymentConfirmationCard({
+            cardUrl = await generatePaymentConfirmationCard({
                 businessName,
                 customerName: sale.customerName,
                 invoiceNumber: sale.invoiceNumber,
@@ -1357,39 +1403,56 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
                 beneficiaryAccountName: va?.accountName || businessName,
                 bankName: va?.bankName || "Paycom (Opay)"
             });
-            if (cardUrl) {
+
+            let imageSent = false;
+            if (isCustomerWindowOpen && cardUrl) {
                 const cardCaption = isFullyPaid
                     ? `✅ Payment received! Invoice *#${sale.invoiceNumber}* is now fully settled.`
                     : `✅ Partial payment of ₦${amountPaid.toLocaleString()} received for Invoice *#${sale.invoiceNumber}*.\n\nOutstanding: *₦${balance.toLocaleString()}*`;
-                await sendImage(cleanCustomerPhone, cardUrl, cardCaption);
+                imageSent = await sendImage(cleanCustomerPhone, cardUrl, cardCaption);
+            }
 
-                if (!isFullyPaid && business?.whatsappNumber) {
-                    const cleanMerchantPhone = normalizePhone(business.whatsappNumber);
+            if (!imageSent) {
+                // Closed window fallback: send template notification with pdf link
+                const fallbackText = isFullyPaid
+                    ? `✅ Payment confirmed! Your payment of ₦${amountPaid.toLocaleString()} for Invoice #${sale.invoiceNumber} has been received. The invoice is now fully paid. View receipt: ${sale.pdfUrl}`
+                    : `✅ Partial payment received. ₦${amountPaid.toLocaleString()} received for Invoice #${sale.invoiceNumber}. Outstanding balance: ₦${balance.toLocaleString()}`;
+                
+                await sendCustomerMessageWithFallback(cleanCustomerPhone, fallbackText, sale.customerName, sale.invoiceNumber);
+            }
+
+            if (!isFullyPaid && business?.whatsappNumber) {
+                const cleanMerchantPhone = normalizePhone(business.whatsappNumber);
+                const isMerchantWindowOpen = !!(business.lastInboundAt && (new Date() - new Date(business.lastInboundAt)) < 24 * 60 * 60 * 1000);
+                if (isMerchantWindowOpen && cardUrl) {
                     const merchantCardCaption = `✅ Partial payment of ₦${amountPaid.toLocaleString()} received for Invoice *#${sale.invoiceNumber}* from *${sale.customerName}*.\n\nOutstanding: *₦${balance.toLocaleString()}*`;
                     await sendImage(cleanMerchantPhone, cardUrl, merchantCardCaption);
                 }
-
-                // Small delay before next message
-                await new Promise(r => setTimeout(r, 1500));
             }
+
+            // Small delay before next message
+            await new Promise(r => setTimeout(r, 1500));
         } catch (cardErr) {
             console.error("⚠️ Could not generate payment card, falling back to text:", cardErr.message);
             // Fallback to plain text confirmation
             const msg = isFullyPaid
-                ? `✅ Payment confirmed! Thank you, ${sale.customerName}. Your payment of ₦${amountPaid.toLocaleString()} for Invoice #${sale.invoiceNumber} has been received. The invoice is now fully paid.`
+                ? `✅ Payment confirmed! Thank you, ${sale.customerName}. Your payment of ₦${amountPaid.toLocaleString()} for Invoice #${sale.invoiceNumber} has been received. The invoice is now fully paid. View receipt: ${sale.pdfUrl}`
                 : `✅ Partial payment received. Thank you, ${sale.customerName}. ₦${amountPaid.toLocaleString()} received for Invoice #${sale.invoiceNumber}.\n\nOutstanding balance: ₦${balance.toLocaleString()}`;
             await sendText(cleanCustomerPhone, msg);
 
             if (!isFullyPaid && business?.whatsappNumber) {
                 const cleanMerchantPhone = normalizePhone(business.whatsappNumber);
-                const merchantMsg = `✅ Partial payment received from *${sale.customerName}*. ₦${amountPaid.toLocaleString()} received for Invoice #${sale.invoiceNumber}.\n\nOutstanding balance: ₦${balance.toLocaleString()}`;
-                await sendText(cleanMerchantPhone, merchantMsg);
+                const isMerchantWindowOpen = !!(business.lastInboundAt && (new Date() - new Date(business.lastInboundAt)) < 24 * 60 * 60 * 1000);
+                if (isMerchantWindowOpen) {
+                    const merchantMsg = `✅ Partial payment received from *${sale.customerName}*. ₦${amountPaid.toLocaleString()} received for Invoice #${sale.invoiceNumber}.\n\nOutstanding balance: ₦${balance.toLocaleString()}`;
+                    await sendText(cleanMerchantPhone, merchantMsg);
+                }
             }
             await new Promise(r => setTimeout(r, 1000));
         }
 
         // ── Step 1.5: Send new checkout buttons for the remaining balance ─────
-        if (!isFullyPaid) {
+        if (!isFullyPaid && isCustomerWindowOpen) {
             const buttons = [
                 { id: `pay_now:${sale._id}`, title: "Pay Remaining" }
             ];
@@ -1406,23 +1469,23 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
         }
 
         // ── Step 2: Final PAID PDF — only when fully settled ──────────────────
-        if (isFullyPaid) {
-            console.log(`📄 Regenerating PAID PDF for Invoice ${sale.invoiceNumber}...`);
-            const pdfUrl = await generateAndUploadInvoicePDF(sale, business);
-            if (pdfUrl) {
-                sale = await Sale.findByIdAndUpdate(saleId, { pdfUrl }, { new: true }).populate("businessId");
-                
-                // Send to customer
+        if (isFullyPaid && sale.pdfUrl) {
+            // Send to customer if window is open
+            if (isCustomerWindowOpen) {
                 await sendDocument(
                     cleanCustomerPhone,
                     sale.pdfUrl,
                     `Receipt-${sale.invoiceNumber}.pdf`,
                     `🧾 *Official Receipt from ${businessName}*\nInvoice #${sale.invoiceNumber} — Fully Settled`
                 );
+            }
 
-                // Send to merchant copy
-                if (business.whatsappNumber) {
-                    const cleanMerchantPhone = normalizePhone(business.whatsappNumber);
+            // Send to merchant copy if window is open
+            if (business.whatsappNumber) {
+                const cleanMerchantPhone = normalizePhone(business.whatsappNumber);
+                const isMerchantWindowOpen = !!(business.lastInboundAt && (new Date() - new Date(business.lastInboundAt)) < 24 * 60 * 60 * 1000);
+                
+                if (isMerchantWindowOpen) {
                     await sendDocument(
                         cleanMerchantPhone,
                         sale.pdfUrl,
@@ -1449,6 +1512,7 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
 const handleCustomerInbound = async (from, msgType, message, text) => {
     try {
         const cleanFrom = normalizePhone(from);
+        await sendTypingIndicator(cleanFrom);
         const lowerText = (text || "").toLowerCase().trim();
 
         // Refresh/upsert customer's 24-hour active window session
