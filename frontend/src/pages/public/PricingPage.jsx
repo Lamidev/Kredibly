@@ -1,10 +1,26 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import PublicNavbar from '../../components/public/PublicNavbar';
 import PublicFooter from '../../components/public/PublicFooter';
 import { motion } from 'framer-motion';
 import { Check, X, ArrowRight, Star, BadgeCheck } from 'lucide-react';
+import SEO from '../../components/public/SEO';
+
+const PricingFAQItem = ({ question, answer, isLast }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    return (
+        <div style={{ borderBottom: isLast ? 'none' : '1px solid #E2E8F0', padding: '20px 0', cursor: 'pointer' }} onClick={() => setIsOpen(!isOpen)}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>{question}</h4>
+                <span style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--primary)', transform: isOpen ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s' }}>+</span>
+            </div>
+            {isOpen && (
+                <p style={{ marginTop: '12px', fontSize: '0.95rem', color: '#64748B', lineHeight: 1.6, margin: 0 }}>{answer}</p>
+            )}
+        </div>
+    );
+};
 
 const PricingPage = () => {
     const navigate = useNavigate();
@@ -13,7 +29,6 @@ const PricingPage = () => {
 
     useEffect(() => {
         window.scrollTo(0, 0);
-        document.title = "Pricing Plans | Kredibly — Hustler, Oga & Chairman Plans";
     }, []);
 
     const plans = [
@@ -87,6 +102,11 @@ const PricingPage = () => {
 
     return (
         <div style={{ minHeight: '100vh', background: 'white', color: '#0F172A', fontFamily: "'Outfit', sans-serif" }}>
+            <SEO 
+                title="Pricing Plans" 
+                description="Choose the Kredibly plan that fits your ambition. Zero hidden bank fees, no transaction commissions — just pure business power." 
+                path="/pricing" 
+            />
             <PublicNavbar />
             
             {/* Header - Premium Vibe */}
@@ -235,6 +255,89 @@ const PricingPage = () => {
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </section>
+
+            {/* Detailed Plan Breakdown */}
+            <section style={{ padding: '80px 24px', background: '#F8FAFC' }}>
+                <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+                        <h2 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#0F172A', marginBottom: '16px' }}>Which Plan is Right for Your Business?</h2>
+                        <p style={{ color: '#64748B', fontSize: '1.1rem', fontWeight: 500 }}>A detailed breakdown of how each plan matches your operational growth.</p>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '32px' }}>
+                        <div style={{ background: 'white', padding: '32px', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
+                            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0F172A', marginBottom: '12px' }}>Hustler Plan</h3>
+                            <p style={{ fontSize: '0.95rem', color: '#64748B', lineHeight: 1.6, marginBottom: '20px' }}>
+                                Designed specifically for solopreneurs, freelance creators, and micro-merchants who are transitioning from manual paper notebooks to digital record-keeping. It gives you 50 structured records every month and full access to Kreddy's core text intelligence.
+                            </p>
+                            <ul style={{ paddingLeft: '20px', fontSize: '0.9rem', color: '#475569', lineHeight: 1.6 }}>
+                                <li>50 invoice entries/month</li>
+                                <li>Direct WhatsApp delivery</li>
+                                <li>Auto-reminders (10/month)</li>
+                                <li>Basic ledger tracking</li>
+                            </ul>
+                        </div>
+                        <div style={{ background: 'white', padding: '32px', borderRadius: '24px', border: '1px solid var(--primary)', position: 'relative' }}>
+                            <div style={{ position: 'absolute', top: '-12px', right: '24px', background: 'var(--primary)', color: 'white', fontSize: '0.75rem', fontWeight: 900, padding: '4px 12px', borderRadius: '100px' }}>POPULAR</div>
+                            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0F172A', marginBottom: '12px' }}>Oga Plan</h3>
+                            <p style={{ fontSize: '0.95rem', color: '#64748B', lineHeight: 1.6, marginBottom: '20px' }}>
+                                Perfect for growing retail stores, service businesses, and merchants who want custom branding, full AI voice note parsing, and conversational payment collection follow-ups. Unlock unlimited ledger records and let Kreddy automatically manage customer extensions.
+                            </p>
+                            <ul style={{ paddingLeft: '20px', fontSize: '0.9rem', color: '#475569', lineHeight: 1.6 }}>
+                                <li>Unlimited ledger entries</li>
+                                <li>Full voice note invoicing</li>
+                                <li>Unlimited reminder loops</li>
+                                <li>Conversational extension manager</li>
+                            </ul>
+                        </div>
+                        <div style={{ background: 'white', padding: '32px', borderRadius: '24px', border: '1px solid #0F172A' }}>
+                            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0F172A', marginBottom: '12px' }}>Chairman Plan</h3>
+                            <p style={{ fontSize: '0.95rem', color: '#64748B', lineHeight: 1.6, marginBottom: '20px' }}>
+                                For scaling multi-branch retail empires and merchants who need premium accounting automation. Includes white-label invoicing, paper invoice scanning, multi-staff permissions, and priority partner channels for bespoke configurations.
+                            </p>
+                            <ul style={{ paddingLeft: '20px', fontSize: '0.9rem', color: '#475569', lineHeight: 1.6 }}>
+                                <li>White-label custom templates</li>
+                                <li>Paper invoice document scanning</li>
+                                <li>Up to 3 staff & office accounts</li>
+                                <li>Priority dedicated support channel</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Sweep & Reconciliation Guarantee */}
+            <section style={{ padding: '80px 24px', background: 'white' }}>
+                <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', padding: '8px 20px', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '100px', color: '#10B981', fontWeight: 800, fontSize: '0.8rem', marginBottom: '24px' }}>THE KREDIBLY SWEEP GUARANTEE</div>
+                    <h2 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#0F172A', marginBottom: '20px' }}>No Commission. Instant Sweeps. Zero Fees.</h2>
+                    <p style={{ fontSize: '1.1rem', color: '#64748B', lineHeight: 1.8, marginBottom: '32px' }}>
+                        Unlike other platforms that charge 1.5% to 2.5% on every customer transaction, Kredibly runs on a fixed subscription model. We do not take a slice of your hard-earned revenue. When customers pay via bank transfer using their dynamic virtual account, the funds are swept instantly directly to your linked settlement account, with zero transfer payout fees.
+                    </p>
+                </div>
+            </section>
+
+            {/* Pricing FAQs Section */}
+            <section style={{ padding: '80px 24px', background: '#F8FAFC' }}>
+                <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+                        <h2 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#0F172A', marginBottom: '16px' }}>Pricing & Billing FAQs</h2>
+                        <p style={{ color: '#64748B', fontSize: '1.1rem', fontWeight: 500 }}>Frequently asked questions about Kredibly subscriptions.</p>
+                    </div>
+
+                    <div style={{ background: 'white', padding: '32px', borderRadius: '24px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}>
+                        {[
+                            { question: "Are there any hidden transaction fees?", answer: "No. Kredibly charges a flat subscription fee. We do not take transaction commissions. The only costs are standard network fees which you can optionally pass to the customer." },
+                            { question: "Can I upgrade or downgrade my plan?", answer: "Yes, you can upgrade, downgrade, or cancel your plan at any time through your settings panel. If you upgrade, the new limit takes effect immediately." },
+                            { question: "How does the Hustler 50-record limit work?", answer: "Every time you record a transaction via Kreddy AI, it counts as one record. The counter resets on your monthly billing date. Read-only access to existing records remains active even if you exceed the limit." },
+                            { question: "Do you offer a free trial?", answer: "Yes, all new sign-ups are eligible for a 7-day trial of our Oga Plan to test AI voice note invoicing and reminders before subscribing." },
+                            { question: "Is my payment information secure?", answer: "All subscription transactions are processed securely through licensed partners. Kredibly never stores your credit card numbers on our servers." }
+                        ].map((faq, i) => (
+                            <PricingFAQItem key={i} question={faq.question} answer={faq.answer} isLast={i === 4} />
+                        ))}
                     </div>
                 </div>
             </section>

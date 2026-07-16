@@ -333,8 +333,8 @@ class InvoiceWorkflow extends WorkflowBase {
 
             if (existingSale) {
                 const bal = existingSale.totalAmount - existingSale.payments.reduce((s, p) => s + p.amount, 0);
-                const link = `${process.env.FRONTEND_URL || "https://usekredibly.com"}/i/${existingSale.invoiceNumber}`;
-                const infoMsg = `Here is that existing invoice details for *${existingSale.customerName}*:\n\n*Invoice #${existingSale.invoiceNumber}*\nTotal: ₦${existingSale.totalAmount.toLocaleString()}\nOwes: *₦${bal.toLocaleString()}*\n\nView here: ${link}`;
+                // V2: Removed browser invoice page link
+                const infoMsg = `Here is that existing invoice details for *${existingSale.customerName}*:\n\n*Invoice #${existingSale.invoiceNumber}*\nTotal: ₦${existingSale.totalAmount.toLocaleString()}\nOwes: *₦${bal.toLocaleString()}*`;
                 await MessageDispatcher.send(opts.from, infoMsg);
             } else {
                 await MessageDispatcher.send(opts.from, "I couldn't locate that existing invoice anymore.");

@@ -27,6 +27,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import PublicNavbar from "../../components/public/PublicNavbar";
 import PublicFooter from "../../components/public/PublicFooter";
 import { useAuth } from "../../context/AuthContext";
+import SEO from "../../components/public/SEO";
 // kreddy-whatsapp.jpg is served from /public for preload + stable URL (no Vite hash)
 const kreddyWhatsapp = "/kreddy-whatsapp.jpg";
 import { KREDDY_CONFIG } from "../../config";
@@ -195,8 +196,6 @@ const LandingPage = () => {
     const [showInstallBanner, setShowInstallBanner] = useState(false);
 
     useEffect(() => {
-        document.title = "Kredibly | AI Business Assistant for Invoicing, Payments & Receivables";
-        
         if (location.state?.scrollTo) {
             const sectionId = location.state.scrollTo;
             setTimeout(() => {
@@ -231,6 +230,7 @@ const LandingPage = () => {
             position: 'relative',
             overflowX: 'hidden'
         }}>
+            <SEO path="" />
             <PublicNavbar />
 
             {/* 1. Hero Section */}
@@ -860,179 +860,7 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* 5. PWA Section */}
-            <section id="pwa-workspace" style={{ padding: 'clamp(4rem, 10vw, 8rem) 24px', background: '#0F172A', color: 'white', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '80px', alignItems: 'center', marginBottom: '80px' }}>
-                        <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-                            <div style={{ display: 'inline-flex', padding: '10px 24px', background: 'rgba(124, 58, 237, 0.1)', borderRadius: '100px', marginBottom: '32px', color: '#A78BFA', fontWeight: 700, fontSize: '0.85rem', letterSpacing: '0.05em' }}>
-                                THE PROFESSIONAL WORKSPACE
-                            </div>
-                            <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: '32px' }}>
-                                Desktop Power. <br />
-                                <span className="premium-gradient">One Seamless App.</span>
-                            </h2>
-                            <p style={{ fontSize: '1.25rem', color: '#CBD5E1', fontWeight: 400, lineHeight: 1.6, marginBottom: '40px' }}>
-                                Install Kredibly on your phone, tablet, or laptop as a high-performance Progressive Web App (PWA). Get <b>Instant Push Alerts</b> for every payment without App Store downloads. Just lightning-fast access to your global commerce infrastructure.
-                            </p>
-                            
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '24px' }}>
-                                {[
-                                    { icon: Smartphone, title: "Phone", desc: "Native speed for on-the-go management." },
-                                    { icon: Bell, title: "Push Alerts", desc: "Real-time payment notifications on your screen." },
-                                    { icon: Monitor, title: "Desktop", desc: "Full-screen power for deep ledger work." }
-                                ].map((f, i) => (
-                                    <div key={i}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: 'var(--primary)' }}>
-                                            <f.icon size={20} />
-                                            <h4 style={{ color: 'white', margin: 0, fontWeight: 700 }}>{f.title}</h4>
-                                        </div>
-                                        <p style={{ color: '#94A3B8', fontSize: '0.85rem', margin: 0, fontWeight: 400 }}>{f.desc}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </motion.div>
 
-                        <motion.div 
-                            initial={{ opacity: 0, y: 30 }} 
-                            whileInView={{ opacity: 1, y: 0 }} 
-                            viewport={{ once: true }}
-                            style={{ position: 'relative' }}
-                        >
-                            <div style={{ position: 'relative', width: '100%', height: '420px' }}>
-                                <div style={{ 
-                                    position: 'absolute', 
-                                    top: '0', 
-                                    right: '0', 
-                                    width: '100%', 
-                                    maxWidth: '520px', 
-                                    height: '320px', 
-                                    background: '#1E293B', 
-                                    borderRadius: '16px', 
-                                    border: '10px solid #334155',
-                                    boxShadow: '0 40px 80px rgba(0,0,0,0.5)',
-                                    overflow: 'hidden'
-                                }}>
-                                    <div style={{ height: '24px', background: '#334155', display: 'flex', alignItems: 'center', padding: '0 12px', gap: '6px' }}>
-                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#EF4444' }} />
-                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#F59E0B' }} />
-                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981' }} />
-                                    </div>
-                                    <div style={{ padding: '15px', background: '#0F172A', height: '100%' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-                                            <div style={{ width: '100px', height: '20px', background: 'rgba(124, 58, 237, 0.2)', borderRadius: '4px' }} />
-                                            <div style={{ display: 'flex', gap: '8px' }}>
-                                                <div style={{ width: '20px', height: '20px', borderRadius: '4px', background: '#1E293B' }} />
-                                                <div style={{ width: '20px', height: '20px', borderRadius: '4px', background: '#1E293B' }} />
-                                            </div>
-                                        </div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-                                            <div style={{ padding: '12px', background: '#1E293B', borderRadius: '10px', border: '1px solid #334155' }}>
-                                                <div style={{ fontSize: '0.6rem', color: '#94A3B8', marginBottom: '4px' }}>Total Revenue</div>
-                                                <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--primary)' }}>₦2,450,000</div>
-                                            </div>
-                                            <div style={{ padding: '12px', background: '#1E293B', borderRadius: '10px', border: '1px solid #334155' }}>
-                                                <div style={{ fontSize: '0.6rem', color: '#94A3B8', marginBottom: '4px' }}>Pending Debts</div>
-                                                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#EF4444' }}>₦120,400</div>
-                                            </div>
-                                        </div>
-                                        <div style={{ height: '80px', background: '#1E293B', borderRadius: '10px', padding: '12px' }}>
-                                            <div style={{ fontSize: '0.6rem', color: '#94A3B8', marginBottom: '8px' }}>Sales Analytics</div>
-                                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '40px' }}>
-                                                {[40, 70, 45, 90, 65, 80, 50].map((h, k) => <div key={k} style={{ flex: 1, height: `${h}%`, background: 'var(--primary)', borderRadius: '2px', opacity: 0.6 }} />)}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <motion.div 
-                                    animate={{ y: [0, -15, 0] }}
-                                    transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                                    style={{ 
-                                        position: 'absolute', 
-                                        bottom: '0', 
-                                        left: '0', 
-                                        width: '240px', 
-                                        height: '320px', 
-                                        background: '#0F172A', 
-                                        borderRadius: '24px', 
-                                        border: '8px solid #334155',
-                                        boxShadow: '0 30px 60px rgba(0,0,0,0.5)',
-                                        zIndex: 5,
-                                        overflow: 'hidden'
-                                    }}
-                                >
-                                    <div style={{ height: '32px', background: '#1E293B', display: 'flex', alignItems: 'center', padding: '0 15px' }}>
-                                        <div style={{ width: '30px', height: '4px', background: '#334155', borderRadius: '2px' }} />
-                                    </div>
-                                    <div style={{ padding: '20px' }}>
-                                        <div style={{ fontSize: '0.8rem', fontWeight: 800, marginBottom: '15px', color: 'white' }}>Daily Ledger</div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                            {[
-                                                { label: "Oando Plc", val: "+₦45k" },
-                                                { label: "Musa & Sons", val: "+₦12k" },
-                                                { label: "Debts Paid", val: "+₦200k" },
-                                                { label: "New Sale", val: "+₦85k" }
-                                            ].map((row, l) => (
-                                                <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', background: '#1E293B', borderRadius: '6px', fontSize: '0.65rem' }}>
-                                                    <span style={{ fontWeight: 600, color: '#CBD5E1' }}>{row.label}</span>
-                                                    <span style={{ color: '#10B981', fontWeight: 800 }}>{row.val}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            </div>
-                        </motion.div>
-                    </div>
-
-                    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)', padding: '48px' }}>
-                        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-                            <h3 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '12px', color: 'white' }}>How to Install</h3>
-                            <p style={{ color: '#94A3B8', fontWeight: 400 }}>No App Store needed. Setup in 10 seconds.</p>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '40px' }}>
-                            {[
-                                { 
-                                    device: "iOS (iPhone/iPad)", 
-                                    steps: [
-                                        "Open usekredibly.com in Safari",
-                                        "Tap the 'Share' icon (square with arrow)",
-                                        "Scroll down and tap 'Add to Home Screen'"
-                                    ] 
-                                },
-                                { 
-                                    device: "Android (Samsung/Pixel/etc)", 
-                                    steps: [
-                                        "Open usekredibly.com in Chrome",
-                                        "Tap the three dots (⋮) at the top right",
-                                        "Tap 'Install App' or 'Add to Home Screen'"
-                                    ] 
-                                },
-                                { 
-                                    device: "Desktop (Mac/Windows/Linux)", 
-                                    steps: [
-                                        "Open usekredibly.com in Chrome or Edge",
-                                        "Click the 'Install' icon in the URL bar",
-                                        "Confirm 'Install' to add to your dock/taskbar"
-                                    ] 
-                                }
-                            ].map((guide, i) => (
-                                <div key={i} style={{ background: 'rgba(255,255,255,0.02)', padding: '32px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                    <h4 style={{ color: '#A78BFA', marginBottom: '20px', fontWeight: 700 }}>{guide.device}</h4>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                        {guide.steps.map((step, j) => (
-                                            <div key={j} style={{ display: 'flex', gap: '12px', fontSize: '0.9rem', color: '#CBD5E1', lineHeight: 1.4 }}>
-                                                <div style={{ minWidth: '20px', height: '20px', borderRadius: '50%', background: 'rgba(124, 58, 237, 0.2)', color: '#A78BFA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700 }}>{j + 1}</div>
-                                                {step}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </section>
 
             {/* ROI SECTION */}
             <section id="roi" style={{ padding: 'clamp(4rem, 10vw, 8rem) 24px', background: 'white', color: '#0F172A', position: 'relative', overflow: 'hidden' }}>
@@ -1096,75 +924,7 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* MISSION MAP SECTION */}
-            <section id="mission-map" style={{ padding: 'clamp(4rem, 10vw, 8rem) 24px', background: '#F8FAFC', color: '#0F172A', borderTop: '1px solid #E2E8F0' }}>
-                <div className="container" style={{ maxWidth: '900px', margin: '0 auto' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-                        <div style={{ display: 'inline-flex', padding: '8px 20px', borderRadius: '100px', background: 'rgba(76, 29, 149, 0.05)', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '24px', letterSpacing: '0.1em' }}>
-                            OUR JOURNEY & VISION
-                        </div>
-                        <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 700, letterSpacing: '-0.04em', color: '#0F172A' }}>The Mission Map.</h2>
-                        <p style={{ fontSize: '1.2rem', color: '#334155', fontWeight: 400, marginTop: '16px' }}>Transparent milestones from a simple idea to a global financial ecosystem.</p>
-                    </div>
 
-                    <div className="mission-timeline-container" style={{ position: 'relative', paddingLeft: '40px' }}>
-                        <div className="timeline-line" style={{ position: 'absolute', left: '7px', top: '0', bottom: '0', width: '2px', background: 'linear-gradient(to bottom, #E2E8F0 0%, #7C3AED 30%, #7C3AED 70%, #E2E8F0 100%)' }} />
-
-                        {[
-                            { date: "JULY '25", title: "The Genesis", desc: "Concept & Research Phase. Identifying the 'Trust Gap' in African commerce.", status: "completed" },
-                            { date: "SEPT '25", title: "Strategic Architecture", desc: "Core blueprinting of the Kredibly workspace and AI interface flow.", status: "completed" },
-                            { date: "DEC '25", title: "Kreddy AI Core", desc: "Intelligence engine development. Teaching Kreddy to understand merchant slang and complex debts.", status: "completed" },
-                            { date: "JAN '26", title: "Premium Platform UX", desc: "Rollout of smart telemetry, professional document generators, and cross-device syncing.", status: "done" },
-                            { date: "JAN '26: JULY '26", title: "Pioneer Program", desc: "Onboarding our first 1,000 pioneers. Lifetime status and exclusive rewards for our founding merchants.", status: "active", isFounding: true },
-                            { date: "AUGUST 1ST", title: "Public Launch", desc: "Opening the ecosystem for public merchant registration and global transactions. Kredibly goes live for everyone.", status: "future" }
-                        ].map((m, i) => (
-                            <motion.div 
-                                key={i}
-                                initial={{ opacity: 0, x: -20 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true, amount: 0.1 }}
-                                transition={{ delay: i * 0.1 }}
-                                style={{ marginBottom: '64px', position: 'relative' }}
-                            >
-                                <div 
-                                    className="timeline-dot"
-                                    style={{ 
-                                        position: 'absolute', 
-                                        left: '-41px', 
-                                        top: '4px', 
-                                        width: '16px', 
-                                        height: '16px', 
-                                        borderRadius: '50%', 
-                                        background: m.status === 'active' ? 'var(--primary)' : m.status === 'completed' ? '#10B981' : 'white',
-                                        border: m.status === 'future' ? '2px solid #E2E8F0' : 'none',
-                                        boxShadow: m.status === 'active' ? '0 0 20px rgba(124, 58, 237, 0.5)' : 'none',
-                                        zIndex: 2
-                                    }}>
-                                    {m.status === 'active' && <div className="pulse-dot" />}
-                                </div>
-
-                                <div style={{ 
-                                    background: m.status === 'active' ? 'white' : 'transparent',
-                                    padding: m.status === 'active' ? '32px' : '0',
-                                    borderRadius: '24px',
-                                    border: m.status === 'active' ? '1px solid #E2E8F0' : 'none',
-                                    boxShadow: m.status === 'active' ? '0 20px 40px -10px rgba(0,0,0,0.05)' : 'none',
-                                    opacity: m.status === 'completed' ? 0.7 : 1
-                                }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: m.status === 'active' ? 'var(--primary)' : '#94A3B8', letterSpacing: '0.1em' }}>{m.date}</span>
-                                        {m.isFounding && m.status === 'active' && (
-                                            <span style={{ fontSize: '0.65rem', fontWeight: 700, background: 'rgba(76, 29, 149, 0.1)', color: 'var(--primary)', padding: '4px 12px', borderRadius: '100px' }}>LIVE NOW</span>
-                                        )}
-                                    </div>
-                                    <h4 style={{ fontSize: '1.4rem', fontWeight: 700, color: m.status === 'active' ? '#0F172A' : '#64748B', marginBottom: '12px' }}>{m.title}</h4>
-                                    <p style={{ color: m.status === 'active' ? '#334155' : '#64748B', fontWeight: 400, lineHeight: 1.6, maxWidth: '600px', margin: 0 }}>{m.desc}</p>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </section>
 
             {/* FAQ SECTION */}
             <section id="faq" style={{ padding: 'clamp(4rem, 10vw, 8rem) 24px', background: 'white' }}>

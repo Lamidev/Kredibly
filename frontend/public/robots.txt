@@ -4,7 +4,17 @@ Allow: /home
 Allow: /about
 Allow: /contact
 Allow: /pricing
-Disallow: /auth/
+
+# Public Auth Entry Points
+Allow: /auth/login
+Allow: /auth/register
+
+# Private Auth State Sub-pages
+Disallow: /auth/forgot-password
+Disallow: /auth/reset-password
+Disallow: /auth/verify-email
+
+# Internal App Modules
 Disallow: /dashboard/
 Disallow: /sales/
 Disallow: /admin/

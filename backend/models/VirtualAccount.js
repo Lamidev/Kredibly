@@ -22,11 +22,11 @@ const VirtualAccountSchema = new mongoose.Schema({
     },
     bankName: {
         type: String,
-        default: "Wema Bank" // Common for Monnify/Paystack
+        default: "Wema Bank"
     },
     provider: {
         type: String,
-        enum: ["monnify", "paystack", "squad", "nomba"],
+        enum: ["squad", "nomba"], // squad dormant; nomba is primary
         default: "nomba"
     },
     reference: {

@@ -52,8 +52,8 @@ export default function Money() {
 
     const netProfit = totalIncome - totalExpenses;
 
-    // Payments made via actual payment infrastructure (Nomba, Paystack, Squad, Card)
-    const INFRA_METHODS = ['Nomba', 'Paystack', 'Squad', 'Card'];
+    // V2: Paystack removed. Squad stays dormant. Nomba is now primary.
+    const INFRA_METHODS = ['Nomba', 'Squad', 'Bank Transfer', 'Card'];
     const infrastructureCollected = useMemo(() =>
         sales.reduce((sum, sale) =>
             sum + (sale.payments || []).filter(p => p.amount > 0 && INFRA_METHODS.some(m => (p.method || '').includes(m)))

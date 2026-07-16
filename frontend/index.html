@@ -12,7 +12,6 @@
 
     <!-- Viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <link rel="canonical" href="https://usekredibly.com/" />
     
     <!-- PWA / Mobile optimized -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -139,7 +138,7 @@
           "name": "Can customers pay without creating an account?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes. Customers receive a professional invoice and a Pay Now button that opens a secure payment page. No Kredibly account is required. Payments are confirmed instantly and your ledger is updated automatically."
+            "text": "Yes. Customers receive a professional PDF invoice and bank account details via WhatsApp. No Kredibly account is required. Payments are confirmed instantly when the bank transfer is received and your ledger is updated automatically."
           }
         },
         {
@@ -147,7 +146,7 @@
           "name": "What happens when a customer requests a payment extension?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Customers can request an extension directly from their invoice link. Kreddy forwards the request to you on WhatsApp with options to approve or reject it. If approved, the due date updates automatically and all reminders are rescheduled."
+            "text": "Customers can request an extension directly on WhatsApp. Kreddy forwards the request to you on WhatsApp with options to approve or reject it. If approved, the due date updates automatically and all reminders are rescheduled."
           }
         },
         {
@@ -274,12 +273,12 @@
         {
           "@type": "HowToStep",
           "name": "Invoice is sent to the customer",
-          "text": "The customer receives a professional PDF invoice via WhatsApp with a secure Pay Now button. No Kredibly account required on their end."
+          "text": "The customer receives a professional PDF invoice via WhatsApp with bank account details for instant transfer. No Kredibly account required."
         },
         {
           "@type": "HowToStep",
           "name": "Customer pays online",
-          "text": "The customer taps Pay Now, completes payment securely, and the transaction is confirmed instantly. Kreddy updates your ledger automatically."
+          "text": "The customer makes a bank transfer using the account details sent on WhatsApp. The payment is confirmed instantly and Kreddy updates your ledger automatically."
         },
         {
           "@type": "HowToStep",
@@ -365,8 +364,8 @@
       #root { min-height: 100vh; }
     </style>
 
-    <!-- Paystack Integration -->
-    <script src="https://js.paystack.co/v1/inline.js"></script>
+    <!-- V2: Paystack integration removed — Nomba is now the sole payment infrastructure -->
+    <!-- <script src="https://js.paystack.co/v1/inline.js"></script> -->
   </head>
   <body>
     <!-- Noscript content -->

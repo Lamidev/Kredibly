@@ -104,7 +104,8 @@ const AdminRevenue = () => {
     );
 
     const totalRecordedVolume = invoicePayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-    const verifiedMethods = ['Nomba', 'Paystack', 'Squad', 'Kredibly Online'];
+    // V2: Paystack removed. Squad stays dormant.
+    const verifiedMethods = ['Nomba', 'Squad', 'Kredibly Online'];
     const totalVerifiedVolume = invoicePayments
         .filter(p => verifiedMethods.includes(p.method))
         .reduce((sum, p) => sum + (p.amount || 0), 0);
@@ -201,7 +202,7 @@ const AdminRevenue = () => {
                         {activeTab === 'subscriptions' ? 'Global Subscription Settlements' : 'Verified Payout Log (Real Cash Only)'}
                     </h3>
                     <p style={{ color: '#64748B', fontWeight: 600, fontSize: '0.9rem', marginTop: '4px', marginLeft: '6px' }}>
-                        {activeTab === 'subscriptions' ? 'Syncing real-time records of paid membership activations.' : 'Real-time record of verified Paystack flows to merchant subaccounts.'}
+                        {activeTab === 'subscriptions' ? 'Syncing real-time records of paid membership activations.' : 'Real-time record of verified payment flows to merchant accounts.'}
                     </p>
                 </div>
                 

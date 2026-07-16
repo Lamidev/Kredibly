@@ -163,20 +163,18 @@ const InvoicePage = () => {
         try {
             await axios.post(`${API_URL}/sales/${id}/remind`, {}, { withCredentials: true });
 
-            const frontendUrl = window.location.origin;
-            const shareUrl = `${frontendUrl}/i/${sale.invoiceNumber}`;
             const paid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
             const balance = sale.totalAmount - paid;
             
             let text = "";
             if (balance <= 0) {
-                text = `Hi ${sale.customerName || 'Customer'},\n\nThank you for your payment! Your invoice (#${sale.invoiceNumber}) from *${sale.businessId.displayName}* is now fully settled.\n\nYou can view and download your official receipt here: ${shareUrl}\n\nWe appreciate your business!`;
+                text = `Hi ${sale.customerName || 'Customer'},\n\nThank you for your payment! Your invoice (#${sale.invoiceNumber}) from *${sale.businessId.displayName}* is now fully settled.\n\nWe appreciate your business!`;
             } else {
                 const tone = sale.businessId.assistantSettings?.reminderTemplate || 'friendly';
                 if (tone === 'formal') {
-                    text = `Dear ${sale.customerName || 'Customer'},\n\nThis is a formal update regarding your invoice (#${sale.invoiceNumber}) from *${sale.businessId.displayName}*.\n\nTotal Paid: ₦${paid.toLocaleString()}\nOutstanding Balance: *₦${balance.toLocaleString()}*\n\nPlease view the updated invoice and settle the balance here: ${shareUrl}\n\nThank you.`;
+                    text = `Dear ${sale.customerName || 'Customer'},\n\nThis is a formal update regarding your invoice (#${sale.invoiceNumber}) from *${sale.businessId.displayName}*.\n\nTotal Paid: ₦${paid.toLocaleString()}\nOutstanding Balance: *₦${balance.toLocaleString()}*\n\nPlease find your updated invoice PDF attached. Thank you.`;
                 } else {
-                    text = `Hi ${sale.customerName || 'Friend'},\n\nFriendly update from *${sale.businessId.displayName}* regarding your invoice (#${sale.invoiceNumber}).\n\nYou've paid ₦${paid.toLocaleString()}, leaving a balance of *₦${balance.toLocaleString()}*.\n\nCheck the details and pay here: ${shareUrl}\n\nThanks!`;
+                    text = `Hi ${sale.customerName || 'Friend'},\n\nFriendly update from *${sale.businessId.displayName}* regarding your invoice (#${sale.invoiceNumber}).\n\nYou've paid ₦${paid.toLocaleString()}, leaving a balance of *₦${balance.toLocaleString()}*.\n\nPlease check your invoice PDF for bank transfer details. Thanks!`;
                 }
             }
 
@@ -283,17 +281,15 @@ const InvoicePage = () => {
     };
 
     const handleShare = async () => {
-        const frontendUrl = window.location.origin;
-        const shareUrl = `${frontendUrl}/i/${sale.invoiceNumber}`;
         const paid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
         const balance = sale.totalAmount - paid;
         const tone = sale.businessId.assistantSettings?.reminderTemplate || 'friendly';
         
         let text = "";
         if (tone === 'formal') {
-            text = `Dear ${sale.customerName || 'Customer'},\n\nThis is a formal payment notice from *${sale.businessId.displayName}*.\n\nReference: Invoice #${sale.invoiceNumber}\nOutstanding Balance: *₦${balance.toLocaleString()}*\n\nPlease arrange for settlement using this secure link: ${shareUrl}\n\nThank you.`;
+            text = `Dear ${sale.customerName || 'Customer'},\n\nThis is a formal payment notice from *${sale.businessId.displayName}*.\n\nReference: Invoice #${sale.invoiceNumber}\nOutstanding Balance: *₦${balance.toLocaleString()}*\n\nPlease find your invoice PDF attached. Thank you.`;
         } else {
-            text = `Hi ${sale.customerName || 'Friend'},\n\nThis is a friendly reminder from *${sale.businessId.displayName}* regarding your invoice (#${sale.invoiceNumber}).\n\nThere is an outstanding balance of *₦${balance.toLocaleString()}*.\n\nYou can view the full details and pay here: ${shareUrl}\n\nThank you for your business!`;
+            text = `Hi ${sale.customerName || 'Friend'},\n\nThis is a friendly reminder from *${sale.businessId.displayName}* regarding your invoice (#${sale.invoiceNumber}).\n\nThere is an outstanding balance of *₦${balance.toLocaleString()}*.\n\nPlease check the attached PDF for invoice details and bank transfer. Thank you for your business!`;
         }
 
         if (navigator.share) {
@@ -301,15 +297,13 @@ const InvoicePage = () => {
                 await navigator.share({
                     title: `Invoice from ${sale.businessId.displayName}`,
                     text: text,
-                    url: shareUrl,
                 });
-                // Optional: Track share as a reminder?
             } catch (err) {
                 // Share cancelled
             }
         } else {
             navigator.clipboard.writeText(text);
-            toast.success("Invoice Message Copied!");
+            toast.success("Invoice Details Copied!");
         }
     };
 
@@ -836,13 +830,15 @@ const InvoicePage = () => {
                                         </button>
                                         <button
                                             onClick={() => {
-                                                const shareUrl = `${window.location.origin}/i/${sale.invoiceNumber}`;
-                                                navigator.clipboard.writeText(shareUrl);
-                                                toast.success("Link copied! Paste anywhere.");
+                                                const paid = sale.payments.reduce((sum, p) => sum + p.amount, 0);
+                                                const balance = sale.totalAmount - paid;
+                                                const infoText = `Invoice #${sale.invoiceNumber}\nCustomer: ${sale.customerName}\nAmount: ₦${sale.totalAmount.toLocaleString()}\nOwed: ₦${balance.toLocaleString()}`;
+                                                navigator.clipboard.writeText(infoText);
+                                                toast.success("Invoice info copied!");
                                             }}
                                             className="btn-secondary mobile-full-width"
                                             style={{ flex: 1, padding: '18px', borderRadius: '18px', border: '1px solid var(--border)', color: 'var(--text-muted)', fontWeight: 800, background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                            title="Copy Invoice Link"
+                                            title="Copy Invoice Info"
                                         >
                                             <Copy size={20} />
                                         </button>

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Shield, Lock, Eye, FileText, Mail, ArrowRight, Sparkles, ChevronRight } from 'lucide-react';
 import PublicNavbar from '../../components/public/PublicNavbar';
 import PublicFooter from '../../components/public/PublicFooter';
+import SEO from '../../components/public/SEO';
 
 const PrivacyPolicy = () => {
     useEffect(() => {
@@ -33,6 +34,11 @@ const PrivacyPolicy = () => {
             position: 'relative',
             overflowX: 'hidden'
         }}>
+            <SEO 
+                title="Privacy Policy" 
+                description="Your privacy is secure with us. Learn how Kredibly processes information securely to provide AI assistant services." 
+                path="/privacy" 
+            />
             <PublicNavbar />
             
             {/* Executive Hero Section - Matching Landing Page Style */}

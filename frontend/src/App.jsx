@@ -9,8 +9,9 @@ import PrivacyPolicy from "./pages/public/privacy-policy";
 import ProductPage from "./pages/public/ProductPage";
 import SolutionPage from "./pages/public/SolutionPage";
 import PricingPage from "./pages/public/PricingPage";
-import PublicInvoicePage from "./pages/public/PublicInvoicePage";
-import PublicReceiptPage from "./pages/public/PublicReceiptPage";
+// V2: PublicInvoicePage and PublicReceiptPage removed — customers no longer have browser invoice/receipt pages
+// import PublicInvoicePage from "./pages/public/PublicInvoicePage";
+// import PublicReceiptPage from "./pages/public/PublicReceiptPage";
 import AuthLayout from "./components/auth/layout";
 import Login from "./pages/auth/login";
 import Register from "./pages/auth/register";
@@ -74,9 +75,10 @@ const App = () => {
         <Route path="/product/:id" element={<ProductPage />} />
         <Route path="/solution/:id" element={<SolutionPage />} />
         <Route path="/pricing" element={<PricingPage />} />
-        <Route path="/invoice/:id" element={<PublicInvoicePage />} />
-        <Route path="/i/:id" element={<PublicInvoicePage />} />
-        <Route path="/r/:id" element={<PublicReceiptPage />} />
+        {/* V2: Public invoice/receipt browser routes removed — all customer interactions are WhatsApp-native */}
+        {/* <Route path="/invoice/:id" element={<PublicInvoicePage />} /> */}
+        {/* <Route path="/i/:id" element={<PublicInvoicePage />} /> */}
+        {/* <Route path="/r/:id" element={<PublicReceiptPage />} /> */}
 
         {/* Auth Routes Wrapped in AuthLayout */}
         <Route element={<AuthLayout />}>

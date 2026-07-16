@@ -145,12 +145,6 @@ app.get("/api/health-check", (req, res) => {
   res.status(200).json({ status: "alive", database: dbStatus, timestamp: new Date() });
 });
 
-// 4. Redirects (WhatsApp Short-links)
-app.get("/r/:id", (req, res) => {
-  const frontendUrl = process.env.FRONTEND_URL || 'https://usekredibly.com';
-  res.redirect(`${frontendUrl}/r/${req.params.id}`);
-});
-
 // 4. Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/business", businessRoutes);

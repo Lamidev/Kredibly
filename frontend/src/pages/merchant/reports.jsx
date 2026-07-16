@@ -57,17 +57,14 @@ const ReportsPage = () => {
         try {
             await axios.post(`${API_URL}/sales/${sale._id}/remind`, {}, { withCredentials: true });
             
-            // Construct the message
-            const frontendUrl = window.location.origin;
-            const shareUrl = `${frontendUrl}/i/${sale.invoiceNumber}`;
             const balance = sale.totalAmount - sale.payments.reduce((sum, p) => sum + p.amount, 0);
             const tone = profile?.assistantSettings?.reminderTemplate || 'friendly';
             let text = "";
 
             if (tone === 'formal') {
-                text = `Dear ${sale.customerName || 'Customer'},\n\nThis is a formal payment notice from *${sale.businessId?.displayName || profile?.displayName}*.\n\nReference: Invoice #${sale.invoiceNumber}\nDescription: ${sale.description}\nOutstanding Balance: *₦${balance.toLocaleString()}*\n\nPlease arrange for settlement using this secure link: ${shareUrl}\n\nThank you.`;
+                text = `Dear ${sale.customerName || 'Customer'},\n\nThis is a formal payment notice from *${sale.businessId?.displayName || profile?.displayName}*.\n\nReference: Invoice #${sale.invoiceNumber}\nDescription: ${sale.description}\nOutstanding Balance: *₦${balance.toLocaleString()}*\n\nPlease see the attached PDF for bank transfer details. Thank you.`;
             } else {
-                text = `Hi ${sale.customerName || 'Friend'},\n\nThis is a friendly reminder from *${sale.businessId?.displayName || profile?.displayName}*.\n\nWe have an outstanding balance of *₦${balance.toLocaleString()}* for your recent purchase (${sale.description}).\n\nPlease check the invoice details here: ${shareUrl}\n\nThank you for your business!`;
+                text = `Hi ${sale.customerName || 'Friend'},\n\nThis is a friendly reminder from *${sale.businessId?.displayName || profile?.displayName}*.\n\nWe have an outstanding balance of *₦${balance.toLocaleString()}* for your recent purchase (${sale.description}).\n\nPlease check the attached PDF for invoice details and payment information.\n\nThank you for your business!`;
             }
 
             if (sale.customerPhone) {
@@ -179,12 +176,12 @@ const ReportsPage = () => {
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         <button 
                                             onClick={() => {
-                                                const shareUrl = `${window.location.origin}/i/${d.invoiceNumber}`;
-                                                navigator.clipboard.writeText(shareUrl);
-                                                toast.success("Link copied! Paste anywhere.");
+                                                const infoText = `Invoice #${d.invoiceNumber}\nCustomer: ${d.customerName}\nOwed: ₦${d.balance.toLocaleString()}`;
+                                                navigator.clipboard.writeText(infoText);
+                                                toast.success("Invoice info copied!");
                                             }}
                                             style={{ background: 'white', border: '1px solid #FECACA', color: '#DC2626', padding: '8px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                            title="Copy Link"
+                                            title="Copy Info"
                                         >
                                             <Copy size={16} />
                                         </button>

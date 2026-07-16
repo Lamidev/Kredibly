@@ -82,7 +82,7 @@ const PublicFooter = () => {
                     <div className="footer-links-container">
                         <h4 style={{ fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '32px', color: '#0F172A' }}>Product</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                            {['Features', 'How it Works', 'Pricing', 'Mission Map'].map(item => (
+                            {['Features', 'How it Works', 'Pricing'].map(item => (
                                 <button 
                                     key={item}
                                     onClick={() => item === 'Pricing' ? navigate('/pricing') : scrollToSection(item.toLowerCase().replace(/ /g, '-'))}

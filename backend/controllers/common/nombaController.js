@@ -45,8 +45,7 @@ exports.initializeNombaAccount = async (req, res) => {
         const sale = await Sale.findOne({
             $or: [
                 { _id: invoiceId?.match(/^[0-9a-fA-F]{24}$/) ? invoiceId : null },
-                { invoiceNumber: invoiceId?.toUpperCase() },
-                { publicSlug: invoiceId }
+                { invoiceNumber: invoiceId?.toUpperCase() }
             ]
         }).populate('businessId');
 
@@ -268,13 +267,6 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
             // Emit to business room (merchant dashboard)
             if (business && business._id) {
                 io.to(business._id.toString().toLowerCase()).emit('sale_updated', payload);
-            }
-
-            // Emit to invoice-specific rooms (public invoice page — all possible room formats)
-            io.to(`invoice:${sale.invoiceNumber.toLowerCase()}`).emit('sale_updated', payload);
-            io.to(`invoice:${sale._id.toString().toLowerCase()}`).emit('sale_updated', payload);
-            if (sale.publicSlug) {
-                io.to(`invoice:${sale.publicSlug.toLowerCase()}`).emit('sale_updated', payload);
             }
         }
 

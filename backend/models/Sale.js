@@ -68,25 +68,6 @@ const SaleSchema = new mongoose.Schema({
     lastAutoReminderSent: Date,
     lastMessageSentAt: Date,
     recordedBy: String,
-    viewed: {
-        type: Boolean,
-        default: false
-    },
-    viewedAt: Date,
-    lastLinkSentAt: {
-        type: Date,
-        default: Date.now
-    },
-    lastOpenedAt: Date,
-    viewCount: {
-        type: Number,
-        default: 0
-    },
-    publicSlug: {
-        type: String,
-        unique: true,
-        index: true
-    },
     invoiceType: {
         type: String,
         enum: ["billing", "record"],
@@ -97,15 +78,14 @@ const SaleSchema = new mongoose.Schema({
     lifecycleStatus: {
         type: String,
         enum: [
-            "PENDING_DELIVERY",   // Created, not yet sent to customer
-            "DELIVERED",          // Invoice sent to customer via WhatsApp
-            "VIEWED",             // Customer clicked the invoice link
-            "EXTENSION_REQUESTED",// Customer requested more time
-            "EXTENSION_GRANTED",  // Merchant approved extension
-            "EXTENSION_REJECTED", // Merchant rejected extension
-            "PARTIALLY_PAID",     // Customer made a partial payment
-            "PAID",               // Fully paid
-            "CANCELLED"           // Merchant cancelled
+            "PENDING_DELIVERY",    // Created, not yet sent to customer
+            "DELIVERED",           // Invoice PDF sent to customer via WhatsApp
+            "EXTENSION_REQUESTED", // Customer requested more time
+            "EXTENSION_GRANTED",   // Merchant approved extension
+            "EXTENSION_REJECTED",  // Merchant rejected extension
+            "PARTIALLY_PAID",      // Customer made a partial payment
+            "PAID",                // Fully paid
+            "CANCELLED"            // Merchant cancelled
         ],
         default: "PENDING_DELIVERY",
         index: true
@@ -178,12 +158,6 @@ SaleSchema.pre("save", async function (next) {
         if (!this.invoiceNumber) {
              this.invoiceNumber = generateCode() + "-" + crypto.randomBytes(2).toString("hex").toUpperCase();
         }
-    }
-
-    // Auto-generate public slug for obfuscated links
-    if (!this.publicSlug) {
-        // Generate a 16-byte base64url slug. Cryptographically secure & 100% collision-proof. No DB query needed!
-        this.publicSlug = crypto.randomBytes(16).toString('base64url');
     }
 
     const paid = this.payments.reduce((sum, p) => sum + p.amount, 0);

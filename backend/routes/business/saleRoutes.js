@@ -13,12 +13,10 @@ router.get("/dashboard-stats", protect, saleController.getDashboardStats);
 router.get("/analytics", protect, saleController.getAnalytics);
 
 // Parameterized routes
-router.get("/:id", saleController.getSale); // Publicly accessible for invoice page
+router.get("/:id", protect, saleController.getSale);
 router.put("/:id", protect, saleController.updateSale);
 router.post("/:id/payment", protect, saleController.addPayment);
-router.post("/:id/track-view", saleController.trackView);
-router.post("/:id/confirm", saleController.confirmSale); // Publicly accessible
-router.post("/:id/share-email", protect, saleController.shareSaleByEmail);
+router.post("/:id/confirm", saleController.confirmSale); // Publicly accessible for webhook confirms
 router.post("/:id/remind", protect, saleController.sendReminder);
 router.post("/:id/approve-extension", protect, saleController.approveExtension);
 router.post("/:id/reject-extension", protect, saleController.rejectExtension);

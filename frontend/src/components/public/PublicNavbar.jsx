@@ -33,8 +33,8 @@ const PublicNavbar = () => {
             type: "dropdown", 
             items: [
                 { name: "Kreddy AI Assistant", desc: "Smart chat for sales & support.", path: "/product/kreddy-ai", icon: Sparkles },
-                { name: "Merchant Dashboard", desc: "Analytics, Inventory & Team Mode.", path: "/product/merchant-dashboard", icon: LayoutDashboard },
-                { name: "Premium Invoices", desc: "First-grade startup invoice designs.", path: "/product/premium-invoices", icon: CreditCard }
+                { name: "Merchant Dashboard", desc: "Analytics, Inventory & Team Mode.", path: "/product/dashboard", icon: LayoutDashboard },
+                { name: "Premium Invoices", desc: "First-grade startup invoice designs.", path: "/product/escrow", icon: CreditCard }
             ]
         },
         { 

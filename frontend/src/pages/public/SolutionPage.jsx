@@ -1,10 +1,26 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PublicNavbar from '../../components/public/PublicNavbar';
 import PublicFooter from '../../components/public/PublicFooter';
 import { motion } from 'framer-motion';
 import CountUp from '../../components/ui/CountUp';
-import { User, Store, ShieldCheck, ArrowRight } from 'lucide-react';
+import { User, Store, ShieldCheck, ArrowRight, CheckCircle2, Award, BookOpen, HelpCircle } from 'lucide-react';
+import SEO from '../../components/public/SEO';
+
+const FAQItem = ({ question, answer }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    return (
+        <div style={{ borderBottom: '1px solid #E2E8F0', padding: '20px 0', cursor: 'pointer' }} onClick={() => setIsOpen(!isOpen)}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>{question}</h4>
+                <span style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--primary)', transform: isOpen ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s' }}>+</span>
+            </div>
+            {isOpen && (
+                <p style={{ marginTop: '12px', fontSize: '0.95rem', color: '#64748B', lineHeight: 1.6, margin: 0 }}>{answer}</p>
+            )}
+        </div>
+    );
+};
 
 const solutions = {
     'solopreneurs': {
@@ -20,6 +36,19 @@ const solutions = {
             "AI Assistant handles your daily logging and updates",
             "Professional invoices delivered directly on WhatsApp",
             "Automated payment reminders and extensions engine"
+        ],
+        detailsTitle: "Streamlining the Solopreneur Hustle",
+        detailsText: "Running a business solo is hard. Between talking to customers, manufacturing/sourcing, packing orders, and coordinating logistics, bookkeeping is often the first thing to get abandoned. But without records, you cannot scale. Kredibly is designed to be your background operating partner.",
+        workflow: [
+            { title: "Record Orders via Voice Notes", desc: "Just speak to Kreddy on WhatsApp like a partner: 'Record order of 3 wigs for Chioma ₦45k'. She creates the ledger entry instantly." },
+            { title: "Automated WhatsApp Invoice Delivery", desc: "Kreddy compiles the order into a clean, professional PDF invoice and delivers it to your customer's WhatsApp inbox." },
+            { title: "Hands-Free Reminders & Extensions", desc: "No more awkward collection chats. Kreddy handles payment notifications and coordinates extension agreements conversationally." },
+            { title: "Escrow Bank settlement", desc: "Customer pays via instant bank transfer using the generated Nomba virtual account. Payout is swept to your bank account with zero fees." }
+        ],
+        faqs: [
+            { question: "How does Kreddy understand my voice notes?", answer: "Kreddy uses advanced natural language processing tuned specifically for African business slang, transaction abbreviations, and product naming conventions. Simply describe the sale as you would to a human." },
+            { question: "Do my customers need to download Kredibly?", answer: "No. Your customers receive everything natively inside WhatsApp as standard messages and PDF files. They interact directly with the assistant via chat." },
+            { question: "Can Kreddy track who owes me money?", answer: "Yes. Simply ask Kreddy 'Who owes me?' on WhatsApp, and she will output a clean list of pending balances, due dates, and debtor details instantly." }
         ]
     },
     'retail': {
@@ -35,6 +64,19 @@ const solutions = {
             "Monitor staff sales and activity in real-time",
             "Instant bank sweeps with zero transfer fees",
             "Direct-to-WhatsApp customer payment loops"
+        ],
+        detailsTitle: "Managing Multi-Staff Operations & Reconciliation",
+        detailsText: "For retail store owners, keeping track of sales across multiple staff members or physical branches is a constant challenge. Inventory walks, sales reconciliations, and cash auditing take hours. Kredibly automates this entire loop from the sales floor to your bank ledger.",
+        workflow: [
+            { title: "Assign Staff Accounts", desc: "Give your shop floor staff access to register sales directly. Every invoice logged is tracked back to the recording staff profile." },
+            { title: "Dynamic Customer Payment Accounts", desc: "Every transaction generates a unique Nomba Virtual Account. Payments map directly to specific invoices, resolving duplicate transfer slips." },
+            { title: "Real-Time Branch Analytics", desc: "Log in to your merchant dashboard to view hourly sales activity, branch performances, and employee leaderboards." },
+            { title: "Escrow-Protected Banking", desc: "Incoming payments are reconciled automatically. Verified funds are swept directly into the merchant's corporate bank vault." }
+        ],
+        faqs: [
+            { question: "Can I manage multiple physical store branches?", answer: "Yes. The Chairman Plan allows you to configure multiple branches and assign staff members to specific locations for isolated tracking." },
+            { question: "How does payment reconciliation work?", answer: "Every Kredibly invoice generates a unique virtual bank account number for the customer. When they perform a transfer, our systems match the exact reference and update your dashboard in real-time." },
+            { question: "Can I monitor staff sales activity remotely?", answer: "Yes. Your merchant dashboard provides a complete real-time ledger showing exactly which staff logged which transaction, complete with timestamps and payout summaries." }
         ]
     }
 };
@@ -46,9 +88,6 @@ const SolutionPage = () => {
 
     useEffect(() => {
         window.scrollTo(0, 0);
-        document.title = solution
-            ? `${solution.title} | Kredibly — Kreddy AI for Nigerian Merchants`
-            : "Solutions | Kredibly";
     }, [id, solution]);
 
     if (!solution) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>Solution not found</div>;
@@ -57,6 +96,11 @@ const SolutionPage = () => {
 
     return (
         <div style={{ minHeight: '100vh', background: 'white' }}>
+            <SEO 
+                title={solution.title} 
+                description={solution.description} 
+                path={`/solution/${id}`} 
+            />
             <PublicNavbar />
             
             <section style={{ paddingTop: '160px', paddingBottom: '100px', background: '#0F172A', color: 'white', position: 'relative', overflow: 'hidden' }}>
@@ -80,7 +124,7 @@ const SolutionPage = () => {
                 </div>
             </section>
 
-            <section style={{ padding: '100px 0' }}>
+            <section style={{ padding: '100px 0', background: 'white' }}>
                 <div className="container">
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '60px', alignItems: 'center' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -109,6 +153,53 @@ const SolutionPage = () => {
                             </p>
                             <p style={{ opacity: 0.6, fontSize: '0.9rem', fontWeight: 500 }}>Average impact reported by Kredibly merchants in this sector.</p>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* In-depth Workflow Details */}
+            <section style={{ padding: '80px 24px', background: '#F8FAFC' }}>
+                <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '60px', alignItems: 'center', marginBottom: '80px' }}>
+                        <div>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem', marginBottom: '16px' }}>
+                                <Award size={18} /> THE DETAILS
+                            </div>
+                            <h2 style={{ fontSize: '2.2rem', fontWeight: 900, color: '#0F172A', marginBottom: '24px', lineHeight: 1.2 }}>{solution.detailsTitle}</h2>
+                            <p style={{ fontSize: '1.05rem', color: '#475569', lineHeight: 1.8, marginBottom: 0 }}>
+                                {solution.detailsText}
+                            </p>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            {solution.workflow.map((w, idx) => (
+                                <div key={idx} style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #E2E8F0', display: 'flex', gap: '16px' }}>
+                                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.85rem', flexShrink: 0 }}>{idx + 1}</div>
+                                    <div>
+                                        <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', marginBottom: '8px', marginTop: 0 }}>{w.title}</h4>
+                                        <p style={{ fontSize: '0.9rem', color: '#64748B', lineHeight: 1.5, margin: 0 }}>{w.desc}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Solutions FAQs Section */}
+            <section style={{ padding: '80px 24px', background: 'white' }}>
+                <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontWeight: 800, fontSize: '0.9rem', marginBottom: '16px' }}>
+                            <HelpCircle size={18} /> FAQ
+                        </div>
+                        <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: '#0F172A', marginBottom: '16px' }}>Solutions Frequently Asked Questions</h2>
+                        <p style={{ color: '#64748B', fontWeight: 500, fontSize: '1.2rem' }}>Answers to operational workflows for your segment.</p>
+                    </div>
+
+                    <div className="glass-card" style={{ padding: '40px', background: 'white', borderRadius: '24px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}>
+                        {solution.faqs.map((faq, i) => (
+                            <FAQItem key={i} question={faq.question} answer={faq.answer} />
+                        ))}
                     </div>
                 </div>
             </section>
