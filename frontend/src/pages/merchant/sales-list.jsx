@@ -276,37 +276,7 @@ const SalesList = ({ initialFilter }) => {
                                             <p style={{ fontWeight: 800, color: 'var(--text)', fontSize: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0 }}>
                                                 {sale.customerName || 'Standard Sale'}
                                             </p>
-                                            {(() => {
-                                                const isViewed = (sale.viewCount > 0) || (sale.lastOpenedAt && sale.lastLinkSentAt 
-                                                    ? new Date(sale.lastOpenedAt) > new Date(sale.lastLinkSentAt)
-                                                    : sale.viewed);
-                                                
-                                                if (!isViewed) return null;
 
-                                                const lastSeenText = sale.lastOpenedAt 
-                                                    ? `Last seen: ${new Date(sale.lastOpenedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}`
-                                                    : "Viewed by customer";
-
-                                                return (
-                                                    <span 
-                                                        title={lastSeenText}
-                                                        style={{ 
-                                                            display: 'inline-flex', 
-                                                            alignItems: 'center', 
-                                                            gap: '4px', 
-                                                            fontSize: '10px', 
-                                                            color: 'var(--primary)', 
-                                                            fontWeight: 800, 
-                                                            background: '#F3E8FF', 
-                                                            padding: '2px 6px', 
-                                                            borderRadius: '4px',
-                                                            whiteSpace: 'nowrap'
-                                                        }}
-                                                    >
-                                                        VIEWED {sale.viewCount > 1 ? `(${sale.viewCount})` : ""}
-                                                    </span>
-                                                );
-                                            })()}
                                         </div>
                                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {sale.description}
@@ -392,28 +362,7 @@ const SalesList = ({ initialFilter }) => {
                                         <div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <p style={{ fontWeight: 800, color: 'var(--text)', fontSize: '1rem', margin: 0 }}>{sale.customerName || 'Standard Sale'}</p>
-                                                {(() => {
-                                                    const isViewed = (sale.viewCount > 0) || (sale.lastOpenedAt && sale.lastLinkSentAt 
-                                                        ? new Date(sale.lastOpenedAt) > new Date(sale.lastLinkSentAt)
-                                                        : sale.viewed);
-                                                    
-                                                    if (!isViewed) return null;
 
-                                                    return (
-                                                        <span style={{ 
-                                                            fontSize: '9px', 
-                                                            color: 'var(--primary)', 
-                                                            fontWeight: 800, 
-                                                            background: '#F3E8FF', 
-                                                            padding: '2px 4px', 
-                                                            borderRadius: '4px',
-                                                            whiteSpace: 'nowrap',
-                                                            display: 'inline-block'
-                                                        }}>
-                                                            VIEWED {sale.viewCount > 1 ? `(${sale.viewCount})` : ""}
-                                                        </span>
-                                                    );
-                                                })()}
                                             </div>
                                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, margin: 0 }}>#{sale.invoiceNumber}</p>
                                         </div>

@@ -124,6 +124,7 @@ const sendKreddyContactCard = async (to) => {
 
 /**
  * Sends a message to a customer with automatic template fallback if the 24-hour window is closed.
+ * V2: Direct WhatsApp text, falls back to kreddy_simple_alert (no browser/URL button templates).
  */
 const sendCustomerMessageWithFallback = async (to, text, customerName, invoiceNumber = null) => {
     const cleanTo = normalizePhone(to);
@@ -133,56 +134,13 @@ const sendCustomerMessageWithFallback = async (to, text, customerName, invoiceNu
     const activeSession = await WhatsAppSession.findOne({ whatsappNumber: cleanTo, type: "customer_active_window" });
     const isWindowOpen = !!activeSession;
 
-    if (isWindowOpen && invoiceNumber) {
-        // Window open: send free-form message with a native CTA URL button (no template)
-        const invoiceUrl = `${process.env.FRONTEND_URL || "https://usekredibly.com"}/i/${invoiceNumber}`;
-        const bodyText = String(text);
-        const success = await sendInteractiveCTAUrlButton(
-            cleanTo,
-            `Invoice #${invoiceNumber}`,
-            bodyText,
-            "",
-            "View Invoice",
-            invoiceUrl
-        );
-        if (success) return true;
-    }
-
-    if (invoiceNumber) {
-        // ALWAYS use template message for invoice links when window is closed
-        const templateName = 'kreddy_system_alert';
-        const cleanMsg = String(text)
-            .replace(/[\r\n\t]+/g, ' ')
-            .replace(/\s\s+/g, ' ')
-            .trim()
-            .substring(0, 1024);
-
-        const components = [
-            {
-                type: "body",
-                parameters: [
-                    { type: "text", text: String(customerName || "Customer").substring(0, 60) },
-                    { type: "text", text: cleanMsg }
-                ]
-            },
-            {
-                type: "button",
-                sub_type: "url",
-                index: "0",
-                parameters: [
-                    { type: "text", text: `i/${invoiceNumber}` }
-                ]
-            }
-        ];
-        return await sendTemplateMsg(to, templateName, components);
-    }
-
-    // For other messages (e.g. no invoice link)
     if (isWindowOpen) {
-        const success = await sendText(to, text);
+        // Window open: send directly via free-form text
+        const success = await sendText(cleanTo, text);
         if (success) return true;
     }
 
+    // Window closed or sendText failed: use kreddy_simple_alert template (no URL buttons)
     console.log(`⚠️ Free-form message failed to deliver to customer ${to}. Attempting template fallback (kreddy_simple_alert)...`);
     const templateName = 'kreddy_simple_alert';
     const cleanMsg = String(text)
@@ -573,7 +531,6 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
         }
 
         const bal = sale.totalAmount - (sale.payments || []).reduce((s, p) => s + p.amount, 0);
-        const paymentLink = `${APP_URL}/i/${sale.invoiceNumber}`;
         const businessName = business.displayName || "Your Merchant";
         const hasDueDate = !!sale.dueDate;
         const dueDateFormatted = hasDueDate
@@ -598,7 +555,7 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
             `*Amount:* ${formattedAmount}`,
             `*Ref:* ${refStr}`,
             ``,
-            `Tap "Pay Invoice Now" to complete payment.`
+            `Please see the attached PDF for bank transfer details.`
         ].join("\n");
 
         const canRequestExt = (sale.extensionsCount || 0) < 2

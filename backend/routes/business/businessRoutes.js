@@ -22,8 +22,4 @@ router.post("/payout-settings", protect, businessController.saveBankDetails);
 router.post("/kyc/verify", protect, businessController.verifyKYC);
 router.post("/trigger-welcome", protect, businessController.triggerWelcome);
 
-// Invoice Payment Initialization
-const paymentController = require("../../controllers/common/paymentController");
-router.post("/paystack/initialize", paymentController.initializePaystackPayment);
-
 module.exports = router;

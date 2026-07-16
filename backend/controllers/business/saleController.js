@@ -116,17 +116,14 @@ exports.getSale = async (req, res) => {
 
         // Try searching by MongoDB ID if it follows the format
         if (safeId.match(/^[0-9a-fA-F]{24}$/)) {
-            sale = await Sale.findById(safeId).populate("businessId", "displayName logoUrl phoneNumber whatsappNumber bankDetails entityType address paystackSubaccountCode plan prefersGatewayFeeAbsorption");
+            sale = await Sale.findById(safeId).populate("businessId", "displayName logoUrl phoneNumber whatsappNumber bankDetails entityType address plan prefersGatewayFeeAbsorption");
         }
 
-        // If not found by ID or not a valid ID format, try searching by invoiceNumber or publicSlug
+        // If not found by _id, try searching by invoiceNumber
         if (!sale) {
             sale = await Sale.findOne({ 
-                $or: [
-                    { invoiceNumber: safeId.toUpperCase() },
-                    { publicSlug: safeId }
-                ]
-            }).populate("businessId", "displayName logoUrl phoneNumber whatsappNumber bankDetails entityType address paystackSubaccountCode plan prefersGatewayFeeAbsorption");
+                invoiceNumber: safeId.toUpperCase()
+            }).populate("businessId", "displayName logoUrl phoneNumber whatsappNumber bankDetails entityType address plan prefersGatewayFeeAbsorption");
         }
 
         if (!sale) return res.status(404).json({ message: "Sale record not found" });
@@ -136,11 +133,9 @@ exports.getSale = async (req, res) => {
             sale.businessId.prefersGatewayFeeAbsorption = true;
         }
 
-        // SECURITY: If bank details were recently changed (24h lock), hide subaccount code
-        // This forces payments to Kredibly escrow instead of the new (risky) bank account.
+        // SECURITY: If bank details were recently changed (24h lock), note it in logs
         if (sale.businessId?.bankDetails?.bankDetailsLockUntil && new Date() < sale.businessId.bankDetails.bankDetailsLockUntil) {
-            console.warn(`🛡️ Payout Hold Active for ${sale.businessId.displayName}. Redirecting to Escrow.`);
-            sale.businessId.paystackSubaccountCode = ""; 
+            console.warn(`🛡️ Payout Hold Active for ${sale.businessId.displayName}. Bank details recently changed.`);
         }
 
         res.status(200).json({ success: true, data: sale });
@@ -326,78 +321,7 @@ exports.confirmSale = async (req, res) => {
     }
 };
 
-// Track Invoice View
-exports.trackView = async (req, res) => {
-    try {
-        const { id } = req.params;
-        let sale;
-
-        if (id.match(/^[0-9a-fA-F]{24}$/)) {
-            sale = await Sale.findById(id).populate("businessId");
-        } else {
-            sale = await Sale.findOne({ invoiceNumber: id.toUpperCase() }).populate("businessId");
-        }
-
-        if (!sale) return res.status(404).json({ success: false, message: "Sale record not found" });
-
-        const now = new Date();
-        const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
-        
-        // Smart decision: Should we alert the merchant again?
-        // Trigger if: It's the first view EVER, OR it's been 30+ mins since last recorded view
-        const isFirstView = !sale.viewed;
-        const isNewEngagement = !sale.lastOpenedAt || sale.lastOpenedAt < thirtyMinutesAgo;
-
-        if (isFirstView) {
-            sale.viewed = true;
-            sale.viewedAt = now;
-            if (sale.lifecycleStatus === "DELIVERED") {
-                sale.lifecycleStatus = "VIEWED";
-            }
-        }
-        
-        // Always increment count and update timestamp
-        sale.viewCount = (sale.viewCount || 0) + 1;
-        sale.lastOpenedAt = now;
-        
-        // IMPORTANT: Use findOneAndUpdate or markModified if save() gives issues with virtuals
-        await sale.save();
-
-        // SMART NOTIFICATION FILTER:
-        // 1. Log Activity: Always show in the 'Activity Feed' for first view OR return visits (busy dashboard)
-        // 2. Notification Bell: ONLY ring for the very first view (prevent noise)
-        if (sale.businessId) {
-            // Log for Activity Feed (First view or 30min+ interval)
-            if (isFirstView || isNewEngagement) {
-                const countSuffix = sale.viewCount > 1 ? ` (Visit #${sale.viewCount})` : "";
-                
-                await logActivity({
-                    businessId: sale.businessId._id,
-                    action: "INVOICE_VIEWED",
-                    entityType: "SALE",
-                    entityId: sale._id,
-                    details: `${sale.customerName || 'A customer'} viewed Invoice #${sale.invoiceNumber}${countSuffix}`
-                });
-            }
-
-            // Create Notification Badge: ONLY for the very first milestone
-            if (isFirstView) {
-                await Notification.create({
-                    businessId: sale.businessId._id,
-                    title: "Invoice Viewed",
-                    message: `${sale.customerName || 'A customer'} just opened Invoice #${sale.invoiceNumber}.`,
-                    type: "system",
-                    saleId: sale._id
-                });
-            }
-        }
-
-        res.status(200).json({ success: true, viewCount: sale.viewCount });
-    } catch (error) {
-        console.error("Tracking Error:", error);
-        res.status(200).json({ success: true }); // Silent fail to not break user UI
-    }
-};
+// V2: trackView removed (browser invoice page view tracking is gone)
 
 // Dashboard stats
 exports.getDashboardStats = async (req, res) => {
@@ -529,29 +453,7 @@ exports.updateSale = async (req, res) => {
     }
 };
 
-// Share sale via email
-exports.shareSaleByEmail = async (req, res) => {
-    try {
-        const { email } = req.body;
-        const { id } = req.params;
-        let sale;
-
-        if (id.match(/^[0-9a-fA-F]{24}$/)) {
-            sale = await Sale.findById(id).populate("businessId");
-        } else {
-            sale = await Sale.findOne({ invoiceNumber: id.toUpperCase() }).populate("businessId");
-        }
-
-        if (!sale) return res.status(404).json({ message: "Sale record not found" });
-
-        sale.lastLinkSentAt = new Date();
-        await sale.save();
-
-        res.status(200).json({ success: true, message: "Email sent successfully" });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
+// V2: shareSaleByEmail removed (email invoicing is gone)
 
 // Manual payment reminder
 exports.sendReminder = async (req, res) => {
@@ -596,7 +498,6 @@ exports.sendReminder = async (req, res) => {
 
         if (result.success) {
             sale.reminderSentAt = new Date();
-            sale.lastLinkSentAt = new Date();
             await sale.save();
             
             if (business.monthlyUsage) {

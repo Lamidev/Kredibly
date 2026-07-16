@@ -19,8 +19,7 @@ exports.initializeSquadAccount = async (req, res) => {
         const sale = await Sale.findOne({ 
             $or: [
                 { _id: invoiceId.match(/^[0-9a-fA-F]{24}$/) ? invoiceId : null },
-                { invoiceNumber: invoiceId.toUpperCase() },
-                { publicSlug: invoiceId }
+                { invoiceNumber: invoiceId.toUpperCase() }
             ]
         }).populate('businessId');
 

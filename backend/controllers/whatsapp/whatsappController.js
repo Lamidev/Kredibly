@@ -11,8 +11,6 @@ const axios = require("axios");
 const chrono = require("chrono-node");
 const { logActivity } = require("../../utils/activityLogger");
 const { processMessageWithAI, processAudioWithAI, processImageWithAI } = require("../../utils/aiService");
-const { logUsage } = require("../../utils/usageTracker");
-const { initializePayment } = require("../../utils/paystack");
 const { getPlanPrice } = require("../../config/pricing");
 const { generateWittyIntro, generateVoiceNoteAck } = require("../../utils/aiService");
 const {
@@ -699,13 +697,8 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
         if (isWindowOpen) {
             console.log(`💡 WhatsApp Session Open for ${normalizedTo} — Sending free session message`);
             // Format as a bold message with person's title
-            let sessionText = `*${finalTitle}!* 🔔\n\n${textMessage}`;
-            if (invoiceNumber) {
-                const link = `https://usekredibly.com/i/${invoiceNumber}`;
-                sessionText += `\n\n${link}`;
-                const ResponseBuilder = require("../../conversation/ResponseBuilder");
-                return await ResponseBuilder.sendText(normalizedTo, sessionText, { buttonTitle: "View Invoice" });
-            }
+            // V2: Browser link removed — DVA bank details are embedded in the PDF
+            const sessionText = `*${finalTitle}!* 🔔\n\n${textMessage}`;
             return await sendReply(normalizedTo, sessionText);
         }
 
@@ -2432,9 +2425,9 @@ const handleIncoming = async (req, res) => {
                         if (result.success) {
                             await sendReply(from, `Done. The reminder has been delivered to *${sale.customerName}*. I'll let you know if they respond.`);
                         } else {
-                            const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-                            const link = `${APP_URL}/i/${sale.invoiceNumber}`;
-                            const draft = `Hello ${sale.customerName},\n\nThis is a friendly reminder about your outstanding balance of *₦${bal.toLocaleString()}* with *${profile.displayName}*.\n\nPlease tap the link below to view and pay your invoice:\n${link}`;
+                            // V2: No browser link. Merchant can resend from the dashboard.
+                            const bal2 = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
+                            const draft = `Hello ${sale.customerName},\n\nThis is a friendly reminder about your outstanding balance of *₦${bal2.toLocaleString()}* with *${profile.displayName}*.\n\nPlease transfer using the bank details shared earlier. Thank you.`;
                             await sendReply(from, `I wasn't able to send the reminder automatically. Here's a draft you can forward directly:\n\n${draft}`);
                         }
                     } else {
@@ -2568,10 +2561,10 @@ const handleIncoming = async (req, res) => {
                     const bal = totalAmount - (paidAmount || 0);
                     const successMsg = await generateWittyIntro("create_sale", { bossTitle });
                     
-                    const paymentLink = `${FRONTEND_URL}/i/${newSale.publicSlug || newSale.invoiceNumber}`;
+                    // V2: Removed browser invoice/receipt links. Clean WhatsApp flow.
                     const template = newSale.invoiceType === 'record' 
-                        ? `Hello ${customerName}, here is your verified digital receipt for the payment of ₦${totalAmount.toLocaleString()} to ${profile.displayName}. View/Download here: ${paymentLink}`
-                        : `Hello ${customerName}, this is your official digital invoice from ${profile.displayName} for ₦${totalAmount.toLocaleString()}. You can view and pay securely here: ${paymentLink}`;
+                        ? `Hello ${customerName}, here is your official digital receipt for the payment of ₦${totalAmount.toLocaleString()} to ${profile.displayName}. Your receipt PDF is attached below.`
+                        : `Hello ${customerName}, this is your official digital invoice from ${profile.displayName} for ₦${totalAmount.toLocaleString()}. Your invoice PDF is attached below. Bank details for transfer will follow.`;
 
                     await sendReply(from, `${successMsg} \n\nI've logged Invoice *#${newSale.invoiceNumber}* for *${customerName}*.\n💰 Status: ${newSale.invoiceType === 'record' ? '*FULLY PAID (Receipt)*' : '*PENDING (Invoice)*'}\n⏳ Balance: ₦${bal.toLocaleString()}\n\n📝 *Draft Message for Customer* (Copy & Send): \n\n_"${template}"_`);
                     
@@ -3493,23 +3486,9 @@ const handleIncoming = async (req, res) => {
                             await sendReply(from, `🔍 I couldn't find an unpaid record for *${searchName}*.`);
                         } else {
                             const sale = matches[0];
-                            const bal = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
-                            const link = `${APP_URL}/i/${sale.invoiceNumber}`;
-
-                            // V2: No naked links — send as a CTA URL button (link opens inside WhatsApp)
-                            const { sendInteractiveButtons } = require('../../utils/customerInvoiceService');
-                            const sent = await sendInteractiveButtons(
-                                from,
-                                `Invoice — ${sale.customerName}`,
-                                `💰 Outstanding balance: *₦${bal.toLocaleString()}*\nInvoice *#${sale.invoiceNumber}*\n\nShare this invoice link with your customer so they can view and pay.`,
-                                '',
-                                [{ id: `view_invoice:${sale.invoiceNumber}`, title: 'View Invoice' }],
-                                link   // CTA URL passed as the url parameter
-                            );
-                            if (!sent) {
-                                // Fallback: plain text without the URL if button delivery fails
-                                await sendReply(from, `💰 *${sale.customerName}* owes *₦${bal.toLocaleString()}* on Invoice *#${sale.invoiceNumber}*. Share the invoice link with them from the Kredibly dashboard.`);
-                            }
+                            const bal2 = sale.totalAmount - sale.payments.reduce((s, p) => s + p.amount, 0);
+                            // V2: No browser link — DVA details sent separately
+                            await sendReply(from, `💰 *${sale.customerName}* owes *₦${bal2.toLocaleString()}* on Invoice *#${sale.invoiceNumber}*. Use the Kredibly dashboard to resend the invoice PDF via WhatsApp.`);
                         }
                     }
                     isProcessed = true;
@@ -4061,38 +4040,9 @@ const handleIncoming = async (req, res) => {
                          const upgradeUrl = `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/pricing`;
                          await sendReply(from, `${bossTitle}, you've already used your trial! You can upgrade anytime on your dashboard: ${upgradeUrl} 🛡️`);
                     } else {
-                        // LAUNCH PROMO: 7-Day Trial + 50% Off (Card vs Transfer)
-                        const rawMethod = (aiResponseItem.data?.method || "").toLowerCase();
-                        const method = rawMethod.includes("transfer") ? "transfer" : "card"; 
-                        const authFee = method === "card" ? 50 : 500;
-                        const targetPlan = "chairman"; // Trial is always Chairman
-                        const fullPrice = getPlanPrice(targetPlan, "monthly");
-
-                        const reference = `KREDDY_TRIAL_${Date.now()}`;
-                        const metadata = { 
-                            paymentType: 'subscription_trial', 
-                            plan: targetPlan, 
-                            billingCycle: 'monthly', 
-                            businessId: profile._id.toString(),
-                            email: user.email,
-                            fullPrice: fullPrice,
-                            method: method
-                        };
-                        
-                        try {
-                            const paystackData = await initializePayment(user.email, authFee, reference, metadata);
-                            
-                            let promoMsg = "";
-                            if (method === "card") {
-                                promoMsg = `🚀 *${bossTitle}, 7-Day Chairman Trial Ready!* \n\nI'll unlock my full scan and voice powers for you now. \n\n🛡️ *Verify Card:* Pay ₦50 below to start. (This enables **Auto-Billing** on Day 8 so your hustle never stops). \n🔗 *Start Trial:* ${paystackData.authorization_url}`;
-                            } else {
-                                promoMsg = `🚀 *${bossTitle}, 7-Day Chairman Trial Ready!* \n\n🎁 *Transfer Activation:* Pay ₦500 below. This ₦500 stays in your Wallet and counts towards your first month! \n🔗 *Start Trial:* ${paystackData.authorization_url}`;
-                            }
-                            await sendReply(from, promoMsg);
-                        } catch (e) {
-                            console.error("Paystack Init Error:", e.message);
-                            await sendReply(from, `Ouch! I had trouble setting up your trial. Please try again!`);
-                        }
+                        // V2: Subscriptions via Nomba — redirect to dashboard pricing page
+                        const pricingUrl = `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/settings?tab=plan`;
+                        await sendReply(from, `🚀 *${bossTitle}, ready to level up?*\n\nSubscriptions are processed securely through your Kredibly dashboard.\n\n👉 Go here to upgrade your plan: ${pricingUrl}\n\nTakes less than 2 minutes! 💎`);
                     }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "check_billing") {
