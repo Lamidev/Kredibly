@@ -872,19 +872,8 @@ const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName,
             .trim()
             .substring(0, 1024);
 
-        const components = [
-            {
-                type: "body",
-                parameters: [
-                    { type: "text", text: safeAmount },
-                    { type: "text", text: safeInvoice },
-                    { type: "text", text: safeCustomer },
-                    { type: "text", text: safeText }
-                ]
-            }
-        ];
-
-        let templateName = 'kreddy_payment_alert';
+        const components = [];
+        let templateName = 'kreddy_simple_alert';
 
         if (pdfUrl) {
             templateName = 'kreddy_payment_alert_pdf';
@@ -900,8 +889,17 @@ const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName,
                     }
                 ]
             });
+            components.push({
+                type: "body",
+                parameters: [
+                    { type: "text", text: safeAmount },
+                    { type: "text", text: safeInvoice },
+                    { type: "text", text: safeCustomer },
+                    { type: "text", text: safeText }
+                ]
+            });
         } else if (receiptImageUrl) {
-            templateName = 'kreddy_payment_alert_image';
+            templateName = 'kreddy_payment_alert'; // Map to your template with the Image header
             components.push({
                 type: "header",
                 parameters: [
@@ -911,6 +909,25 @@ const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName,
                             link: receiptImageUrl
                         }
                     }
+                ]
+            });
+            components.push({
+                type: "body",
+                parameters: [
+                    { type: "text", text: safeAmount },
+                    { type: "text", text: safeInvoice },
+                    { type: "text", text: safeCustomer },
+                    { type: "text", text: safeText }
+                ]
+            });
+        } else {
+            // Text fallback: use simple text-only alert template
+            templateName = 'kreddy_simple_alert';
+            components.push({
+                type: "body",
+                parameters: [
+                    { type: "text", text: bossTitle },
+                    { type: "text", text: `Payment of ₦${safeAmount} received for Invoice #${safeInvoice}. ${safeText}` }
                 ]
             });
         }
