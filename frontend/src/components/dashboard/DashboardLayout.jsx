@@ -187,6 +187,18 @@ const DashboardLayout = () => {
         return () => clearInterval(tick);
     }, []);
 
+    // 🔒 Prevent background scroll when notifications pop-up is open
+    useEffect(() => {
+        if (showNotifications) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [showNotifications]);
+
     const commandPlaceholder = `Ask or tell Kreddy: "${PLACEHOLDERS[placeholderIndex]}"`;
 
     const handleCommandSubmit = (e) => {
@@ -238,7 +250,7 @@ const DashboardLayout = () => {
         setIsRefreshing(true);
         try {
             await Promise.all([fetchSales(), fetchStats(), fetchNotifications()]);
-            toast.success("Dashboard refreshed! 🚀");
+            toast.success("Dashboard refreshed!");
         } catch (err) {
             toast.error("Failed to refresh data.");
         } finally {
@@ -409,9 +421,8 @@ const DashboardLayout = () => {
                 </div>
             </aside>
 
-            {/* Main Content Area */}
             <main className="main-content-layout">
-                <header className="top-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                <header className="top-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <button
                             onClick={() => setIsSidebarOpen(true)}
@@ -463,15 +474,21 @@ const DashboardLayout = () => {
                                 )}
                             </button>
 
-                            {showNotifications && (
+                            {showNotifications && createPortal(
                                 <>
-                                    {/* Mobile Backdrop to close on click outside */}
+                                    {/* Global Backdrop overlay for page blur and click-out (both mobile and desktop) */}
                                     <div 
-                                        className="md:hidden"
-                                        style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+                                        style={{ 
+                                            position: 'fixed', 
+                                            inset: 0, 
+                                            background: 'rgba(15, 23, 42, 0.35)', 
+                                            backdropFilter: 'blur(4px)', 
+                                            WebkitBackdropFilter: 'blur(4px)',
+                                            zIndex: 19999 
+                                        }}
                                         onClick={() => setShowNotifications(false)}
                                     />
-                                    <div className="glass-card notification-dropdown">
+                                    <div className="glass-card notification-dropdown" style={{ zIndex: 20000 }}>
                                         <div style={{ padding: '20px', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700 }}>Alerts</h4>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -519,8 +536,9 @@ const DashboardLayout = () => {
                                             ))
                                         )}
                                     </div>
-                                </div>
-                                </>
+                                    </div>
+                                </>,
+                                document.body
                             )}
                         </div>
 
@@ -555,14 +573,14 @@ const DashboardLayout = () => {
             <SupportHub />
             <style>{`
                 .notification-dropdown {
-                    position: absolute;
-                    top: 50px;
-                    right: 0;
+                    position: fixed;
+                    top: 75px;
+                    right: 40px;
                     width: 360px;
                     background: white;
                     border: 1px solid #E2E8F0;
                     padding: 0;
-                    z-index: 1000;
+                    z-index: 20000;
                     border-radius: 24px;
                     overflow: hidden;
                     box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
@@ -577,7 +595,6 @@ const DashboardLayout = () => {
                         width: 95%;
                         max-width: 400px;
                         right: auto;
-                        box-shadow: 0 0 0 100vw rgba(15, 23, 42, 0.2);
                     }
                 }
             `}</style>

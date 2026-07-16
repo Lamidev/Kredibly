@@ -189,22 +189,29 @@ mongoose
   })
   .then(() => {
     console.log("✅ MongoDB Connected Successfully");
-    // startProactiveAssistant(); // Redundant queue worker (avoid duplicate alerts)
-    startTicketCleanup();
-    startBackupScheduler();
-    scheduleMorningSummary();
-    scheduleRemindersWorker();
-    schedulePlanExpiryReminders();
-    scheduleProactiveFollowUps();
-    schedulePastDueEscalations();
-    scheduleEscrowPayouts();
-    scheduleMonthlyUsageReset();
-    scheduleQueueHousekeeping();
-    scheduleUpcomingNudges();
-    scheduleBankLockChecker();
-    scheduleDailySettlements();
-    schedulePaymentSessionExpiry();
-    scheduleAbandonedTasksFollowUp();
+    // 🛡️ PM2 CLUSTER PROTECTION: Only register cron schedulers on the primary instance
+    const isPrimaryInstance = !process.env.NODE_APP_INSTANCE || process.env.NODE_APP_INSTANCE === '0';
+    if (isPrimaryInstance) {
+        startTicketCleanup();
+        startBackupScheduler();
+        scheduleMorningSummary();
+        scheduleRemindersWorker();
+        schedulePlanExpiryReminders();
+        scheduleProactiveFollowUps();
+        schedulePastDueEscalations();
+        scheduleEscrowPayouts();
+        scheduleMonthlyUsageReset();
+        scheduleQueueHousekeeping();
+        scheduleUpcomingNudges();
+        scheduleBankLockChecker();
+        scheduleDailySettlements();
+        schedulePaymentSessionExpiry();
+        scheduleAbandonedTasksFollowUp();
+    } else {
+        console.log(`ℹ️ [PM2] Non-primary instance (${process.env.NODE_APP_INSTANCE}). Skipping scheduler registration to prevent duplicate triggers.`);
+    }
+
+    // Always start the worker on all instances to process the queue in parallel using atomic locks
     startBackgroundJobRunner();
 
     // 7. Start Server

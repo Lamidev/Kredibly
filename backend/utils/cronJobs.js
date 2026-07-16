@@ -542,7 +542,7 @@ const scheduleProactiveFollowUps = () => {
                         type: "DEBT_NUDGE",
                         businessId: reminder.businessId,
                         status: "pending",
-                        data: { type: "proactive_followup", reminderId: reminder._id, whatsappNumber: reminder.whatsappNumber }
+                        data: { type: "proactive_followup", reminderId: reminder._id.toString(), whatsappNumber: reminder.whatsappNumber }
                     });
                  }
             }
@@ -579,7 +579,7 @@ const schedulePastDueEscalations = () => {
                         type: "DEBT_NUDGE",
                         businessId: sale.businessId._id,
                         status: "pending",
-                        data: { type: "past_due_escalation", saleId: sale._id, whatsappNumber: sale.businessId.whatsappNumber }
+                        data: { type: "past_due_escalation", saleId: sale._id.toString(), whatsappNumber: sale.businessId.whatsappNumber }
                     });
                 }
             }
