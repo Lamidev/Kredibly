@@ -109,6 +109,7 @@ const BusinessProfileSchema = new mongoose.Schema({
     },
     // Usage Tracking (Resets monthly)
     monthlyUsage: {
+        invoices: { type: Number, default: 0 }, // Sales/invoice records created this month
         reminders: { type: Number, default: 0 },
         voiceNotes: { type: Number, default: 0 },
         images: { type: Number, default: 0 },

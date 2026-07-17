@@ -1319,11 +1319,12 @@ const handleIncoming = async (req, res) => {
 
         // 🛡️ AI USAGE CAPS (Managed pre-launch/trial expenses)
         const usedMessages = profile.monthlyUsage?.messages || 0;
-        const msgLimit = plan === "chairman" ? 500 : (plan === "oga" ? 250 : 50); 
+        const { getPlanLimit } = require('../../config/pricing');
+        const msgLimit = getPlanLimit(plan, 'aiMessages'); // null = unlimited
 
-        if (usedMessages >= msgLimit) {
+        if (msgLimit !== null && usedMessages >= msgLimit) {
             const APP_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
-            const limitMsg = `⚠️ *Monthly AI Usage Limit Met*\n\nHigh power, ${bossTitle}! 🚀 You've used up your *${msgLimit}* AI-powered messages for this month.\n\nYou can still record sales & manage your dashboard on the website, but my brain needs a rest! 🧠💤\n\nNeed unlimited Kreddy? Upgrade or check your plan here: ${APP_URL}/settings`;
+            const limitMsg = `Your ${msgLimit} AI-powered messages for this month are used up, ${bossTitle}.\n\nYou can still record sales and manage your dashboard, but AI responses are paused until next month.\n\nNeed unlimited Kreddy? Upgrade your plan here: ${APP_URL}/settings`;
             await sendReply(from, limitMsg);
             return;
         }
