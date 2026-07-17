@@ -21,7 +21,8 @@ import {
     Monitor,
     Bell,
     Star,
-    Mic
+    Mic,
+    Play
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import PublicNavbar from "../../components/public/PublicNavbar";
@@ -194,6 +195,7 @@ const LandingPage = () => {
 
     const location = useLocation();
     const [showInstallBanner, setShowInstallBanner] = useState(false);
+    const [showVideoModal, setShowVideoModal] = useState(false);
 
     useEffect(() => {
         if (location.state?.scrollTo) {
@@ -328,7 +330,7 @@ const LandingPage = () => {
                                 Unlock automated invoicing, debt tracking, and instant payments with <b>Kreddy</b>, your AI-powered assistant on WhatsApp.
                             </p>
                             
-                            <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', width: '100%' }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', width: '100%', gap: '16px', flexWrap: 'wrap' }}>
                                 <a
                                     href={KREDDY_CONFIG.getLink("Hi Kreddy\nI'd like to see how Kredibly works.")}
                                     target="_blank"
@@ -363,6 +365,40 @@ const LandingPage = () => {
                                     </svg>
                                     <span style={{ letterSpacing: "-0.01em" }}>Try Kreddy Now</span>
                                 </a>
+                                <button
+                                    onClick={() => setShowVideoModal(true)}
+                                    className="btn-magnetic"
+                                    style={{
+                                        padding: 'clamp(10px, 1vw, 14px) clamp(18px, 2vw, 28px)',
+                                        fontSize: 'clamp(0.75rem, 0.9vw, 0.95rem)',
+                                        borderRadius: '10px',
+                                        background: 'rgba(255, 255, 255, 0.8)',
+                                        color: '#0F172A',
+                                        border: '1px solid #E2E8F0',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        transition: 'all 0.2s ease',
+                                        textDecoration: 'none',
+                                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+                                        backdropFilter: 'blur(8px)'
+                                    }}
+                                    onMouseEnter={e => {
+                                        e.currentTarget.style.background = '#F8FAFC';
+                                        e.currentTarget.style.borderColor = '#CBD5E1';
+                                        e.currentTarget.style.transform = 'translateY(-1px)';
+                                    }}
+                                    onMouseLeave={e => {
+                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                                        e.currentTarget.style.borderColor = '#E2E8F0';
+                                        e.currentTarget.style.transform = 'none';
+                                    }}
+                                >
+                                    <Play size={18} fill="#0F172A" style={{ flexShrink: 0 }} />
+                                    <span style={{ letterSpacing: "-0.01em" }}>Watch Demo</span>
+                                </button>
                             </div>
                         </motion.div>
 
@@ -1052,6 +1088,97 @@ const LandingPage = () => {
                     </div>
                 </motion.div>
             )}
+
+            {/* Video Demo Modal */}
+            <AnimatePresence>
+                {showVideoModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowVideoModal(false)}
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                            backdropFilter: 'blur(12px)',
+                            zIndex: 10000,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            padding: '24px'
+                        }}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.95, y: 20 }}
+                            transition={{ type: 'spring', duration: 0.5 }}
+                            onClick={e => e.stopPropagation()}
+                            style={{
+                                width: '100%',
+                                maxWidth: '960px',
+                                background: '#0F172A',
+                                borderRadius: '24px',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                overflow: 'hidden',
+                                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+                                position: 'relative'
+                            }}
+                        >
+                            {/* Close Button */}
+                            <button
+                                onClick={() => setShowVideoModal(false)}
+                                style={{
+                                    position: 'absolute',
+                                    top: '16px',
+                                    right: '16px',
+                                    zIndex: 10,
+                                    width: '36px',
+                                    height: '36px',
+                                    borderRadius: '50%',
+                                    background: 'rgba(255, 255, 255, 0.1)',
+                                    border: 'none',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    color: '#FFFFFF',
+                                    transition: 'background-color 0.2s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
+                                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+                            >
+                                <X size={20} />
+                            </button>
+
+                            {/* Aspect Ratio Video Container */}
+                            <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000' }}>
+                                <video
+                                    controls
+                                    autoPlay
+                                    playsInline
+                                    style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        border: 'none'
+                                    }}
+                                >
+                                    <source src="https://res.cloudinary.com/dz3ofeehd/video/upload/v1784261737/kredibly_assets/kreddydemo.mp4" type="video/mp4" />
+                                    <source src="/kreddydemo.mp4" type="video/mp4" />
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <style>{`
                 .landing-mockup-grid { display: grid; grid-template-columns: 1fr; gap: 3rem; align-items: center; }
