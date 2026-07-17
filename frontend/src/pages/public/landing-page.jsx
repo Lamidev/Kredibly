@@ -131,16 +131,17 @@ const LandingPage = () => {
             slug: "hustler",
             tagline: "The Record-Keeper's Choice",
             description: "Stop writing in notebooks. Start building your digital reputation today.",
-            price: "₦2,500",
+            price: "₦3,000",
             period: "/ month",
-            fee: "Zero Transfer Fees*",
+            fee: "Settlement Transfer Covered",
             features: [
                 "50 Sales Records per Month",
+                "100 AI Conversations / Month",
                 "Kreddy AI Text Intelligence",
                 "Interactive Pay Now Invoices",
-                "Automated Customer Reminders",
-                "Verified Ledger Seal",
-                "Digital Receipts & Invoices"
+                "20 Customer Payment Reminders",
+                "Professional Invoices with Your Logo",
+                "Direct Bank Settlement"
             ],
             cta: profile?.plan === "hustler" ? "Current Plan" : "Start Hustling",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -152,18 +153,18 @@ const LandingPage = () => {
             slug: "oga",
             tagline: "The Business Leader",
             isPopular: true,
-            description: "Step up to professional branding and AI voice recording for your business.",
-            price: "₦5,000", 
-            fee: "Zero Transfer Fees*",
+            description: "Unlimited records, AI voice, and a trusted staff member by your side.",
+            price: "₦6,000",
+            fee: "Settlement Transfer Covered",
             period: "/ month",
             features: [
                 "Everything in Hustler Plan",
                 "Unlimited Sales Records",
+                "Unlimited AI Conversations",
                 "Kreddy Voice Notes (Just speak!)",
-                "Co-Branded Invoices & Logo",
-                "AI-Managed Extensions",
+                "Unlimited Customer Reminders",
                 "Add 1 Staff Member",
-                "Priority Payment Settlement"
+                "Morning Business Briefing"
             ],
             cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade to Oga" : "Become an Oga",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -174,17 +175,16 @@ const LandingPage = () => {
             name: "Chairman",
             slug: "chairman",
             tagline: "The Empire Command Center",
-            description: "Run multiple shops without stress. Lead your empire with zero commissions.",
-            price: "₦7,500", 
-            fee: "Zero Transfer Fees*",
+            description: "Run multiple branches. Lead your empire with AI-powered automation.",
+            price: "₦9,000",
+            fee: "Settlement Transfer Covered",
             period: "/ month",
             features: [
                 "Everything in Oga Plan",
-                "White-Label Invoices (Only Logo)",
                 "Up to 3 Staff & Offices",
-                "Paper Invoice Scanning",
-                "Custom Extension Limits",
-                "Priority Support & Slack Channel"
+                "AI Invoice Scanner (OCR)",
+                "Business Reports & Analytics",
+                "Priority Support Channel"
             ],
             cta: profile?.plan === "chairman" ? "Current Plan" : profile ? "Lead Your Empire" : "Claim Chairman Title",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -472,7 +472,7 @@ const LandingPage = () => {
                                     </div>
                                 </motion.div>
 
-                                {/* Floating Bubbles - Same position on all devices */}
+                                {/* Floating Bubbles */}
                                 <motion.div
                                     initial={{ opacity: 0, x: -30, y: 20 }}
                                     animate={{ opacity: 1, x: 0, y: 0 }}
@@ -580,6 +580,7 @@ const LandingPage = () => {
                     </div>
                 </header>
             </section>
+
 
             {/* 2. Bento Grid Section */}
             <section id="features" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px' }}>
@@ -814,7 +815,7 @@ const LandingPage = () => {
                                     { icon: Smartphone, title: "Direct WhatsApp Delivery", desc: "No copy-pasting required. Customers receive invoices directly in their WhatsApp chat with clean interactive action buttons." },
                                     { icon: Calendar, title: "Automated Extensions", desc: "Tired of awkward debt chasing? Customers can request due-date extensions directly on their invoice. Kreddy handles the limits and notifies you." },
                                     { icon: Zap, title: "Instant Bank Sweeps", desc: "As soon as a customer pays via bank transfer, the money is swept directly into your bank account. No holding periods, no manual withdrawals." },
-                                    { icon: BadgeCheck, title: "Zero Bank Charges", desc: "ZERO TRANSFER FEES. We cover all payout bank fees. A ₦15,000 payment from your customer is exactly ₦15,000 in your pocket." }
+                                    { icon: BadgeCheck, title: "Zero Payout Fees", desc: "SETTLEMENT FEES COVERED. We cover all payout bank transfer charges. Standard payment gateway processing fees (1% capped at ₦150) apply, with zero extra markups or hidden commissions." }
                                 ].map((item, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '28px' }}>
                                         <div style={{ minWidth: '64px', height: '64px', borderRadius: '20px', background: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><item.icon color="var(--primary)" size={28} /></div>
@@ -986,7 +987,7 @@ const LandingPage = () => {
                         />
                         <FAQItem 
                             question="How do instant sweeps and zero bank charges work?" 
-                            answer="Unlike traditional payment gateways that hold your money for 24-48 hours, Kredibly sweeps every successful payment directly to your bank account instantly. Better yet, we subsidize all payout transfer fees completely—so if a customer pays ₦15,000, you get exactly ₦15,000 in your account."
+                            answer="Unlike traditional payment gateways that hold your money for 24-48 hours, Kredibly sweeps every successful payment directly to your bank account instantly. We cover 100% of the settlement transfer fees, ensuring there are no payout charges when you move money to your bank. Standard payment gateway processing fees (1% capped at ₦150) still apply to incoming customer payments, but we never charge any commissions, markups, or hidden bank fees on top."
                         />
                         <FAQItem 
                             question="Can I use Kredibly without a smartphone?" 

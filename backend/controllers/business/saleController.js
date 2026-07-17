@@ -3,6 +3,7 @@ const BusinessProfile = require("../../models/BusinessProfile");
 const Notification = require("../../models/Notification");
 const { sendWhatsAppMessage, sendWhatsAppAlert, sendWhatsAppTemplate } = require("../whatsapp/whatsappController");
 const { logActivity } = require("../../utils/activityLogger");
+const { getPlanLimit } = require('../../config/pricing');
 
 const { isPlanActive } = require('../../utils/planGate');
 
@@ -36,6 +37,7 @@ exports.createSale = async (req, res) => {
         const isTrialing = business.planStatus === 'trialing';
 
         if (isHustler && !isTrialing) {
+            const invoiceLimit = getPlanLimit('hustler', 'invoices'); // 50
             const startOfMonth = new Date();
             startOfMonth.setDate(1);
             startOfMonth.setHours(0, 0, 0, 0);
@@ -45,10 +47,10 @@ exports.createSale = async (req, res) => {
                 createdAt: { $gte: startOfMonth }
             });
 
-            if (invoiceCount >= 10) {
+            if (invoiceLimit !== null && invoiceCount >= invoiceLimit) {
                 return res.status(403).json({ 
                     success: false, 
-                    message: "Monthly Entry Limit Reached! Upgrade to Oga for unlimited records.",
+                    message: `Monthly limit of ${invoiceLimit} invoice records reached. Upgrade to Oga for unlimited records.`,
                     code: "LIMIT_REACHED"
                 });
             }
@@ -472,11 +474,13 @@ exports.sendReminder = async (req, res) => {
         const business = sale.businessId;
         if (!business) return res.status(404).json({ message: "Business data missing" });
 
-        // HUDDLE/LIMIT ENFORCEMENT
-        if (business.plan === 'hustler' && business.monthlyUsage && business.monthlyUsage.reminders >= 5) {
+        // REMINDER LIMIT ENFORCEMENT
+        const reminderLimit = getPlanLimit(business.plan, 'reminders'); // null = unlimited
+        const usedReminders = business.monthlyUsage?.reminders || 0;
+        if (reminderLimit !== null && usedReminders >= reminderLimit) {
             return res.status(403).json({
                 success: false,
-                message: "You have reached your free limit of 5 Reminders for this month. Upgrade to Oga to unlock unlimited automated reminders."
+                message: `You have reached your ${reminderLimit} reminder limit for this month. Upgrade to Oga for unlimited automated reminders.`
             });
         }
 

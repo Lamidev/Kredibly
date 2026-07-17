@@ -37,16 +37,17 @@ const PricingPage = () => {
             slug: "hustler",
             tagline: "The Record-Keeper's Choice",
             description: "Stop writing in notebooks. Start building your digital reputation today.",
-            price: "₦2,500",
+            price: "₦3,000",
             period: "/ month",
-            fee: "Zero Transfer Fees*",
+            fee: "Settlement Transfer Covered",
             features: [
                 "50 Sales Records per Month",
+                "100 AI Conversations / Month",
                 "Kreddy AI Text Intelligence",
                 "Interactive Pay Now Invoices",
-                "Automated Customer Reminders",
-                "Verified Ledger Seal",
-                "Digital Receipts & Invoices"
+                "20 Customer Payment Reminders",
+                "Professional Invoices with Your Logo",
+                "Direct Bank Settlement"
             ],
             cta: profile?.plan === "hustler" ? "Current Plan" : "Start Hustling",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -57,19 +58,19 @@ const PricingPage = () => {
             name: "Oga Plan",
             slug: "oga",
             tagline: "The Business Leader",
-            description: "Step up to professional branding and AI voice recording for your business.",
-            price: "₦5,000", 
+            description: "Unlimited records, AI voice, and a trusted staff member by your side.",
+            price: "₦6,000",
             isPopular: true,
-            fee: "Zero Transfer Fees*",
+            fee: "Settlement Transfer Covered",
             period: "/ month",
             features: [
                 "Everything in Hustler Plan",
                 "Unlimited Sales Records",
+                "Unlimited AI Conversations",
                 "Kreddy Voice Notes (Just speak!)",
-                "Co-Branded Invoices & Logo",
-                "AI-Managed Extensions",
+                "Unlimited Customer Reminders",
                 "Add 1 Staff Member",
-                "Priority Payment Settlement"
+                "Morning Business Briefing"
             ],
             cta: profile?.plan === "oga" ? "Current Plan" : profile ? "Upgrade to Oga" : "Become an Oga",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -80,18 +81,17 @@ const PricingPage = () => {
             name: "Chairman",
             slug: "chairman",
             tagline: "The Empire Command Center",
-            description: "Run multiple shops without stress. Lead your empire with zero commissions.",
-            price: "₦7,500", 
+            description: "Run multiple branches. Lead your empire with AI-powered automation.",
+            price: "₦9,000",
             isFounding: true,
-            fee: "Zero Transfer Fees*",
+            fee: "Settlement Transfer Covered",
             period: "/ month",
             features: [
                 "Everything in Oga Plan",
-                "White-Label Invoices (Only Logo)",
                 "Up to 3 Staff & Offices",
-                "Paper Invoice Scanning",
-                "Custom Extension Limits",
-                "Priority Support & Slack Channel"
+                "AI Invoice Scanner (OCR)",
+                "Business Reports & Analytics",
+                "Priority Support Channel"
             ],
             cta: profile?.plan === "chairman" ? "Current Plan" : profile ? "Lead Your Empire" : "Claim Chairman Title",
             ctaAction: () => profile ? navigate('/dashboard') : navigate('/auth/register'),
@@ -202,35 +202,34 @@ const PricingPage = () => {
                             </thead>
                             <tbody>
                                 {[
-                                    { category: "Infrastructure & AI", features: [
+                                    { category: "AI & Intelligence", features: [
                                         { name: "WhatsApp AI Assistant (Text)", hustler: true, oga: true, chairman: true },
-                                        { name: "Kreddy Voice Assistant", hustler: false, oga: true, chairman: true },
-                                        { name: "Instant Bank Settlements", hustler: true, oga: true, chairman: true },
+                                        { name: "Monthly AI Conversations", hustler: "100 / mo", oga: "Unlimited", chairman: "Unlimited" },
+                                        { name: "Kreddy Voice Notes", hustler: false, oga: true, chairman: true },
+                                        { name: "AI Invoice Scanner (OCR)", hustler: false, oga: false, chairman: true },
                                         { name: "Morning Business Briefing", hustler: false, oga: true, chairman: true },
-                                        { name: "Automated Ledger Sync", hustler: true, oga: true, chairman: true },
-                
+                                        { name: "Business Reports & Analytics", hustler: false, oga: false, chairman: true }
                                     ]},
                                     { category: "Business Management", features: [
-                                        { name: "Sales Records Limit", hustler: "50 / mo", oga: "Unlimited", chairman: "Unlimited" },
-                                        { name: "Staff Members", hustler: "0", oga: "1", chairman: "3" },
-                                        { name: "Multi-Office / Branches", hustler: false, oga: false, chairman: true },
-                                        { name: "Paper Invoice Scanning", hustler: false, oga: false, chairman: true }
+                                        { name: "Monthly Sales Records", hustler: "50 / mo", oga: "Unlimited", chairman: "Unlimited" },
+                                        { name: "Staff Members", hustler: "Owner Only", oga: "1 Staff", chairman: "3 Staff" },
+                                        { name: "Multi-Office / Branches", hustler: false, oga: false, chairman: true }
                                     ]},
-                                    { category: "Receipts & Branding", features: [
-                                        { name: "Digital Receipts", hustler: true, oga: true, chairman: true },
-                                        { name: "Custom Logo on Receipts", hustler: false, oga: true, chairman: true },
-                                        { name: "White-Label (No Kredibly Brand)", hustler: false, oga: false, chairman: true }
+                                    { category: "Invoices & Branding", features: [
+                                        { name: "Professional Invoices & Receipts", hustler: true, oga: true, chairman: true },
+                                        { name: "Your Logo on Invoices", hustler: true, oga: true, chairman: true },
+                                        { name: "Business Initials if No Logo", hustler: true, oga: true, chairman: true }
                                     ]},
-                                    { category: "Invoicing & Collection Loops", features: [
-                                        { name: "WhatsApp Invoices & Pay Now Links", hustler: true, oga: true, chairman: true },
-                                        { name: "Automated Customer Reminders", hustler: "10 / mo", oga: "Unlimited", chairman: "Unlimited" },
-                                        { name: "AI-Managed Extensions", hustler: false, oga: true, chairman: true },
-                                        { name: "Automatic Payment Reconciliation", hustler: true, oga: true, chairman: true }
+                                    { category: "Payments & Collection", features: [
+                                        { name: "WhatsApp Pay Now Links", hustler: true, oga: true, chairman: true },
+                                        { name: "Customer Payment Reminders", hustler: "20 / mo", oga: "Unlimited", chairman: "Unlimited" },
+                                        { name: "Automatic Payment Reconciliation", hustler: true, oga: true, chairman: true },
+                                        { name: "Direct Bank Settlement", hustler: true, oga: true, chairman: true },
+                                        { name: "Settlement Transfer Covered", hustler: true, oga: true, chairman: true }
                                     ]},
-                                    { category: "Support & ROI", features: [
-                                        { name: "Zero Transfer Fees on Payouts", hustler: true, oga: true, chairman: true },
-                                        { name: "Priority Vault Access", hustler: false, oga: false, chairman: true },
-                                        { name: "Dedicated Support", hustler: false, oga: "Standard", chairman: "Priority" }
+                                    { category: "Support", features: [
+                                        { name: "Dashboard Access", hustler: true, oga: true, chairman: true },
+                                        { name: "Dedicated Support", hustler: "Standard", oga: "Standard", chairman: "Priority" }
                                     ]}
                                 ].map((cat, i) => (
                                     <React.Fragment key={i}>
@@ -269,39 +268,42 @@ const PricingPage = () => {
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '32px' }}>
                         <div style={{ background: 'white', padding: '32px', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
-                            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0F172A', marginBottom: '12px' }}>Hustler Plan</h3>
+                            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0F172A', marginBottom: '12px' }}>Hustler — ₦3,000/mo</h3>
                             <p style={{ fontSize: '0.95rem', color: '#64748B', lineHeight: 1.6, marginBottom: '20px' }}>
-                                Designed specifically for solopreneurs, freelance creators, and micro-merchants who are transitioning from manual paper notebooks to digital record-keeping. It gives you 50 structured records every month and full access to Kreddy's core text intelligence.
+                                For solopreneurs and micro-merchants moving from notebooks to digital records. 50 structured sales records every month, 100 AI conversations with Kreddy, and 20 automated payment reminders.
                             </p>
                             <ul style={{ paddingLeft: '20px', fontSize: '0.9rem', color: '#475569', lineHeight: 1.6 }}>
-                                <li>50 invoice entries/month</li>
-                                <li>Direct WhatsApp delivery</li>
-                                <li>Auto-reminders (10/month)</li>
-                                <li>Basic ledger tracking</li>
+                                <li>50 invoice records / month</li>
+                                <li>100 AI conversations / month</li>
+                                <li>20 customer reminders / month</li>
+                                <li>Professional invoice with your logo</li>
+                                <li>Direct bank settlement</li>
                             </ul>
                         </div>
                         <div style={{ background: 'white', padding: '32px', borderRadius: '24px', border: '1px solid var(--primary)', position: 'relative' }}>
                             <div style={{ position: 'absolute', top: '-12px', right: '24px', background: 'var(--primary)', color: 'white', fontSize: '0.75rem', fontWeight: 900, padding: '4px 12px', borderRadius: '100px' }}>POPULAR</div>
-                            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0F172A', marginBottom: '12px' }}>Oga Plan</h3>
+                            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0F172A', marginBottom: '12px' }}>Oga — ₦6,000/mo</h3>
                             <p style={{ fontSize: '0.95rem', color: '#64748B', lineHeight: 1.6, marginBottom: '20px' }}>
-                                Perfect for growing retail stores, service businesses, and merchants who want custom branding, full AI voice note parsing, and conversational payment collection follow-ups. Unlock unlimited ledger records and let Kreddy automatically manage customer extensions.
+                                For growing retail stores and service businesses. Unlimited records, unlimited AI conversations, AI voice note invoicing, unlimited reminders, and one trusted staff member.
                             </p>
                             <ul style={{ paddingLeft: '20px', fontSize: '0.9rem', color: '#475569', lineHeight: 1.6 }}>
-                                <li>Unlimited ledger entries</li>
-                                <li>Full voice note invoicing</li>
-                                <li>Unlimited reminder loops</li>
-                                <li>Conversational extension manager</li>
+                                <li>Unlimited sales records</li>
+                                <li>Unlimited AI conversations</li>
+                                <li>Voice note invoicing</li>
+                                <li>Unlimited customer reminders</li>
+                                <li>Add 1 staff member</li>
+                                <li>Morning business briefing</li>
                             </ul>
                         </div>
                         <div style={{ background: 'white', padding: '32px', borderRadius: '24px', border: '1px solid #0F172A' }}>
-                            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0F172A', marginBottom: '12px' }}>Chairman Plan</h3>
+                            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0F172A', marginBottom: '12px' }}>Chairman — ₦9,000/mo</h3>
                             <p style={{ fontSize: '0.95rem', color: '#64748B', lineHeight: 1.6, marginBottom: '20px' }}>
-                                For scaling multi-branch retail empires and merchants who need premium accounting automation. Includes white-label invoicing, paper invoice scanning, multi-staff permissions, and priority partner channels for bespoke configurations.
+                                For multi-branch businesses that need full automation. Snap a photo of a paper invoice and Kreddy extracts the details, creates the record, and asks for your confirmation before saving.
                             </p>
                             <ul style={{ paddingLeft: '20px', fontSize: '0.9rem', color: '#475569', lineHeight: 1.6 }}>
-                                <li>White-label custom templates</li>
-                                <li>Paper invoice document scanning</li>
+                                <li>AI invoice scanner (OCR)</li>
                                 <li>Up to 3 staff & office accounts</li>
+                                <li>Business reports & analytics</li>
                                 <li>Priority dedicated support channel</li>
                             </ul>
                         </div>
@@ -330,13 +332,15 @@ const PricingPage = () => {
 
                     <div style={{ background: 'white', padding: '32px', borderRadius: '24px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}>
                         {[
-                            { question: "Are there any hidden transaction fees?", answer: "No. Kredibly charges a flat subscription fee. We do not take transaction commissions. The only costs are standard network fees which you can optionally pass to the customer." },
-                            { question: "Can I upgrade or downgrade my plan?", answer: "Yes, you can upgrade, downgrade, or cancel your plan at any time through your settings panel. If you upgrade, the new limit takes effect immediately." },
-                            { question: "How does the Hustler 50-record limit work?", answer: "Every time you record a transaction via Kreddy AI, it counts as one record. The counter resets on your monthly billing date. Read-only access to existing records remains active even if you exceed the limit." },
-                            { question: "Do you offer a free trial?", answer: "Yes, all new sign-ups are eligible for a 7-day trial of our Oga Plan to test AI voice note invoicing and reminders before subscribing." },
-                            { question: "Is my payment information secure?", answer: "All subscription transactions are processed securely through licensed partners. Kredibly never stores your credit card numbers on our servers." }
-                        ].map((faq, i) => (
-                            <PricingFAQItem key={i} question={faq.question} answer={faq.answer} isLast={i === 4} />
+                            { question: "Are there any hidden charges?", answer: "No. Kredibly charges only your monthly subscription. Payment gateway fees are handled according to the option you choose (merchant or customer pays), and Kredibly covers the settlement transfer cost on all paid plans. There are no platform commissions on your sales." },
+                            { question: "How does payment processing work?", answer: "When a customer pays an invoice, a payment gateway fee applies (1% capped at ₦150). You decide who covers it: your customer pays it on top of the invoice, or it is deducted from your settlement. After payment is confirmed, funds are transferred directly to your verified bank account. Kredibly covers the settlement transfer cost — we do not charge you for moving your money." },
+                            { question: "Does Kredibly take a commission on my sales?", answer: "No. Kredibly does not take a percentage of your sales. Your monthly subscription gives you full access to the platform. Payment processing follows the transparent fee structure above." },
+                            { question: "Do you offer a free trial?", answer: "Yes. Every new business gets 14 days of full Chairman access — no credit card required. You experience everything before deciding on your plan." },
+                            { question: "How does the Hustler 50-record limit work?", answer: "Every time you create an invoice or sales record via Kreddy, it counts as one entry. The counter resets on your monthly billing date. You can still view existing records even after the limit is reached." },
+                            { question: "Can I upgrade or downgrade my plan?", answer: "Yes. You can upgrade, downgrade, or cancel at any time through your Settings panel. Upgrades take effect immediately." },
+                            { question: "Is my payment information secure?", answer: "All subscription payments are processed securely through our licensed payment partners. Kredibly never stores your card details on our servers." }
+                        ].map((faq, i, arr) => (
+                            <PricingFAQItem key={i} question={faq.question} answer={faq.answer} isLast={i === arr.length - 1} />
                         ))}
                     </div>
                 </div>
@@ -345,12 +349,12 @@ const PricingPage = () => {
             {/* AI Call to Action */}
             <section style={{ padding: '80px 24px', background: 'white' }}>
                 <div className="pricing-cta-box" style={{ maxWidth: '1000px', margin: '0 auto', background: '#F5F3FF', padding: '60px', borderRadius: '48px', border: '1px solid rgba(124, 58, 237, 0.1)', textAlign: 'center' }}>
-                    <h2 style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.04em', marginBottom: '24px' }}>Build your empire. <br /><span className="premium-gradient">Start with Chairman.</span></h2>
+                    <h2 style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.04em', marginBottom: '24px' }}>Build your empire. <br /><span className="premium-gradient">Start with 14 days free.</span></h2>
                     <p style={{ fontSize: '1.15rem', color: '#4C1D95', fontWeight: 700, marginBottom: '40px', maxWidth: '600px', margin: '0 auto 40px' }}>
-                        Unlock unlimited staff, AI voice notes, white-label receipts, and executive briefings. Your empire starts today.
+                        Every new business gets 14 days of full Chairman access. No credit card. No commitment. Just results.
                     </p>
                     <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', height: 'auto', borderRadius: '20px' }}>Claim Chairman Title <ArrowRight size={18} strokeWidth={3} /></button>
+                        <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', height: 'auto', borderRadius: '20px' }}>Start Your Free Trial <ArrowRight size={18} strokeWidth={3} /></button>
                     </div>
                 </div>
             </section>

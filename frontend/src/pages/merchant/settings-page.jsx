@@ -1119,7 +1119,6 @@ const SettingsPage = () => {
                                     };
                                     return (
                                         <>
-                                {/* HUSTLER */}
                                 <button 
                                     onClick={() => { setSelectedPlan('hustler'); setShowCheckout(true); }} 
                                     className="glass-card clickable-card" 
@@ -1134,10 +1133,10 @@ const SettingsPage = () => {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                                         <span style={{ fontWeight: 900, color: '#64748B', fontSize: '0.85rem' }}>HUSTLER</span>
                                         <div style={{ textAlign: 'right' }}>
-                                            <span style={{ fontWeight: 900, color: '#1E293B', fontSize: '1.1rem' }}>₦2,500/mo</span>
+                                            <span style={{ fontWeight: 900, color: '#1E293B', fontSize: '1.1rem' }}>₦3,000/mo</span>
                                         </div>
                                     </div>
-                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 20px 0', fontWeight: 600, lineHeight: 1.4 }}>Up to 50 sales/mo, 10 auto-reminders, and basic receipts.</p>
+                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 20px 0', fontWeight: 600, lineHeight: 1.4 }}>50 invoices & sales/mo, 100 AI conversations, 20 payment reminders.</p>
                                     <div style={{ width: '100%', padding: '12px', borderRadius: '14px', background: profile?.plan === 'hustler' ? '#64748B' : 'white', border: '1.5px solid #E2E8F0', color: profile?.plan === 'hustler' ? 'white' : '#64748B', fontWeight: 900, fontSize: '0.85rem', textAlign: 'center' }}>
                                         {getPlanLabel('hustler')}
                                     </div>
@@ -1159,10 +1158,10 @@ const SettingsPage = () => {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                                         <span style={{ fontWeight: 900, color: 'var(--primary)', fontSize: '0.85rem' }}>OGA PLAN</span>
                                         <div style={{ textAlign: 'right' }}>
-                                            <span style={{ fontWeight: 900, color: 'var(--primary)', fontSize: '1.1rem' }}>₦5,000/mo</span>
+                                            <span style={{ fontWeight: 900, color: 'var(--primary)', fontSize: '1.1rem' }}>₦6,000/mo</span>
                                         </div>
                                     </div>
-                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 20px 0', fontWeight: 600, lineHeight: 1.4 }}>Kreddy AI Voice, Proactive Reminders & 1 Staff member.</p>
+                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 20px 0', fontWeight: 600, lineHeight: 1.4 }}>Unlimited invoices & AI conversations, voice notes, unlimited reminders & 1 staff member.</p>
                                     <div style={{ width: '100%', padding: '12px', borderRadius: '14px', background: profile?.plan === 'oga' ? 'var(--primary)' : 'white', border: '1.5px solid var(--primary)', color: profile?.plan === 'oga' ? 'white' : 'var(--primary)', fontWeight: 900, fontSize: '0.85rem', textAlign: 'center' }}>
                                         {getPlanLabel('oga')}
                                     </div>
@@ -1182,10 +1181,10 @@ const SettingsPage = () => {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                                         <span style={{ fontWeight: 900, color: '#8B5CF6', fontSize: '0.85rem' }}>CHAIRMAN</span>
                                         <div style={{ textAlign: 'right' }}>
-                                            <span style={{ fontWeight: 900, color: '#8B5CF6', fontSize: '1.1rem' }}>₦7,500/mo</span>
+                                            <span style={{ fontWeight: 900, color: '#8B5CF6', fontSize: '1.1rem' }}>₦9,000/mo</span>
                                         </div>
                                     </div>
-                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 20px 0', fontWeight: 600, lineHeight: 1.4 }}>Up to 3 Staff, AI Insights & Priority White-labeling.</p>
+                                    <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0 0 20px 0', fontWeight: 600, lineHeight: 1.4 }}>Up to 3 staff, AI invoice scanner, business reports & priority support.</p>
                                     <div style={{ width: '100%', padding: '12px', borderRadius: '14px', background: profile?.plan === 'chairman' ? '#8B5CF6' : 'white', border: '1.5px solid #8B5CF6', color: profile?.plan === 'chairman' ? 'white' : '#8B5CF6', fontWeight: 900, fontSize: '0.85rem', textAlign: 'center' }}>
                                         {getPlanLabel('chairman')}
                                     </div>
