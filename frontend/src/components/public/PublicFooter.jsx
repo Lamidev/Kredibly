@@ -21,26 +21,24 @@ const PublicFooter = () => {
         <footer style={{
             background: '#FFFFFF',
             color: '#0F172A',
-            padding: 'clamp(48px, 6vw, 80px) 24px 0',
+            padding: 'clamp(40px, 5vw, 72px) 0 0',
             borderTop: '1px solid #F1F5F9',
             overflow: 'hidden',
-            position: 'relative'
+            position: 'relative',
+            width: '100%'
         }}>
-            <div style={{ maxWidth: '1360px', margin: '0 auto' }}>
-                {/* Top Bar: Nav Links on Left, Legal Copyright Notice on Right */}
+            <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 24px' }}>
+                {/* Top Bar: Nav Links on Left, Legal Copyright Notice Strictly Opposite on Right */}
                 <div className="footer-top-bar" style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    flexWrap: 'wrap',
                     gap: '24px',
-                    paddingBottom: 'clamp(32px, 4vw, 48px)'
+                    paddingBottom: 'clamp(28px, 4vw, 48px)',
+                    width: '100%'
                 }}>
-                    {/* Minimal Horizontal Links */}
-                    <div style={{ display: 'flex', gap: 'clamp(16px, 2.5vw, 32px)', flexWrap: 'wrap', alignItems: 'center' }}>
-                        <button onClick={() => scrollToSection('problem')} className="footer-nav-link">
-                            Why Kredibly
-                        </button>
+                    {/* Minimal Horizontal Links (Removed "Why Kredibly") */}
+                    <div className="footer-links-row" style={{ display: 'flex', gap: 'clamp(14px, 2.2vw, 28px)', alignItems: 'center', whiteSpace: 'nowrap' }}>
                         <button onClick={() => scrollToSection('meet-kreddy')} className="footer-nav-link">
                             Meet Kreddy
                         </button>
@@ -61,38 +59,41 @@ const PublicFooter = () => {
                         </a>
                     </div>
 
-                    {/* Legal Copyright Line (Placed BEFORE the Giant Logo) */}
-                    <div style={{ fontSize: '0.85rem', color: '#94A3B8', fontWeight: 400 }}>
+                    {/* Legal Copyright Line (Strictly Opposite Links on Desktop in Single Line) */}
+                    <div className="footer-legal-line" style={{ fontSize: '0.85rem', color: '#94A3B8', fontWeight: 400, textAlign: 'right', flexShrink: 0, whiteSpace: 'nowrap' }}>
                         © {new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd (RC-9466327). All rights reserved.
                     </div>
                 </div>
+            </div>
 
-                {/* Giant Base Brand Display Logo (Exact Reference Image Style) */}
-                <div style={{
+            {/* Edge-to-Edge Full Viewport Width Giant Base Brand Display Logo */}
+            <div style={{
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'flex-end',
+                paddingTop: '10px',
+                overflow: 'hidden',
+                lineHeight: 0.75
+            }}>
+                <h1 className="giant-footer-logo" style={{
+                    fontSize: 'clamp(3.8rem, 21.2vw, 25rem)',
+                    fontWeight: 950,
+                    letterSpacing: '-0.06em',
+                    color: 'transparent',
+                    background: 'linear-gradient(180deg, #0F172A 0%, rgba(15, 23, 42, 0.1) 100%)',
+                    WebkitBackgroundClip: 'text',
+                    backgroundClip: 'text',
+                    margin: 0,
+                    padding: 0,
+                    userSelect: 'none',
+                    textAlign: 'center',
+                    whiteSpace: 'nowrap',
                     width: '100%',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'flex-end',
-                    paddingTop: '20px',
-                    overflow: 'hidden',
-                    lineHeight: 0.85
+                    transform: 'translateY(10%) scaleX(1.04)'
                 }}>
-                    <h1 style={{
-                        fontSize: 'clamp(4.5rem, 18vw, 17rem)',
-                        fontWeight: 900,
-                        letterSpacing: '-0.05em',
-                        color: 'transparent',
-                        background: 'linear-gradient(180deg, #0F172A 0%, rgba(15, 23, 42, 0.12) 100%)',
-                        WebkitBackgroundClip: 'text',
-                        margin: 0,
-                        padding: 0,
-                        userSelect: 'none',
-                        textAlign: 'center',
-                        transform: 'translateY(10%)'
-                    }}>
-                        kredibly
-                    </h1>
-                </div>
+                    kredibly
+                </h1>
             </div>
 
             <style>{`
@@ -110,10 +111,38 @@ const PublicFooter = () => {
                 .footer-nav-link:hover {
                     color: var(--primary) !important;
                 }
-                @media (max-width: 768px) {
+                @media (min-width: 992px) {
                     .footer-top-bar {
-                        flex-direction: column;
+                        flex-direction: row !important;
+                        justify-content: space-between !important;
+                        align-items: center !important;
+                    }
+                    .footer-legal-line {
+                        margin-left: auto !important;
+                        text-align: right !important;
+                    }
+                }
+                @media (max-width: 991px) {
+                    .footer-top-bar {
+                        flex-direction: column !important;
                         align-items: flex-start !important;
+                        gap: 16px !important;
+                    }
+                    .footer-links-row {
+                        flex-wrap: wrap !important;
+                        gap: 16px !important;
+                    }
+                    .footer-legal-line {
+                        text-align: left !important;
+                        white-space: normal !important;
+                        color: #475569 !important;
+                        font-weight: 500 !important;
+                    }
+
+                    .giant-footer-logo {
+                        font-size: 21vw !important;
+                        letter-spacing: -0.05em !important;
+                        transform: translateY(8%) scaleX(1.06) !important;
                     }
                 }
             `}</style>

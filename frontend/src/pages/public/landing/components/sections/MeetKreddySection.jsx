@@ -13,7 +13,8 @@ const MeetKreddySection = () => {
         },
         {
             title: "Direct WhatsApp Delivery",
-            desc: "No copy-pasting required. Your customer gets a clean, professional PDF invoice directly in their WhatsApp chat with an interactive Pay Now button."
+            desc: "No copy-pasting required. Your customer gets a clean, professional PDF invoice directly in their WhatsApp chat with a dynamic virtual bank account for instant transfer."
+
         },
         {
             title: "Automated Debt Reminders",
@@ -28,10 +29,12 @@ const MeetKreddySection = () => {
     return (
         <section id="meet-kreddy" style={{
             padding: 'clamp(4rem, 10vw, 7rem) 24px',
-            backgroundColor: '#FFFFFF',
+            background: 'linear-gradient(180deg, #F5F3FF 0%, #FAF8FC 100%)',
             color: '#0F172A',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            borderBottom: '1px solid rgba(124, 58, 237, 0.08)'
+
         }}>
             <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
                 {/* Header */}

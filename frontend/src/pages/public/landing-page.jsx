@@ -618,7 +618,8 @@ const LandingPage = () => {
 
 
             {/* 4. PRICING SECTION */}
-            <section id="pricing" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: 'white', color: '#0F172A' }}>
+            <section id="pricing" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: '#F8FAFC', color: '#0F172A', borderTop: '1px solid #E2E8F0', borderBottom: '1px solid #E2E8F0' }}>
+
                 <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: 'clamp(40px, 8vw, 80px)' }}>
                         <div style={{ display: 'inline-block', padding: '10px 20px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '100px', marginBottom: '24px', color: 'var(--primary)', fontWeight: 700, fontSize: 'clamp(0.7rem, 2vw, 0.85rem)', letterSpacing: '0.05em' }}>100% INSTANT SETTLEMENTS & ZERO BANK FEES</div>
@@ -723,61 +724,101 @@ const LandingPage = () => {
 
 
 
-            {/* ROI SECTION */}
-            <section id="roi" style={{ padding: 'clamp(4rem, 10vw, 8rem) 24px', background: 'white', color: '#0F172A', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 2 }}>
-                    <div style={{ display: 'inline-block', padding: '8px 20px', borderRadius: '100px', background: 'rgba(124, 58, 237, 0.1)', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '24px' }}>THE COST OF DOING NOTHING</div>
-                    <h2 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 700, letterSpacing: '-0.04em', marginBottom: '24px' }}>How much are you losing?</h2>
-                    <p style={{ color: '#64748B', fontSize: '1.2rem', fontWeight: 400, maxWidth: '700px', margin: '0 auto 60px' }}>Traditional payment gateways charge you 1.5% and hold your money for 24 hours. Small debts go forgotten. Here is the Kredibly difference.</p>
+            {/* ROI / COMPARISON SECTION */}
+            <section id="roi" style={{ padding: 'clamp(4rem, 9vw, 7.5rem) 24px', background: '#FFFFFF', color: '#0F172A', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ maxWidth: '1080px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 2 }}>
+                    <h2 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.6rem)', fontWeight: 800, letterSpacing: '-0.04em', marginBottom: '16px', color: '#0F172A' }}>
+                        How Much Is Manual Management Costing You?
+                    </h2>
+                    <p style={{ color: '#64748B', fontSize: 'clamp(1rem, 2vw, 1.2rem)', fontWeight: 400, maxWidth: '720px', margin: '0 auto 56px', lineHeight: 1.6 }}>
+                        From forgotten credit sales to manual bank alert audits, running your business in notebooks and unorganized WhatsApp chats drains profits. Here is the Kreddy difference.
+                    </p>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0', textAlign: 'left', borderRadius: '24px', overflow: 'hidden', border: '1px solid #E2E8F0' }}>
-                        <div style={{ background: '#F8FAFC', padding: '40px', borderRight: '1px solid #E2E8F0' }}>
-                            <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#64748B', marginBottom: '32px', textAlign: 'center' }}>Without Kredibly</h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                    <div style={{ color: '#EF4444' }}>✕</div>
-                                    <p style={{ margin: 0, fontWeight: 500, color: '#64748B', flex: 1 }}>High Fees (1.5% + ₦100 per transfer)</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', textAlign: 'left' }}>
+                        {/* Without Kredibly */}
+                        <div style={{ background: '#F8FAFC', padding: 'clamp(28px, 4vw, 40px)', borderRadius: '28px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '28px' }}>
+                                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#FEE2E2', color: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.9rem' }}>✕</div>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#475569', margin: 0 }}>Without Kreddy</h3>
+                            </div>
+                            
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', flex: 1 }}>
+                                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                                    <div style={{ color: '#EF4444', marginTop: '2px', fontWeight: 800 }}>✕</div>
+                                    <div>
+                                        <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', fontSize: '0.98rem' }}>Forgotten Credit Sales</p>
+                                        <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#64748B', lineHeight: 1.4 }}>Unrecorded customer debts get lost inside daily WhatsApp chat history.</p>
+                                    </div>
                                 </div>
                                 <div style={{ height: '1px', background: '#E2E8F0' }} />
-                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                    <div style={{ color: '#EF4444' }}>✕</div>
-                                    <p style={{ margin: 0, fontWeight: 500, color: '#64748B', flex: 1 }}>24-Hour Settlement Delays (T+1)</p>
+                                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                                    <div style={{ color: '#EF4444', marginTop: '2px', fontWeight: 800 }}>✕</div>
+                                    <div>
+                                        <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', fontSize: '0.98rem' }}>Manual Bank Alert Audits</p>
+                                        <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#64748B', lineHeight: 1.4 }}>Wasting time cross-checking transfer screenshots against bank mobile apps.</p>
+                                    </div>
                                 </div>
                                 <div style={{ height: '1px', background: '#E2E8F0' }} />
-                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                    <div style={{ color: '#EF4444' }}>✕</div>
-                                    <p style={{ margin: 0, fontWeight: 500, color: '#64748B', flex: 1 }}>Manual Bank Alert Checking</p>
+                                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                                    <div style={{ color: '#EF4444', marginTop: '2px', fontWeight: 800 }}>✕</div>
+                                    <div>
+                                        <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', fontSize: '0.98rem' }}>Gateway Deductions & Delays</p>
+                                        <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#64748B', lineHeight: 1.4 }}>1.5% transaction cuts and 24-hour settlement delays (T+1) holding cash.</p>
+                                    </div>
                                 </div>
                                 <div style={{ height: '1px', background: '#E2E8F0' }} />
-                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                    <div style={{ color: '#EF4444' }}>✕</div>
-                                    <p style={{ margin: 0, fontWeight: 500, color: '#64748B', flex: 1 }}>Forgotten Debts & Unpaid Invoices</p>
+                                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                                    <div style={{ color: '#EF4444', marginTop: '2px', fontWeight: 800 }}>✕</div>
+                                    <div>
+                                        <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', fontSize: '0.98rem' }}>Awkward Payment Chasing</p>
+                                        <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#64748B', lineHeight: 1.4 }}>Manually calling and messaging customers for unpaid invoices causing friction.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div style={{ background: 'white', padding: '40px', position: 'relative' }}>
-                            <div style={{ position: 'absolute', top: '15px', right: '15px', background: 'var(--primary)', color: 'white', padding: '4px 12px', borderRadius: '100px', fontSize: '0.65rem', fontWeight: 700 }}>ROI MULTIPLIER</div>
-                            <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '32px', textAlign: 'center' }}>With Kredibly</h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                    <div style={{ color: '#10B981' }}><Check size={20} /></div>
-                                    <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', flex: 1 }}>Subsidized Gateway (Zero Transfer Fees)</p>
+                        {/* With Kredibly */}
+                        <div style={{ background: '#0F172A', color: '#FFFFFF', padding: 'clamp(28px, 4vw, 40px)', borderRadius: '28px', border: '1px solid var(--primary)', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px -10px rgba(124, 58, 237, 0.25)', position: 'relative' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.9rem' }}>✓</div>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>With Kreddy</h3>
                                 </div>
-                                <div style={{ height: '1px', background: '#E2E8F0' }} />
-                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                    <div style={{ color: '#10B981' }}><Check size={20} /></div>
-                                    <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', flex: 1 }}>Instant Payouts (Money swept instantly)</p>
+                                <div style={{ background: 'var(--primary)', color: 'white', padding: '4px 12px', borderRadius: '100px', fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.05em' }}>AI OPERATING SYSTEM</div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', flex: 1 }}>
+                                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                                    <div style={{ color: '#4ADE80', marginTop: '2px', flexShrink: 0 }}><Check size={18} strokeWidth={3} /></div>
+                                    <div>
+                                        <p style={{ margin: 0, fontWeight: 700, color: '#FFFFFF', fontSize: '0.98rem' }}>Automated WhatsApp Debt Tracking</p>
+                                        <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.4 }}>Kreddy AI records credit sales, debtor balances, and due dates in 5 seconds.</p>
+                                    </div>
                                 </div>
-                                <div style={{ height: '1px', background: '#E2E8F0' }} />
-                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                    <div style={{ color: '#10B981' }}><Check size={20} /></div>
-                                    <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', flex: 1 }}>Direct WhatsApp PDF Delivery & Pay Now links</p>
+                                <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.1)' }} />
+                                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                                    <div style={{ color: '#4ADE80', marginTop: '2px', flexShrink: 0 }}><Check size={18} strokeWidth={3} /></div>
+                                    <div>
+                                        <p style={{ margin: 0, fontWeight: 700, color: '#FFFFFF', fontSize: '0.98rem' }}>Instant 0% Payout Sweeps</p>
+                                        <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.4 }}>Nomba dynamic virtual accounts sweep payments to your bank with zero fees.</p>
+                                    </div>
                                 </div>
-                                <div style={{ height: '1px', background: '#E2E8F0' }} />
-                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                    <div style={{ color: '#10B981' }}><Check size={20} /></div>
-                                    <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', flex: 1 }}>Automated Follow-ups & Due Date Extensions</p>
+                                <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.1)' }} />
+                                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                                    <div style={{ color: '#4ADE80', marginTop: '2px', flexShrink: 0 }}><Check size={18} strokeWidth={3} /></div>
+                                    <div>
+                                        <p style={{ margin: 0, fontWeight: 700, color: '#FFFFFF', fontSize: '0.98rem' }}>Direct WhatsApp PDF Invoices</p>
+                                        <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.4 }}>Professional PDF invoices with dynamic virtual bank accounts delivered in chat.</p>
+                                    </div>
+                                </div>
+
+                                <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.1)' }} />
+                                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                                    <div style={{ color: '#4ADE80', marginTop: '2px', flexShrink: 0 }}><Check size={18} strokeWidth={3} /></div>
+                                    <div>
+                                        <p style={{ margin: 0, fontWeight: 700, color: '#FFFFFF', fontSize: '0.98rem' }}>Automated Debt Nudges & Extensions</p>
+                                        <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.4 }}>Kreddy sends polite reminders and negotiates extension terms conversationally.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -787,8 +828,10 @@ const LandingPage = () => {
 
 
 
+
             {/* FAQ SECTION */}
-            <section id="faq" style={{ padding: 'clamp(4rem, 10vw, 8rem) 24px', background: 'white' }}>
+            <section id="faq" style={{ padding: 'clamp(4rem, 10vw, 8rem) 24px', background: '#F5F3FF', borderTop: '1px solid rgba(124, 58, 237, 0.08)' }}>
+
                 <div style={{ maxWidth: '900px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '60px' }}>
                         <div style={{ display: 'inline-flex', padding: '8px 20px', borderRadius: '100px', background: 'rgba(76, 29, 149, 0.05)', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '24px', letterSpacing: '0.1em' }}>GOT QUESTIONS?</div>
@@ -796,14 +839,16 @@ const LandingPage = () => {
                         <p style={{ fontSize: '1.2rem', color: '#64748B', fontWeight: 400, marginTop: '16px' }}>Everything you need to know about scaling with Kredibly.</p>
                     </div>
 
-                    <div style={{ background: '#F8FAFC', padding: '40px', borderRadius: '32px', border: '1px solid #E2E8F0' }}>
+                    <div style={{ background: '#FFFFFF', padding: '40px', borderRadius: '32px', border: '1px solid rgba(124, 58, 237, 0.12)', boxShadow: '0 10px 30px rgba(0,0,0,0.03)' }}>
+
                         <FAQItem 
                             question="How does Kreddy AI actually work?" 
                             answer="Kreddy is your intelligent business companion on WhatsApp. When you send a voice note or message like 'Kreddy, log sale of cake to Tola for 15,000, due on Friday', she uses NLP to parse the details, logs it in your secure ledger, builds a professional PDF invoice, and delivers it directly to your customer on WhatsApp."
                         />
                         <FAQItem 
                             question="How do my customers pay their invoices?" 
-                            answer="Every PDF invoice Kreddy delivers on WhatsApp has a 'Pay Now' action button. Customers can click it to complete a secure, direct bank transfer. The moment they pay, Kreddy automatically reconciles the transaction, updates your ledger, and notifies you."
+                            answer="Every PDF invoice Kreddy delivers on WhatsApp contains a unique Nomba dynamic virtual bank account. Customers simply perform a standard bank transfer to that account. The moment funds land, Kreddy automatically reconciles the payment, sweeps it to your bank account with zero fees, updates your ledger, and notifies you."
+
                         />
                         <FAQItem 
                             question="What happens if a customer needs more time to pay?" 
