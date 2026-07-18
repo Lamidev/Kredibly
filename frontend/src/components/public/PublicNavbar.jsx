@@ -26,8 +26,29 @@ const PublicNavbar = () => {
         setExpandedMenu(expandedMenu === menu ? null : menu);
     };
 
+    const handleLinkClick = (e, path) => {
+        if (path === '/') {
+            const isHomePage = location.pathname === '/' || location.pathname === '/home';
+            if (isHomePage) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        } else if (path.startsWith('/#')) {
+            e.preventDefault();
+            const sectionId = path.replace('/#', '');
+            const isHomePage = location.pathname === '/' || location.pathname === '/home';
+            if (isHomePage) {
+                const element = document.getElementById(sectionId);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                }
+            } else {
+                navigate('/', { state: { scrollTo: sectionId } });
+            }
+        }
+    };
+
     const navLinks = [
-        { name: "Home", path: "/" },
+        { name: "Features", path: "/" },
         { 
             name: "Product", 
             type: "dropdown", 
@@ -37,6 +58,7 @@ const PublicNavbar = () => {
                 { name: "Premium Invoices", desc: "First-grade startup invoice designs.", path: "/product/escrow", icon: CreditCard }
             ]
         },
+
         { 
             name: "Solutions", 
             type: "dropdown", 
@@ -82,13 +104,18 @@ const PublicNavbar = () => {
                                         </div>
                                     </>
                                 ) : (
-                                    <Link to={link.path} style={{ color: '#0F172A', opacity: 1, fontSize: '0.92rem', fontWeight: 700, textDecoration: 'none' }}>
+                                    <Link 
+                                        to={link.path} 
+                                        onClick={(e) => handleLinkClick(e, link.path)}
+                                        style={{ color: '#0F172A', opacity: 1, fontSize: '0.92rem', fontWeight: 700, textDecoration: 'none' }}
+                                    >
                                          {link.name}
                                     </Link>
                                 )}
                             </div>
                         ))}
                     </div>
+
 
                     {/* Actions */}
                     <div className="nav-actions">
@@ -161,7 +188,17 @@ const PublicNavbar = () => {
                                                             )}
                                                         </>
                                                     ) : (
-                                                        <Link to={link.path} onClick={() => setIsMobileMenuOpen(false)} style={{ padding: '16px', display: 'block', textDecoration: 'none', color: '#0F172A', fontWeight: 700, fontSize: 'clamp(0.95rem, 4vw, 1.05rem)' }}>{link.name}</Link>
+                                                        <Link 
+                                                            to={link.path} 
+                                                            onClick={(e) => {
+                                                                handleLinkClick(e, link.path);
+                                                                setIsMobileMenuOpen(false);
+                                                            }} 
+                                                            style={{ padding: '16px', display: 'block', textDecoration: 'none', color: '#0F172A', fontWeight: 700, fontSize: 'clamp(0.95rem, 4vw, 1.05rem)' }}
+                                                        >
+                                                            {link.name}
+                                                        </Link>
+
                                                     )}
                                                 </div>
                                             ))}

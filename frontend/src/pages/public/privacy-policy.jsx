@@ -1,278 +1,357 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Lock, Eye, FileText, Mail, ArrowRight, Sparkles, ChevronRight } from 'lucide-react';
 import PublicNavbar from '../../components/public/PublicNavbar';
 import PublicFooter from '../../components/public/PublicFooter';
 import SEO from '../../components/public/SEO';
 
 const PrivacyPolicy = () => {
+    const [activeTab, setActiveTab] = useState('privacy'); // 'privacy' | 'terms'
+
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, []);
-
-    const sections = [
-        { id: 'introduction', title: '1. Introduction', icon: FileText },
-        { id: 'data-collection', title: '2. Information We Collect', icon: Eye },
-        { id: 'security', title: '3. Bank-Grade Security', icon: Lock },
-        { id: 'contact', title: '4. Contact Support', icon: Mail }
-    ];
-
-    const scrollToSection = (id) => {
-        const element = document.getElementById(id);
-        if (element) {
-            const yOffset = -100;
-            const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
-            window.scrollTo({ top: y, behavior: 'smooth' });
-        }
-    };
+    }, [activeTab]);
 
     return (
-        <div className="noise-bg" style={{
+        <div style={{
             minHeight: '100vh',
-            backgroundColor: 'var(--background)',
-            color: 'var(--text)',
+            backgroundColor: '#FFFFFF',
+            color: '#0F172A',
             position: 'relative',
             overflowX: 'hidden'
         }}>
             <SEO 
-                title="Privacy Policy" 
-                description="Your privacy is secure with us. Learn how Kredibly processes information securely to provide AI assistant services." 
+                title={activeTab === 'privacy' ? "Privacy Policy" : "Terms of Service"} 
+                description="Read Kredibly's Privacy Policy & Terms of Service. Clean, transparent, and structured information on how we handle data and service usage." 
                 path="/privacy" 
             />
             <PublicNavbar />
             
-            {/* Executive Hero Section - Matching Landing Page Style */}
+            {/* Header Area */}
             <header style={{
-                padding: '180px 20px 100px',
-                maxWidth: '1200px',
-                margin: '0 auto',
-                textAlign: 'center',
-                position: 'relative',
-                zIndex: 2
+                padding: 'clamp(140px, 12vw, 180px) 24px clamp(32px, 4vw, 56px)',
+                maxWidth: '1100px',
+                margin: '0 auto'
             }}>
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                >
-                    <div className="hero-badge">
-                        <Shield size={16} style={{ marginRight: '8px' }} />
-                        TRUST & TRANSPARENCY
-                    </div>
-                    <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', fontWeight: 950, letterSpacing: '-0.05em' }}>
-                        Your Safety. <br />
-                        <span style={{ color: 'var(--primary)', fontWeight: 950 }}>Our Priority.</span>
-                    </h1>
-                    <p className="hero-description" style={{ fontSize: '1.3rem', maxWidth: '750px', margin: '0 auto 40px' }}>
-                        Kredibly is built on a foundation of absolute privacy. We treat your business data with the 
-                        same rigor as a global financial institution.
-                    </p>
-                </motion.div>
-            </header>
-
-            <main style={{
-                maxWidth: '1250px',
-                margin: '0 auto 120px',
-                padding: '0 24px',
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) 340px',
-                gap: '80px',
-                alignItems: 'start'
-            }} className="desktop-grid">
-                
-                {/* Main Legal Content */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '80px' }}>
-                    
-                    <motion.section 
-                        id="introduction"
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
+                {/* Tab Switcher */}
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '32px' }}>
+                    <button
+                        onClick={() => setActiveTab('privacy')}
+                        style={{
+                            padding: '10px 24px',
+                            borderRadius: '100px',
+                            border: activeTab === 'privacy' ? '1px solid var(--primary)' : '1px solid #E2E8F0',
+                            background: activeTab === 'privacy' ? 'var(--primary)' : '#F8FAFC',
+                            color: activeTab === 'privacy' ? '#FFFFFF' : '#475569',
+                            fontWeight: 700,
+                            fontSize: '0.92rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                        }}
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
-                            <div style={{ background: 'rgba(76, 29, 149, 0.05)', padding: '16px', borderRadius: '20px', color: 'var(--primary)', border: '1px solid rgba(76, 29, 149, 0.1)' }}>
-                                <FileText size={28} />
-                            </div>
-                            <h2 style={{ fontSize: '2.5rem', fontWeight: 950, letterSpacing: '-0.04em', margin: 0 }}>Introduction</h2>
-                        </div>
-                        <div style={{ color: 'var(--text-muted)', fontSize: '1.15rem', lineHeight: 1.8, fontWeight: 500 }}>
-                            <p style={{ marginBottom: '24px' }}>
-                                At Kredibly, we respect your privacy and are committed to protecting your personal data. 
-                                This policy informs you of our practices regarding the collection, use, and disclosure of 
-                                personal data when you use our Service and the choices you have associated with that data.
-                            </p>
-                            <p>
-                                By utilizing Kredibly, you agree to the collection and use of information in accordance 
-                                with this Policy. We only collect the data necessary to provide a professional, 
-                                automated experience for your business.
-                            </p>
-                        </div>
-                    </motion.section>
-
-                    <motion.section 
-                        id="data-collection"
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
+                        Privacy Policy
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('terms')}
+                        style={{
+                            padding: '10px 24px',
+                            borderRadius: '100px',
+                            border: activeTab === 'terms' ? '1px solid var(--primary)' : '1px solid #E2E8F0',
+                            background: activeTab === 'terms' ? 'var(--primary)' : '#F8FAFC',
+                            color: activeTab === 'terms' ? '#FFFFFF' : '#475569',
+                            fontWeight: 700,
+                            fontSize: '0.92rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                        }}
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
-                            <div style={{ background: 'rgba(16, 185, 129, 0.05)', padding: '16px', borderRadius: '20px', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
-                                <Eye size={28} />
-                            </div>
-                            <h2 style={{ fontSize: '2.5rem', fontWeight: 950, letterSpacing: '-0.04em', margin: 0 }}>Data Collection</h2>
-                        </div>
-                        
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
-                            {[
-                                { title: "Business Identity", desc: "Official name, business category, and your display settings for professional invoicing." },
-                                { title: "Interaction History", desc: "Message context from WhatsApp to accurately record your sales and debts using Kreddy AI." },
-                                { title: "Merchant Contacts", desc: "Verified WhatsApp numbers for routing mission-critical business alerts and reminders." },
-                                { title: "Financial Ledger", desc: "Debt balances and customer names to manage your proactive notifications and scores." }
-                            ].map((item, i) => (
-                                <div key={i} className="glass-card" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    <h4 style={{ fontWeight: 900, marginBottom: '4px', fontSize: '1.2rem', color: 'var(--text)' }}>{item.title}</h4>
-                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', fontWeight: 500, lineHeight: 1.6 }}>{item.desc}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </motion.section>
-
-                    <motion.section 
-                        id="security"
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                    >
-                        <div style={{ 
-                            background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)',
-                            borderRadius: '48px',
-                            padding: '80px 60px',
-                            color: 'white',
-                            position: 'relative',
-                            overflow: 'hidden',
-                            boxShadow: '0 40px 80px -20px rgba(15, 23, 42, 0.4)'
-                        }}>
-                            <div className="pattern-dots" style={{ opacity: 0.1 }} />
-                            <div style={{ position: 'relative', zIndex: 2 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-                                    <Lock size={24} color="#10B981" />
-                                    <span style={{ fontWeight: 900, letterSpacing: '0.1em', fontSize: '0.8rem', opacity: 0.8, textTransform: 'uppercase' }}>Security Protocol</span>
-                                </div>
-                                <h2 style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 950, marginBottom: '24px', letterSpacing: '-0.04em' }}>Bank-Grade Protection</h2>
-                                <p style={{ fontSize: '1.25rem', opacity: 0.7, fontWeight: 500, lineHeight: 1.6, maxWidth: '650px', marginBottom: '48px' }}>
-                                    Your business intelligence is protected with AES-256 encryption and processed through 
-                                    isolated security layers. We never compromise on your data safety.
-                                </p>
-                                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                                    <div style={{ padding: '14px 28px', background: 'rgba(255,255,255,0.06)', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.1)', fontSize: '0.95rem', fontWeight: 800 }}>🛡️ End-to-End Encrypted</div>
-                                    <div style={{ padding: '14px 28px', background: 'rgba(255,255,255,0.06)', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.1)', fontSize: '0.95rem', fontWeight: 800 }}>🔓 GDPR & NDPR Ready</div>
-                                </div>
-                            </div>
-                        </div>
-                    </motion.section>
-
-                    <motion.section 
-                        id="contact"
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        style={{ textAlign: 'center', padding: '80px 0', background: 'rgba(255,255,255,0.5)', borderRadius: '48px', border: '1px solid rgba(0,0,0,0.03)' }}
-                    >
-                        <h2 style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: '20px' }}>Need further clarity?</h2>
-                        <p className="hero-description" style={{ marginBottom: '48px', maxWidth: '600px', margin: '0 auto 48px' }}>
-                            Our data protection team is standing by to assist with any technical or legal queries 
-                            regarding your privacy.
-                        </p>
-                        <a href="mailto:support@usekredibly.com" className="btn-primary" style={{ padding: '24px 64px', fontSize: '1.2rem' }}>
-                            Contact Privacy Team <ArrowRight size={22} />
-                        </a>
-                    </motion.section>
-
+                        Terms of Service
+                    </button>
                 </div>
 
-                {/* Executive Side Navigation */}
-                <aside className="desktop-only-sticky">
-                    <div className="glass-card" style={{ padding: '48px 40px', background: 'white', borderRadius: '40px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.04)' }}>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-muted)', letterSpacing: '0.15em', marginBottom: '40px', textTransform: 'uppercase' }}>Quick Navigation</p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {sections.map((section) => (
-                                <button
-                                    key={section.id}
-                                    onClick={() => scrollToSection(section.id)}
-                                    className="legal-nav-item"
-                                    style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        padding: '16px 0',
-                                        width: '100%',
-                                        cursor: 'pointer',
-                                        color: 'var(--text-muted)',
-                                        fontWeight: 700,
-                                        fontSize: '1rem',
-                                        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                                        textAlign: 'left',
-                                        borderBottom: '1px solid rgba(0,0,0,0.04)'
-                                    }}
-                                >
-                                    <span>{section.title}</span>
-                                    <ChevronRight size={18} />
-                                </button>
-                            ))}
-                        </div>
-                        <div style={{ marginTop: '48px', padding: '28px', background: 'rgba(76, 29, 149, 0.04)', borderRadius: '24px', border: '1px solid rgba(76, 29, 149, 0.05)' }}>
-                            <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', lineHeight: 1.6 }}>
-                                Last Revision: <br />
-                                January 24, 2026. <br />
-                                <span style={{ opacity: 0.6 }}>Governance v1.02</span>
-                            </p>
-                        </div>
+                {/* Top Split Header (Exact Reference Style) */}
+                <div className="legal-header-split" style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(12, 1fr)',
+                    gap: '24px',
+                    alignItems: 'start'
+                }}>
+                    <div style={{ gridColumn: 'span 12' }} className="legal-header-left">
+                        <h1 style={{ 
+                            fontSize: 'clamp(2.8rem, 6vw, 4.2rem)', 
+                            fontWeight: 900, 
+                            letterSpacing: '-0.04em',
+                            margin: 0,
+                            color: '#0F172A',
+                            lineHeight: 1.1
+                        }}>
+                            {activeTab === 'privacy' ? 'Privacy Policy' : 'Terms of Service'}
+                        </h1>
                     </div>
-                </aside>
+                    <div style={{ gridColumn: 'span 12' }} className="legal-header-right">
+                        <p style={{
+                            color: '#64748B',
+                            fontSize: '1rem',
+                            lineHeight: 1.6,
+                            margin: 0,
+                            maxWidth: '420px'
+                        }}>
+                            {activeTab === 'privacy' 
+                                ? 'By using our website and WhatsApp AI assistant, you consent to our privacy policy and agree to its terms. This policy applies to all information collected.'
+                                : 'Your use of and access to Kredibly services are subject to the following terms. Please read them carefully before using our platform.'
+                            }
+                        </p>
+                    </div>
+                </div>
+            </header>
+
+            {/* Main Clean Structured Content (No Cards / No Icons) */}
+            <main style={{
+                maxWidth: '1100px',
+                margin: '0 auto 120px',
+                padding: '0 24px'
+            }}>
+                <div style={{
+                    borderTop: '1px solid #E2E8F0',
+                    paddingTop: '48px',
+                    maxWidth: '820px'
+                }}>
+                    {activeTab === 'privacy' ? (
+                        /* PRIVACY POLICY CONTENT */
+                        <motion.div
+                            key="privacy-content"
+                            initial={{ opacity: 0, y: 15 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4 }}
+                            className="legal-text-body"
+                        >
+                            <p className="lead-text">
+                                Welcome to Kredibly, your AI-powered financial assistant and business operating system on WhatsApp. At Kredibly, your privacy is important to us. This Privacy Policy explains how we collect, use, store, and protect your personal information when you use our services.
+                            </p>
+
+                            <h2>What Information We Collect</h2>
+                            <p>When you use Kredibly through WhatsApp, we may collect the following information:</p>
+
+                            <h3>Personal Information</h3>
+                            <ul>
+                                <li>Your full name, BVN, and phone number (from WhatsApp)</li>
+                                <li>Profile photo (if publicly available via WhatsApp)</li>
+                            </ul>
+
+                            <h3>Transaction & Usage Data</h3>
+                            <ul>
+                                <li>Images of bills, receipts, or financial documents you send</li>
+                                <li>Voice notes and messages you share</li>
+                                <li>Details of transactions (e.g., amount, recipient, purpose, due dates)</li>
+                                <li>Time, date, and frequency of interactions</li>
+                            </ul>
+
+                            <h2>How We Use Your Information</h2>
+                            <p>We use your information to:</p>
+                            <ul>
+                                <li>Understand and process your financial requests and sales records</li>
+                                <li>Provide insights into your revenue, debts, and spending habits</li>
+                                <li>Enhance user experience with personalized responses</li>
+                                <li>Improve our AI's understanding of voice, image, and text inputs</li>
+                                <li>Ensure security, fraud prevention, and troubleshooting</li>
+                                <li>Comply with legal and financial obligations</li>
+                            </ul>
+                            <p className="emphasis-text">We do not sell or rent your personal data to third parties.</p>
+
+                            <h2>Voice & Image Processing</h2>
+                            <p>
+                                When you send voice notes or images, our system temporarily processes them using machine learning tools to extract relevant financial information (e.g., due amount, account number, customer name). These inputs may be used to train and improve our AI, but personal identifiers are anonymized or removed where possible.
+                            </p>
+
+                            <h2>Data Storage & Security</h2>
+                            <p>
+                                We use secure servers and bank-grade encryption to protect your data. Access to user information is strictly controlled and only available to authorized personnel for support or system improvement.
+                            </p>
+                            <p>
+                                We store your data only as long as necessary to provide services, comply with laws, or improve system performance. You may request data deletion at any time.
+                            </p>
+
+                            <h2>Third-Party Services</h2>
+                            <p>
+                                Kredibly may integrate with licensed third-party services (e.g., payment processors, analytics platforms, banking APIs). We ensure these services comply with standard data protection practices (NDPR / GDPR). We do not share your data with them unless required for service delivery or compliance.
+                            </p>
+
+                            <h2>Your Rights</h2>
+                            <p>You have the right to:</p>
+                            <ul>
+                                <li>Request access to the data we hold about you</li>
+                                <li>Correct or update your personal information</li>
+                                <li>Request deletion of your data</li>
+                                <li>Withdraw consent (which may limit your use of Kredibly)</li>
+                            </ul>
+                            <p>
+                                To make any of these requests, simply email us at <strong>privacy@usekredibly.com</strong>.
+                            </p>
+
+                            <h2>Children’s Privacy</h2>
+                            <p>
+                                Kredibly is not intended for use by individuals under 18. We do not knowingly collect data from minors. If we become aware of such use, we will delete the data immediately.
+                            </p>
+
+                            <h2>Policy Updates</h2>
+                            <p>
+                                We may update this policy from time to time. If we make significant changes, we’ll notify you through WhatsApp or via our website.
+                            </p>
+
+                            <h2>Contact Us</h2>
+                            <p>
+                                If you have any questions or concerns about this Privacy Policy, you can reach us at:
+                            </p>
+                            <ul>
+                                <li><strong>Email:</strong> support@usekredibly.com or privacy@usekredibly.com</li>
+                                <li><strong>Company Name:</strong> AkinByte Technologies Ltd (RC-9466327)</li>
+                            </ul>
+                        </motion.div>
+                    ) : (
+                        /* TERMS OF SERVICE CONTENT */
+                        <motion.div
+                            key="terms-content"
+                            initial={{ opacity: 0, y: 15 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4 }}
+                            className="legal-text-body"
+                        >
+                            <p className="lead-text">
+                                Please note that your use of and access to the services (as defined below) are subject to the following terms; if you do not agree to all of these terms, you may not use or access the services in any manner.
+                            </p>
+
+                            <h2>Overview of the Service</h2>
+                            <p>
+                                Kredibly is an AI-powered business assistant that operates through WhatsApp to help you manage your sales, invoices, and business finances. You can issue invoices, collect payments, track debts, and receive financial insights—all via WhatsApp chat, images, or voice notes. The Service is provided by <strong>AkinByte Technologies Ltd (RC-9466327)</strong>.
+                            </p>
+
+                            <h2>User Eligibility</h2>
+                            <p>You must be:</p>
+                            <ul>
+                                <li>At least 18 years old</li>
+                                <li>The owner of the WhatsApp number used</li>
+                                <li>Authorized to use any linked payment methods or business bank accounts</li>
+                            </ul>
+
+                            <h2>Acceptable Use</h2>
+                            <p>By using Kredibly, you agree to:</p>
+                            <ul>
+                                <li>Use the Service only for lawful business and personal financial activities</li>
+                                <li>Provide accurate and up-to-date information</li>
+                                <li>Not impersonate anyone or provide a false identity</li>
+                                <li>Not use the Service to conduct fraud, money laundering, or any unlawful activity</li>
+                                <li>
+                                    Not abuse, misuse, or attempt to manipulate our AI system in any way, including but not limited to: sending excessive or automated requests to disrupt the Service; attempting to jailbreak, bypass, or override safety controls; extracting system prompts or proprietary model behavior; or using the AI to generate harmful, abusive, or malicious content
+                                </li>
+                            </ul>
+                            <p className="emphasis-text">We reserve the right to suspend or terminate your access if you violate these terms.</p>
+
+                            <h2>Data and Privacy</h2>
+                            <p>
+                                Your use of Kredibly is also governed by our Privacy Policy, which outlines how we collect, store, and use your data. By using the Service, you consent to the processing of your personal and financial data in accordance with that policy.
+                            </p>
+
+                            <h2>Service Limitations</h2>
+                            <p>
+                                Kredibly is an AI assistant and provides financial insights, not professional tax or legal advice. We do not guarantee that all responses or interpretations of your input will be 100% accurate or appropriate for every situation.
+                            </p>
+                            <p>
+                                We may occasionally limit access, pause transactions, or restrict certain features for maintenance, updates, or compliance.
+                            </p>
+
+                            <h2>Transactions & Responsibility</h2>
+                            <p>
+                                You are fully responsible for verifying the correctness of all invoices and transactions you initiate via Kredibly. Once confirmed, transactions may not be reversible.
+                            </p>
+                            <p>Kredibly is not liable for:</p>
+                            <ul>
+                                <li>Mistaken or unauthorized transactions initiated from your device</li>
+                                <li>Delays or errors caused by third-party services (e.g., banks, payment processors)</li>
+                            </ul>
+
+                            <h2>Intellectual Property</h2>
+                            <p>
+                                All branding, features, algorithms, and AI technology used in the Kredibly platform are the intellectual property of AkinByte Technologies Ltd and its partners. You may not copy, modify, or reverse-engineer any part of the Service.
+                            </p>
+
+                            <h2>Termination</h2>
+                            <p>
+                                You may stop using Kredibly at any time by contacting us via email at <strong>support@usekredibly.com</strong>.
+                            </p>
+                            <p>
+                                We may suspend or terminate your access for violating these Terms or if required by law or regulation.
+                            </p>
+
+                            <h2>Modifications to Terms</h2>
+                            <p>
+                                We may update these Terms at any time. Continued use after changes are posted means you accept the updated Terms. We’ll notify you through WhatsApp, Email, or our website when updates are made.
+                            </p>
+
+                            <h2>Contact Information</h2>
+                            <p>If you have questions or concerns about these Terms, please contact us at:</p>
+                            <ul>
+                                <li><strong>Email:</strong> support@usekredibly.com</li>
+                                <li><strong>Company Name:</strong> AkinByte Technologies Ltd (RC-9466327)</li>
+                            </ul>
+                        </motion.div>
+                    )}
+                </div>
             </main>
 
             <PublicFooter />
 
             <style>{`
-                .legal-nav-item:hover {
-                    color: var(--primary) !important;
-                    padding-left: 12px !important;
-                }
-                @media (max-width: 1024px) {
-                    .desktop-grid {
-                        grid-template-columns: 1fr !important;
-                        gap: 60px !important;
+                @media (min-width: 768px) {
+                    .legal-header-split .legal-header-left {
+                        grid-column: span 7 !important;
                     }
-                    aside {
-                        display: none !important;
+                    .legal-header-split .legal-header-right {
+                        grid-column: span 5 !important;
                     }
                 }
-                @media (max-width: 640px) {
-                    header {
-                        padding: 140px 20px 60px !important;
-                    }
-                    main {
-                        margin-bottom: 60px !important;
-                    }
-                    .section-title {
-                        font-size: 2rem !important;
-                    }
-                    .glass-card {
-                        padding: 24px !important;
-                    }
-                    #security > div {
-                        padding: 40px 24px !important;
-                        border-radius: 32px !important;
-                    }
-                    #contact {
-                        padding: 40px 20px !important;
-                        border-radius: 32px !important;
-                    }
-                    div[style*="gap: 80px"] {
-                        gap: 48px !important;
-                    }
+                .legal-text-body .lead-text {
+                    font-size: 1.15rem;
+                    line-height: 1.7;
+                    color: #334155;
+                    margin-bottom: 36px;
+                }
+                .legal-text-body h2 {
+                    font-size: 1.65rem;
+                    font-weight: 800;
+                    color: #0F172A;
+                    margin-top: 44px;
+                    margin-bottom: 16px;
+                    letter-spacing: -0.02em;
+                }
+                .legal-text-body h3 {
+                    font-size: 1.25rem;
+                    font-weight: 700;
+                    color: #0F172A;
+                    margin-top: 24px;
+                    margin-bottom: 12px;
+                }
+                .legal-text-body p {
+                    font-size: 1.05rem;
+                    line-height: 1.7;
+                    color: #475569;
+                    margin-bottom: 20px;
+                }
+                .legal-text-body ul {
+                    margin-bottom: 24px;
+                    padding-left: 24px;
+                }
+                .legal-text-body li {
+                    font-size: 1.02rem;
+                    line-height: 1.7;
+                    color: #475569;
+                    margin-bottom: 10px;
+                }
+                .legal-text-body .emphasis-text {
+                    font-weight: 700;
+                    color: #0F172A;
+                    background: #F8FAFC;
+                    padding: 12px 16px;
+                    border-left: 3px solid var(--primary);
+                    margin: 24px 0;
                 }
             `}</style>
         </div>

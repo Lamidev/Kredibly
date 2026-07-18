@@ -155,11 +155,46 @@ const PricingPage = () => {
 
                             <button 
                                 onClick={plan.ctaAction}
-                                className={plan.highlight ? "btn-primary" : "btn-secondary"} 
-                                style={{ width: '100%', marginBottom: '32px', justifyContent: 'center', height: '58px', borderRadius: '18px', fontSize: '1rem', fontWeight: 800, boxShadow: plan.highlight ? '0 15px 30px -5px rgba(124, 58, 237, 0.4)' : 'none' }}
+                                style={{ 
+                                    width: '100%', 
+                                    marginBottom: '32px', 
+                                    padding: '8px 8px 8px 24px',
+                                    borderRadius: '100px',
+                                    fontSize: '0.98rem', 
+                                    fontWeight: 800,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    background: plan.highlight ? '#FFFFFF' : 'var(--primary)',
+                                    color: plan.highlight ? '#0F172A' : '#FFFFFF',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    boxShadow: plan.highlight ? '0 12px 30px rgba(0,0,0,0.3)' : '0 8px 24px rgba(124, 58, 237, 0.28)',
+                                    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                                }}
+                                onMouseEnter={e => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.transform = 'none';
+                                }}
                             >
-                                {plan.cta} <ArrowRight size={18} strokeWidth={3} />
+                                <span>{plan.cta}</span>
+                                <div style={{
+                                    width: '38px',
+                                    height: '38px',
+                                    borderRadius: '50%',
+                                    backgroundColor: plan.highlight ? 'var(--primary)' : '#FFFFFF',
+                                    color: plan.highlight ? '#FFFFFF' : 'var(--primary)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    <ArrowRight size={18} strokeWidth={2.5} />
+                                </div>
                             </button>
+
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 {plan.features.map((feat, j) => (
