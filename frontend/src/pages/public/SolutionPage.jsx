@@ -117,9 +117,48 @@ const SolutionPage = () => {
                         <p style={{ fontSize: '1.25rem', opacity: 0.8, lineHeight: 1.6, maxWidth: '700px', margin: '0 auto 40px' }}>
                             {solution.description}
                         </p>
-                        <button onClick={() => navigate('/auth/register')} className="btn-secondary" style={{ padding: '20px 48px', fontSize: '1.1rem', background: 'white', border: 'none', color: '#0F172A' }}>
-                            Start Your Journey <ArrowRight size={20} />
+                        <button 
+                            onClick={() => navigate('/auth/register')}
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                padding: '8px 8px 8px 24px',
+                                borderRadius: '100px',
+                                background: '#FFFFFF',
+                                color: '#0F172A',
+                                fontWeight: 700,
+                                fontSize: '0.98rem',
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                                boxShadow: '0 8px 24px rgba(255, 255, 255, 0.15)'
+                            }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 12px 30px rgba(255, 255, 255, 0.25)';
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.transform = 'none';
+                                e.currentTarget.style.boxShadow = '0 8px 24px rgba(255, 255, 255, 0.15)';
+                            }}
+                        >
+                            <span>Start Your Journey</span>
+                            <div style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '50%',
+                                backgroundColor: 'var(--primary)',
+                                color: '#FFFFFF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0
+                            }}>
+                                <ArrowRight size={18} strokeWidth={2.5} />
+                            </div>
                         </button>
+
                     </motion.div>
                 </div>
             </section>

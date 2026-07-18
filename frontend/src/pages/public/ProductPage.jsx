@@ -145,13 +145,52 @@ const ProductPage = () => {
                             {product.description}
                         </p>
                         <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-                            <button onClick={() => navigate('/auth/register')} className="btn-primary" style={{ padding: '20px 48px', fontSize: '1.1rem' }}>
-                                Try for Free <ArrowRight size={20} />
+                            <button 
+                                onClick={() => navigate('/auth/register')}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    padding: '8px 8px 8px 24px',
+                                    borderRadius: '100px',
+                                    background: 'var(--primary)',
+                                    color: '#FFFFFF',
+                                    fontWeight: 700,
+                                    fontSize: '0.98rem',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                                    boxShadow: '0 8px 24px rgba(109, 40, 217, 0.28)'
+                                }}
+                                onMouseEnter={e => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 12px 30px rgba(109, 40, 217, 0.38)';
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.transform = 'none';
+                                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(109, 40, 217, 0.28)';
+                                }}
+                            >
+                                <span>Try for Free</span>
+                                <div style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    borderRadius: '50%',
+                                    backgroundColor: '#FFFFFF',
+                                    color: 'var(--primary)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    <ArrowRight size={18} strokeWidth={2.5} />
+                                </div>
                             </button>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#16A34A', fontWeight: 800, fontSize: '0.9rem' }}>
                                 <BadgeCheck size={18} /> Zero Bank Charges
                             </div>
                         </div>
+
                     </motion.div>
                 </div>
             </section>
