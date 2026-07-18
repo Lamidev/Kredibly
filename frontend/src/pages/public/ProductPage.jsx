@@ -86,7 +86,8 @@ const products = {
         features: [
             { title: "Instant Bank Settlements", desc: "Funds transferred by clients are swept immediately to your partner bank account via API." },
             { title: "Zero Payout Transfer Fees", desc: "Avoid flat-rate payout transaction deductions. Kredibly sweeps your revenue to your bank with zero fees." },
-            { title: "Interactive Pay Now Buttons", desc: "Deliver quick transfer virtual account numbers directly inside customer threads for faster clicks." },
+            { title: "Dynamic Virtual Accounts", desc: "Deliver unique transfer virtual account numbers directly inside customer invoices for instant bank settlement." },
+
             { title: "Verified Ledger Security Seal", desc: "Every receipt has a cryptographic hash seal, validating records for credit assessments and audits." }
         ],
         detailsTitle: "Nomba-Powered Conversational Settlements",

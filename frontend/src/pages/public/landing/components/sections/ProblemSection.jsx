@@ -32,12 +32,13 @@ const ProblemSection = () => {
     return (
         <section id="problem" style={{
             padding: 'clamp(4rem, 9vw, 7.5rem) 24px',
-            backgroundColor: '#FFFFFF',
+            backgroundColor: '#F8FAFC',
             color: '#0F172A',
             position: 'relative',
             overflow: 'hidden',
-            borderTop: '1px solid #F1F5F9',
-            borderBottom: '1px solid #F1F5F9'
+            borderTop: '1px solid #E2E8F0',
+            borderBottom: '1px solid #E2E8F0'
+
         }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                 {/* Section Header */}
