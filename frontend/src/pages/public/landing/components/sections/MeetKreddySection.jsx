@@ -21,10 +21,16 @@ const MeetKreddySection = () => {
             desc: "No more awkward debt chasing on WhatsApp. Kreddy sends polite, scheduled payment reminders so you get paid without ruining customer relationships."
         },
         {
+            title: "Easy Due-Date Extensions",
+            desc: "When a customer needs extra days to pay, they can ask for more time right on WhatsApp. Kreddy routes it to you for approval and caps extensions at 2 per invoice so your cash flow stays safe."
+        },
+
+        {
             title: "Instant Direct Bank Sweeps",
             desc: "The second a customer pays via bank transfer, the money is swept directly into your bank account. Zero holding periods, zero manual withdrawals."
         }
     ];
+
 
     return (
         <section id="meet-kreddy" style={{
