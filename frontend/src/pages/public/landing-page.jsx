@@ -557,9 +557,9 @@ const LandingPage = () => {
                                         />
                                     </div>
                                 </motion.div>
-
-                                {/* Floating Notification Cards (Matching Target Image Mockup 100%) */}
-                                {/* Top-Left: Kreddy Withdrawal Success Banner (White iOS Card) */}
+                                
+                                {/* Floating Notification Cards (Matching Target Mobile Mockup) */}
+                                {/* Top-Left: Kreddy Withdrawal Success Pill (Thin White Pill) */}
                                 <motion.div
                                     initial={{ opacity: 0, x: -30, y: 20 }}
                                     animate={{ opacity: 1, x: 0, y: 0 }}
@@ -567,25 +567,25 @@ const LandingPage = () => {
                                     className="floating-bubble-1"
                                     style={{
                                         position: 'absolute',
-                                        top: '12%',
+                                        top: '10%',
                                         left: '-22%',
                                         zIndex: 25,
                                         background: '#FFFFFF',
-                                        borderRadius: '20px',
-                                        padding: '10px 16px 10px 10px',
+                                        borderRadius: '18px',
+                                        padding: '9px 16px 9px 9px',
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '10px',
                                         boxShadow: '0 15px 35px -5px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0,0,0,0.04)',
                                         animation: 'float-1 5s ease-in-out infinite',
                                         width: 'max-content',
-                                        maxWidth: '280px'
+                                        maxWidth: '240px'
                                     }}
                                     translate="no"
                                 >
-                                    <div style={{
-                                        width: '38px',
-                                        height: '38px',
+                                    <div className="bubble-icon-box" style={{
+                                        width: '32px',
+                                        height: '32px',
                                         borderRadius: '50%',
                                         overflow: 'hidden',
                                         display: 'flex',
@@ -596,17 +596,15 @@ const LandingPage = () => {
                                         <img src="/kredibly-k-icon.png" alt="Kreddy" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-                                        <span style={{ fontWeight: 800, fontSize: '0.86rem', color: '#0F172A', lineHeight: 1.15 }}>Kreddy</span>
-                                        <span style={{ color: '#475569', fontSize: '0.68rem', fontWeight: 500, lineHeight: 1.25, marginTop: '2px', whiteSpace: 'nowrap' }}>
-                                            Incoming payment of ₦100,000.00
-                                            <br />
-                                            <span style={{ fontSize: '0.62rem', color: '#475569' }}>From Akin for #INV-2567</span>
-                                           
+                                        <span className="bubble-title" style={{ fontWeight: 800, fontSize: '0.78rem', color: '#0F172A', lineHeight: 1.15 }}>Kreddy</span>
+                                        <span className="bubble-text" style={{ color: '#475569', fontSize: '0.62rem', fontWeight: 500, lineHeight: 1.25, marginTop: '1px' }}>
+                                            Payment of ₦100,000.00 <br />
+                                            <span style={{ fontSize: '0.58rem', color: '#475569' }}>From Akin for #INV-2567</span>
                                         </span>
                                     </div>
                                 </motion.div>
 
-                                {/* Bottom-Right: OPay Payment Received Banner (Dark iOS Card matching Mockup) */}
+                                {/* Bottom-Right: OPay Payment Received Pill (Thin Dark Pill) */}
                                 <motion.div
                                     initial={{ opacity: 0, x: 30, y: 20 }}
                                     animate={{ opacity: 1, x: 0, y: 0 }}
@@ -618,8 +616,8 @@ const LandingPage = () => {
                                         right: '-22%',
                                         zIndex: 25,
                                         background: '#18181B',
-                                        borderRadius: '20px',
-                                        padding: '10px 16px 10px 10px',
+                                        borderRadius: '18px',
+                                        padding: '9px 16px 9px 9px',
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '10px',
@@ -632,9 +630,9 @@ const LandingPage = () => {
                                     translate="no"
                                 >
                                     {/* Precise OPay Logo Icon */}
-                                    <div style={{
-                                        width: '38px',
-                                        height: '38px',
+                                    <div className="bubble-icon-box" style={{
+                                        width: '32px',
+                                        height: '32px',
                                         borderRadius: '50%',
                                         backgroundColor: '#FFFFFF',
                                         display: 'flex',
@@ -642,16 +640,16 @@ const LandingPage = () => {
                                         justifyContent: 'center',
                                         flexShrink: 0
                                     }}>
-                                        <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
+                                        <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
                                             <circle cx="20" cy="20" r="13" stroke="#00C49F" strokeWidth="5.5" fill="none" />
                                             <rect x="7" y="17" width="11" height="6" fill="#1E1B4B" rx="1.5" />
                                         </svg>
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-                                        <span style={{ fontWeight: 800, fontSize: '0.86rem', color: '#FFFFFF', lineHeight: 1.15 }}>OPay</span>
-                                        <span style={{ color: '#E2E8F0', fontSize: '0.68rem', fontWeight: 400, lineHeight: 1.25, marginTop: '2px' }}>
+                                        <span className="bubble-title" style={{ fontWeight: 800, fontSize: '0.78rem', color: '#FFFFFF', lineHeight: 1.15 }}>OPay</span>
+                                        <span className="bubble-text" style={{ color: '#E2E8F0', fontSize: '0.62rem', fontWeight: 400, lineHeight: 1.25, marginTop: '1px' }}>
                                             You have received ₦100,000.00 <br />
-                                            <span style={{ fontSize: '0.62rem', color: '#94A3B8' }}>July 09, 12:45PM.</span>
+                                            <span style={{ fontSize: '0.58rem', color: '#94A3B8' }}>July 09, 12:45PM.</span>
                                         </span>
                                     </div>
                                 </motion.div>
@@ -1152,7 +1150,38 @@ const LandingPage = () => {
                         top: 10px !important;
                         border-radius: 16px !important;
                     }
-                    /* Floating bubbles stay in same position - no overrides */
+                    /* Floating notification pills scaling on mobile */
+                    .floating-bubble-1, .floating-bubble-2 {
+                        padding: 6px 12px 6px 6px !important;
+                        border-radius: 14px !important;
+                        max-width: 220px !important;
+                        width: max-content !important;
+                        gap: 6px !important;
+                    }
+                    .floating-bubble-1 {
+                        top: 8% !important;
+                        left: -16% !important;
+                    }
+                    .floating-bubble-2 {
+                        bottom: 16% !important;
+                        right: -16% !important;
+                    }
+                    .bubble-icon-box {
+                        width: 24px !important;
+                        height: 24px !important;
+                    }
+                    .bubble-icon-box svg {
+                        width: 16px !important;
+                        height: 16px !important;
+                    }
+                    .bubble-title {
+                        font-size: 0.65rem !important;
+                    }
+                    .bubble-text {
+                        font-size: 0.54rem !important;
+                        line-height: 1.2 !important;
+                        white-space: nowrap !important;
+                    }
                     /* Increase button size on mobile */
                     .btn-magnetic {
                         padding: clamp(12px, 2.5vw, 16px) clamp(22px, 4vw, 32px) !important;
