@@ -217,6 +217,81 @@ exports.sendAdminNewUserAlert = async (data) => {
     }
 };
 
+exports.sendAdminNewBusinessAlert = async (data) => {
+    try {
+        const { 
+            name, email, businessName, phone, 
+            bankDetails, staffNumbers, plan, sellMode, entityType, kyc 
+        } = data;
+
+        const hasBank = bankDetails && bankDetails.accountNumber;
+        const bankHtml = hasBank ? `
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 16px; border-radius: 12px; margin-bottom: 16px;">
+                <p style="margin: 0 0 8px 0; font-weight: bold; color: #1E293B;">🏦 Bank Payout Account Attached</p>
+                <p style="margin: 4px 0; font-size: 14px; color: #475569;"><strong>Bank:</strong> ${bankDetails.bankName || 'N/A'}</p>
+                <p style="margin: 4px 0; font-size: 14px; color: #475569;"><strong>Account Number:</strong> ${bankDetails.accountNumber || 'N/A'}</p>
+                <p style="margin: 4px 0; font-size: 14px; color: #475569;"><strong>Account Name:</strong> ${bankDetails.accountName || 'N/A'}</p>
+            </div>
+        ` : `
+            <div style="background: #FFF7ED; border: 1px solid #FFEDD5; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; font-size: 14px; color: #C2410C;">
+                ⚠️ No Bank Payout Account attached yet.
+            </div>
+        `;
+
+        const hasStaff = staffNumbers && staffNumbers.length > 0;
+        const staffHtml = hasStaff ? `
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 16px; border-radius: 12px; margin-bottom: 16px;">
+                <p style="margin: 0 0 8px 0; font-weight: bold; color: #1E293B;">👥 Staff Members Added (${staffNumbers.length})</p>
+                <ul style="margin: 4px 0; padding-left: 20px; font-size: 14px; color: #475569;">
+                    ${staffNumbers.map(s => `<li>${s}</li>`).join('')}
+                </ul>
+            </div>
+        ` : `
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; font-size: 14px; color: #64748B;">
+                👥 Staff: Solo merchant (No staff added yet).
+            </div>
+        `;
+
+        await resendClient.emails.send({
+            from: `${sender.name} <${sender.email}>`,
+            to: ADMIN_EMAIL,
+            subject: `🚀 New Merchant Joined: ${businessName || name}`,
+            html: `
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; color: #0F172A; background: #FFFFFF; border-radius: 16px; border: 1px solid #E2E8F0;">
+                    <div style="margin-bottom: 24px; border-bottom: 2px solid #F1F5F9; padding-bottom: 16px;">
+                        <h2 style="color: #4C1D95; margin: 0 0 6px 0; font-size: 22px; font-weight: 800;">🚀 New Merchant Joined Kredibly!</h2>
+                        <p style="margin: 0; font-size: 14px; color: #64748B;">A new pioneer has completed business onboarding.</p>
+                    </div>
+
+                    <!-- Merchant Overview -->
+                    <div style="background: #F3F4F6; padding: 18px; border-radius: 14px; margin-bottom: 20px;">
+                        <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #1F2937;">👤 Merchant Profile</h3>
+                        <p style="margin: 4px 0; font-size: 14px;"><strong>Business Name:</strong> <span style="color: #4C1D95; font-weight: bold;">${businessName || 'Not Provided'}</span></p>
+                        <p style="margin: 4px 0; font-size: 14px;"><strong>Owner Name:</strong> ${name}</p>
+                        <p style="margin: 4px 0; font-size: 14px;"><strong>Email:</strong> ${email}</p>
+                        <p style="margin: 4px 0; font-size: 14px;"><strong>WhatsApp Number:</strong> <span style="color: #16A34A; font-weight: bold;">${phone || 'N/A'}</span></p>
+                        <p style="margin: 4px 0; font-size: 14px;"><strong>Plan:</strong> ${String(plan || 'chairman').toUpperCase()}</p>
+                        <p style="margin: 4px 0; font-size: 14px;"><strong>Selling Mode:</strong> ${sellMode || 'both'}</p>
+                    </div>
+
+                    <!-- Bank Details Section -->
+                    ${bankHtml}
+
+                    <!-- Staff Members Section -->
+                    ${staffHtml}
+
+                    <div style="border-top: 1px solid #E2E8F0; padding-top: 16px; margin-top: 24px; text-align: center; font-size: 12px; color: #94A3B8;">
+                        <p style="margin: 0;">Kredibly Growth Monitor • Automated Real-time Alert</p>
+                    </div>
+                </div>
+            `
+        });
+    } catch (error) {
+        console.error("Admin New Business Alert Error:", error.message);
+    }
+};
+
+
 
 
 

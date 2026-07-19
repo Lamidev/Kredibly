@@ -122,6 +122,20 @@ exports.updateProfile = async (req, res) => {
                 profile.trialExpiresAt = expiryDate;
                 profile.firstMerchantGreetingSent = false;
                 await profile.save();
+
+                const { sendAdminNewBusinessAlert } = require("../../emailLogic/emails");
+                sendAdminNewBusinessAlert({
+                    name: req.user.name,
+                    email: req.user.email,
+                    businessName: profile.displayName,
+                    phone: profile.whatsappNumber,
+                    bankDetails: profile.bankDetails,
+                    staffNumbers: profile.staffNumbers,
+                    plan: profile.plan,
+                    sellMode: profile.sellMode,
+                    entityType: profile.entityType,
+                    kyc: profile.kyc
+                }).catch(err => console.error("Admin Business Alert Error:", err.message));
             }
         } else {
             // ... (Creation logic)
@@ -157,6 +171,20 @@ exports.updateProfile = async (req, res) => {
             if (profile.onboardingStep === 4) {
                 profile.firstMerchantGreetingSent = false;
                 await profile.save();
+
+                const { sendAdminNewBusinessAlert } = require("../../emailLogic/emails");
+                sendAdminNewBusinessAlert({
+                    name: req.user.name,
+                    email: req.user.email,
+                    businessName: profile.displayName,
+                    phone: profile.whatsappNumber,
+                    bankDetails: profile.bankDetails,
+                    staffNumbers: profile.staffNumbers,
+                    plan: profile.plan,
+                    sellMode: profile.sellMode,
+                    entityType: profile.entityType,
+                    kyc: profile.kyc
+                }).catch(err => console.error("Admin Business Alert Error:", err.message));
             }
         }
         res.status(200).json({ success: true, data: profile });

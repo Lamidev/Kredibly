@@ -187,9 +187,134 @@ exports.getAllUsers = async (req, res) => {
             };
         });
 
+        // Sort by newest activity / registration date descending (so newest merchants appear at top of directory)
+        userList.sort((a, b) => {
+            const dateA = a.business?.createdAt ? new Date(a.business.createdAt).getTime() : new Date(a.createdAt).getTime();
+            const dateB = b.business?.createdAt ? new Date(b.business.createdAt).getTime() : new Date(b.createdAt).getTime();
+            return dateB - dateA;
+        });
+
         res.status(200).json({ success: true, data: userList });
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+exports.getMerchantDetails = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        let user = await User.findById(id).select("-password");
+        let business = null;
+
+        if (user) {
+            business = await BusinessProfile.findOne({ ownerId: user._id });
+        } else {
+            business = await BusinessProfile.findById(id);
+            if (business) {
+                user = await User.findById(business.ownerId).select("-password");
+            }
+        }
+
+        if (!user && !business) {
+            return res.status(404).json({ success: false, message: "Merchant not found" });
+        }
+
+        const businessId = business ? business._id : null;
+
+        // 1. Fetch Sales / Invoices
+        let sales = [];
+        if (businessId) {
+            sales = await Sale.find({ businessId }).sort({ createdAt: -1 });
+        }
+
+        // 2. Financial Metrics
+        const totalInvoices = sales.length;
+        let totalInvoiceAmountRecorded = 0;
+        let totalCollectedNombaOnline = 0;
+        let totalCollectedCash = 0;
+        let totalCollectedAll = 0;
+        let totalOutstanding = 0;
+
+        const verifiedMethods = ['Paystack', 'Nomba', 'Squad', 'Kredibly Online'];
+
+        sales.forEach(sale => {
+            totalInvoiceAmountRecorded += (sale.totalAmount || 0);
+            const payments = sale.payments || [];
+            
+            payments.forEach(p => {
+                const amount = p.amount || 0;
+                totalCollectedAll += amount;
+                if (verifiedMethods.includes(p.method)) {
+                    totalCollectedNombaOnline += amount;
+                } else {
+                    totalCollectedCash += amount;
+                }
+            });
+
+            const salePaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+            totalOutstanding += Math.max(0, (sale.totalAmount || 0) - salePaid);
+        });
+
+        // 3. Activity Logs
+        let activityLogs = [];
+        if (businessId) {
+            activityLogs = await ActivityLog.find({ businessId })
+                .sort({ createdAt: -1 })
+                .limit(50);
+        }
+
+        // 4. Tasks & Background Jobs
+        let backgroundJobs = [];
+        if (businessId) {
+            const BackgroundJob = require("../../models/BackgroundJob");
+            backgroundJobs = await BackgroundJob.find({ businessId })
+                .sort({ createdAt: -1 })
+                .limit(20);
+        }
+
+        // 5. Reminders
+        let reminders = [];
+        if (businessId) {
+            const Reminder = require("../../models/Reminder");
+            reminders = await Reminder.find({ businessId })
+                .sort({ dueDate: -1 })
+                .limit(20);
+        }
+
+        // 6. Support Tickets
+        let supportTickets = [];
+        if (user || businessId) {
+            supportTickets = await SupportTicket.find({
+                $or: [
+                    { userId: user?._id },
+                    { businessId: businessId }
+                ]
+            }).sort({ createdAt: -1 });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                user,
+                business,
+                stats: {
+                    totalInvoices,
+                    totalInvoiceAmountRecorded,
+                    totalCollectedNombaOnline,
+                    totalCollectedCash,
+                    totalCollectedAll,
+                    totalOutstanding
+                },
+                sales,
+                activityLogs,
+                backgroundJobs,
+                reminders,
+                supportTickets
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 

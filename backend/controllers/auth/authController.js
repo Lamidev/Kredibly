@@ -52,23 +52,11 @@ const register = async (req, res) => {
     await newUser.save();
 
     // 🛡️ SUPER ADMIN NOTIFICATION
-    const { sendEmail } = require("../../utils/emailService");
-    sendEmail({
-        to: "usekredibly@gmail.com",
-        subject: `🚀 New Merchant Joined: ${newUser.name}`,
-        html: `
-            <div style="font-family: sans-serif; padding: 20px; color: #333;">
-                <h2>A new pioneer has joined Kredibly!</h2>
-                <p><strong>Name:</strong> ${newUser.name}</p>
-                <p><strong>Email:</strong> ${newUser.email}</p>
-                <p><strong>Registered At:</strong> ${new Date().toLocaleString()}</p>
-                <hr />
-                <p style="font-size: 12px; color: #777;">Kredibly Growth Monitor: Automated Alert</p>
-            </div>
-        `
-    }).catch(err => console.error("Admin Registration Alert Error:", err.message));
+    const { sendAdminNewUserAlert, sendVerificationEmail } = require("../../emailLogic/emails");
+    sendAdminNewUserAlert({ name: newUser.name, email: newUser.email })
+        .catch(err => console.error("Admin Registration Alert Error:", err.message));
+
     // Send verification email in background for speed
-    const { sendVerificationEmail } = require("../../emailLogic/emails");
     sendVerificationEmail(newUser.email, verificationToken)
       .catch(err => console.error("Background Email Error (Verification):", err.message));
 
