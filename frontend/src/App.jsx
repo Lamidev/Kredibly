@@ -38,6 +38,7 @@ import SettingsPlanPage from "./pages/merchant/settings/SettingsPlanPage";
 import ReportsPage from "./pages/merchant/reports";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminMerchants from "./pages/admin/AdminMerchants";
+import AdminMerchantDetail from "./pages/admin/AdminMerchantDetail";
 import AdminSupport from "./pages/admin/AdminSupport";
 import AdminRevenue from "./pages/admin/AdminRevenue";
 import AdminCoupons from "./pages/admin/AdminCoupons";
@@ -135,6 +136,7 @@ const App = () => {
         >
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/merchants" element={<AdminMerchants />} />
+          <Route path="/admin/merchants/:id" element={<AdminMerchantDetail />} />
           <Route path="/admin/support" element={<AdminSupport />} />
           <Route path="/admin/revenue" element={<AdminRevenue />} />
            <Route path="/admin/coupons" element={<AdminCoupons />} />
