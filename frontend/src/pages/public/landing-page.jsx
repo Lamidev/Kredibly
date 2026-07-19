@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     useNavigate,
     useLocation
@@ -24,7 +24,7 @@ import {
     Mic,
     Play
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import PublicNavbar from "../../components/public/PublicNavbar";
 import PublicFooter from "../../components/public/PublicFooter";
 import { useAuth } from "../../context/AuthContext";
@@ -32,10 +32,11 @@ import SEO from "../../components/public/SEO";
 // kreddy-whatsapp.jpg is served from /public for preload + stable URL (no Vite hash)
 const kreddyWhatsapp = "/kreddy-whatsapp.jpg";
 import { KREDDY_CONFIG } from "../../config";
-import ProblemSection from "./landing/components/sections/ProblemSection";
+import ProblemSectionV4Bento from "./landing/components/sections/ProblemSectionV4Bento";
 import MeetKreddySection from "./landing/components/sections/MeetKreddySection";
 import ProductivitySection from "./landing/components/sections/ProductivitySection";
 import CTASection from "./landing/components/sections/CTASection";
+import ROISectionV2Scroll from "./landing/components/sections/ROISectionV2Scroll";
 
 /**
  * PhraseFlip — replaces the old Typewriter.
@@ -122,6 +123,67 @@ const FAQItem = ({ question, answer }) => {
                 </p>
             </motion.div>
         </div>
+    );
+};
+
+/**
+ * PricingCard — scroll-linked shrink & enlarge animation matching ProblemSection Bento cards
+ */
+const PricingCard = ({ children, className, style }) => {
+    const cardRef = useRef(null);
+
+    const { scrollYProgress } = useScroll({
+        target: cardRef,
+        offset: ["start end", "end start"]
+    });
+
+    const scale = useTransform(scrollYProgress, [0.05, 0.35, 0.65, 0.95], [0.72, 1, 1, 0.72]);
+    const opacity = useTransform(scrollYProgress, [0.05, 0.25, 0.75, 0.95], [0, 1, 1, 0]);
+    const y = useTransform(scrollYProgress, [0.05, 0.35, 0.65, 0.95], [40, 0, 0, -40]);
+
+    return (
+        <motion.div
+            ref={cardRef}
+            className={className}
+            style={{
+                ...style,
+                scale,
+                opacity,
+                y,
+                transformOrigin: 'center center',
+                willChange: 'transform, opacity'
+            }}
+        >
+            {children}
+        </motion.div>
+    );
+};
+
+/**
+ * PricingHeader — scroll-linked shrink & enlarge animation matching ProblemSection header
+ */
+const PricingHeader = ({ children }) => {
+    const headerRef = useRef(null);
+    const { scrollYProgress } = useScroll({
+        target: headerRef,
+        offset: ["start end", "end start"]
+    });
+
+    const scale = useTransform(scrollYProgress, [0.05, 0.35, 0.65, 0.95], [0.80, 1, 1, 0.80]);
+    const opacity = useTransform(scrollYProgress, [0.05, 0.25, 0.75, 0.95], [0, 1, 1, 0]);
+
+    return (
+        <motion.div
+            ref={headerRef}
+            style={{
+                scale,
+                opacity,
+                transformOrigin: 'center center',
+                willChange: 'transform, opacity'
+            }}
+        >
+            {children}
+        </motion.div>
     );
 };
 
@@ -302,7 +364,7 @@ const LandingPage = () => {
                             }}>
                                 <span style={{ display: 'block' }}>Your Personal AI</span>
                                 <span style={{ display: 'block' }}>Business Assistant.</span>
-                                <div style={{ 
+                                {/* <div style={{ 
                                     color: 'var(--primary)', 
                                     position: 'relative', 
                                     minHeight: '1.4em',
@@ -320,18 +382,18 @@ const LandingPage = () => {
                                         "Send invoices.",
                                         "Collect payments.",
                                     ]} />
-                                </div>
+                                </div> */}
                             </h1>
 
                             <p style={{  
-                                fontSize: 'clamp(0.85rem, 1.5vw, 1.1rem)', 
+                                fontSize: 'clamp(0.95rem, 1.6vw, 1.15rem)', 
                                 color: '#4B5563', 
                                 marginBottom: '24px', 
-                                lineHeight: 1.5, 
+                                lineHeight: 1.55, 
                                 maxWidth: '520px', 
-                                fontWeight: 400
+                                fontWeight: 450
                             }}>
-                                Unlock automated invoicing, debt tracking, and instant payments with <b>Kreddy</b>, your AI-powered assistant on WhatsApp.
+                                Send invoices, track customer debts, auto-collect payments and organize your records without stress right inside WhatsApp.
                             </p>
                             
                             <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', width: '100%', gap: '16px', flexWrap: 'wrap' }}>
@@ -496,7 +558,8 @@ const LandingPage = () => {
                                     </div>
                                 </motion.div>
 
-                                {/* Floating Bubbles */}
+                                {/* Floating Notification Cards (Matching Target Image Mockup 100%) */}
+                                {/* Top-Left: Kreddy Withdrawal Success Banner (White iOS Card) */}
                                 <motion.div
                                     initial={{ opacity: 0, x: -30, y: 20 }}
                                     animate={{ opacity: 1, x: 0, y: 0 }}
@@ -504,99 +567,92 @@ const LandingPage = () => {
                                     className="floating-bubble-1"
                                     style={{
                                         position: 'absolute',
-                                        top: '10%',
+                                        top: '12%',
                                         left: '-22%',
                                         zIndex: 25,
-                                        background: 'white',
-                                        borderRadius: '100px',
-                                        padding: '6px 18px 6px 6px',
+                                        background: '#FFFFFF',
+                                        borderRadius: '20px',
+                                        padding: '10px 16px 10px 10px',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '8px',
-                                        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)',
-                                        animation: 'float-1 5s ease-in-out infinite'
+                                        gap: '10px',
+                                        boxShadow: '0 15px 35px -5px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0,0,0,0.04)',
+                                        animation: 'float-1 5s ease-in-out infinite',
+                                        width: 'max-content',
+                                        maxWidth: '280px'
                                     }}
                                     translate="no"
                                 >
-                                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#FCE7F3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#DB2777', fontSize: '12px' }}>
-                                        MN
+                                    <div style={{
+                                        width: '38px',
+                                        height: '38px',
+                                        borderRadius: '50%',
+                                        overflow: 'hidden',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0
+                                    }}>
+                                        <img src="/kredibly-k-icon.png" alt="Kreddy" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        <span style={{ fontWeight: 800, fontSize: '12px', color: '#0F172A', lineHeight: 1.2 }}>Received 20k</span>
-                                        <span style={{ color: '#64748B', fontSize: '10px', fontWeight: 500 }}>from Mama Ngozi</span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+                                        <span style={{ fontWeight: 800, fontSize: '0.86rem', color: '#0F172A', lineHeight: 1.15 }}>Kreddy</span>
+                                        <span style={{ color: '#475569', fontSize: '0.68rem', fontWeight: 500, lineHeight: 1.25, marginTop: '2px', whiteSpace: 'nowrap' }}>
+                                            Incoming payment of ₦100,000.00
+                                            <br />
+                                            <span style={{ fontSize: '0.62rem', color: '#475569' }}>From Akin for #INV-2567</span>
+                                           
+                                        </span>
                                     </div>
                                 </motion.div>
 
+                                {/* Bottom-Right: OPay Payment Received Banner (Dark iOS Card matching Mockup) */}
                                 <motion.div
-                                    initial={{ opacity: 0, x: 30, y: -20 }}
+                                    initial={{ opacity: 0, x: 30, y: 20 }}
                                     animate={{ opacity: 1, x: 0, y: 0 }}
                                     transition={{ delay: 0.6, duration: 0.6 }}
                                     className="floating-bubble-2"
                                     style={{
                                         position: 'absolute',
-                                        top: '6%',
+                                        bottom: '18%',
                                         right: '-22%',
-                                        zIndex: 10,
-                                        background: 'white',
+                                        zIndex: 25,
+                                        background: '#18181B',
                                         borderRadius: '20px',
-                                        padding: '12px',
+                                        padding: '10px 16px 10px 10px',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'center',
-                                        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)',
-                                        animation: 'float-2 6s ease-in-out infinite'
+                                        gap: '10px',
+                                        boxShadow: '0 20px 40px -5px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.08)',
+                                        animation: 'float-2 6s ease-in-out infinite',
+                                        width: 'max-content',
+                                        maxWidth: '240px',
+                                        color: '#FFFFFF'
                                     }}
                                     translate="no"
                                 >
-                                   <div style={{ position: 'relative', width: '70px', height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                       <svg width="100%" height="100%" viewBox="0 0 36 36" style={{ position: 'absolute', top: 0, left: 0 }}>
-                                           <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#F1F5F9" strokeWidth="3" />
-                                           <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831" fill="none" stroke="#F59E0B" strokeWidth="3" strokeDasharray="60, 100" strokeLinecap="round" />
-                                       </svg>
-                                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 1, marginTop: '2px' }}>
-                                           <span style={{ fontSize: '7px', color: '#64748B', fontWeight: 600, letterSpacing: '0.02em', marginBottom: '2px' }}>Total Budget</span>
-                                           <span style={{ fontSize: '11px', fontWeight: 900, color: '#0F172A' }}>350,000</span>
-                                       </div>
-                                   </div>
-                                </motion.div>
-
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.8, duration: 0.6 }}
-                                    className="floating-bubble-3"
-                                    style={{
-                                        position: 'absolute',
-                                        bottom: '12%',
-                                        left: '-20%',
-                                        zIndex: 10,
-                                        background: 'white',
-                                        borderRadius: '100px',
-                                        padding: '6px 10px',
+                                    {/* Precise OPay Logo Icon */}
+                                    <div style={{
+                                        width: '38px',
+                                        height: '38px',
+                                        borderRadius: '50%',
+                                        backgroundColor: '#FFFFFF',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)',
-                                        animation: 'float-3 7s ease-in-out infinite'
-                                    }}
-                                >
-                                    <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3, border: '2px solid white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                                        <svg width="20" height="20" viewBox="0 0 40 40" fill="none">
-                                            <path d="M20 2 L36 10 L36 30 L20 38 L4 30 L4 10 Z" fill="#7C3AED" />
-                                            <path d="M20 12 L28 16 L20 20 L16 18 M28 24 L20 28 L12 24 L12 16" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+                                        justifyContent: 'center',
+                                        flexShrink: 0
+                                    }}>
+                                        <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
+                                            <circle cx="20" cy="20" r="13" stroke="#00C49F" strokeWidth="5.5" fill="none" />
+                                            <rect x="7" y="17" width="11" height="6" fill="#1E1B4B" rx="1.5" />
                                         </svg>
                                     </div>
-                                    <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, border: '2px solid white', marginLeft: '-12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                                        <svg width="20" height="20" viewBox="0 0 40 40" fill="none">
-                                            <circle cx="20" cy="20" r="14" stroke="#10B981" strokeWidth="8" />
-                                            <rect x="2" y="15" width="12" height="10" fill="#1E3A8A" rx="2" />
-                                        </svg>
-                                    </div>
-                                    <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, border: '2px solid white', marginLeft: '-12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                                        <svg width="20" height="20" viewBox="0 0 40 40" fill="none">
-                                            <path d="M20 4 L36 20 L20 36 L4 20 Z" stroke="#F97316" strokeWidth="4" />
-                                            <path d="M20 12 L28 20 L20 28 L12 20 Z" stroke="#F97316" strokeWidth="4" />
-                                            <rect x="18" y="18" width="4" height="4" fill="#F97316" />
-                                        </svg>
+                                    <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+                                        <span style={{ fontWeight: 800, fontSize: '0.86rem', color: '#FFFFFF', lineHeight: 1.15 }}>OPay</span>
+                                        <span style={{ color: '#E2E8F0', fontSize: '0.68rem', fontWeight: 400, lineHeight: 1.25, marginTop: '2px' }}>
+                                            You have received ₦100,000.00 <br />
+                                            <span style={{ fontSize: '0.62rem', color: '#94A3B8' }}>July 09, 12:45PM.</span>
+                                        </span>
                                     </div>
                                 </motion.div>
                             </div>
@@ -606,8 +662,8 @@ const LandingPage = () => {
             </section>
 
 
-            {/* 2. PROBLEM SECTION - The Daily Merchant Struggle */}
-            <ProblemSection />
+            {/* 2. PROBLEM SECTION - V4 Bento Grid (Selected) */}
+            <ProblemSectionV4Bento />
 
 
             {/* 3. MEET KREDDY SECTION - Recolly-Style Business Track */}
@@ -616,20 +672,26 @@ const LandingPage = () => {
             {/* 4. PRODUCTIVITY SECTION - Recolly-Style Personal Track */}
             <ProductivitySection />
 
+            {/* 5. ROI / COMPARISON SECTION - Positioned right before Pricing for max value anchor */}
+            <ROISectionV2Scroll />
 
-            {/* 4. PRICING SECTION */}
+
+
+            {/* 6. PRICING SECTION */}
             <section id="pricing" style={{ padding: 'clamp(2rem, 10vw, 8rem) 24px', background: '#F8FAFC', color: '#0F172A', borderTop: '1px solid #E2E8F0', borderBottom: '1px solid #E2E8F0' }}>
 
                 <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                    <div style={{ textAlign: 'center', marginBottom: 'clamp(40px, 8vw, 80px)' }}>
-                        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 4rem)', fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Premium Pricing. <br /><span className="premium-gradient">Unlimited Growth.</span></h2>
+                    <PricingHeader>
+                        <div style={{ textAlign: 'center', marginBottom: 'clamp(40px, 8vw, 80px)' }}>
+                            <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 4rem)', fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Premium Pricing. <br /><span className="premium-gradient">Unlimited Growth.</span></h2>
 
-                        <p style={{ fontSize: 'clamp(0.9rem, 2.5vw, 1.2rem)', color: '#64748B', marginTop: '20px', maxWidth: '600px', margin: '20px auto 48px' }}>Choose the plan that fits your ambition. No hidden bank charges, no transaction commissions, just pure business power.</p>
-                    </div>
+                            <p style={{ fontSize: 'clamp(0.9rem, 2.5vw, 1.2rem)', color: '#64748B', marginTop: '20px', maxWidth: '600px', margin: '20px auto 48px' }}>Choose the plan that fits your ambition. No hidden bank charges, no transaction commissions, just pure business power.</p>
+                        </div>
+                    </PricingHeader>
 
                     <div className="lp-pricing-grid">
                         {plans.map((plan, i) => (
-                             <div key={i} className={`lp-pricing-card ${plan.highlight ? 'lp-pricing-card--featured' : ''}`} style={{ position: 'relative' }}>
+                             <PricingCard key={i} className={`lp-pricing-card ${plan.highlight ? 'lp-pricing-card--featured' : ''}`} style={{ position: 'relative' }}>
                                 {plan.isPopular && (
                                     <div style={{ 
                                         position: 'absolute', 
@@ -716,112 +778,8 @@ const LandingPage = () => {
                                         </div>
                                     ))}
                                 </div>
-                            </div>
+                            </PricingCard>
                         ))}
-                    </div>
-                </div>
-            </section>
-
-
-
-            {/* ROI / COMPARISON SECTION */}
-            <section id="roi" style={{ padding: 'clamp(4rem, 9vw, 7.5rem) 24px', background: '#FFFFFF', color: '#0F172A', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ maxWidth: '1080px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 2 }}>
-                    <h2 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.6rem)', fontWeight: 800, letterSpacing: '-0.04em', marginBottom: '16px', color: '#0F172A' }}>
-                        How Much Is Manual Management Costing You?
-                    </h2>
-                    <p style={{ color: '#64748B', fontSize: 'clamp(1rem, 2vw, 1.2rem)', fontWeight: 400, maxWidth: '720px', margin: '0 auto 56px', lineHeight: 1.6 }}>
-                        From forgotten credit sales to manual bank alert audits, running your business in notebooks and unorganized WhatsApp chats drains profits. Here is the Kreddy difference.
-                    </p>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', textAlign: 'left' }}>
-                        {/* Without Kredibly */}
-                        <div style={{ background: '#F8FAFC', padding: 'clamp(28px, 4vw, 40px)', borderRadius: '28px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '28px' }}>
-                                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#FEE2E2', color: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.9rem' }}>✕</div>
-                                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#475569', margin: 0 }}>Without Kreddy</h3>
-                            </div>
-                            
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', flex: 1 }}>
-                                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                                    <div style={{ color: '#EF4444', marginTop: '2px', fontWeight: 800 }}>✕</div>
-                                    <div>
-                                        <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', fontSize: '0.98rem' }}>Forgotten Credit Sales</p>
-                                        <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#64748B', lineHeight: 1.4 }}>Unrecorded customer debts get lost inside daily WhatsApp chat history.</p>
-                                    </div>
-                                </div>
-                                <div style={{ height: '1px', background: '#E2E8F0' }} />
-                                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                                    <div style={{ color: '#EF4444', marginTop: '2px', fontWeight: 800 }}>✕</div>
-                                    <div>
-                                        <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', fontSize: '0.98rem' }}>Manual Bank Alert Audits</p>
-                                        <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#64748B', lineHeight: 1.4 }}>Wasting time cross-checking transfer screenshots against bank mobile apps.</p>
-                                    </div>
-                                </div>
-                                <div style={{ height: '1px', background: '#E2E8F0' }} />
-                                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                                    <div style={{ color: '#EF4444', marginTop: '2px', fontWeight: 800 }}>✕</div>
-                                    <div>
-                                        <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', fontSize: '0.98rem' }}>Gateway Deductions & Delays</p>
-                                        <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#64748B', lineHeight: 1.4 }}>1.5% transaction cuts and 24-hour settlement delays (T+1) holding cash.</p>
-                                    </div>
-                                </div>
-                                <div style={{ height: '1px', background: '#E2E8F0' }} />
-                                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                                    <div style={{ color: '#EF4444', marginTop: '2px', fontWeight: 800 }}>✕</div>
-                                    <div>
-                                        <p style={{ margin: 0, fontWeight: 700, color: '#0F172A', fontSize: '0.98rem' }}>Awkward Payment Chasing</p>
-                                        <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#64748B', lineHeight: 1.4 }}>Manually calling and messaging customers for unpaid invoices causing friction.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* With Kredibly */}
-                        <div style={{ background: '#0F172A', color: '#FFFFFF', padding: 'clamp(28px, 4vw, 40px)', borderRadius: '28px', border: '1px solid var(--primary)', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px -10px rgba(124, 58, 237, 0.25)', position: 'relative' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.9rem' }}>✓</div>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>With Kreddy</h3>
-                                </div>
-                                <div style={{ background: 'var(--primary)', color: 'white', padding: '4px 12px', borderRadius: '100px', fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.05em' }}>AI OPERATING SYSTEM</div>
-                            </div>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', flex: 1 }}>
-                                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                                    <div style={{ color: '#4ADE80', marginTop: '2px', flexShrink: 0 }}><Check size={18} strokeWidth={3} /></div>
-                                    <div>
-                                        <p style={{ margin: 0, fontWeight: 700, color: '#FFFFFF', fontSize: '0.98rem' }}>Automated WhatsApp Debt Tracking</p>
-                                        <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.4 }}>Kreddy AI records credit sales, debtor balances, and due dates in 5 seconds.</p>
-                                    </div>
-                                </div>
-                                <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.1)' }} />
-                                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                                    <div style={{ color: '#4ADE80', marginTop: '2px', flexShrink: 0 }}><Check size={18} strokeWidth={3} /></div>
-                                    <div>
-                                        <p style={{ margin: 0, fontWeight: 700, color: '#FFFFFF', fontSize: '0.98rem' }}>Instant 0% Payout Sweeps</p>
-                                        <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.4 }}>Nomba dynamic virtual accounts sweep payments to your bank with zero fees.</p>
-                                    </div>
-                                </div>
-                                <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.1)' }} />
-                                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                                    <div style={{ color: '#4ADE80', marginTop: '2px', flexShrink: 0 }}><Check size={18} strokeWidth={3} /></div>
-                                    <div>
-                                        <p style={{ margin: 0, fontWeight: 700, color: '#FFFFFF', fontSize: '0.98rem' }}>Direct WhatsApp PDF Invoices</p>
-                                        <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.4 }}>Professional PDF invoices with dynamic virtual bank accounts delivered in chat.</p>
-                                    </div>
-                                </div>
-
-                                <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.1)' }} />
-                                <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                                    <div style={{ color: '#4ADE80', marginTop: '2px', flexShrink: 0 }}><Check size={18} strokeWidth={3} /></div>
-                                    <div>
-                                        <p style={{ margin: 0, fontWeight: 700, color: '#FFFFFF', fontSize: '0.98rem' }}>Automated Debt Nudges & Extensions</p>
-                                        <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.4 }}>Kreddy sends polite reminders and negotiates extension terms conversationally.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </section>
@@ -1102,6 +1060,14 @@ const LandingPage = () => {
                         grid-template-columns: 1fr;
                         max-width: 480px;
                         margin: 0 auto;
+                        gap: 24px;
+                    }
+                }
+
+                @media (max-width: 600px) {
+                    .lp-pricing-card {
+                        padding: 32px 20px !important;
+                        border-radius: 24px !important;
                     }
                 }
 
@@ -1215,9 +1181,10 @@ const LandingPage = () => {
                 }
                 .floating-bubble-2 {
                     position: absolute;
-                    top: 6%;
+                    bottom: 18%;
+                    top: auto;
                     right: -22%;
-                    z-index: 10;
+                    z-index: 25;
                     animation: float-2 6s ease-in-out infinite;
                 }
                 .floating-bubble-3 {

@@ -1,23 +1,32 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 
 const CTASection = () => {
     const navigate = useNavigate();
+    const sectionRef = useRef(null);
+
+    const { scrollYProgress } = useScroll({
+        target: sectionRef,
+        offset: ["start end", "end start"]
+    });
+
+    const scale = useTransform(scrollYProgress, [0.05, 0.35, 0.65, 0.95], [0.78, 1, 1, 0.78]);
+    const opacity = useTransform(scrollYProgress, [0.05, 0.25, 0.75, 0.95], [0, 1, 1, 0]);
+    const y = useTransform(scrollYProgress, [0.05, 0.35, 0.65, 0.95], [40, 0, 0, -40]);
 
     return (
-        <section style={{
-            padding: 'clamp(40px, 6vw, 80px) 24px',
-            backgroundColor: '#FFFFFF',
-            color: '#FFFFFF'
-        }}>
+        <section
+            ref={sectionRef}
+            style={{
+                padding: 'clamp(40px, 6vw, 80px) 24px',
+                backgroundColor: '#FFFFFF',
+                color: '#FFFFFF'
+            }}
+        >
             <div style={{ maxWidth: '1240px', margin: '0 auto' }}>
                 <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6 }}
                     style={{
                         position: 'relative',
                         background: 'linear-gradient(135deg, #091026 0%, #0F172A 50%, #1E1B4B 100%)',
@@ -25,7 +34,12 @@ const CTASection = () => {
                         padding: 'clamp(60px, 8vw, 100px) clamp(24px, 5vw, 64px)',
                         textAlign: 'center',
                         overflow: 'hidden',
-                        boxShadow: '0 30px 60px -15px rgba(15, 23, 42, 0.3)'
+                        boxShadow: '0 30px 60px -15px rgba(15, 23, 42, 0.3)',
+                        scale,
+                        opacity,
+                        y,
+                        transformOrigin: 'center center',
+                        willChange: 'transform, opacity'
                     }}
                 >
                     {/* Concentric SVG Radial Ripple Circles Pattern */}
@@ -74,7 +88,7 @@ const CTASection = () => {
                         </p>
 
                         {/* White Capsule Pill Button with Circle Arrow Badge */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', flexWrap: 'wrap', alignItems: 'center', gap: '16px' }}>
                             <button
                                 onClick={() => navigate('/auth/register')}
                                 style={{

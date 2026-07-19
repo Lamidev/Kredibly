@@ -111,7 +111,7 @@ const PricingPage = () => {
             <PublicNavbar />
             
             {/* Header - Premium Vibe */}
-            <section className="pricing-header" style={{ padding: 'calc(clamp(80px, 12vw, 150px) + env(safe-area-inset-top, 0px)) 20px 60px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: '#FDFCFE' }}>
+            <section className="pricing-header" style={{ padding: 'calc(clamp(115px, 14vw, 160px) + env(safe-area-inset-top, 0px)) 20px 24px', textAlign: 'center', position: 'relative', overflow: 'hidden', background: '#FDFCFE' }}>
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.05, background: 'radial-gradient(circle at 50% 50%, var(--primary) 0%, transparent 70%)' }} />
                 
                 <div style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto' }}>
@@ -120,7 +120,7 @@ const PricingPage = () => {
                             Simple Pricing.<br />
                             <span className="premium-gradient">Unlimited Growth.</span>
                         </h1>
-                        <p style={{ fontSize: '1.25rem', color: '#64748B', marginBottom: '48px', maxWidth: '700px', margin: '0 auto 48px', fontWeight: 600 }}>
+                        <p style={{ fontSize: '1.25rem', color: '#64748B', maxWidth: '700px', margin: '0 auto 20px', fontWeight: 600 }}>
                             Choose the plan that fits your ambition. No hidden bank charges, no transaction commissions — just pure business power.
                         </p>
                     </motion.div>
@@ -128,17 +128,31 @@ const PricingPage = () => {
             </section>
 
             {/* Pricing Grid */}
-            <section style={{ padding: '40px 24px 100px', background: '#FDFCFE' }}>
+            <section style={{ padding: '16px 24px 100px', background: '#FDFCFE' }}>
                 <div className="pp-pricing-grid" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                    {plans.map((plan, i) => (
-                        <div key={i} className={`pp-pricing-card ${plan.highlight ? 'pp-pricing-card--featured' : ''}`} style={{ position: 'relative' }}>
-                            {plan.isPopular && (
-                                <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: 'var(--primary)', color: 'white', padding: '6px 16px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 800, whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(76, 29, 149, 0.2)' }}>
-                                    MOST POPULAR
-                                </div>
-                            )}
-                            
-                            <h3 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', fontWeight: 800, marginBottom: '8px' }}>{plan.name}</h3>
+                    {plans.map((plan, i) => {
+                        // Sliding angles: Card 0 from Left (-80px), Card 1 from Bottom (Y: 80px), Card 2 from Right (+80px)
+                        const initialAngle = i === 0 ? { opacity: 0, x: -80, y: 20, scale: 0.92 }
+                            : i === 1 ? { opacity: 0, y: 80, scale: 0.92 }
+                            : { opacity: 0, x: 80, y: 20, scale: 0.92 };
+
+                        return (
+                            <motion.div
+                                key={i}
+                                initial={initialAngle}
+                                whileInView={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+                                viewport={{ once: false, margin: "-40px" }}
+                                transition={{ duration: 0.65, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
+                                className={`pp-pricing-card ${plan.highlight ? 'pp-pricing-card--featured' : ''}`}
+                                style={{ position: 'relative' }}
+                            >
+                                {plan.isPopular && (
+                                    <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: 'var(--primary)', color: 'white', padding: '6px 16px', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 800, whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(76, 29, 149, 0.2)' }}>
+                                        MOST POPULAR
+                                    </div>
+                                )}
+                                
+                                <h3 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', fontWeight: 800, marginBottom: '8px' }}>{plan.name}</h3>
                             <p style={{ opacity: 0.7, fontSize: '0.9rem', fontWeight: 600, marginBottom: '24px', lineHeight: 1.5 }}>{plan.description}</p>
                             
                             <div style={{ marginBottom: '32px' }}>
@@ -207,8 +221,9 @@ const PricingPage = () => {
                                     </div>
                                 ))}
                             </div>
-                        </div>
-                    ))}
+                            </motion.div>
+                        );
+                    })}
                 </div>
                 
                 <div style={{ marginTop: '60px', textAlign: 'center', maxWidth: '800px', margin: '60px auto 0' }}>

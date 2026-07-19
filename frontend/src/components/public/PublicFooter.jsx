@@ -37,30 +37,36 @@ const PublicFooter = () => {
                     paddingBottom: 'clamp(28px, 4vw, 48px)',
                     width: '100%'
                 }}>
-                    {/* Minimal Horizontal Links (Removed "Why Kredibly") */}
-                    <div className="footer-links-row" style={{ display: 'flex', gap: 'clamp(14px, 2.2vw, 28px)', alignItems: 'center', whiteSpace: 'nowrap' }}>
-                        <button onClick={() => scrollToSection('meet-kreddy')} className="footer-nav-link">
-                            Meet Kreddy
-                        </button>
-                        <button onClick={() => navigate('/pricing')} className="footer-nav-link">
-                            Pricing
-                        </button>
-                        <Link to="/privacy" className="footer-nav-link">
-                            Privacy Policy
-                        </Link>
-                        <a href="https://x.com/usekredibly" target="_blank" rel="noopener noreferrer" className="footer-nav-link">
-                            Twitter
-                        </a>
-                        <a href="https://www.linkedin.com/company/usekredibly/" target="_blank" rel="noopener noreferrer" className="footer-nav-link">
-                            LinkedIn
-                        </a>
-                        <a href="https://facebook.com/usekredibly" target="_blank" rel="noopener noreferrer" className="footer-nav-link">
-                            Facebook
-                        </a>
+                    {/* Links Group: Stacked in 2 straight horizontal rows on mobile */}
+                    <div className="footer-links-group" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {/* Row 1: Primary Links in a straight line */}
+                        <div className="footer-links-row" style={{ display: 'flex', gap: 'clamp(12px, 2vw, 24px)', alignItems: 'center', flexWrap: 'nowrap' }}>
+                            <button onClick={() => scrollToSection('meet-kreddy')} className="footer-nav-link">
+                                Meet Kreddy
+                            </button>
+                            <Link to="/privacy" className="footer-nav-link">
+                                Privacy Policy
+                            </Link>
+                            <Link to="/terms" className="footer-nav-link">
+                                Terms of Service
+                            </Link>
+                        </div>
+                        {/* Row 2: Social Links in a straight line below */}
+                        <div className="footer-social-row" style={{ display: 'flex', gap: 'clamp(16px, 2vw, 28px)', alignItems: 'center', flexWrap: 'nowrap' }}>
+                            <a href="https://x.com/usekredibly" target="_blank" rel="noopener noreferrer" className="footer-nav-link footer-social-link">
+                                Twitter
+                            </a>
+                            <a href="https://www.linkedin.com/company/usekredibly/" target="_blank" rel="noopener noreferrer" className="footer-nav-link footer-social-link">
+                                LinkedIn
+                            </a>
+                            <a href="https://facebook.com/usekredibly" target="_blank" rel="noopener noreferrer" className="footer-nav-link footer-social-link">
+                                Facebook
+                            </a>
+                        </div>
                     </div>
 
-                    {/* Legal Copyright Line (Strictly Opposite Links on Desktop in Single Line) */}
-                    <div className="footer-legal-line" style={{ fontSize: '0.85rem', color: '#94A3B8', fontWeight: 400, textAlign: 'right', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                    {/* Legal Copyright Line */}
+                    <div className="footer-legal-line" style={{ fontSize: '0.85rem', color: '#94A3B8', fontWeight: 400, textAlign: 'right', flexShrink: 0 }}>
                         © {new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd (RC-9466327). All rights reserved.
                     </div>
                 </div>
@@ -126,17 +132,43 @@ const PublicFooter = () => {
                     .footer-top-bar {
                         flex-direction: column !important;
                         align-items: flex-start !important;
-                        gap: 16px !important;
+                        gap: 20px !important;
+                    }
+                    .footer-links-group {
+                        width: 100% !important;
+                        gap: 14px !important;
                     }
                     .footer-links-row {
-                        flex-wrap: wrap !important;
+                        display: flex !important;
+                        flex-direction: row !important;
+                        flex-wrap: nowrap !important;
+                        justify-content: flex-start !important;
+                        gap: 12px !important;
+                        width: 100% !important;
+                    }
+                    .footer-links-row .footer-nav-link {
+                        font-size: 0.84rem !important;
+                        white-space: nowrap !important;
+                    }
+                    .footer-social-row {
+                        display: flex !important;
+                        flex-direction: row !important;
+                        flex-wrap: nowrap !important;
+                        justify-content: flex-start !important;
                         gap: 16px !important;
+                        width: 100% !important;
+                    }
+                    .footer-social-row .footer-nav-link {
+                        font-size: 0.84rem !important;
+                        white-space: nowrap !important;
+                        color: #64748B !important;
                     }
                     .footer-legal-line {
                         text-align: left !important;
                         white-space: normal !important;
-                        color: #475569 !important;
-                        font-weight: 500 !important;
+                        color: #64748B !important;
+                        font-weight: 400 !important;
+                        font-size: 0.78rem !important;
                     }
 
                     .giant-footer-logo {
