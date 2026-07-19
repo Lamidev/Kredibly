@@ -1,10 +1,34 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useRef, useEffect } from "react";
+import { motion, useAnimation, useInView } from "framer-motion";
 import { KREDDY_CONFIG } from "../../../../../config";
 import PhoneMockup from "../shared/PhoneMockup";
 
 const ProductivitySection = () => {
     const kreddyProductivityImg = "/kreddy-productivity.jpg";
+
+    // Sequenced platform animation: block first, then phone halfway through
+    const platformRef = useRef(null);
+    const blockControls = useAnimation();
+    const phoneControls = useAnimation();
+    const isInView = useInView(platformRef, { once: false, margin: "-80px" });
+
+    useEffect(() => {
+        let timer;
+        if (isInView) {
+            // Step 1: Backdrop block fades + scales in immediately
+            blockControls.start({ opacity: 1, scale: 1, transition: { duration: 0.6, ease: 'easeOut' } });
+            // Step 2: Phone slides up after block is halfway done (350ms delay)
+            timer = setTimeout(() => {
+                phoneControls.start({ opacity: 1, y: 0, transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] } });
+            }, 350);
+        } else {
+            // Reset both to hidden so animation replays on next scroll-in
+            blockControls.start({ opacity: 0, scale: 0.94, transition: { duration: 0.2 } });
+            phoneControls.start({ opacity: 0, y: 100, transition: { duration: 0.2 } });
+        }
+        return () => clearTimeout(timer);
+    }, [isInView, blockControls, phoneControls]);
+
 
     const steps = [
         {
@@ -69,15 +93,15 @@ const ProductivitySection = () => {
                     {/* Left Column: Recolly-Style Vertical Steps */}
                     <div style={{ gridColumn: 'span 12', position: 'relative' }} className="tracker-col">
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '44px', position: 'relative' }}>
-                            {/* Connecting Line */}
+                            {/* Sleek Connecting Line (1.5px thickness) */}
                             <div style={{
                                 position: 'absolute',
-                                top: '16px',
-                                bottom: '16px',
-                                left: '11px',
-                                width: '3px',
-                                background: 'linear-gradient(180deg, var(--primary) 0%, rgba(124, 58, 237, 0.25) 100%)',
-                                borderRadius: '4px',
+                                top: '12px',
+                                bottom: '12px',
+                                left: '7.25px',
+                                width: '1.5px',
+                                background: 'linear-gradient(180deg, var(--primary) 0%, rgba(124, 58, 237, 0.2) 100%)',
+                                borderRadius: '2px',
                                 zIndex: 0
                             }} />
 
@@ -96,18 +120,18 @@ const ProductivitySection = () => {
                                         zIndex: 1
                                     }}
                                 >
-                                    {/* Solid Glowing Node Dot (Exact Recolly Style) */}
+                                    {/* Sleek Node Dot (16px diameter) */}
                                     <div style={{
-                                        width: '25px',
-                                        height: '25px',
+                                        width: '16px',
+                                        height: '16px',
                                         borderRadius: '50%',
                                         background: 'var(--primary)',
-                                        boxShadow: '0 0 0 6px rgba(124, 58, 237, 0.15)',
+                                        boxShadow: '0 0 0 4px rgba(124, 58, 237, 0.15)',
                                         flexShrink: 0,
-                                        marginTop: '4px'
+                                        marginTop: '6px'
                                     }} />
 
-                                    {/* Clean Text Block (No Box / No Cards / No Icons) */}
+                                    {/* Clean Text Block */}
                                     <div>
                                         <h3 style={{ 
                                             fontSize: 'clamp(1.35rem, 2.5vw, 1.65rem)', 
@@ -134,7 +158,7 @@ const ProductivitySection = () => {
                         </div>
 
                         {/* Try Kreddy Capsule Pill Button */}
-                        <div style={{ marginTop: '40px', paddingLeft: '49px' }}>
+                        <div style={{ marginTop: '40px', paddingLeft: '40px' }} className="productivity-cta-wrap">
                             <a
                                 href={KREDDY_CONFIG.getLink("Hi Kreddy\nI'd like to see how Kredibly works.")}
                                 target="_blank"
@@ -181,28 +205,63 @@ const ProductivitySection = () => {
                         </div>
                     </div>
 
-                    {/* Right Column: Soft Ambient Card + Phone Mockup */}
+                    {/* Right Column: Platform Block Card + Phone Mockup with Sequenced Scroll Effect */}
                     <div style={{ gridColumn: 'span 12' }} className="phone-col">
-                        <div className="phone-card-wrapper" style={{
-                            position: 'sticky',
-                            top: '120px',
-                            background: 'linear-gradient(135deg, rgba(76, 29, 149, 0.05) 0%, rgba(219, 39, 119, 0.05) 100%)',
-                            borderRadius: '40px',
-                            border: '1px solid rgba(124, 58, 237, 0.12)',
-                            padding: 'clamp(32px, 5vw, 56px) 24px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 24px 64px -12px rgba(76, 29, 149, 0.08)'
-                        }}>
-                            <PhoneMockup 
-                                imgSrc={kreddyProductivityImg} 
-                                alt="Real Kreddy AI WhatsApp Task Reminder Conversation"
-                                maxWidth="290px"
-                                glowColor="rgba(124, 58, 237, 0.25)"
+                        <div
+                            ref={platformRef}
+                            className="phone-platform-container"
+                            style={{
+                                position: 'sticky',
+                                top: '100px',
+                                width: '100%',
+                                maxWidth: '360px',
+                                margin: '0 auto',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                paddingTop: '50px',
+                                paddingBottom: '50px'
+                            }}
+                        >
+                            {/* 1. Backdrop Purple Block (Animates First via blockControls) */}
+                            <motion.div
+                                animate={blockControls}
+                                initial={{ opacity: 0, scale: 0.94 }}
+                                style={{
+                                    position: 'absolute',
+                                    top: '85px',
+                                    bottom: '0px',
+                                    left: '-12px',
+                                    right: '-12px',
+                                    background: 'linear-gradient(180deg, #F3E8FF 0%, #E9D5FF 100%)',
+                                    borderRadius: '48px',
+                                    zIndex: 1,
+                                    boxShadow: '0 24px 60px -10px rgba(124, 58, 237, 0.18)'
+                                }}
                             />
+
+                            {/* 2. Phone Mockup (Slides Up After Block is Halfway Done) */}
+                            <motion.div
+                                animate={phoneControls}
+                                initial={{ opacity: 0, y: 100 }}
+                                style={{
+                                    position: 'relative',
+                                    zIndex: 2,
+                                    width: '100%',
+                                    maxWidth: '290px'
+                                }}
+                            >
+                                <PhoneMockup 
+                                    imgSrc={kreddyProductivityImg} 
+                                    alt="Real Kreddy AI WhatsApp Task Reminder Conversation"
+                                    maxWidth="290px"
+                                    glowColor="rgba(124, 58, 237, 0.25)"
+                                />
+                            </motion.div>
                         </div>
                     </div>
+
+
                 </div>
             </div>
 

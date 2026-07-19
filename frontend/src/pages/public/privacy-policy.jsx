@@ -1,15 +1,27 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PublicNavbar from '../../components/public/PublicNavbar';
 import PublicFooter from '../../components/public/PublicFooter';
 import SEO from '../../components/public/SEO';
 
-const PrivacyPolicy = () => {
-    const [activeTab, setActiveTab] = useState('privacy'); // 'privacy' | 'terms'
+const PrivacyPolicy = ({ defaultTab }) => {
+    const location = useLocation();
+    const initialTab = defaultTab || (location.pathname === '/terms' ? 'terms' : 'privacy');
+    const [activeTab, setActiveTab] = useState(initialTab);
+
+    useEffect(() => {
+        if (location.pathname === '/terms') {
+            setActiveTab('terms');
+        } else if (location.pathname === '/privacy') {
+            setActiveTab('privacy');
+        }
+    }, [location.pathname]);
 
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [activeTab]);
+
 
     return (
         <div style={{
