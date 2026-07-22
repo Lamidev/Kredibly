@@ -29,6 +29,7 @@ const AdminSupport = () => {
                 setTickets(res.data.data.map(t => ({ ...t, replyText: '' })));
             }
         } catch (err) {
+            if (err.response?.status === 401 || err.response?.status === 403) return;
             toast.error("Failed to fetch support tickets.");
         } finally {
             setLoading(false);

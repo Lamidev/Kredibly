@@ -23,6 +23,7 @@ const AdminCoupons = () => {
             const res = await axios.get(`${API_URL}/admin/coupons`, { withCredentials: true });
             if (res.data.success) setCoupons(res.data.data);
         } catch (err) {
+            if (err.response?.status === 401 || err.response?.status === 403) return;
             toast.error("Failed to fetch coupons.");
         } finally {
             setLoading(false);

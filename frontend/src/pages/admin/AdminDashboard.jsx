@@ -54,6 +54,7 @@ const AdminDashboard = () => {
 
         } catch (err) {
             console.error("Admin Fetch Error:", err);
+            if (err.response?.status === 401 || err.response?.status === 403) return;
             if (!silent) toast.error("Security alert: Failed to sync mission control.");
         } finally {
             setLoading(false);

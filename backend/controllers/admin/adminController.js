@@ -787,3 +787,53 @@ exports.getDetailedDispatchReport = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// ─── Account Status (Freeze / Block / Reactivate) ─────────────────────────────
+exports.updateAccountStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, reason } = req.body;
+
+        const validStatuses = ['active', 'frozen', 'blocked'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
+            });
+        }
+
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Prevent admin accounts from being moderated
+        if (user.role === 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Admin accounts cannot be moderated via this endpoint.'
+            });
+        }
+
+        user.accountStatus = status;
+        user.accountStatusReason = reason || '';
+        user.accountStatusUpdatedAt = new Date();
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: `Account ${status === 'active' ? 'reactivated' : status} successfully.`,
+            data: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                accountStatus: user.accountStatus,
+                accountStatusReason: user.accountStatusReason,
+                accountStatusUpdatedAt: user.accountStatusUpdatedAt
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+

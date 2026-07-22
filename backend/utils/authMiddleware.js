@@ -11,22 +11,33 @@ const authMiddleware = async (req, res, next) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
-        // If modern stateless token, skip database
-        if (decoded.email && decoded.role) {
-            req.user = {
-                _id: decoded.userId,
-                name: decoded.name,
-                email: decoded.email,
-                role: decoded.role
-            };
-        } else {
-            // Fallback for old tokens (backward compatibility)
-            req.user = await User.findById(decoded.userId).select("-password");
-        }
+        // Always fetch user from DB to enforce accountStatus in real-time
+        const dbUser = await User.findById(decoded.userId).select("-password");
 
-        if (!req.user) {
+        if (!dbUser) {
             return res.status(401).json({ message: "Token is not valid" });
         }
+
+        // ─── Account Moderation Gates ───────────────────────────────────────
+        if (dbUser.accountStatus === 'blocked') {
+            return res.status(403).json({
+                code: 'ACCOUNT_BLOCKED',
+                message: 'Your account has been suspended. Please contact support.'
+            });
+        }
+
+        if (dbUser.accountStatus === 'frozen') {
+            // Admins are never frozen — only user accounts
+            if (dbUser.role !== 'admin' && req.method !== 'GET') {
+                return res.status(403).json({
+                    code: 'ACCOUNT_FROZEN',
+                    message: 'Your account is under review. Write access is temporarily suspended.'
+                });
+            }
+        }
+        // ────────────────────────────────────────────────────────────────────
+
+        req.user = dbUser;
         next();
     } catch (err) {
         res.status(401).json({ message: "Token is not valid" });
