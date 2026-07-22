@@ -90,6 +90,7 @@ const AdminMissionControl = () => {
             }
         } catch (err) {
             console.error("Mission Control Sync Error:", err);
+            if (err.response?.status === 401 || err.response?.status === 403) return;
             if (!silent) toast.error("Failed to sync Mission Control.");
         } finally {
             setLoading(false);

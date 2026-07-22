@@ -34,6 +34,13 @@ const UserSchema = new mongoose.Schema({
   resetPasswordExpiresAt: Date,
   lastLoginAt: Date,
   lastLoginIp: String,
+  accountStatus: {
+    type: String,
+    enum: ['active', 'frozen', 'blocked'],
+    default: 'active'
+  },
+  accountStatusReason: { type: String, default: '' },
+  accountStatusUpdatedAt: { type: Date },
   createdAt: {
     type: Date,
     default: Date.now

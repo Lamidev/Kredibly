@@ -12,6 +12,7 @@ router.get("/stats", adminController.getGlobalStats);
 router.get("/users", adminController.getAllUsers);
 router.get("/merchants/:id/details", adminController.getMerchantDetails);
 router.post("/merchants/:id/verify", adminController.manualVerifyMerchant);
+router.patch("/merchants/:id/account-status", adminController.updateAccountStatus);
 router.delete("/users/:id", adminController.deleteUser);
 router.get("/coupons", adminController.getCoupons);
 router.post("/coupons", adminController.createCoupon);

@@ -48,6 +48,7 @@ const AdminRevenue = () => {
             if (invoiceRes.data.success) setInvoicePayments(invoiceRes.data.data);
             if (healthRes.data.status === 'success') setHealthStats(healthRes.data);
         } catch (err) {
+            if (err.response?.status === 401 || err.response?.status === 403) return;
             toast.error("Security sync failed.");
         } finally {
             setLoading(false);
