@@ -1497,6 +1497,18 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
         }
 
         console.log(`📩 Payment confirmation sent to customer ${customerPhone} for Invoice #${sale.invoiceNumber}`);
+
+        // Publish InvoicePaid event to trigger event-driven subscribers (referral check, analytics, memory)
+        const WorkflowEventBus = require("../conversation/WorkflowEventBus");
+        WorkflowEventBus.publish("InvoicePaid", {
+            saleId: sale._id,
+            businessId: sale.businessId,
+            customerPhone: cleanCustomerPhone,
+            customerName: sale.customerName,
+            paidAmount: amount,
+            isFullyPaid
+        });
+
         return cardUrl;
     } catch (err) {
         console.error("❌ notifyCustomerPaymentReceived Error:", err.message);

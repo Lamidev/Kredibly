@@ -51,7 +51,7 @@ const ProblemSectionV4Bento = () => {
             ref={sectionRef}
             id="problem"
             style={{
-                padding: 'clamp(4rem, 9vw, 7.5rem) 24px',
+                padding: 'clamp(4rem, 9vw, 8rem) 24px',
                 backgroundColor: '#F8FAFC',
                 color: '#0F172A',
                 position: 'relative',
@@ -78,12 +78,7 @@ const ProblemSectionV4Bento = () => {
                         color: '#0F172A',
                         marginBottom: '16px'
                     }}>
-                        Running a Business Shouldn't{' '}
-                        <span style={{
-                            background: 'linear-gradient(135deg, var(--primary) 0%, #DB2777 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent'
-                        }}>Feel Like This Every Day.</span>
+                        Running a Business Shouldn't Feel Like This Every Day.
                     </h2>
                     <p style={{
                         color: '#64748B',
