@@ -24,7 +24,6 @@ const notificationRoutes = require("./routes/business/notificationRoutes");
 const adminRoutes = require("./routes/admin/adminRoutes");
 const supportRoutes = require("./routes/admin/supportRoutes");
 const paymentRoutes = require("./routes/common/paymentRoutes");
-// const { startProactiveAssistant } = require("./utils/proactiveAssistant"); // Redundant legacy queue worker, superseded by startBackgroundJobRunner
 const { startTicketCleanup } = require("./utils/ticketScheduler");
 const { startBackupScheduler } = require("./utils/backupService");
 const { setupSentryErrorHandler } = require("./utils/sentry");

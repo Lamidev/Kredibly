@@ -408,9 +408,9 @@ const generateInvoicePDFBuffer = async (sale, business) => {
 
         rule(doc, MARGIN, PAGE_W, FOOTER_Y - 10, C.GRAY_MID, 0.5);
 
-        // Draw "Powered by:" text left-aligned
-        doc.fillColor(C.GRAY).font("Roboto").fontSize(10);
-        doc.text("Powered by:", MARGIN, FOOTER_Y, { lineBreak: false });
+        // Draw "Powered by Kredibly — Secure invoicing and payments on WhatsApp." text left-aligned
+        doc.fillColor(C.GRAY).font("Roboto").fontSize(9);
+        doc.text("Powered by Kredibly — Secure invoicing and payments on WhatsApp.", MARGIN, FOOTER_Y, { lineBreak: false });
 
         const LOGO_W = 110;
         const LOGO_H = 28;

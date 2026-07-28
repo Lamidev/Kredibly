@@ -26,6 +26,15 @@ class IntentGuard {
             };
         }
 
+        // Policy: Off-topic general trivia / non-business query check
+        if (intent === "off_topic" || data?.isOffTopic) {
+            return {
+                allowed: false,
+                overrideIntent: "general_chat",
+                fallbackText: "That's outside what I'm built for 😄. I can help you manage customers, payments, invoices, reminders and your day-to-day work."
+            };
+        }
+
         return {
             allowed: true,
             overrideIntent: null,

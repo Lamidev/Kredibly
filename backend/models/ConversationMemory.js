@@ -8,7 +8,9 @@ const ConversationMemorySchema = new mongoose.Schema({
         name: { type: String, required: true },
         phone: { type: String, required: true },
         frequency: { type: Number, default: 1 },
-        lastInteractionAt: { type: Date, default: Date.now }
+        lastInteractionAt: { type: Date, default: Date.now },
+        introducedToKredibly: { type: Boolean, default: false },
+        introducedAt: { type: Date }
     }],
 
     // Frequently sold products mapping name -> price and count
@@ -17,6 +19,22 @@ const ConversationMemorySchema = new mongoose.Schema({
         defaultPrice: { type: Number },
         frequency: { type: Number, default: 1 }
     }],
+
+    // Relationship memory (client payment habits, risk, notes)
+    relationshipMemory: [{
+        customerPhone: { type: String, required: true },
+        customerName: { type: String },
+        timelinessTag: { type: String, enum: ["prompt", "late", "unknown"], default: "unknown" },
+        avgDaysToPay: { type: Number, default: 0 },
+        totalInvoicesPaid: { type: Number, default: 0 },
+        notes: { type: String }
+    }],
+
+    // Habitual merchant metrics
+    habitualMetrics: {
+        usualLogHour: { type: Number }, // e.g. 18 for 6pm
+        peakLogDay: { type: Number }     // 0-6 (Sunday-Saturday)
+    },
 
     // Inferred preferences
     preferences: {

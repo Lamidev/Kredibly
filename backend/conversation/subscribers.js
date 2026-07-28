@@ -242,3 +242,68 @@ WorkflowEventBus.subscribe("ProspectPromoted", async (payload) => {
         console.error("🚨 [Subscriber] Error handling ProspectPromoted event:", err);
     }
 });
+
+// ==========================================
+// Event: InvoicePaid
+// ==========================================
+// Handles customer referral introduction (1-time only) and relationship memory updates.
+
+WorkflowEventBus.subscribe("InvoicePaid", async (payload) => {
+    const { saleId, businessId, customerPhone, customerName, paidAmount, isFullyPaid } = payload;
+    if (!customerPhone) return;
+
+    try {
+        const cleanPhone = customerPhone.replace(/\D/g, "");
+        const ConversationMemory = require("../models/ConversationMemory");
+
+        // Update relationship memory & customer records
+        if (businessId) {
+            let memory = await ConversationMemory.findOne({ businessId });
+            if (!memory) memory = new ConversationMemory({ businessId });
+
+            let cust = memory.customers.find(c => c.phone === cleanPhone);
+            if (!cust && customerName) {
+                memory.customers.push({ name: customerName, phone: cleanPhone, frequency: 1, lastInteractionAt: new Date() });
+                cust = memory.customers[memory.customers.length - 1];
+            } else if (cust) {
+                cust.lastInteractionAt = new Date();
+            }
+
+            // Update relationship memory
+            let rel = memory.relationshipMemory.find(r => r.customerPhone === cleanPhone);
+            if (!rel) {
+                memory.relationshipMemory.push({
+                    customerPhone: cleanPhone,
+                    customerName: customerName || "Customer",
+                    timelinessTag: isFullyPaid ? "prompt" : "unknown",
+                    totalInvoicesPaid: isFullyPaid ? 1 : 0
+                });
+            } else {
+                if (isFullyPaid) rel.totalInvoicesPaid += 1;
+            }
+
+            // Check 1-time Customer Referral Introduction
+            if (cust && !cust.introducedToKredibly) {
+                const { sendInteractiveCTAUrlButton } = require("../utils/customerInvoiceService");
+                const introBody = "Payment completed successfully.\nYour paid invoice has been delivered.\nThanks for using Kredibly.\n\nIf people pay you for products or services, Kredibly helps you send invoices, collect payments, track customers and stay organized directly from WhatsApp.";
+
+                await sendInteractiveCTAUrlButton(
+                    cleanPhone,
+                    "Payment Completed 👍",
+                    introBody,
+                    "Powered by Kredibly",
+                    "Explore Kredibly",
+                    "https://usekredibly.com?utm_source=invoice_ref"
+                );
+
+                cust.introducedToKredibly = true;
+                cust.introducedAt = new Date();
+                console.log(`🚀 [Subscriber] Delivered 1-time Kredibly referral card to customer ${cleanPhone}`);
+            }
+
+            await memory.save();
+        }
+    } catch (err) {
+        console.error("🚨 [Subscriber] Error in InvoicePaid event handler:", err);
+    }
+});

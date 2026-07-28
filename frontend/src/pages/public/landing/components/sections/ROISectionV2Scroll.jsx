@@ -151,10 +151,7 @@ const ROISectionV2Scroll = () => {
                         color: '#F8FAFC',
                         margin: 0
                     }}>
-                        How Much Is Manual Management{' '}
-                        <span style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #F472B6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                            Costing You?
-                        </span>
+                        How Much Is Manual Management Costing You?
                     </h2>
                 </motion.div>
             </div>

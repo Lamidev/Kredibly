@@ -34,6 +34,7 @@ const kreddyWhatsapp = "/kreddy-whatsapp.jpg";
 import { KREDDY_CONFIG } from "../../config";
 import ProblemSectionV4Bento from "./landing/components/sections/ProblemSectionV4Bento";
 import MeetKreddySection from "./landing/components/sections/MeetKreddySection";
+import ForEveryoneSection from "./landing/components/sections/ForEveryoneSection";
 import ProductivitySection from "./landing/components/sections/ProductivitySection";
 import CTASection from "./landing/components/sections/CTASection";
 import ROISectionV2Scroll from "./landing/components/sections/ROISectionV2Scroll";
@@ -355,45 +356,28 @@ const LandingPage = () => {
                             }}
                         >
                             <h1 style={{ 
-                                fontSize: 'clamp(2rem, 5vw, 4.2rem)', 
+                                fontSize: 'clamp(2.4rem, 5.5vw, 4.4rem)', 
                                 fontWeight: 950, 
                                 lineHeight: 1.05, 
-                                marginBottom: '16px',
+                                marginBottom: '14px',
                                 letterSpacing: '-0.04em',
+                                color: '#0F172A',
                                 fontFamily: 'var(--font-heading)'
                             }}>
-                                <span style={{ display: 'block' }}>Your Personal AI</span>
-                                <span style={{ display: 'block' }}>Business Assistant.</span>
-                                {/* <div style={{ 
-                                    color: 'var(--primary)', 
-                                    position: 'relative', 
-                                    minHeight: '1.4em',
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'flex-start',
-                                    width: '100%',
-                                    fontSize: 'clamp(2rem, 4.5vw, 3rem)',
-                                    fontFamily: 'var(--font-heading)',
-                                    overflow: 'hidden',
-                                    marginTop: '4px'
-                                }}>
-                                    <PhraseFlip phrases={[
-                                        "On WhatsApp.",
-                                        "Send invoices.",
-                                        "Collect payments.",
-                                    ]} />
-                                </div> */}
+                                <span style={{ display: 'block' }}>Your Personal</span>
+                                <span style={{ display: 'block' }}>AI Assistant.</span>
                             </h1>
+
 
                             <p style={{  
                                 fontSize: 'clamp(0.95rem, 1.6vw, 1.15rem)', 
                                 color: '#4B5563', 
                                 marginBottom: '24px', 
                                 lineHeight: 1.55, 
-                                maxWidth: '520px', 
+                                maxWidth: '540px', 
                                 fontWeight: 450
                             }}>
-                                Send invoices, track customer debts, auto-collect payments and organize your records without stress right inside WhatsApp.
+                                Send invoices, collect payments, follow up on unpaid bills, and keep your work organized without leaving WhatsApp.
                             </p>
                             
                             <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', width: '100%', gap: '16px', flexWrap: 'wrap' }}>
@@ -578,6 +562,7 @@ const LandingPage = () => {
                                         gap: '10px',
                                         boxShadow: '0 15px 35px -5px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0,0,0,0.04)',
                                         animation: 'float-1 5s ease-in-out infinite',
+                                        willChange: 'transform',
                                         width: 'max-content',
                                         maxWidth: '240px'
                                     }}
@@ -623,6 +608,7 @@ const LandingPage = () => {
                                         gap: '10px',
                                         boxShadow: '0 20px 40px -5px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.08)',
                                         animation: 'float-2 6s ease-in-out infinite',
+                                        willChange: 'transform',
                                         width: 'max-content',
                                         maxWidth: '240px',
                                         color: '#FFFFFF'
@@ -659,18 +645,93 @@ const LandingPage = () => {
                 </header>
             </section>
 
+            {/* MARQUEE TICKER — Option C: Large Bold Slow Scroll */}
+            <div style={{
+                width: '100%',
+                background: '#F1F5F9',
+                overflow: 'hidden',
+                padding: '32px 0',
+                position: 'relative',
+                zIndex: 10,
+                borderTop: '1px solid #E2E8F0',
+                borderBottom: '1px solid #E2E8F0'
+            }}>
+                {/* Left fade */}
+                <div style={{
+                    position: 'absolute', left: 0, top: 0, bottom: 0, width: '180px',
+                    background: 'linear-gradient(to right, #F1F5F9, transparent)',
+                    zIndex: 2, pointerEvents: 'none'
+                }} />
+                {/* Right fade */}
+                <div style={{
+                    position: 'absolute', right: 0, top: 0, bottom: 0, width: '180px',
+                    background: 'linear-gradient(to left, #F1F5F9, transparent)',
+                    zIndex: 2, pointerEvents: 'none'
+                }} />
+
+                {/* Scrolling track — single row, slow */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '56px',
+                    width: 'max-content',
+                    animation: 'ticker-c 44s linear infinite',
+                    willChange: 'transform'
+                }}>
+                    {[
+                        'Freelancers','Vendors','Creators','Artisans',
+                        'Consultants','Agencies','Small Businesses',
+                        'Tradespeople','Photographers','Designers','Caterers','Tutors',
+                        'Freelancers','Vendors','Creators','Artisans',
+                        'Consultants','Agencies','Small Businesses',
+                        'Tradespeople','Photographers','Designers','Caterers','Tutors',
+                    ].map((word, i) => (
+                        <React.Fragment key={i}>
+                            <span style={{
+                                fontFamily: 'var(--font-heading)',
+                                fontWeight: 900,
+                                fontSize: 'clamp(1.6rem, 3vw, 2.2rem)',
+                                letterSpacing: '-0.03em',
+                                textTransform: 'uppercase',
+                                color: '#94A3B8',
+                                whiteSpace: 'nowrap',
+                                userSelect: 'none',
+                                flexShrink: 0
+                            }}>
+                                {word}
+                            </span>
+                            <span style={{
+                                color: '#7C3AED',
+                                fontSize: '0.75rem',
+                                flexShrink: 0,
+                                userSelect: 'none',
+                                opacity: 0.7
+                            }}>✦</span>
+                        </React.Fragment>
+                    ))}
+                </div>
+
+                <style>{`
+                    @keyframes ticker-c {
+                        0%   { transform: translateX(0); }
+                        100% { transform: translateX(-50%); }
+                    }
+                `}</style>
+            </div>
 
             {/* 2. PROBLEM SECTION - V4 Bento Grid (Selected) */}
             <ProblemSectionV4Bento />
 
-
             {/* 3. MEET KREDDY SECTION - Recolly-Style Business Track */}
             <MeetKreddySection />
 
-            {/* 4. PRODUCTIVITY SECTION - Recolly-Style Personal Track */}
+            {/* 4. FOR EVERYONE SECTION - Audience Bento Grid (ProblemSection Layout & Motion Port) */}
+            <ForEveryoneSection />
+
+            {/* 5. PRODUCTIVITY SECTION - Recolly-Style Personal Track */}
             <ProductivitySection />
 
-            {/* 5. ROI / COMPARISON SECTION - Positioned right before Pricing for max value anchor */}
+            {/* 6. ROI / COMPARISON SECTION - Positioned right before Pricing for max value anchor */}
             <ROISectionV2Scroll />
 
 
@@ -796,6 +857,11 @@ const LandingPage = () => {
                     </div>
 
                     <div style={{ background: '#FFFFFF', padding: '40px', borderRadius: '32px', border: '1px solid rgba(124, 58, 237, 0.12)', boxShadow: '0 10px 30px rgba(0,0,0,0.03)' }}>
+
+                        <FAQItem
+                            question="Is Kreddy only for business owners?"
+                            answer="Not at all. Kreddy works for anyone who gets paid for their work — whether you call it a business or not. A tailor tracking fabric deposits, a photographer chasing shoot payments, a developer invoicing clients, a tutor collecting lesson fees, a mechanic logging repair jobs — they all use Kreddy the same way. If someone owes you money, Kreddy helps you get it without the awkward follow-ups."
+                        />
 
                         <FAQItem 
                             question="How does Kreddy AI actually work?" 
