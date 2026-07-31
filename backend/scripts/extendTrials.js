@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const BusinessProfile = require("../models/BusinessProfile");
+const { LAUNCH_DATE } = require("../config/pricing");
 require("dotenv").config();
 
 const extendTrials = async () => {
@@ -11,7 +12,7 @@ const extendTrials = async () => {
         const statuses = await BusinessProfile.aggregate([{ $group: { _id: "$planStatus", count: { $sum: 1 } } }]);
         console.log("Current Status Counts:", JSON.stringify(statuses));
 
-        const newExpiry = new Date('2026-08-01T00:00:00Z');
+        const newExpiry = LAUNCH_DATE;
         
         console.log(`⏳ Updating all 'trialing' profiles to expire on ${newExpiry.toDateString()}...`);
         

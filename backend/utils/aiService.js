@@ -66,7 +66,7 @@ PERSONALITY & CONVERSATIONAL BRAIN:
 
 VOICE RECOGNITION, OCR, AND TEXT INPUT RULES (CRITICAL):
 - INFER DEPOSITS & BALANCES: If the merchant says "X paid Y for Z of total amount W", infer "paidAmount" = Y, and "totalAmount" = W. If they just say "X paid Y for Z" and you can match X with an existing unpaid invoice, treat this as a payment (update_record) of Y. If it's a new transaction with no total amount given, ask for clarification.
-- MATCH EXISTING CUSTOMERS & ALIASES: Always check the "Debtors" list in the context. If a customer name in the merchant's voice note, text message, or scanned receipt/invoice matches or phonetically resembles an existing customer (e.g., " Sarah", "Sara" matches "Sarah Okon"), match it to keep the ledger unified. Do not create a duplicate customer unless the spelling is significantly different or you are sure it is a different person.
+- MATCH EXISTING CUSTOMERS & ALIASES (CRITICAL): Always check the "Debtors" list in the context FIRST. If a customer name in the merchant's message or voice note is a nickname, short form, or variant of an existing debtor (e.g., "Mike" or "Mikael" → "Michael Okon", "Kola" → "Kolawole", "Sara" → "Sarah", "Tunde" → "Babatunde"), ALWAYS map customerName to the FULL EXISTING NAME from the Debtors list ("Michael Okon", "Kolawole", "Sarah"). NEVER create a new duplicate customer profile if a matching debtor exists in context.
 - CLARIFY MISSING DATA: If critical data (e.g. customer name, total amount, or item description) is missing from the merchant's request, do not guess. Set the intent to "general_chat" and ask the merchant a structured, polite question to clarify the missing information (e.g., "What is the customer's name for this sale?" or "Could you clarify the amount?").
 - DESCRIPTION CLEANUP RULE (CRITICAL): When extracting the 'item' field from any text, voice note, or image caption, STRIP all action/transaction verbs and filler phrases. Remove words like: "sold", "sale", "create invoice for", "invoice for", "create a bill for", "bill for", "record for", "log for", "for", "to". Extract ONLY the product or service name and quantity. Example: "create invoice for Tunde for 2 pairs of Nike shoes" → item should be "2 pairs of Nike shoes", NOT "create invoice for 2 pairs of Nike shoes".
 - OCR PAYMENT STATUS RULE (CRITICAL): When processing a scanned invoice, bill, or receipt image, DO NOT assume paidAmount unless the image contains an explicit "PAID" stamp, a payment reference number, or a bank receipt header. If payment status is ambiguous or not clearly indicated, set 'paidAmount' to 0, set 'totalAmount' to whatever is shown, and set 'clarify_payment_status' to true in the data object. The system will ask the merchant to confirm payment status.
@@ -340,6 +340,16 @@ const processMessageWithAI = async (text, context = {}) => {
 const processAudioWithAI = async (audioBuffer, mimeType, context = {}) => {
     if (!process.env.KREDDY_API_KEY) return null;
 
+    if (!audioBuffer || !Buffer.isBuffer(audioBuffer) || audioBuffer.length === 0) {
+        console.warn("⚠️ Voice Processing: Empty or invalid audio buffer received.");
+        return {
+            intent: "general_chat",
+            data: {
+                reply: `I couldn't process that voice note because the audio was empty or unclear. Could you try sending it again or typing out the message?`
+            }
+        };
+    }
+
     try {
         const plan = context.plan || "hustler";
         const model = genAI.getGenerativeModel({ 
@@ -374,7 +384,7 @@ const processAudioWithAI = async (audioBuffer, mimeType, context = {}) => {
             {
                 inlineData: {
                     data: audioBuffer.toString("base64"),
-                    mimeType: mimeType
+                    mimeType: mimeType || "audio/mp3"
                 }
             }
         ]);
@@ -393,7 +403,12 @@ const processAudioWithAI = async (audioBuffer, mimeType, context = {}) => {
             if (!parsed && objectMatch) try { parsed = JSON.parse(objectMatch[0]); } catch (e2) {}
             if (!parsed) {
                 console.error(`❌ Voice AI JSON Parse Error. Raw:`, textResponse.substring(0, 500));
-                return null;
+                return {
+                    intent: "general_chat",
+                    data: {
+                        reply: `I couldn't catch all details in that voice note clearly. Could you type out the item and amount so I log it accurately?`
+                    }
+                };
             }
         }
 
@@ -402,7 +417,12 @@ const processAudioWithAI = async (audioBuffer, mimeType, context = {}) => {
         return parsed;
     } catch (error) {
         console.error("Kreddy Voice AI Error:", error.message);
-        return null;
+        return {
+            intent: "general_chat",
+            data: {
+                reply: `I had trouble processing that voice note. Could you try re-recording or typing out the transaction?`
+            }
+        };
     }
 };
 

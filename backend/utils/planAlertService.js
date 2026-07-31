@@ -34,19 +34,19 @@ const sendIndividualPlanAlert = async (data) => {
 
         switch (alertType) {
             case "trial_warning":
-                msg = `Only 3 days left on your trial! Don't lose access to your Digital Chief of Staff. Subscribe now to keep your Scan and Voice powers at the **50% Launch Discount**. 🛡️`;
+                msg = `Your 14-day free trial on Kredibly ends in 3 days. To keep recording sales and tracking receivables without interruption, choose a plan from your web dashboard when you're ready.`;
                 break;
 
             case "trial_ended_grace":
                 profile.planStatus = 'past_due';
                 await profile.save();
-                msg = `Your trial has ended, but I'm staying on duty for **72 more hours** as a favor so your records stay sharp. Subscribe now to prevent any service interruption! 💰`;
+                msg = `Your free trial has ended. I'm keeping your workspace active for 72 more hours so your records remain intact. Choose a plan from your dashboard whenever you're ready.`;
                 break;
 
             case "final_lockout":
                 profile.planStatus = 'inactive';
                 await profile.save();
-                msg = `Your Digital Chief of Staff is now *On Leave*. My automated services (Summaries & Voice Recording) are paused until your plan is active. Let's get back to work.`;
+                msg = `Your trial period has ended and AI services are now paused. All your saved business records and customer balances are safe. You can reactivate your account anytime from your dashboard.`;
 
                 // 🔔 IN-APP NOTIFICATION: Also ring the dashboard bell so the merchant
                 // sees the lockout even if they missed the WhatsApp message.
