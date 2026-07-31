@@ -1285,7 +1285,7 @@ const handleIncoming = async (req, res) => {
         // 🛡️ PLAN STATUS LOCK: If the plan is inactive, Kreddy goes "On Leave"
         const isControlKeyword = /help|subscribe|pay|plan|contact/i.test(text.toLowerCase());
         if ((profile.planStatus === 'inactive' || profile.planStatus === 'cancelled') && !isControlKeyword) {
-            const inactiveMsg = `⚠️ *I'm currently on Leave, ${bossTitle}!* \n\nMy automated services (reminders, voice sync, and debt tracking) are paused because your workspace is inactive. \n\nReactivate your plan now to get your Digital Chief of Staff back on duty! 🛡️🚀`;
+            const inactiveMsg = `${bossTitle}, your workspace services are currently paused because your account is inactive.\n\nYou can reactivate your plan anytime from your dashboard: ${process.env.FRONTEND_URL || 'https://usekredibly.com'}/settings?tab=plan`;
             const cleanMsg = inactiveMsg
                 .replace(/[\r\n\t]+/g, ' ')
                 .replace(/\s\s+/g, ' ')
@@ -1328,6 +1328,11 @@ const handleIncoming = async (req, res) => {
             await sendReply(from, limitMsg);
             return;
         }
+
+        // ⚡ ATOMIC USAGE INCREMENT: Prevents concurrent race condition on message caps
+        await BusinessProfile.findByIdAndUpdate(profile._id, {
+            $inc: { "monthlyUsage.messages": 1 }
+        }).catch(err => console.error("Atomic usage increment fail:", err.message));
 
         // Usage Reset Logic (Monthly)
         if (!profile.monthlyUsage) {
@@ -3232,7 +3237,7 @@ const handleIncoming = async (req, res) => {
 
                 // V3 Intent Guard Policy check
                 const IntentGuard = require("../../conversation/IntentGuard");
-                const guardResult = IntentGuard.validate(aiResponseItem.intent, aiResponseItem.data, profile);
+                const guardResult = IntentGuard.validate(aiResponseItem.intent, aiResponseItem.data, profile, { isStaff, rawText: text });
                 if (!guardResult.allowed) {
                     if (guardResult.fallbackText) {
                         const ResponseBuilder = require("../../conversation/ResponseBuilder");
@@ -3702,7 +3707,7 @@ const handleIncoming = async (req, res) => {
                         const upgradeUrl = `${process.env.FRONTEND_URL || 'https://usekredibly.com'}/pricing`;
                         await sendReply(from, `${bossTitle}, your free trial is over — but you can still upgrade to *Oga* or *Chairman* here: ${upgradeUrl}`);
                     } else {
-                        const trialMsg = `${bossTitle}, you can try the *Chairman Plan* for *7 Days FREE* right now.\n\n*50% OFF* for your first few months as a launch offer.\n\n*Choose how to activate:*\n1. *Card (Recommended):* ₦50 verification. Auto-billing starts on Day 8.\n2. *Transfer:* ₦500 deposit — counts towards your first month.\n\nJust say _"Activate Chairman Trial"_ to begin.`;
+                        const trialMsg = `${bossTitle}, you can try the *Chairman Plan* for *7 Days FREE* right now.\n\n*Choose how to activate:*\n1. *Card (Recommended):* ₦50 verification. Auto-billing starts on Day 8.\n2. *Transfer:* ₦500 deposit — counts towards your first month.\n\nJust say _"Activate Chairman Trial"_ to begin.`;
                         await sendReply(from, trialMsg);
                     }
                     isProcessed = true;

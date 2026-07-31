@@ -31,8 +31,8 @@ const AboutUs = () => {
         { date: "JULY '25", title: "The Genesis", desc: "Research Phase: Identifying the informal bookkeeping gap and high failure rates in SME debt collection.", status: "completed" },
         { date: "SEPT '25", title: "Strategic Architecture", desc: "Design of our WhatsApp conversational transaction engine and real-time ledger architecture.", status: "completed" },
         { date: "DEC '25", title: "Kreddy AI Core", desc: "Training Kreddy to process Nigerian business slang, unstructured inputs, and voice notes.", status: "completed" },
-        { date: "JAN '26 - JULY '26", title: "Pioneer Program", desc: "Onboarding the first 1,000 retail pioneers under early-access status with lifetime transaction perks.", status: "active" },
-        { date: "AUGUST 1ST '26", title: "Global Public Launch", desc: "Releasing Kredibly globally. Any African SME can start collecting payments via WhatsApp instantly.", status: "future" }
+        { date: "JAN '26 - MID-AUG '26", title: "Pioneer Program", desc: "Onboarding the first 1,000 retail pioneers under early-access status with lifetime transaction perks.", status: "active" },
+        { date: "AUGUST 16TH '26", title: "Global Public Launch", desc: "Releasing Kredibly globally. Any African SME can start collecting payments via WhatsApp instantly.", status: "future" }
     ];
 
     const faqs = [
