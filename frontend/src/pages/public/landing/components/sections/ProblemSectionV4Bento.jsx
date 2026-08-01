@@ -7,15 +7,12 @@ const BentoCard = ({ children, style, className }) => {
 
     const { scrollYProgress } = useScroll({
         target: cardRef,
-        offset: ["start end", "end start"]
+        offset: ["start end", "center center"]
     });
 
-    // 0.0 -> 0.35: Entering from bottom -> Enlarges from scale 0.70 to 1.0 (actual grid size), opacity 0 -> 1
-    // 0.35 -> 0.65: Fully in active view -> Stays at scale 1.0 (actual size), opacity 1
-    // 0.65 -> 1.00: Exiting from top / scrolling back up -> Shrinks from scale 1.0 down to 0.70, opacity 1 -> 0 till it disappears
-    const scale = useTransform(scrollYProgress, [0.05, 0.35, 0.65, 0.95], [0.70, 1, 1, 0.70]);
-    const opacity = useTransform(scrollYProgress, [0.05, 0.25, 0.75, 0.95], [0, 1, 1, 0]);
-    const y = useTransform(scrollYProgress, [0.05, 0.35, 0.65, 0.95], [40, 0, 0, -40]);
+    const scale = useTransform(scrollYProgress, [0, 1], [0.92, 1]);
+    const opacity = useTransform(scrollYProgress, [0, 0.8], [0, 1]);
+    const y = useTransform(scrollYProgress, [0, 1], [24, 0]);
 
     return (
         <motion.div
@@ -134,7 +131,7 @@ const ProblemSectionV4Bento = () => {
                             </p>
                         </div>
                         <p style={{ color: '#64748B', fontSize: '0.92rem', lineHeight: 1.65, position: 'relative', zIndex: 1, margin: 0 }}>
-                            Calculator, notes app, manual PDF, copy-paste to WhatsApp — every single time. While customers wait.
+                            Calculator, notes app, manual PDF, copy-paste to WhatsApp. Every single time, while customers wait.
                         </p>
                     </BentoCard>
 

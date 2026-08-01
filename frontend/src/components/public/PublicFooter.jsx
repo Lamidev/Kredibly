@@ -28,8 +28,8 @@ const PublicFooter = () => {
             width: '100%'
         }}>
             <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 24px' }}>
-                {/* Top Bar: Nav Links on Left, Legal Copyright Notice Strictly Opposite on Right */}
-                <div className="footer-top-bar" style={{
+                {/* Desktop Top Bar */}
+                <div className="footer-top-bar desktop-only" style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -37,9 +37,7 @@ const PublicFooter = () => {
                     paddingBottom: 'clamp(28px, 4vw, 48px)',
                     width: '100%'
                 }}>
-                    {/* Links Group: Stacked in 2 straight horizontal rows on mobile */}
                     <div className="footer-links-group" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {/* Row 1: Primary Links in a straight line */}
                         <div className="footer-links-row" style={{ display: 'flex', gap: 'clamp(12px, 2vw, 24px)', alignItems: 'center', flexWrap: 'nowrap' }}>
                             <button onClick={() => scrollToSection('meet-kreddy')} className="footer-nav-link">
                                 Meet Kreddy
@@ -51,7 +49,6 @@ const PublicFooter = () => {
                                 Terms of Service
                             </Link>
                         </div>
-                        {/* Row 2: Social Links in a straight line below */}
                         <div className="footer-social-row" style={{ display: 'flex', gap: 'clamp(16px, 2vw, 28px)', alignItems: 'center', flexWrap: 'nowrap' }}>
                             <a href="https://x.com/usekredibly" target="_blank" rel="noopener noreferrer" className="footer-nav-link footer-social-link">
                                 Twitter
@@ -65,20 +62,65 @@ const PublicFooter = () => {
                         </div>
                     </div>
 
-                    {/* Legal Copyright Line */}
                     <div className="footer-legal-line" style={{ fontSize: '0.85rem', color: '#94A3B8', fontWeight: 400, textAlign: 'right', flexShrink: 0 }}>
+                        © {new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd (RC-9466327). All rights reserved.
+                    </div>
+                </div>
+
+                {/* Mobile 2-Column Grid Footer (Exact Reference Layout) */}
+                <div className="footer-mobile-container mobile-only">
+                    <div className="mobile-footer-grid">
+                        {/* Row 1 */}
+                        <div className="mobile-grid-item text-left">
+                            <button onClick={() => scrollToSection('meet-kreddy')} className="footer-nav-link mobile-link">
+                                Meet Kreddy
+                            </button>
+                        </div>
+                        <div className="mobile-grid-item text-right">
+                            <a href="https://x.com/usekredibly" target="_blank" rel="noopener noreferrer" className="footer-nav-link mobile-link">
+                                Twitter
+                            </a>
+                        </div>
+
+                        {/* Row 2 */}
+                        <div className="mobile-grid-item text-left">
+                            <Link to="/privacy" className="footer-nav-link mobile-link">
+                                Privacy Policy
+                            </Link>
+                        </div>
+                        <div className="mobile-grid-item text-right">
+                            <Link to="/terms" className="footer-nav-link mobile-link">
+                                Terms of Service
+                            </Link>
+                        </div>
+
+                        {/* Row 3 */}
+                        <div className="mobile-grid-item text-left">
+                            <a href="https://www.linkedin.com/company/usekredibly/" target="_blank" rel="noopener noreferrer" className="footer-nav-link mobile-link">
+                                LinkedIn
+                            </a>
+                        </div>
+                        <div className="mobile-grid-item text-right">
+                            <a href="https://facebook.com/usekredibly" target="_blank" rel="noopener noreferrer" className="footer-nav-link mobile-link">
+                                Facebook
+                            </a>
+                        </div>
+                    </div>
+
+                    {/* Legal Notice Below */}
+                    <div className="footer-legal-line-mobile">
                         © {new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd (RC-9466327). All rights reserved.
                     </div>
                 </div>
             </div>
 
-            {/* Edge-to-Edge Full Viewport Width Giant Base Brand Display Logo */}
+            {/* Edge-to-Edge Giant Base Brand Display Logo */}
             <div style={{
                 width: '100%',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'flex-end',
-                paddingTop: '10px',
+                paddingTop: '20px',
                 overflow: 'hidden',
                 lineHeight: 0.75
             }}>
@@ -106,7 +148,7 @@ const PublicFooter = () => {
                 .footer-nav-link {
                     background: none;
                     border: none;
-                    color: #475569;
+                    color: #0F172A;
                     font-size: 0.95rem;
                     font-weight: 500;
                     cursor: pointer;
@@ -117,60 +159,58 @@ const PublicFooter = () => {
                 .footer-nav-link:hover {
                     color: var(--primary) !important;
                 }
-                @media (min-width: 992px) {
-                    .footer-top-bar {
-                        flex-direction: row !important;
-                        justify-content: space-between !important;
-                        align-items: center !important;
+
+                @media (min-width: 769px) {
+                    .mobile-only {
+                        display: none !important;
                     }
-                    .footer-legal-line {
-                        margin-left: auto !important;
-                        text-align: right !important;
+                    .desktop-only {
+                        display: flex !important;
                     }
                 }
-                @media (max-width: 991px) {
-                    .footer-top-bar {
-                        flex-direction: column !important;
-                        align-items: flex-start !important;
-                        gap: 20px !important;
+
+                @media (max-width: 768px) {
+                    .desktop-only {
+                        display: none !important;
                     }
-                    .footer-links-group {
-                        width: 100% !important;
-                        gap: 14px !important;
+                    .mobile-only {
+                        display: block !important;
                     }
-                    .footer-links-row {
-                        display: flex !important;
-                        flex-direction: row !important;
-                        flex-wrap: nowrap !important;
-                        justify-content: flex-start !important;
-                        gap: 12px !important;
-                        width: 100% !important;
+                    .footer-mobile-container {
+                        width: 100%;
+                        padding: 10px 0 20px;
                     }
-                    .footer-links-row .footer-nav-link {
-                        font-size: 0.84rem !important;
+                    .mobile-footer-grid {
+                        display: grid !important;
+                        grid-template-columns: 1fr 1fr !important;
+                        row-gap: 28px !important;
+                        column-gap: 32px !important;
+                        max-width: 310px;
+                        margin: 0 auto;
+                        width: 100%;
+                        align-items: center;
+                    }
+                    .mobile-grid-item.text-left {
+                        text-align: left;
+                    }
+                    .mobile-grid-item.text-right {
+                        text-align: right;
+                    }
+                    .mobile-link {
+                        font-size: 0.95rem !important;
+                        font-weight: 500 !important;
+                        color: #0F172A !important;
                         white-space: nowrap !important;
                     }
-                    .footer-social-row {
-                        display: flex !important;
-                        flex-direction: row !important;
-                        flex-wrap: nowrap !important;
-                        justify-content: flex-start !important;
-                        gap: 16px !important;
-                        width: 100% !important;
-                    }
-                    .footer-social-row .footer-nav-link {
-                        font-size: 0.84rem !important;
-                        white-space: nowrap !important;
-                        color: #64748B !important;
-                    }
-                    .footer-legal-line {
-                        text-align: left !important;
-                        white-space: normal !important;
+                    .footer-legal-line-mobile {
+                        text-align: center !important;
                         color: #64748B !important;
                         font-weight: 400 !important;
-                        font-size: 0.78rem !important;
+                        font-size: 0.84rem !important;
+                        line-height: 1.5;
+                        max-width: 320px;
+                        margin: 36px auto 0;
                     }
-
                     .giant-footer-logo {
                         font-size: 21vw !important;
                         letter-spacing: -0.05em !important;

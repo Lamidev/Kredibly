@@ -7,18 +7,17 @@ import { KREDDY_CONFIG } from "../../../../../config";
 
 const kreddyWhatsapp = "/kreddy-whatsapp.jpg";
 
-// RecollyCard component: Uses Desktop Scroll-Scale & Opacity Effect on ALL Devices (Desktop & Mobile)
 const RecollyCard = ({ children, style, className }) => {
     const cardRef = useRef(null);
 
     const { scrollYProgress } = useScroll({
         target: cardRef,
-        offset: ["start end", "end start"]
+        offset: ["start end", "center center"]
     });
 
-    const cardScale = useTransform(scrollYProgress, [0.05, 0.35, 0.65, 0.95], [0.82, 1, 1, 0.82]);
-    const cardOpacity = useTransform(scrollYProgress, [0.05, 0.25, 0.75, 0.95], [0.15, 1, 1, 0.15]);
-    const cardY = useTransform(scrollYProgress, [0.05, 0.35, 0.65, 0.95], [28, 0, 0, -28]);
+    const cardScale = useTransform(scrollYProgress, [0, 1], [0.92, 1]);
+    const cardOpacity = useTransform(scrollYProgress, [0, 0.8], [0, 1]);
+    const cardY = useTransform(scrollYProgress, [0, 1], [24, 0]);
 
     return (
         <motion.div
@@ -108,7 +107,7 @@ const ForEveryoneSection = () => {
                         margin: '0 auto',
                         lineHeight: 1.6
                     }}>
-                        If people pay you for your work — whether it's a project, a repair, a lesson, or products — Kreddy lives in your WhatsApp to handle the money.
+                        If people pay you for your work, whether it's a project, a repair, a lesson, or products, Kreddy lives in your WhatsApp to handle the money.
                     </p>
                 </motion.div>
 
@@ -149,7 +148,7 @@ const ForEveryoneSection = () => {
                                 If People Pay You For a Skill
                             </h4>
                             <p style={{ color: '#334155', fontSize: '0.9rem', lineHeight: 1.55, margin: 0, fontWeight: 450 }}>
-                                Designers, writers, tailors, photographers, developers — Kreddy invoices upfront deposits on WhatsApp before work begins.
+                                Designers, writers, tailors, photographers, developers: Kreddy invoices upfront deposits on WhatsApp before work begins.
                             </p>
                         </div>
 
@@ -215,7 +214,7 @@ const ForEveryoneSection = () => {
                                 If People Pay You For a Service
                             </h4>
                             <p style={{ color: '#451A03', fontSize: '0.9rem', lineHeight: 1.55, margin: 0, opacity: 0.9, fontWeight: 450 }}>
-                                Mechanics, tutors, barbers, repairers — log credit sales in 5 seconds via voice notes and let Kreddy follow up when due.
+                                Mechanics, tutors, barbers, repairers: log credit sales in 5 seconds via voice notes and let Kreddy follow up when due.
                             </p>
                         </div>
 
@@ -262,7 +261,7 @@ const ForEveryoneSection = () => {
                                 If People Buy Products From You
                             </h4>
                             <p style={{ color: '#451A03', fontSize: '0.9rem', lineHeight: 1.55, margin: 0, opacity: 0.9, fontWeight: 450 }}>
-                                Instagram vendors, retailers, caterers — no more paper debt books. Track who owes what and confirm transfers instantly.
+                                Instagram vendors, retailers, caterers: no more paper debt books. Track who owes what and confirm transfers instantly.
                             </p>
                         </div>
 

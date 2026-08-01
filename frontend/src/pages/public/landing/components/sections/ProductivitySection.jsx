@@ -10,7 +10,7 @@ const ProductivitySection = () => {
     const platformRef = useRef(null);
     const blockControls = useAnimation();
     const phoneControls = useAnimation();
-    const isInView = useInView(platformRef, { once: false, margin: "-80px" });
+    const isInView = useInView(platformRef, { once: true, margin: "-50px" });
 
     useEffect(() => {
         let timer;
@@ -21,10 +21,6 @@ const ProductivitySection = () => {
             timer = setTimeout(() => {
                 phoneControls.start({ opacity: 1, y: 0, transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] } });
             }, 350);
-        } else {
-            // Reset both to hidden so animation replays on next scroll-in
-            blockControls.start({ opacity: 0, scale: 0.94, transition: { duration: 0.2 } });
-            phoneControls.start({ opacity: 0, y: 100, transition: { duration: 0.2 } });
         }
         return () => clearTimeout(timer);
     }, [isInView, blockControls, phoneControls]);
@@ -33,7 +29,7 @@ const ProductivitySection = () => {
     const steps = [
         {
             title: "Say Hi to Kreddy",
-            desc: "Start a WhatsApp chat and treat Kreddy like your personal assistant. You can tell her anything you don't want to forget — from deadlines to dinner plans or gym appointments — and she'll remember for you."
+            desc: "Start a WhatsApp chat and treat Kreddy like your personal assistant. You can tell her anything you don't want to forget (from deadlines to dinner plans or gym appointments) and she'll remember for you."
         },
         {
             title: "Save What Matters",

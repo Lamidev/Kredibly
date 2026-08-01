@@ -135,12 +135,12 @@ const PricingCard = ({ children, className, style }) => {
 
     const { scrollYProgress } = useScroll({
         target: cardRef,
-        offset: ["start end", "end start"]
+        offset: ["start end", "center center"]
     });
 
-    const scale = useTransform(scrollYProgress, [0.05, 0.35, 0.65, 0.95], [0.72, 1, 1, 0.72]);
-    const opacity = useTransform(scrollYProgress, [0.05, 0.25, 0.75, 0.95], [0, 1, 1, 0]);
-    const y = useTransform(scrollYProgress, [0.05, 0.35, 0.65, 0.95], [40, 0, 0, -40]);
+    const scale = useTransform(scrollYProgress, [0, 1], [0.92, 1]);
+    const opacity = useTransform(scrollYProgress, [0, 0.8], [0, 1]);
+    const y = useTransform(scrollYProgress, [0, 1], [24, 0]);
 
     return (
         <motion.div
@@ -167,11 +167,11 @@ const PricingHeader = ({ children }) => {
     const headerRef = useRef(null);
     const { scrollYProgress } = useScroll({
         target: headerRef,
-        offset: ["start end", "end start"]
+        offset: ["start end", "center center"]
     });
 
-    const scale = useTransform(scrollYProgress, [0.05, 0.35, 0.65, 0.95], [0.80, 1, 1, 0.80]);
-    const opacity = useTransform(scrollYProgress, [0.05, 0.25, 0.75, 0.95], [0, 1, 1, 0]);
+    const scale = useTransform(scrollYProgress, [0, 1], [0.92, 1]);
+    const opacity = useTransform(scrollYProgress, [0, 0.8], [0, 1]);
 
     return (
         <motion.div
@@ -356,16 +356,25 @@ const LandingPage = () => {
                             }}
                         >
                             <h1 style={{ 
-                                fontSize: 'clamp(2.4rem, 5.5vw, 4.4rem)', 
-                                fontWeight: 950, 
-                                lineHeight: 1.05, 
-                                marginBottom: '14px',
-                                letterSpacing: '-0.04em',
+                                fontSize: 'clamp(2.1rem, 4.5vw, 3.8rem)', 
+                                fontWeight: 900, 
+                                lineHeight: 1.12, 
+                                marginBottom: '20px',
+                                letterSpacing: '-0.035em',
                                 color: '#0F172A',
-                                fontFamily: 'var(--font-heading)'
+                                fontFamily: 'var(--font-heading)',
+                                textWrap: 'balance'
                             }}>
-                                <span style={{ display: 'block' }}>Your Personal</span>
-                                <span style={{ display: 'block' }}>AI Assistant.</span>
+                                Get Paid for What You Do{' '}
+                                <span style={{ 
+                                    whiteSpace: 'nowrap',
+                                    background: 'linear-gradient(135deg, #7C3AED 0%, #4C1D95 100%)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    display: 'inline-block'
+                                }}>
+                                    on WhatsApp.
+                                </span>
                             </h1>
 
 
@@ -377,7 +386,7 @@ const LandingPage = () => {
                                 maxWidth: '540px', 
                                 fontWeight: 450
                             }}>
-                                Send invoices, collect payments, follow up on unpaid bills, and keep your work organized without leaving WhatsApp.
+                                Send invoices, collect payments, follow up on unpaid bills, and keep your work organized. If people pay you, Kredibly is for you.
                             </p>
                             
                             <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', width: '100%', gap: '16px', flexWrap: 'wrap' }}>

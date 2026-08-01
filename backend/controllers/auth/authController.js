@@ -104,7 +104,7 @@ const login = async (req, res) => {
     user.lastLoginIp = req.ip || req.headers['x-forwarded-for'];
     await user.save();
 
-    const token = generateTokenAndSetCookie(res, user._id, user.name, user.email, user.role);
+    generateTokenAndSetCookie(res, user._id, user.name, user.email, user.role);
 
     // Get business profile if exists
     const profile = await BusinessProfile.findOne({ ownerId: user._id });
@@ -115,8 +115,8 @@ const login = async (req, res) => {
     res.status(200).json({
       success: true,
       user: userData,
-      profile: profile || null,
-      token
+      profile: profile || null
+      // token intentionally omitted — delivered via httpOnly cookie only
     });
 
   } catch (error) {
@@ -147,12 +147,12 @@ const verifyEmail = async (req, res) => {
       .catch(err => console.error("Background Email Error (Welcome):", err.message));
 
     // Generate token and set cookie so user is authenticated immediately
-    const token = generateTokenAndSetCookie(res, user._id, user.name, user.email, user.role);
+    generateTokenAndSetCookie(res, user._id, user.name, user.email, user.role);
 
     res.status(200).json({
       success: true,
-      message: "Email verified successfully",
-      token // Send token back just in case client needs it
+      message: "Email verified successfully"
+      // token intentionally omitted — delivered via httpOnly cookie only
     });
 
   } catch (error) {
@@ -201,11 +201,11 @@ const checkAuth = async (req, res) => {
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
   try {
-    const user = await User.findOne({ email });
+    // Generic response first — prevents user enumeration regardless of outcome
+    res.status(200).json({ success: true, message: "If this email is registered, a reset code has been sent." });
 
-    if (!user) {
-      return res.status(400).json({ success: false, message: "User not found" });
-    }
+    const user = await User.findOne({ email });
+    if (!user) return; // Silently exit — user doesn't exist but we already responded
 
     // Generate numeric reset token (6 digits)
     const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
@@ -218,10 +218,8 @@ const forgotPassword = async (req, res) => {
 
     sendPasswordResetEmail(user.email, resetToken)
       .catch(err => console.error("Background Email Error (Forgot Password):", err.message));
-
-    res.status(200).json({ success: true, message: "Password reset link sent to your email" });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("forgotPassword Error:", error.message);
   }
 };
 

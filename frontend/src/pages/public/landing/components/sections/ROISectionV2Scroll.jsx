@@ -22,7 +22,7 @@ const ROI_ROWS = [
         lossSub: "You open your banking app 10 times a day to verify one transfer before packing an order.",
         lossAccent: "#F97316",
         fix: "Instant Auto-Reconciliation",
-        fixSub: "Nomba dynamic virtual accounts auto-confirm every payment. You get notified once — when it's done.",
+        fixSub: "Nomba dynamic virtual accounts auto-confirm every payment. You get notified once: when it's done.",
         fixAccent: "#4ADE80"
     },
     {
@@ -44,7 +44,7 @@ const ROI_ROWS = [
         lossSub: "Manually calling customers for unpaid invoices damages relationships and costs you hours a week.",
         lossAccent: "#8B5CF6",
         fix: "Automated Polite Nudges",
-        fixSub: "Kreddy sends timed, professional WhatsApp reminders and negotiates extensions — without any awkwardness.",
+        fixSub: "Kreddy sends timed, professional WhatsApp reminders and negotiates extensions without any awkwardness.",
         fixAccent: "#4ADE80"
     }
 ];
@@ -58,13 +58,13 @@ const AnimatedWords = ({ text, isActive }) => {
                 return (
                     <motion.span
                         key={i}
-                        initial={{ opacity: 0, y: 16, filter: "blur(5px)" }}
+                        initial={{ opacity: 0, y: 12 }}
                         animate={isActive
-                            ? { opacity: 1, y: 0, filter: "blur(0px)" }
-                            : { opacity: 0, y: 16, filter: "blur(5px)" }
+                            ? { opacity: 1, y: 0 }
+                            : { opacity: 0, y: 12 }
                         }
-                        transition={{ duration: 0.38, delay: isActive ? i * 0.065 : 0, ease: [0.22, 1, 0.36, 1] }}
-                        style={{ display: 'inline-block', marginRight: word.trim() ? '0.2em' : 0 }}
+                        transition={{ duration: 0.3, delay: isActive ? i * 0.04 : 0, ease: [0.22, 1, 0.36, 1] }}
+                        style={{ display: 'inline-block', marginRight: word.trim() ? '0.2em' : 0, willChange: 'transform, opacity' }}
                     >
                         {word.trim() && word}
                     </motion.span>

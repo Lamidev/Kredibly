@@ -130,6 +130,12 @@ exports.getSale = async (req, res) => {
 
         if (!sale) return res.status(404).json({ message: "Sale record not found" });
 
+        // 🛡️ SECURITY: Verify the requesting user owns this sale (IDOR protection)
+        const requesterBusiness = await BusinessProfile.findOne({ ownerId: req.user._id });
+        if (!requesterBusiness || sale.businessId?._id?.toString() !== requesterBusiness._id.toString()) {
+            return res.status(403).json({ message: "Not authorized to view this sale" });
+        }
+
         // Ensure businessId has a default for prefersGatewayFeeAbsorption if missing
         if (sale.businessId && sale.businessId.prefersGatewayFeeAbsorption === undefined) {
             sale.businessId.prefersGatewayFeeAbsorption = true;
@@ -160,6 +166,12 @@ exports.addPayment = async (req, res) => {
         }
 
         if (!sale) return res.status(404).json({ message: "Sale record not found" });
+
+        // 🛡️ SECURITY: Verify the requesting user owns this sale (IDOR protection)
+        const requesterBusiness = await BusinessProfile.findOne({ ownerId: req.user._id });
+        if (!requesterBusiness || sale.businessId.toString() !== requesterBusiness._id.toString()) {
+            return res.status(403).json({ message: "Not authorized to record payment for this sale" });
+        }
 
         sale.payments.push({ 
             amount: Number(amount), 
@@ -473,6 +485,12 @@ exports.sendReminder = async (req, res) => {
 
         const business = sale.businessId;
         if (!business) return res.status(404).json({ message: "Business data missing" });
+
+        // 🛡️ SECURITY: Verify the requesting user owns this sale (IDOR protection)
+        const requesterBusiness = await BusinessProfile.findOne({ ownerId: req.user._id });
+        if (!requesterBusiness || business._id.toString() !== requesterBusiness._id.toString()) {
+            return res.status(403).json({ message: "Not authorized to send reminder for this sale" });
+        }
 
         // REMINDER LIMIT ENFORCEMENT
         const reminderLimit = getPlanLimit(business.plan, 'reminders'); // null = unlimited

@@ -488,6 +488,12 @@ const schedulePlanExpiryReminders = () => {
     cron.schedule("0 9 * * *", async () => {
         try {
             const now = new Date();
+            const { LAUNCH_DATE } = require("../config/pricing");
+            if (now < LAUNCH_DATE) {
+                console.log("⏳ Pre-launch period active: Plan/Trial expiry checks skipped.");
+                return;
+            }
+
             // Catch accounts within 3 days of expiry on EITHER the trial OR billing date.
             // This covers: (1) trialing merchants, (2) paid subscribers approaching renewal.
             const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
