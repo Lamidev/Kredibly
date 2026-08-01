@@ -4044,14 +4044,20 @@ const handleIncoming = async (req, res) => {
                     await sendReply(from, scheduleMsg);
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "check_performance") {
-                    // 💰 PERFORMANCE CHECK: "How much did I make today/yesterday?"
+                    // 💰 PERFORMANCE CHECK: "How much did I make today/yesterday/total?"
                     const target = String(aiResponseItem.data?.targetDate || "today").toLowerCase();
+                    const isTotalQuery = ["total", "all_time", "overall", "lifetime", "processed", "all"].includes(target) || 
+                                         lowerText.includes("total") || lowerText.includes("all-time") || lowerText.includes("all time") || lowerText.includes("processed");
                     
                     let startDate = new Date();
                     let endDate = new Date();
                     let dateLabel = "Today's";
 
-                    if (target === "yesterday") {
+                    if (isTotalQuery) {
+                        startDate = new Date(0);
+                        endDate = new Date();
+                        dateLabel = "All-Time";
+                    } else if (target === "yesterday") {
                         startDate.setDate(startDate.getDate() - 1);
                         startDate.setHours(0, 0, 0, 0);
                         endDate.setDate(endDate.getDate() - 1);
@@ -4097,13 +4103,21 @@ const handleIncoming = async (req, res) => {
 
                     // 3. Resolve boss title
                     const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || "Partner";
+                    const totalInvoiceValue = salesInRange.reduce((sum, s) => sum + s.totalAmount, 0);
 
-                    let performanceMsg = `📊 *${dateLabel} Performance, ${bossTitle}!*\n\n`;
+                    // If AI generated a contextual reply (e.g. acknowledging a praise prefix like "Nice!"), include it!
+                    let prefixText = aiResponseItem.data?.reply ? `${aiResponseItem.data.reply.trim()}\n\n` : "";
+
+                    let performanceMsg = `${prefixText}📊 *${dateLabel} Performance, ${bossTitle}!*\n\n`;
                     performanceMsg += `💰 Cash Collected: *₦${totalCashIn.toLocaleString()}*\n`;
-                    performanceMsg += `📑 New Invoices: *${salesInRange.length}* (₦${salesInRange.reduce((sum, s) => sum + s.totalAmount, 0).toLocaleString()})\n\n`;
+                    performanceMsg += `📑 ${isTotalQuery ? 'Total Invoices' : 'New Invoices'}: *${salesInRange.length}* (₦${totalInvoiceValue.toLocaleString()})\n\n`;
 
-                    if (totalCashIn > 0) {
-                        performanceMsg += target === 'yesterday' ? `Yesterday was productive! Let's beat that record today. 💎` : `Excellent! Your cash position is looking stronger. 💎`;
+                    if (totalCashIn > 0 || totalInvoiceValue > 0) {
+                        if (isTotalQuery) {
+                            performanceMsg += `Awesome work building your business volume! Keep recording all your sales straight into Kredibly. 💎`;
+                        } else {
+                            performanceMsg += target === 'yesterday' ? `Yesterday was productive! Let's beat that record today. 💎` : `Excellent! Your cash position is looking stronger. 💎`;
+                        }
                     } else if (salesInRange.length > 0) {
                         performanceMsg += `Sales recorded, but no cash in yet. Let's chase those payments! 🛡️`;
                     } else {

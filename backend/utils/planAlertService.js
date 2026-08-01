@@ -1,5 +1,6 @@
 const BusinessProfile = require("../models/BusinessProfile");
 const { sendWhatsAppMessage, sendWhatsAppTemplate } = require("../controllers/whatsapp/whatsappController");
+const { LAUNCH_DATE } = require("../config/pricing");
 
 /**
  * Sends a plan alert (TRIAL_EXPIRY) based on the provided context.
@@ -8,6 +9,11 @@ const { sendWhatsAppMessage, sendWhatsAppTemplate } = require("../controllers/wh
  */
 const sendIndividualPlanAlert = async (data) => {
     try {
+        const now = new Date();
+        if (now < LAUNCH_DATE) {
+            return { status: "skipped", reason: "Pre-launch active: trial alerts paused until launch date" };
+        }
+
         const { type, profileId, whatsappNumber } = data;
         const profile = await BusinessProfile.findById(profileId);
         if (!profile) return { status: "failed", error: "Profile not found" };
@@ -16,7 +22,6 @@ const sendIndividualPlanAlert = async (data) => {
 
         // If no specific subtype is passed (from Cron), calculate it based on profile state
         if (!alertType || alertType === "TRIAL_EXPIRY") {
-            const now = new Date();
             const expiry = profile.trialExpiresAt;
             if (!expiry) return { status: "skipped", reason: "No expiry date set" };
 

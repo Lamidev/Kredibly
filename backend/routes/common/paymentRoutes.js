@@ -12,7 +12,7 @@ const {
 
 router.post('/initialize-subscription', protect, initializeNombaSubscription);
 router.post('/initialize-nomba-account', initializeNombaAccount);
-router.post('/verify-nomba-payment', verifyNombaPaymentStatus);
+router.post('/verify-nomba-payment', protect, verifyNombaPaymentStatus);
 router.post('/webhook/nomba', handleNombaWebhook);
 
 // ─── SQUAD (Dormant — Kept for future reactivation) ──────────────────────────

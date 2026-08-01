@@ -6,6 +6,7 @@ import LandingPage from "./pages/public/landing-page";
 import AboutUs from "./pages/public/about-us";
 import SupportHub from "./pages/public/support-hub";
 import PrivacyPolicy from "./pages/public/privacy-policy";
+import TermsOfService from "./pages/public/terms-of-service";
 import ProductPage from "./pages/public/ProductPage";
 import SolutionPage from "./pages/public/SolutionPage";
 import PricingPage from "./pages/public/PricingPage";
@@ -72,8 +73,8 @@ const App = () => {
         
         <Route path="/about" element={<AboutUs />} />
         <Route path="/contact" element={<SupportHub />} />
-        <Route path="/privacy" element={<PrivacyPolicy defaultTab="privacy" />} />
-        <Route path="/terms" element={<PrivacyPolicy defaultTab="terms" />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
 
         <Route path="/product/:id" element={<ProductPage />} />
         <Route path="/solution/:id" element={<SolutionPage />} />

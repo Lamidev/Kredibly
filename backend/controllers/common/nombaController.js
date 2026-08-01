@@ -9,6 +9,7 @@ const { logActivity } = require('../../utils/activityLogger');
 const { createDynamicVirtualAccount, createNombaCheckoutOrder, verifyWebhookSignature, initiateTransfer, checkPaymentStatusByReference } = require('../../utils/nomba');
 const { logUsage } = require('../../utils/usageTracker');
 const { sendWhatsAppAlert } = require('../whatsapp/whatsappController');
+const crypto = require('crypto');
 
 /**
  * 💳 INITIALIZE NOMBA SUBSCRIPTION (SaaS)
@@ -139,6 +140,34 @@ exports.verifyNombaPaymentStatus = async (req, res) => {
  * 🔔 HANDLE NOMBA PAYMENT WEBHOOK
  */
 exports.handleNombaWebhook = async (req, res) => {
+    // ─── SIGNATURE VERIFICATION (C1 Security Fix) ─────────────────────────────
+    const nombaSignature = req.headers['x-nomba-signature'] || req.headers['x-webhook-signature'];
+    const webhookSecret = process.env.NOMBA_WEBHOOK_SECRET;
+
+    if (webhookSecret) {
+        if (!nombaSignature) {
+            console.error('❌ Nomba Webhook rejected: Missing signature header');
+            return res.status(401).json({ message: 'Unauthorized: Missing signature' });
+        }
+        try {
+            const hmac = crypto.createHmac('sha256', webhookSecret);
+            hmac.update(req.rawBody || JSON.stringify(req.body));
+            const expected = hmac.digest('hex');
+            const sigBuffer = Buffer.from(nombaSignature.replace('sha256=', ''), 'hex');
+            const expBuffer = Buffer.from(expected, 'hex');
+            if (sigBuffer.length !== expBuffer.length || !crypto.timingSafeEqual(sigBuffer, expBuffer)) {
+                console.error('❌ Nomba Webhook rejected: Signature mismatch — possible forgery');
+                return res.status(401).json({ message: 'Unauthorized: Invalid signature' });
+            }
+        } catch (sigErr) {
+            console.error('❌ Nomba Webhook signature check error:', sigErr.message);
+            return res.status(401).json({ message: 'Unauthorized: Signature verification failed' });
+        }
+    } else {
+        console.warn('⚠️ NOMBA_WEBHOOK_SECRET not set — signature verification skipped (set this in production!)');
+    }
+    // ──────────────────────────────────────────────────────────────────────────
+
     console.log('⚡ Nomba Webhook Arrived:', JSON.stringify(req.body, null, 2));
     res.status(200).json({ status: 'received' });
 
