@@ -535,7 +535,7 @@ body.lock-scroll {
 /* Responsive Pill Navbar */
 .pill-nav-container {
     position: fixed;
-    top: calc(12px + env(safe-area-inset-top, 0px));
+    top: max(14px, calc(env(safe-area-inset-top, 0px) + 12px));
     left: 0;
     right: 0;
     z-index: 3000;
@@ -545,6 +545,21 @@ body.lock-scroll {
     transform: translate3d(0, 0, 0);
     -webkit-transform: translate3d(0, 0, 0);
     will-change: transform;
+}
+
+/* 📱 PWA & Mobile Safe-Area Top Spacing for Sonner Toasts & Header */
+[data-sonner-toaster] {
+    top: max(20px, calc(env(safe-area-inset-top, 0px) + 16px)) !important;
+    z-index: 999999 !important;
+}
+
+@media (display-mode: standalone), (display-mode: fullscreen) {
+    .pill-nav-container {
+        top: max(22px, calc(env(safe-area-inset-top, 0px) + 16px)) !important;
+    }
+    [data-sonner-toaster] {
+        top: max(38px, calc(env(safe-area-inset-top, 0px) + 24px)) !important;
+    }
 }
 
 .pill-nav {

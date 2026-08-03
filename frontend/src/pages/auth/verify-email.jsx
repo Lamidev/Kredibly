@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
-import { RefreshCcw, Loader2 } from "lucide-react";
+import { RefreshCcw, Loader2, MailCheck } from "lucide-react";
 
 const VerifyEmail = () => {
     const [code, setCode] = useState("");
@@ -29,8 +29,7 @@ const VerifyEmail = () => {
             setLoading(true);
             verifyEmail(cleanCode)
                 .then(() => {
-                    toast.success("Email verified successfully!");
-                    navigate("/activate");
+                    navigate("/activate", { state: { verified: true } });
                 })
                 .catch((err) => {
                     console.error("Auto Verification Error:", err);
@@ -46,8 +45,7 @@ const VerifyEmail = () => {
         setLoading(true);
         try {
             await verifyEmail(code);
-            toast.success("Email verified successfully!");
-            navigate("/activate");
+            navigate("/activate", { state: { verified: true } });
         } catch (err) {
             console.error("Verification Error:", err);
             const errorMessage = err.response?.data?.message || err.message || "Verification failed";
@@ -80,85 +78,73 @@ const VerifyEmail = () => {
         }
     };
 
+    const pendingEmail = localStorage.getItem("kredibly_pending_email") || "your email";
+
     return (
         <div className="glass-card animate-fade-in" style={{ 
-            padding: 'clamp(24px, 6vw, 48px)', 
-            borderRadius: 'clamp(20px, 4vw, 32px)', 
+            padding: 'clamp(24px, 4vw, 40px)', 
+            borderRadius: 'clamp(20px, 4vw, 28px)', 
             boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)',
             width: '100%',
-            maxWidth: '500px'
+            maxWidth: '440px',
+            textAlign: 'center'
         }}>
-            <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-                <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px', letterSpacing: '-0.03em', color: '#000000' }}>Check your inbox</h2>
-                <p style={{ color: '#6B7280', fontWeight: 400, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>We sent a 6-digit verification code to your email. Tap the link in the email or enter the code below.</p>
-                <p style={{ fontSize: '0.8rem', color: '#D97706', marginTop: '8px', fontWeight: 500 }}>
-                    💡 Can't find it? Check your Spam folder. The code expires in 24 hours.
-                </p>
+            {/* Animated Mail Badge */}
+            <div style={{ 
+                width: '64px', 
+                height: '64px', 
+                borderRadius: '50%', 
+                background: 'rgba(76, 29, 149, 0.08)', 
+                color: 'var(--primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px'
+            }}>
+                <MailCheck size={32} />
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="input-group" style={{ marginBottom: '40px' }}>
-                    <label className="input-label" style={{ fontWeight: 500 }}>Verification Code</label>
-                    <input
-                        type="text"
-                        className="input-field verify-code-input text-center tracking-[0.5em] font-bold"
-                        style={{ height: '70px', border: '1.5px solid #E5E7EB', borderRadius: '14px', fontSize: '1.5rem', fontWeight: 600 }}
-                        placeholder="000000"
-                        maxLength={6}
-                        value={code}
-                        onChange={(e) => setCode(e.target.value)}
-                        autoComplete="one-time-code"
-                        required
-                    />
-                </div>
+            <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.03em', color: '#000000' }}>
+                Check your email
+            </h2>
+            
+            <p style={{ color: '#475569', fontWeight: 500, fontSize: '0.92rem', lineHeight: 1.5, marginBottom: '24px' }}>
+                We sent a 1-tap activation link to <strong style={{ color: '#0F172A' }}>{pendingEmail}</strong>. Click the button in the email to activate your account.
+            </p>
 
-                <button
-                    type="submit"
-                    className="btn-primary"
-                    style={{ 
-                        width: '100%', 
-                        height: '60px', 
-                        borderRadius: '16px', 
-                        fontSize: '1.1rem', 
-                        fontWeight: 600, 
-                        background: 'var(--primary)', 
-                        marginTop: '8px',
-                        boxShadow: '0 10px 20px -5px var(--primary-glow)' 
-                    }}
-                    disabled={loading}
-                >
-                    {loading ? "Verifying..." : "Activate My Account →"}
-                </button>
-            </form>
+            <button
+                onClick={handleResend}
+                disabled={cooldown > 0 || resending}
+                className="btn-primary"
+                style={{ 
+                    width: '100%', 
+                    height: '48px', 
+                    borderRadius: '14px', 
+                    fontSize: '0.95rem', 
+                    fontWeight: 700, 
+                    background: cooldown > 0 ? '#F1F5F9' : 'var(--primary)', 
+                    color: cooldown > 0 ? '#94A3B8' : 'white',
+                    border: 'none',
+                    cursor: cooldown > 0 || resending ? 'not-allowed' : 'pointer',
+                    boxShadow: cooldown > 0 ? 'none' : '0 8px 16px -4px var(--primary-glow)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s'
+                }}
+            >
+                {resending 
+                    ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Resending...</>
+                    : cooldown > 0
+                        ? `Resend available in ${cooldown}s`
+                        : <><RefreshCcw size={16} /> Resend Activation Link</>
+                }
+            </button>
 
-            <div style={{ textAlign: 'center', marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #F3F4F6' }}>
-                <button
-                    style={{ 
-                        background: 'none', 
-                        border: 'none', 
-                        color: cooldown > 0 ? '#94A3B8' : '#000000',
-                        fontWeight: 600, 
-                        cursor: cooldown > 0 || resending ? 'not-allowed' : 'pointer', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        gap: '8px', 
-                        margin: '0 auto',
-                        opacity: cooldown > 0 ? 0.6 : 1,
-                        transition: 'all 0.2s'
-                    }}
-                    onClick={handleResend}
-                    disabled={cooldown > 0 || resending}
-                >
-                    {resending 
-                        ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Sending...</>
-                        : cooldown > 0
-                            ? `Resend in ${cooldown}s`
-                            : <><RefreshCcw size={18} /> Send a new link</>
-                    }
-                </button>
-                <Link to="/auth/login" style={{ display: 'block', marginTop: '16px', color: '#6B7280', textDecoration: 'none', fontWeight: 500, fontSize: '0.9rem' }}>
-                    Sign in with another account
+            <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #F1F5F9' }}>
+                <Link to="/auth/login" style={{ color: '#64748B', textDecoration: 'none', fontWeight: 600, fontSize: '0.85rem' }}>
+                    ← Back to Login
                 </Link>
             </div>
         </div>

@@ -31,8 +31,8 @@ const Register = () => {
     try {
       await registerUser(formData.name, formData.email, formData.password);
       localStorage.setItem("kredibly_pending_email", formData.email); // used by verify-email resend
-      toast.success("Almost there — check your email to activate your account.");
-      navigate("/auth/verify-email");
+      toast.success("Account created! Let's activate your account.");
+      navigate("/activate");
     } catch (err) {
       console.error("Registration Error details:", err); // Log for debugging
       // Show specific error from backend if available
@@ -45,61 +45,59 @@ const Register = () => {
 
   return (
     <div className="glass-card animate-fade-in" style={{ 
-      padding: 'clamp(24px, 6vw, 48px)', 
-      borderRadius: 'clamp(20px, 4vw, 32px)', 
+      padding: 'clamp(20px, 4vw, 36px)', 
+      borderRadius: 'clamp(20px, 4vw, 28px)', 
       boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)',
       width: '100%',
-      maxWidth: '500px'
+      maxWidth: '460px'
     }}>
-      <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px', letterSpacing: '-0.03em', color: '#000000' }}>Create your account</h2>
-        <p style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>Sign up in seconds. No card needed.</p>
+      <div style={{ textAlign: 'left', marginBottom: '20px' }}>
+        <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.1rem)', fontWeight: 800, marginBottom: '4px', letterSpacing: '-0.03em', color: '#000000' }}>Create your account</h2>
+        <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.88rem', margin: 0 }}>Start managing your business in seconds.</p>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 500 }}>Your name</label>
+          <label className="input-label" style={{ fontWeight: 600, fontSize: '0.82rem', marginBottom: '6px', display: 'block', color: '#1E293B' }}>Your Name</label>
           <div style={{ position: 'relative' }}>
              <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
              <input
                type="text"
                className="input-field"
-               style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', background: 'var(--background)', fontWeight: 400 }}
+               style={{ height: '48px', border: '1px solid var(--border)', borderRadius: '14px', paddingLeft: '46px', background: 'var(--background)', fontWeight: 500, fontSize: '0.92rem' }}
                placeholder="e.g. Tosin Adebayo"
                value={formData.name}
                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                required
              />
           </div>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px', fontWeight: 400 }}>This is just for your account — not what appears on your invoices. You'll set that next.</p>
         </div>
 
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 500 }}>Your email address</label>
+          <label className="input-label" style={{ fontWeight: 600, fontSize: '0.82rem', marginBottom: '6px', display: 'block', color: '#1E293B' }}>Email Address</label>
           <div style={{ position: 'relative' }}>
              <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
              <input
                type="email"
                className="input-field"
-               style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', background: 'var(--background)', fontWeight: 400 }}
+               style={{ height: '48px', border: '1px solid var(--border)', borderRadius: '14px', paddingLeft: '46px', background: 'var(--background)', fontWeight: 500, fontSize: '0.92rem' }}
                placeholder="your@email.com"
                value={formData.email}
                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                required
              />
           </div>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px', fontWeight: 400 }}>We'll send a one-tap verification link here.</p>
         </div>
 
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 500 }}>Password</label>
+          <label className="input-label" style={{ fontWeight: 600, fontSize: '0.82rem', marginBottom: '6px', display: 'block', color: '#1E293B' }}>Password</label>
           <div style={{ position: 'relative' }}>
             <Lock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
             <input
               type={showPassword ? "text" : "password"}
               className="input-field"
-              style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', paddingRight: '52px', background: 'var(--background)', fontWeight: 400 }}
-              placeholder="8+ chars, 1 number & 1 symbol"
+              style={{ height: '48px', border: '1px solid var(--border)', borderRadius: '14px', paddingLeft: '46px', paddingRight: '48px', background: 'var(--background)', fontWeight: 500, fontSize: '0.92rem' }}
+              placeholder="8+ chars (include number & symbol)"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
@@ -107,12 +105,11 @@ const Register = () => {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
             >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 500 }}>Must include a number and a special character (e.g. !@#)</p>
         </div>
 
         <button
@@ -121,44 +118,38 @@ const Register = () => {
           disabled={loading}
           style={{ 
               width: '100%', 
-              height: '60px', 
-              borderRadius: '16px', 
-              fontSize: '1.1rem', 
-              fontWeight: 600, 
+              height: '50px', 
+              borderRadius: '14px', 
+              fontSize: '1rem', 
+              fontWeight: 700, 
               background: 'var(--primary)',
-              marginTop: '8px',
+              marginTop: '6px',
               cursor: 'pointer',
-              boxShadow: '0 10px 20px -5px var(--primary-glow)' 
+              boxShadow: '0 8px 16px -4px var(--primary-glow)' 
           }}
         >
-           {loading ? "Creating account..." : "Create My Account"}
+           {loading ? "Creating account..." : "Create Free Account →"}
         </button>
       </form>
 
-      <div style={{ textAlign: 'center', marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', fontWeight: 400 }}>
-          Already have an account? {" "}
-          <Link to="/auth/login" style={{ color: '#000000', fontWeight: 600, textDecoration: 'none' }}>Login instead</Link>
+      <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500, margin: 0 }}>
+          Have an account? {" "}
+          <Link to="/auth/login" style={{ color: '#000000', fontWeight: 700, textDecoration: 'none' }}>Log in</Link>
         </p>
         <Link
           to="/"
           style={{
-            background: 'none',
-            border: 'none',
-            fontSize: '0.85rem',
+            fontSize: '0.82rem',
             color: '#64748B',
-            cursor: 'pointer',
-            textDecoration: 'underline',
-            textUnderlineOffset: '3.5px',
-            fontWeight: 500,
-            padding: '4px 8px',
-            display: 'inline-block',
+            textDecoration: 'none',
+            fontWeight: 600,
             transition: 'color 0.2s'
           }}
           onMouseEnter={e => e.currentTarget.style.color = '#0F172A'}
           onMouseLeave={e => e.currentTarget.style.color = '#64748B'}
         >
-          ← Back to Home
+          ← Home
         </Link>
       </div>
     </div>

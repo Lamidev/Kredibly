@@ -91,14 +91,20 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (isSetupPopoverOpen && window.innerWidth <= 640) {
+            document.documentElement.style.overflow = 'hidden';
             document.body.style.overflow = 'hidden';
+            document.body.style.touchAction = 'none';
             document.body.classList.add('setup-sheet-open');
         } else {
+            document.documentElement.style.overflow = '';
             document.body.style.overflow = '';
+            document.body.style.touchAction = '';
             document.body.classList.remove('setup-sheet-open');
         }
         return () => {
+            document.documentElement.style.overflow = '';
             document.body.style.overflow = '';
+            document.body.style.touchAction = '';
             document.body.classList.remove('setup-sheet-open');
         };
     }, [isSetupPopoverOpen]);
@@ -340,12 +346,14 @@ export default function Dashboard() {
                                     {/* Backdrop overlay (mobile & desktop click-away) */}
                                     <div
                                         onClick={() => setIsSetupPopoverOpen(false)}
+                                        onTouchMove={(e) => e.preventDefault()}
                                         style={{
                                             position: "fixed",
                                             inset: 0,
                                             backgroundColor: "rgba(15, 23, 42, 0.4)",
                                             backdropFilter: "blur(2px)",
                                             zIndex: 9998,
+                                            touchAction: "none"
                                         }}
                                     />
 
@@ -509,6 +517,12 @@ export default function Dashboard() {
                     50% { opacity: 0.7; transform: scale(1.3); }
                 }
                 @media (max-width: 640px) {
+                    html.setup-sheet-open,
+                    body.setup-sheet-open {
+                        overflow: hidden !important;
+                        height: 100vh !important;
+                        touch-action: none !important;
+                    }
                     body.setup-sheet-open .support-hub-container {
                         opacity: 0 !important;
                         pointer-events: none !important;

@@ -136,7 +136,20 @@ export const AuthProvider = ({ children }) => {
     const registerUser = async (name, email, password) => {
         try {
             setError(null);
-            const res = await axios.post(`${API_URL}/auth/register`, { name, email, password });
+            const res = await axios.post(`${API_URL}/auth/register`, { name, email, password }, { withCredentials: true });
+            if (res.data.success) {
+                if (res.data.user) {
+                    setUser(res.data.user);
+                    localStorage.setItem("kredibly_user", JSON.stringify(res.data.user));
+                }
+                if (res.data.profile) {
+                    setProfile(res.data.profile);
+                    localStorage.setItem("kredibly_profile", JSON.stringify(res.data.profile));
+                }
+                if (res.data.token) {
+                    localStorage.setItem("kredibly_token", res.data.token);
+                }
+            }
             return res.data;
         } catch (err) {
             setError(err.response?.data?.message || "Registration failed");
@@ -181,6 +194,14 @@ export const AuthProvider = ({ children }) => {
             setError(null);
             const res = await axios.post(`${API_URL}/auth/verify-email`, { code }, { withCredentials: true });
             if (res.data.success) {
+                if (res.data.user) {
+                    setUser(res.data.user);
+                    localStorage.setItem("kredibly_user", JSON.stringify(res.data.user));
+                }
+                if (res.data.profile) {
+                    setProfile(res.data.profile);
+                    localStorage.setItem("kredibly_profile", JSON.stringify(res.data.profile));
+                }
                 if (res.data.token) {
                     localStorage.setItem("kredibly_token", res.data.token);
                 }
