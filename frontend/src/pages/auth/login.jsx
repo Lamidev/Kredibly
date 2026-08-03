@@ -19,10 +19,11 @@ const Login = () => {
       const data = await login(email, password);
       toast.success("Welcome back!");
       
+      const isFullyActive = data.profile?.displayName && data.profile?.whatsappNumber;
       if (data.user.role === 'admin') {
         navigate("/admin");
-      } else if (!data.profile) {
-        navigate("/onboarding");
+      } else if (!isFullyActive) {
+        navigate("/activate");
       } else {
         navigate("/dashboard");
       }

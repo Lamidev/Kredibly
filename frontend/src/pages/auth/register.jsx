@@ -31,7 +31,7 @@ const Register = () => {
     try {
       await registerUser(formData.name, formData.email, formData.password);
       localStorage.setItem("kredibly_pending_email", formData.email); // used by verify-email resend
-      toast.success("Account created! Please check your email for verification.");
+      toast.success("Almost there — check your email to activate your account.");
       navigate("/auth/verify-email");
     } catch (err) {
       console.error("Registration Error details:", err); // Log for debugging
@@ -52,29 +52,30 @@ const Register = () => {
       maxWidth: '500px'
     }}>
       <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px', letterSpacing: '-0.03em', color: '#000000' }}>Create Account</h2>
-        <p style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>Join Kredibly and start growing your business today.</p>
+        <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px', letterSpacing: '-0.03em', color: '#000000' }}>Create your account</h2>
+        <p style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>Sign up in seconds. No card needed.</p>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 500 }}>Full Name</label>
+          <label className="input-label" style={{ fontWeight: 500 }}>Your name</label>
           <div style={{ position: 'relative' }}>
              <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
              <input
                type="text"
                className="input-field"
                style={{ height: '56px', border: '1px solid var(--border)', borderRadius: '16px', paddingLeft: '48px', background: 'var(--background)', fontWeight: 400 }}
-               placeholder="e.g. John Doe"
+               placeholder="e.g. Tosin Adebayo"
                value={formData.name}
                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                required
              />
           </div>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px', fontWeight: 400 }}>This is just for your account — not what appears on your invoices. You'll set that next.</p>
         </div>
 
         <div className="input-group">
-          <label className="input-label" style={{ fontWeight: 500 }}>Email Address</label>
+          <label className="input-label" style={{ fontWeight: 500 }}>Your email address</label>
           <div style={{ position: 'relative' }}>
              <Mail size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
              <input
@@ -87,6 +88,7 @@ const Register = () => {
                required
              />
           </div>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px', fontWeight: 400 }}>We'll send a one-tap verification link here.</p>
         </div>
 
         <div className="input-group">
@@ -129,7 +131,7 @@ const Register = () => {
               boxShadow: '0 10px 20px -5px var(--primary-glow)' 
           }}
         >
-          {loading ? "Creating account..." : "Start Free Trial"}
+           {loading ? "Creating account..." : "Create My Account"}
         </button>
       </form>
 

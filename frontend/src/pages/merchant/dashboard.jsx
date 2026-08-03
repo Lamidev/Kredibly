@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSales } from "../../context/SaleContext";
 import { useAuth } from "../../context/AuthContext";
-import { AlertCircle, X, TrendingUp, Clock, CheckCircle2, Activity, Bot, MessageCircle } from "lucide-react";
+import { AlertCircle, X, TrendingUp, Clock, CheckCircle2, Activity, Bot, MessageCircle, ChevronDown, Check } from "lucide-react";
 import { KREDDY_CONFIG } from "../../config";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -44,8 +44,50 @@ export default function Dashboard() {
     const [showHealthModal, setShowHealthModal] = useState(false);
     const [visibleEvents, setVisibleEvents] = useState(5);
     const [isBankModalOpen, setIsBankModalOpen] = useState(false);
+    const [isSetupPopoverOpen, setIsSetupPopoverOpen] = useState(false);
 
     const hasBank = !!(profile?.bankDetails?.accountNumber && profile?.bankDetails?.bankCode);
+    const hasLogo = !!profile?.logoUrl;
+    const hasStaff = !!(profile?.staffNumbers && profile.staffNumbers.length > 0);
+    const isMultiUserPlan = profile?.plan === 'oga' || profile?.plan === 'chairman';
+
+    const setupItems = useMemo(() => {
+        const items = [
+            {
+                id: 'bank',
+                title: 'Payout Bank Account',
+                desc: 'Required to receive automated payments',
+                completed: hasBank,
+                action: () => setIsBankModalOpen(true),
+                actionLabel: 'Add Bank'
+            },
+            {
+                id: 'logo',
+                title: 'Invoice Brand Logo',
+                desc: 'Appears on customer PDF receipts',
+                completed: hasLogo,
+                action: () => navigate('/settings'),
+                actionLabel: 'Upload Logo'
+            }
+        ];
+
+        if (isMultiUserPlan) {
+            items.push({
+                id: 'staff',
+                title: 'Staff WhatsApp Access',
+                desc: 'Grant team members sales recording access',
+                completed: hasStaff,
+                action: () => navigate('/settings'),
+                actionLabel: 'Manage Staff'
+            });
+        }
+
+        return items;
+    }, [hasBank, hasLogo, hasStaff, isMultiUserPlan, navigate]);
+
+    const completedSetupCount = useMemo(() => {
+        return setupItems.filter(i => i.completed).length;
+    }, [setupItems]);
 
     useEffect(() => {
         setVisibleEvents(5);
@@ -216,39 +258,28 @@ export default function Dashboard() {
                 onSuccess={() => fetchStats()}
             />
 
-            {/* Payment Readiness Banner */}
-            {!hasBank ? (
-                <div style={{ background: "#FEF3C7", border: "1.5px solid #FCD34D", borderRadius: "18px", padding: "14px 20px", marginBottom: "24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap", boxShadow: "0 2px 8px rgba(245, 158, 11, 0.08)" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                        <AlertCircle size={22} color="#B45309" />
-                        <div>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem", color: "#92400E" }}>Payment account not connected</p>
-                            <p style={{ margin: 0, fontSize: "0.85rem", color: "#B45309" }}>Add your bank account to receive automated sweeps when customers pay your invoices.</p>
-                        </div>
+            {/* Bank Setup Prompt (Only if bank is NOT connected) */}
+            {!hasBank && (
+                <div style={{ background: "#F5F0FF", border: "1px solid rgba(109, 40, 217, 0.2)", borderRadius: "12px", padding: "10px 16px", marginBottom: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <AlertCircle size={18} color="#6D28D9" />
+                        <span style={{ fontSize: "0.88rem", fontWeight: 600, color: "#4C1D95" }}>Complete your setup — add your payout bank account to receive payments</span>
                     </div>
-                    <button onClick={() => setIsBankModalOpen(true)} style={{ background: "#D97706", color: "white", border: "none", padding: "10px 18px", borderRadius: "12px", fontWeight: 700, fontSize: "0.88rem", cursor: "pointer" }}>
-                        Verify Bank Account
+                    <button onClick={() => setIsBankModalOpen(true)} style={{ background: "#6D28D9", color: "white", border: "none", padding: "6px 14px", borderRadius: "8px", fontWeight: 700, fontSize: "0.82rem", cursor: "pointer", whiteSpace: "nowrap" }}>
+                        Add Payout Account →
                     </button>
-                </div>
-            ) : (
-                <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: "14px", padding: "10px 16px", marginBottom: "24px", display: "flex", alignItems: "center", gap: "10px" }}>
-                    <CheckCircle2 size={18} color="#16A34A" />
-                    <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#166534" }}>✓ Payment account ready: {profile.bankDetails.bankName} ••••{profile.bankDetails.accountNumber.slice(-4)} ({profile.bankDetails.accountName})</span>
                 </div>
             )}
 
             {/* WhatsApp Connection Banner if missing */}
             {!profile?.whatsappNumber && (
-                <div style={{ background: "#F0F9FF", border: "1.5px solid #BAE6FD", borderRadius: "18px", padding: "14px 20px", marginBottom: "24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                        <MessageCircle size={22} color="#0284C7" />
-                        <div>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem", color: "#0369A1" }}>WhatsApp number not connected</p>
-                            <p style={{ margin: 0, fontSize: "0.85rem", color: "#0284C7" }}>Add your WhatsApp number so Kreddy recognizes your chat commands.</p>
-                        </div>
+                <div style={{ background: "#F0F9FF", border: "1px solid #BAE6FD", borderRadius: "12px", padding: "10px 16px", marginBottom: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <MessageCircle size={18} color="#0284C7" />
+                        <span style={{ fontSize: "0.88rem", fontWeight: 600, color: "#0369A1" }}>Connect your WhatsApp number so Kreddy can recognize your messages and send sales alerts</span>
                     </div>
-                    <button onClick={() => navigate('/settings/profile')} style={{ background: "#0284C7", color: "white", border: "none", padding: "10px 18px", borderRadius: "12px", fontWeight: 700, fontSize: "0.88rem", cursor: "pointer" }}>
-                        Connect WhatsApp
+                    <button onClick={() => navigate('/activate')} style={{ background: "#0284C7", color: "white", border: "none", padding: "6px 14px", borderRadius: "8px", fontWeight: 700, fontSize: "0.82rem", cursor: "pointer", whiteSpace: "nowrap" }}>
+                        Connect WhatsApp →
                     </button>
                 </div>
             )}
@@ -265,60 +296,154 @@ export default function Dashboard() {
                     </p>
                 </div>
 
-                {/* Right: Compact Kreddy pill */}
-                <button
-                    onClick={() => {
-                        const msg = profile?.firstMerchantGreetingSent ? "Hi Kreddy" : "Hello";
-                        window.open(KREDDY_CONFIG.getLink(msg), '_blank', 'noopener,noreferrer');
-                    }}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        background: "white",
-                        border: "1.5px solid rgba(109,40,217,0.18)",
-                        borderRadius: "40px",
-                        padding: "6px 14px 6px 8px",
-                        cursor: "pointer",
-                        transition: "all 0.2s ease",
-                        boxShadow: "0 2px 8px rgba(109,40,217,0.08)",
-                        flexShrink: 0,
-                    }}
-                    onMouseEnter={e => {
-                        e.currentTarget.style.background = "#F5F0FF";
-                        e.currentTarget.style.borderColor = "rgba(109,40,217,0.4)";
-                        e.currentTarget.style.transform = "translateY(-1px)";
-                        e.currentTarget.style.boxShadow = "0 4px 14px rgba(109,40,217,0.15)";
-                    }}
-                    onMouseLeave={e => {
-                        e.currentTarget.style.background = "white";
-                        e.currentTarget.style.borderColor = "rgba(109,40,217,0.18)";
-                        e.currentTarget.style.transform = "none";
-                        e.currentTarget.style.boxShadow = "0 2px 8px rgba(109,40,217,0.08)";
-                    }}
-                >
-                    {/* Mini avatar */}
-                    <div style={{ position: "relative", flexShrink: 0 }}>
-                        <div style={{
-                            width: "28px", height: "28px",
-                            borderRadius: "50%",
-                            background: "linear-gradient(135deg, #6D28D9, #7C3AED)",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                        }}>
-                            <Bot size={14} color="white" />
+                {/* Right: Actions (Setup Progress Pill + Kreddy Button) */}
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", flexShrink: 0 }}>
+                    {/* Setup Progress Pill & Popover */}
+                    {completedSetupCount < setupItems.length && (
+                        <div style={{ position: "relative" }}>
+                            <button
+                                onClick={() => setIsSetupPopoverOpen(!isSetupPopoverOpen)}
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                    background: "rgba(109, 40, 217, 0.06)",
+                                    border: "1px solid rgba(109, 40, 217, 0.2)",
+                                    borderRadius: "40px",
+                                    padding: "6px 14px",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s ease",
+                                }}
+                            >
+                                <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#6D28D9" }}>
+                                    Setup {completedSetupCount}/{setupItems.length}
+                                </span>
+                                <ChevronDown size={14} color="#6D28D9" style={{ transform: isSetupPopoverOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+                            </button>
+
+                            {/* Popover Dropdown */}
+                            {isSetupPopoverOpen && (
+                                <div
+                                    style={{
+                                        position: "absolute",
+                                        top: "calc(100% + 8px)",
+                                        right: 0,
+                                        width: "min(300px, calc(100vw - 32px))",
+                                        background: "white",
+                                        borderRadius: "18px",
+                                        border: "1px solid #E2E8F0",
+                                        boxShadow: "0 20px 40px -15px rgba(0,0,0,0.15)",
+                                        padding: "16px",
+                                        zIndex: 100,
+                                    }}
+                                >
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", paddingBottom: "8px", borderBottom: "1px solid #F1F5F9" }}>
+                                        <span style={{ fontSize: "0.82rem", fontWeight: 800, color: "#0F172A" }}>Account Setup Checklist</span>
+                                        <button onClick={() => setIsSetupPopoverOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8", padding: "2px" }}>
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                        {setupItems.map(item => (
+                                            <div key={item.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
+                                                <div>
+                                                    <p style={{ margin: 0, fontSize: "0.8rem", fontWeight: 700, color: item.completed ? "#94A3B8" : "#0F172A", textDecoration: item.completed ? "line-through" : "none" }}>
+                                                        {item.title}
+                                                    </p>
+                                                    <p style={{ margin: 0, fontSize: "0.7rem", color: "#64748B", fontWeight: 400 }}>
+                                                        {item.desc}
+                                                    </p>
+                                                </div>
+
+                                                {item.completed ? (
+                                                    <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#16A34A", display: "flex", alignItems: "center", gap: "2px" }}>
+                                                        <Check size={13} /> Done
+                                                    </span>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => {
+                                                            setIsSetupPopoverOpen(false);
+                                                            item.action();
+                                                        }}
+                                                        style={{
+                                                            background: "#F8FAFC",
+                                                            border: "1px solid #CBD5E1",
+                                                            borderRadius: "8px",
+                                                            padding: "4px 10px",
+                                                            fontSize: "0.72rem",
+                                                            fontWeight: 700,
+                                                            color: "#0F172A",
+                                                            cursor: "pointer",
+                                                            whiteSpace: "nowrap",
+                                                        }}
+                                                    >
+                                                        {item.actionLabel}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                        <span style={{
-                            position: "absolute", bottom: 0, right: 0,
-                            width: "8px", height: "8px", borderRadius: "50%",
-                            background: "#10B981", border: "1.5px solid white",
-                            animation: "kreddy-pulse 2s infinite"
-                        }} />
-                    </div>
-                    {/* Label */}
-                    <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#4C1D95", whiteSpace: "nowrap" }}>
-                        {profile?.firstMerchantGreetingSent ? "Open Kreddy" : "Open WhatsApp"}
-                    </span>
-                </button>
+                    )}
+
+                    {/* Compact Kreddy pill */}
+                    <button
+                        onClick={() => {
+                            const msg = profile?.firstMerchantGreetingSent ? "Hi Kreddy" : "Hello";
+                            window.open(KREDDY_CONFIG.getLink(msg), '_blank', 'noopener,noreferrer');
+                        }}
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            background: "white",
+                            border: "1.5px solid rgba(109,40,217,0.18)",
+                            borderRadius: "40px",
+                            padding: "6px 14px 6px 8px",
+                            cursor: "pointer",
+                            transition: "all 0.2s ease",
+                            boxShadow: "0 2px 8px rgba(109,40,217,0.08)",
+                            flexShrink: 0,
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.background = "#F5F0FF";
+                            e.currentTarget.style.borderColor = "rgba(109,40,217,0.4)";
+                            e.currentTarget.style.transform = "translateY(-1px)";
+                            e.currentTarget.style.boxShadow = "0 4px 14px rgba(109,40,217,0.15)";
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.background = "white";
+                            e.currentTarget.style.borderColor = "rgba(109,40,217,0.18)";
+                            e.currentTarget.style.transform = "none";
+                            e.currentTarget.style.boxShadow = "0 2px 8px rgba(109,40,217,0.08)";
+                        }}
+                    >
+                        {/* Mini avatar */}
+                        <div style={{ position: "relative", flexShrink: 0 }}>
+                            <div style={{
+                                width: "28px", height: "28px",
+                                borderRadius: "50%",
+                                background: "linear-gradient(135deg, #6D28D9, #7C3AED)",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>
+                                <Bot size={14} color="white" />
+                            </div>
+                            <span style={{
+                                position: "absolute", bottom: 0, right: 0,
+                                width: "8px", height: "8px", borderRadius: "50%",
+                                background: "#10B981", border: "1.5px solid white",
+                                animation: "kreddy-pulse 2s infinite"
+                            }} />
+                        </div>
+                        {/* Label */}
+                        <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#4C1D95", whiteSpace: "nowrap" }}>
+                            {profile?.firstMerchantGreetingSent ? "Open Kreddy" : "Open WhatsApp"}
+                        </span>
+                    </button>
+                </div>
             </div>
             <style>{`
                 @keyframes kreddy-pulse {

@@ -51,12 +51,8 @@ const register = async (req, res) => {
 
     await newUser.save();
 
-    // 🛡️ SUPER ADMIN NOTIFICATION
-    const { sendAdminNewUserAlert, sendVerificationEmail } = require("../../emailLogic/emails");
-    sendAdminNewUserAlert({ name: newUser.name, email: newUser.email })
-        .catch(err => console.error("Admin Registration Alert Error:", err.message));
-
     // Send verification email in background for speed
+    const { sendVerificationEmail } = require("../../emailLogic/emails");
     sendVerificationEmail(newUser.email, verificationToken)
       .catch(err => console.error("Background Email Error (Verification):", err.message));
 

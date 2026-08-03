@@ -103,8 +103,8 @@ exports.updateProfile = async (req, res) => {
                 }
             }
             
-            const wasIncomplete = (profile.onboardingStep || 0) < 4;
-            if (req.body.onboardingStep === 4 || profile.displayName) {
+            const wasIncomplete = !profile.whatsappNumber || (profile.onboardingStep || 0) < 4;
+            if (req.body.onboardingStep === 4 || (profile.displayName && profile.whatsappNumber)) {
                 profile.onboardingStep = 4;
                 await User.findByIdAndUpdate(req.user._id, { onboardingCompleted: true });
             }

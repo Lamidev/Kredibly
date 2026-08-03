@@ -20,6 +20,7 @@ import VerifyEmail from "./pages/auth/verify-email";
 import ForgotPassword from "./pages/auth/forgotPassword";
 import ResetPassword from "./pages/auth/resetPassword";
 import Onboarding from "./pages/merchant/onboarding";
+import Activate from "./pages/auth/activate";
 import Dashboard from "./pages/merchant/dashboard";
 import CreateSale from "./pages/merchant/create-sale";
 import InvoicePage from "./pages/merchant/invoice-page";
@@ -56,9 +57,14 @@ const App = () => {
   const getHomeRedirect = () => {
     if (!user) return "/";
     if (user.role === 'admin') return "/admin";
-    // A completed profile always has a displayName — works for all users regardless of onboardingStep value
-    const onboardingComplete = profile && profile.displayName;
-    return onboardingComplete ? "/dashboard" : "/onboarding";
+    // A merchant is only truly active when they have BOTH an invoice name AND a WhatsApp number.
+    // Having only displayName (e.g. auto-filled by migration script) is not sufficient —
+    // Kreddy cannot function without a WhatsApp number.
+    const isFullyActive = profile?.displayName && profile?.whatsappNumber;
+    if (isFullyActive) return "/dashboard";
+    // They have an account but need to complete activation (name + WhatsApp)
+    if (user) return "/activate";
+    return "/";
   };
 
   return (
@@ -95,7 +101,7 @@ const App = () => {
 
         {/* Protected Routes with Sidebar Layout */}
         <Route
-          element={user && profile && profile.displayName ? <DashboardLayout /> : <Navigate to={getHomeRedirect()} />}
+          element={user && profile?.displayName && profile?.whatsappNumber ? <DashboardLayout /> : <Navigate to={getHomeRedirect()} />}
         >
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/workspace" element={<Workspace />} />
@@ -120,15 +126,21 @@ const App = () => {
           <Route path="/dashboard/invoice/:id" element={<InvoicePage />} />
         </Route>
 
-        {/* Onboarding - No Sidebar */}
+        {/* /activate — the single account setup screen (invoice name + WhatsApp) */}
         <Route
-          path="/onboarding"
+          path="/activate"
           element={
             !user ? <Navigate to="/auth/login" /> :
             user.role === 'admin' ? <Navigate to="/admin" /> :
-            (!profile || !profile.displayName) ? <Onboarding /> :
-            <Navigate to="/dashboard" />
+            (profile?.displayName && profile?.whatsappNumber) ? <Navigate to="/dashboard" /> :
+            <Activate />
           }
+        />
+
+        {/* /onboarding — legacy redirect to /activate for backward compatibility */}
+        <Route
+          path="/onboarding"
+          element={<Navigate to="/activate" replace />}
         />
 
         {/* Admin Routes - Restricted to Founders */}
