@@ -30,9 +30,8 @@ const Register = () => {
 
     try {
       await registerUser(formData.name, formData.email, formData.password);
-      localStorage.setItem("kredibly_pending_email", formData.email); // used by verify-email resend
-      toast.success("Account created! Let's activate your account.");
-      navigate("/activate");
+      localStorage.setItem("kredibly_pending_email", formData.email);
+      navigate("/auth/verify-email");
     } catch (err) {
       console.error("Registration Error details:", err); // Log for debugging
       // Show specific error from backend if available

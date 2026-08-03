@@ -49,11 +49,12 @@ const register = async (req, res) => {
       verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000,
     });
 
-    // 🚀 Zero-Friction: Log user in immediately upon registration
+    await newUser.save();
+
+    // 🚀 Zero-Friction: Log user in immediately so verify-email doesn't require re-login
     const token = generateTokenAndSetCookie(res, newUser._id, newUser.name, newUser.email, newUser.role);
 
-    // Send verification email in background for speed
-    const { sendVerificationEmail } = require("../../emailLogic/emails");
+    // Send 6-digit verification code email in background for speed
     sendVerificationEmail(newUser.email, verificationToken)
       .catch(err => console.error("Background Email Error (Verification):", err.message));
 
