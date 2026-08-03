@@ -24,12 +24,15 @@ const handleEmailError = (error, message) => {
 // Send Verification Email
 exports.sendVerificationEmail = async (email, verificationToken) => {
   try {
+    const verificationLink = `${FRONTEND_URL}/auth/verify-email?code=${verificationToken}&email=${encodeURIComponent(email)}`;
     await resendClient.emails.send({
       from: `${sender.name} <${sender.email}>`,
       to: email,
-      subject: "Your Kredibly verification code",
-      text: `Hi,\n\nYour Kredibly verification code is: ${verificationToken}\n\nThis code expires in 15 minutes. If you didn't sign up, please ignore this email.\n\n— Oluwatosin, Founder of Kredibly`,
-      html: VERIFICATION_EMAIL_TEMPLATE.replace("{verificationCode}", verificationToken),
+      subject: "Verify your Kredibly account",
+      text: `Hi,\n\nClick the link below to verify your Kredibly account:\n${verificationLink}\n\nOr enter code: ${verificationToken}\n\nThis link expires in 24 hours.\n\n— Oluwatosin, Founder of Kredibly`,
+      html: VERIFICATION_EMAIL_TEMPLATE
+        .replace("{verificationCode}", verificationToken)
+        .replace(/\{verificationLink\}/g, verificationLink),
     });
   } catch (error) {
     handleEmailError(error, "Error sending verification email");

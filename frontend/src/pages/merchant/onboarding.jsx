@@ -204,35 +204,25 @@ const Onboarding = () => {
         }
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (e) => {
+        if (e) e.preventDefault();
+        if (!displayName.trim()) return toast.error("Please enter the name for your invoices");
+        if (!whatsappNumber.trim()) return toast.error("WhatsApp number is required for Kreddy");
+        if (!isValidNigerianPhone(whatsappNumber)) return toast.error("Invalid WhatsApp number format");
+
         setLoading(true);
         try {
             const savedLang = localStorage.getItem('kreddy_preferred_language') || 'english';
             const payload = {
                 displayName,
-                entityType,
-                sellMode,
-                logoUrl,
                 whatsappNumber: formatPhoneForDB(whatsappNumber),
-                bankDetails: { 
-                    bankName: selectedBank.name, 
-                    bankCode: selectedBank.code,
-                    accountNumber, 
-                    accountName 
-                },
-                staffNumbers,
                 onboardingStep: 4, // 🚀 Mark onboarding as complete
-                kyc: {
-                    status: kycStatus,
-                    method: kycStatus === 'verified' ? kycType : 'none',
-                    idNumber: kycStatus === 'verified' ? idNumber.substring(0, 4) + '****' : ''
-                },
                 assistantSettings: {
                     preferredLanguage: savedLang
                 }
             };
             await updateProfile(payload);
-            toast.success(`Setup Complete! Welcome to the ${planTitle} Life.`);
+            toast.success("Workspace Launched! Welcome to Kredibly.");
             setShowWelcomePreview(true);
         } catch (err) {
             toast.error(err.response?.data?.message || "Setup failed. Check details.");
@@ -240,85 +230,6 @@ const Onboarding = () => {
             setLoading(false);
         }
     };
-
-    const addStaff = () => {
-        if (!newStaffPhone) return;
-        if (!isValidNigerianPhone(newStaffPhone)) return toast.error("Invalid staff phone number");
-        const formatted = formatPhoneForDB(newStaffPhone);
-        if (staffNumbers.includes(formatted)) return toast.error("Already added");
-        if (staffNumbers.length >= 3) return toast.error("Founding Member Limit: You can add up to 3 staff members during setup.");
-        setStaffNumbers([...staffNumbers, formatted]);
-        setNewStaffPhone("");
-    };
-
-    const ProgressHeader = () => (
-        <div style={{ marginBottom: '32px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {step > 1 && (
-                        <button
-                            onClick={() => setStep(prev => prev - 1)}
-                            className="back-step-btn"
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: '36px',
-                                height: '36px',
-                                borderRadius: '50%',
-                                border: '1.5px solid #E2E8F0',
-                                background: 'transparent',
-                                color: '#64748B',
-                                cursor: 'pointer',
-                                flexShrink: 0,
-                                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
-                            }}
-                            onMouseEnter={e => {
-                                e.currentTarget.style.background = '#F8FAFC';
-                                e.currentTarget.style.borderColor = '#94A3B8';
-                                e.currentTarget.style.color = '#0F172A';
-                                e.currentTarget.style.transform = 'translateX(-2px)';
-                            }}
-                            onMouseLeave={e => {
-                                e.currentTarget.style.background = 'transparent';
-                                e.currentTarget.style.borderColor = '#E2E8F0';
-                                e.currentTarget.style.color = '#64748B';
-                                e.currentTarget.style.transform = 'translateX(0)';
-                            }}
-                        >
-                            <ArrowLeft size={16} />
-                        </button>
-                    )}
-                    <div>
-                        <h3 style={{ margin: 0, fontWeight: 700, fontSize: '1.5rem', letterSpacing: '-0.02em', color: '#0F172A' }}>
-                            {step === 1 ? 'Elite Access' : 'Quick Setup'}
-                        </h3>
-                        <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: '#0F172A', fontWeight: 400 }}>
-                            {step === 1 ? 'You are a Founding Member.' : `Step ${step - 1} of 3`}
-                        </p>
-                    </div>
-                </div>
-                {step > 1 && (
-                    <div style={{ background: 'rgba(76, 29, 149, 0.05)', padding: '8px 16px', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)' }}>
-                        {Math.round(((step-1)/3)*100)}% COMPLETED
-                    </div>
-                )}
-            </div>
-            <div style={{ display: 'flex', gap: '8px', height: '6px' }}>
-                {[1, 2, 3, 4].map((s) => (
-                    <div key={s} style={{ 
-                        flex: 1, 
-                        borderRadius: '4px', 
-                        background: s <= step ? 'var(--primary)' : '#E2E8F0',
-                        transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                        boxShadow: s <= step ? '0 0 10px rgba(76, 29, 149, 0.3)' : 'none'
-                    }} />
-                ))}
-            </div>
-        </div>
-    );
-
-    const filteredBanks = banks.filter(b => b.name.toLowerCase().includes(searchBank.toLowerCase())).slice(0, 8);
 
     return (
         <div className="auth-pattern" style={{ 
@@ -338,7 +249,7 @@ const Onboarding = () => {
                 pointerEvents: 'none'
             }} />
 
-            {/* Logo header — same style as AuthLayout */}
+            {/* Logo header */}
             <div
                 onClick={() => navigate('/')}
                 className="auth-logo-header animate-fade-in"
@@ -363,10 +274,9 @@ const Onboarding = () => {
                 <div style={{ maxWidth: '540px', width: '100%' }}>
                     
                     <div className="glass-card" style={{ padding: 'clamp(24px, 6vw, 48px)', borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)' }}>
-                        {!showWelcomePreview && <ProgressHeader />}
                         
                         <AnimatePresence mode="wait">
-                            {showWelcomePreview && (
+                            {showWelcomePreview ? (
                                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} key="welcome-preview">
                                     <div style={{ textAlign: 'center', marginBottom: '32px' }}>
                                         <div style={{ width: '64px', height: '64px', background: 'rgba(34, 197, 94, 0.05)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#10B981' }}>
@@ -374,7 +284,7 @@ const Onboarding = () => {
                                         </div>
                                         <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0F172A', marginBottom: '8px' }}>Workspace Launched!</h3>
                                         <p style={{ fontSize: '0.9rem', color: '#64748B', fontWeight: 500 }}>
-                                            Kreddy has sent the first message to your WhatsApp number: <strong style={{ color: '#0F172A' }}>{whatsappNumber}</strong>.
+                                            Kreddy is ready on WhatsApp for: <strong style={{ color: '#0F172A' }}>{whatsappNumber}</strong>
                                         </p>
                                     </div>
 
@@ -389,7 +299,7 @@ const Onboarding = () => {
                                         </div>
                                         
                                         <div style={{ background: 'white', padding: '14px 16px', borderRadius: '0 16px 16px 16px', fontSize: '0.88rem', maxWidth: '90%', boxShadow: '0 1px 2px rgba(0,0,0,0.1)', color: '#334155', lineHeight: 1.5 }}
-                                            dangerouslySetInnerHTML={{ __html: parseWhatsAppMarkdown(`Hello *${displayName || 'Boss'}*,\n\nI'm *Kreddy*, your Digital Chief of Staff.\n\nI've successfully launched your workspace for *${displayName || 'your business'}* and I'm ready to get to work.\n\nHere is what I can do for you:\n\n*Voice Note:*\n_"Sarah bought a bag for 15k, she paid 5k, remind me Friday for the balance."_\n\n*Picture:*\nSend me a paper invoice and I'll record it.\n\n*Ask me:*\n_"What is my revenue today?"_\n_"Who owes me money?"_\n\nTalk to me naturally.\n\nLet's get to work.`) }}
+                                            dangerouslySetInnerHTML={{ __html: parseWhatsAppMarkdown(`Hello *${displayName || 'User'}*,\n\nI'm *Kreddy*, your AI assistant.\n\nYour workspace for *${displayName}* is live! I'm ready to help you record sales, send invoices, and track payments.\n\nTalk to me naturally on WhatsApp anytime.`) }}
                                         />
                                     </div>
 
@@ -401,242 +311,73 @@ const Onboarding = () => {
                                         Go to Dashboard 🚀
                                     </button>
                                 </motion.div>
-                            )}
-                            {/* Step 1: Founding Member Welcome */}
-                            {!showWelcomePreview && step === 1 && (
-                                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} key="welcome">
-                                    <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-                                        <div style={{ width: '80px', height: '80px', background: 'linear-gradient(135deg, #7C3AED, #4C1D95)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: 'white', boxShadow: '0 15px 30px rgba(76, 29, 149, 0.3)' }}>
-                                            <Zap size={40} fill="white" />
-                                        </div>
-                                        <h2 style={{ fontSize: 'clamp(1.5rem, 6vw, 2rem)', fontWeight: 700, letterSpacing: '-0.04em', color: '#000000', marginBottom: '12px' }} className="mobile-heading">Welcome, {planTitle}.</h2>
-                                        <p style={{ color: '#000000', fontWeight: 400, fontSize: '1rem', lineHeight: 1.7 }} className="mobile-text">
-                                            As a <span style={{ color: '#000000', fontWeight: 600 }}>Founding Member</span>, you've been granted <strong style={{ color: '#000000' }}>30 days</strong> of the <strong style={{ color: '#000000' }}>{planTitle} Plan</strong> for free during this beta phase.
-                                        </p>
-                                    </div>
-                                    <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1.5px solid #E2E8F0', marginBottom: '40px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-                                            <CheckCircle2 size={18} color="#10B981" />
-                                            <span style={{ fontWeight: 500, fontSize: '0.92rem', color: '#1E293B' }}>Unlimited Invoice Records (No 10 sale limit)</span>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-                                            <CheckCircle2 size={18} color="#10B981" />
-                                            <span style={{ fontWeight: 500, fontSize: '0.92rem', color: '#1E293B' }}>Kreddy AI Voice Notes (Just Speak!)</span>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                            <CheckCircle2 size={18} color="#10B981" />
-                                            <span style={{ fontWeight: 500, fontSize: '0.92rem', color: '#1E293B' }}>0% Transaction Fees, Always</span>
-                                        </div>
-                                    </div>
-                                    <button onClick={() => setStep(2)} className="btn-primary" style={{ width: '100%', height: '64px', fontSize: '1.15rem' }}>Verify Business Profile <ArrowRight size={20} /></button>
-                                    <div style={{ textAlign: 'center', marginTop: '16px' }}>
-                                        <button
-                                            onClick={async () => {
-                                                await logout();
-                                                navigate("/auth/login");
-                                            }}
-                                            style={{
-                                                background: 'none',
-                                                border: 'none',
-                                                fontSize: '0.85rem',
-                                                color: '#64748B',
-                                                cursor: 'pointer',
-                                                textDecoration: 'underline',
-                                                textUnderlineOffset: '3px',
-                                                fontWeight: 500,
-                                                padding: '4px 8px'
-                                            }}
-                                        >
-                                            ← Back to Login
-                                        </button>
-                                    </div>
-                                </motion.div>
-                            )}
-
-                            {/* Step 2: Basic Business Info */}
-                            {!showWelcomePreview && step === 2 && (
-                                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} key="info">
-                                    <div className="input-group" style={{ marginBottom: '24px' }}>
-                                        <label className="input-label" style={{ fontWeight: 500, color: '#0F172A' }}>Name of your Business, Shop, or Service?</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <Store size={20} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }} />
-                                            <input 
-                                                type="text" 
-                                                className="input-field" 
-                                                style={{ height: '60px', paddingLeft: '56px', fontSize: '1.1rem', fontWeight: 400 }}
-                                                placeholder="e.g. Trendy Collections, John The Plumber" 
-                                                value={displayName} 
-                                                onChange={e => setDisplayName(e.target.value)} 
-                                                autoFocus 
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="input-group" style={{ marginBottom: '40px' }}>
-                                        <label className="input-label" style={{ fontWeight: 500, color: '#0F172A' }}>Your Whatsapp Number</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <MessageCircle size={20} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }} />
-                                            <input 
-                                                type="tel" 
-                                                className="input-field" 
-                                                style={{ paddingLeft: '56px', height: '60px', fontSize: '1.1rem', fontWeight: 400 }}
-                                                placeholder="08123456789" 
-                                                value={whatsappNumber} 
-                                                onChange={e => setWhatsappNumber(e.target.value)} 
-                                            />
-                                        </div>
-                                        <p style={{ fontSize: '0.8rem', color: '#0F172A', marginTop: '8px', fontWeight: 400 }}>Kreddy will be able to communicate with you through your whatsapp number.</p>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '16px' }}>
-                                        <button onClick={nextStep} className="btn-primary" style={{ flex: 1, height: '64px', fontSize: '1.1rem' }}>Next: Payout Details <Landmark size={20} /></button>
-                                    </div>
-                                </motion.div>
-                            )}
-
-                            {/* Step 3: Payout Settlement (Moved before KYC) */}
-                            {!showWelcomePreview && step === 3 && (
-                                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} key="bank">
+                            ) : (
+                                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key="micro-onboarding">
                                     <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                                        <div style={{ width: '64px', height: '64px', background: 'rgba(76, 29, 149, 0.05)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'var(--primary)' }}>
-                                            <Landmark size={32} />
+                                        <div style={{ width: '64px', height: '64px', background: 'linear-gradient(135deg, #7C3AED, #4C1D95)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'white', boxShadow: '0 10px 20px rgba(76, 29, 149, 0.2)' }}>
+                                            <Zap size={32} fill="white" />
                                         </div>
-                                        <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', marginBottom: '8px' }}>Payout Settlement</h3>
-                                        <p style={{ fontSize: '0.9rem', color: '#64748B', fontWeight: 400 }}>Where should we pay your money?</p>
+                                        <h2 style={{ fontSize: 'clamp(1.5rem, 5vw, 1.8rem)', fontWeight: 800, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.03em' }}>Welcome to Kredibly</h2>
+                                        <p style={{ color: '#64748B', fontWeight: 500, fontSize: '0.95rem' }}>Set up your workspace in less than 30 seconds.</p>
                                     </div>
 
-                                    <div className="input-group" style={{ marginBottom: '24px' }}>
-                                        <div style={{ position: 'relative' }}>
-                                            <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', zIndex: 2 }} />
-                                            <input 
-                                                type="text" 
-                                                className="input-field" 
-                                                style={{ height: '56px', paddingLeft: '48px', fontSize: '1rem', fontWeight: 400 }}
-                                                placeholder={banksLoading ? "Loading banks..." : "Search Bank (e.g. Kuda, GTB)"}
-                                                value={selectedBank ? selectedBank.name : searchBank}
-                                                onChange={e => { setSearchBank(e.target.value); setSelectedBank(null); }}
-                                                onClick={() => { if (selectedBank) setSelectedBank(null); }}
-                                                disabled={banksLoading}
-                                            />
-                                            {banksLoading && (
-                                                <Loader2 size={16} style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', animation: 'spin 1s linear infinite' }} />
-                                            )}
-                                            {searchBank && !selectedBank && filteredBanks.length > 0 && (
-                                                <div style={{ position: 'absolute', top: '62px', left: 0, right: 0, background: 'white', border: '1px solid #E2E8F0', borderRadius: '16px', zIndex: 100, boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', maxHeight: '280px', overflowY: 'auto' }}>
-                                                    {filteredBanks.map(b => (
-                                                        <div 
-                                                            key={b.code} 
-                                                            onMouseDown={() => { setSelectedBank(b); setSearchBank(""); setAccountName(""); }} 
-                                                            style={{ padding: '14px 20px', cursor: 'pointer', borderBottom: '1px solid #F1F5F9', fontWeight: 500, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '10px' }}
-                                                            onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'}
-                                                            onMouseLeave={e => e.currentTarget.style.background = 'white'}
-                                                        >
-                                                            <Landmark size={14} color="#94A3B8" />
-                                                            {b.name}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
+                                    <form onSubmit={handleSubmit}>
+                                        <div className="input-group" style={{ marginBottom: '24px' }}>
+                                            <label className="input-label" style={{ fontWeight: 600, color: '#0F172A' }}>What name should appear on your invoices?</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <Store size={20} style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }} />
+                                                <input 
+                                                    type="text" 
+                                                    className="input-field" 
+                                                    style={{ height: '58px', paddingLeft: '52px', fontSize: '1.05rem', fontWeight: 500 }}
+                                                    placeholder="e.g. Joy's Closet, Tosin Creatives, or Tosin Adebayo" 
+                                                    value={displayName} 
+                                                    onChange={e => setDisplayName(e.target.value)} 
+                                                    autoFocus
+                                                    required 
+                                                />
+                                            </div>
+                                            <p style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '6px', fontWeight: 400 }}>
+                                                This will be displayed on all receipts and invoices sent to customers.
+                                            </p>
                                         </div>
-                                    </div>
-                                    <div className="input-group" style={{ marginBottom: '24px' }}>
-                                        <label className="input-label" style={{ fontWeight: 500, color: '#0F172A' }}>Account Number</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <input 
-                                                type="text" 
-                                                className="input-field" 
-                                                style={{ height: '56px', fontSize: '1.2rem', fontWeight: 600, letterSpacing: '0.2em' }}
-                                                placeholder="0123456789" 
-                                                maxLength={10}
-                                                value={accountNumber} 
-                                                onChange={e => setAccountNumber(e.target.value.replace(/\D/g, "").trim())}
-                                            />
-                                            {isResolving && <Loader2 className="spin" size={20} style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)', animation: 'spin 1s linear infinite' }} />}
-                                        </div>
-                                    </div>
-                                    {accountName && (
-                                        <div style={{ background: '#F0FDF4', padding: '16px 20px', borderRadius: '16px', border: '1px solid #BBF7D0', marginBottom: '40px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                            <CheckCircle2 size={20} color="#16A34A" />
-                                            <span style={{ fontWeight: 600, color: '#166534', fontSize: '0.95rem' }}>{accountName}</span>
-                                        </div>
-                                    )}
-                                    <div style={{ display: 'flex', gap: '16px' }}>
-                                        <button onClick={nextStep} className="btn-primary" style={{ flex: 1, height: '64px', fontSize: '1.1rem' }}>Verify & Continue <ArrowRight size={20} /></button>
-                                    </div>
-                                </motion.div>
-                            )}
 
-                            {/* Step 4: Finishing Touches — Logo + Staff (Optional) */}
-                            {!showWelcomePreview && step === 4 && (
-                                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} key="staff">
-                                    {/* Logo Upload */}
-                                    <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                                        <div
-                                            onClick={() => fileInputRef.current.click()}
-                                            style={{ 
-                                                width: '96px', height: '96px', borderRadius: '28px', 
-                                                background: logoUrl ? 'transparent' : '#F8FAFC', 
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                                margin: '0 auto 12px', border: '3px dashed #E2E8F0', 
-                                                cursor: 'pointer', overflow: 'hidden',
-                                                fontWeight: 600, fontSize: '1.8rem', color: 'var(--primary)'
-                                            }}
-                                        >
-                                            {uploading ? (
-                                                <Loader2 size={32} color="#94A3B8" style={{ animation: 'spin 1s linear infinite' }} />
-                                            ) : logoUrl ? (
-                                                <img src={logoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="logo" />
-                                            ) : (
-                                                getInitials(displayName)
-                                            )}
-                                        </div>
-                                        <p style={{ fontWeight: 600, color: '#0F172A', cursor: 'pointer', marginBottom: '4px' }} onClick={() => fileInputRef.current.click()}>
-                                            {logoUrl ? "Logo Uploaded ✓" : "Upload Brand Logo (Optional)"}
-                                        </p>
-                                        <p style={{ fontSize: '0.78rem', color: '#0F172A', fontWeight: 400 }}>
-                                            {logoUrl ? "Click to change" : "Your initials show until you add a logo — you can also do this in Settings later"}
-                                        </p>
-                                        <input ref={fileInputRef} type="file" hidden onChange={handleLogoUpload} accept="image/*" />
-                                    </div>
-
-                                    <div className="input-group" style={{ marginBottom: '40px' }}>
-                                        <label className="input-label" style={{ fontWeight: 500, color: '#0F172A' }}>Add Managers or Partners (Optional)</label>
-                                        <p style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '12px', fontWeight: 400 }}>They'll be able to record sales on WhatsApp too. You can add multiple.</p>
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <div style={{ position: 'relative', flex: 1 }}>
-                                                <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }} />
+                                        <div className="input-group" style={{ marginBottom: '36px' }}>
+                                            <label className="input-label" style={{ fontWeight: 600, color: '#0F172A' }}>What WhatsApp number should Kreddy use?</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <MessageCircle size={20} style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }} />
                                                 <input 
                                                     type="tel" 
                                                     className="input-field" 
-                                                    style={{ height: '56px', paddingLeft: '48px', fontSize: '1rem', fontWeight: 400, width: '100%' }}
-                                                    placeholder="Their Phone Number" 
-                                                    value={newStaffPhone}
-                                                    onChange={e => setNewStaffPhone(e.target.value)}
+                                                    style={{ height: '58px', paddingLeft: '52px', fontSize: '1.05rem', fontWeight: 500 }}
+                                                    placeholder="e.g. 08123456789" 
+                                                    value={whatsappNumber} 
+                                                    onChange={e => setWhatsappNumber(e.target.value)}
+                                                    required 
                                                 />
                                             </div>
-                                            <button onClick={addStaff} className="btn-secondary" style={{ padding: '0 20px', borderRadius: '14px', height: '56px' }}>Add</button>
+                                            <p style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '6px', fontWeight: 400 }}>
+                                                Kreddy uses this to send your sales confirmations and invoice alerts.
+                                            </p>
                                         </div>
-                                        {staffNumbers.length > 0 && (
-                                            <div style={{ marginTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                                {staffNumbers.map(s => <div key={s} style={{ background: '#F1F5F9', padding: '6px 12px', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 600 }}>{s}</div>)}
-                                            </div>
-                                        )}
-                                    </div>
 
-                                    <button 
-                                        onClick={handleSubmit} 
-                                        disabled={loading} 
-                                        className="btn-primary" 
-                                        style={{ width: '100%', height: '64px', fontSize: '1.2rem', boxShadow: '0 15px 30px rgba(76, 29, 149, 0.4)' }}
-                                    >
-                                        {loading ? <Loader2 className="spin" size={24} style={{ animation: 'spin 1s linear infinite' }} /> : "Launch My Workspace"}
-                                    </button>
+                                        <button 
+                                            type="submit" 
+                                            disabled={loading} 
+                                            className="btn-primary" 
+                                            style={{ width: '100%', height: '60px', fontSize: '1.1rem', fontWeight: 700, borderRadius: '16px', boxShadow: '0 10px 20px rgba(76, 29, 149, 0.3)' }}
+                                        >
+                                            {loading ? <Loader2 className="spin" size={22} style={{ animation: 'spin 1s linear infinite' }} /> : "Launch My Workspace 🚀"}
+                                        </button>
+                                    </form>
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
 
-                    <div style={{ marginTop: '32px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 500, color: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                            <ShieldCheck size={16} color="#0F172A" /> DATA ENCRYPTED & BANK-GRADE SECURE
+                    <div style={{ marginTop: '28px', textAlign: 'center' }}>
+                        <p style={{ fontSize: '0.78rem', fontWeight: 500, color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                            <ShieldCheck size={16} color="#10B981" /> 100% BANK-GRADE SECURE · NO CREDIT CARD REQUIRED
                         </p>
                     </div>
                 </div>

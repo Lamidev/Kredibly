@@ -143,16 +143,18 @@ const verifyEmail = async (req, res) => {
     user.verificationTokenExpiresAt = undefined;
     await user.save();
 
-    sendWelcomeEmail(user.email, user.name)
-      .catch(err => console.error("Background Email Error (Welcome):", err.message));
-
     // Generate token and set cookie so user is authenticated immediately
     generateTokenAndSetCookie(res, user._id, user.name, user.email, user.role);
 
+    const profile = await BusinessProfile.findOne({ ownerId: user._id });
+    const userData = user.toObject();
+    delete userData.password;
+
     res.status(200).json({
       success: true,
-      message: "Email verified successfully"
-      // token intentionally omitted — delivered via httpOnly cookie only
+      message: "Email verified successfully",
+      user: userData,
+      profile: profile || null
     });
 
   } catch (error) {

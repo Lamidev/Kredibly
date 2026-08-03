@@ -79,6 +79,12 @@ class InvoiceWorkflow extends WorkflowBase {
 
             await this.complete(state);
 
+            const hasBank = !!(profile.bankDetails?.accountNumber && profile.bankDetails?.bankCode);
+            const User = require("../../models/User");
+            const ownerId = profile.ownerId?._id || profile.ownerId;
+            const ownerUser = await User.findById(ownerId);
+            const isVerified = (ownerUser && ownerUser.bankVerified) || hasBank;
+
             const newSale = new Sale({
                 businessId: profile._id,
                 customerName: customerName || "Customer",
@@ -90,9 +96,27 @@ class InvoiceWorkflow extends WorkflowBase {
                 recordedBy: opts.cleanFrom,
                 invoiceType: invoiceType || "billing",
                 customerPhone: customerPhone || undefined,
-                lifecycleStatus: "PENDING_DELIVERY"
+                lifecycleStatus: isVerified ? "PENDING_DELIVERY" : "AWAITING_BANK_SETUP"
             });
             await newSale.save();
+
+            if (!isVerified) {
+                if (ownerUser) {
+                    ownerUser.pendingAction = {
+                        type: "SEND_INVOICE",
+                        saleId: newSale._id,
+                        from: opts.from,
+                        customerPhone: customerPhone || null
+                    };
+                    await ownerUser.save();
+                }
+
+                await MessageDispatcher.send(
+                    opts.from,
+                    `Invoice #${newSale.invoiceNumber} for *${newSale.customerName}* (₦${newSale.totalAmount.toLocaleString()}) is ready.\n\nBefore I deliver it, where should customer payments be deposited?\n\nReply with your Bank Name & Account Number (e.g. GTBank 0123456789).`
+                );
+                return true;
+            }
 
             await MessageDispatcher.send(
                 opts.from,
