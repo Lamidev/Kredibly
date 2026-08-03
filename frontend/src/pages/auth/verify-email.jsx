@@ -9,6 +9,7 @@ const VerifyEmail = () => {
     const [loading, setLoading] = useState(false);
     const [resending, setResending] = useState(false);
     const [cooldown, setCooldown] = useState(0);
+    const [locked, setLocked] = useState(false);
     const { verifyEmail, resendVerificationCode } = useAuth();
     const navigate = useNavigate();
     const inputs = useRef([]);
@@ -30,10 +31,16 @@ const VerifyEmail = () => {
         if (digit && index < 5) {
             inputs.current[index + 1]?.focus();
         }
-        // Auto-submit when last box filled
+        // Auto-submit when last box filled — flash first then submit
         if (digit && index === 5) {
             const code = [...newDigits].join("");
-            if (code.length === 6) submitCode(code);
+            if (code.length === 6) {
+                setLocked(true);
+                setTimeout(() => {
+                    setLocked(false);
+                    submitCode(code);
+                }, 380);
+            }
         }
     };
 
@@ -149,13 +156,16 @@ const VerifyEmail = () => {
                                 textAlign: 'center',
                                 fontSize: 'clamp(1.2rem, 4vw, 1.6rem)',
                                 fontWeight: 700,
-                                border: d ? '2px solid var(--primary)' : '1.5px solid #E2E8F0',
+                                border: locked ? '2px solid #10B981' : d ? '2px solid var(--primary)' : '1.5px solid #E2E8F0',
                                 borderRadius: '12px',
-                                background: d ? 'rgba(76,29,149,0.04)' : '#FAFAFA',
-                                color: '#0F172A',
+                                background: locked ? 'rgba(16,185,129,0.07)' : d ? 'rgba(76,29,149,0.04)' : '#FAFAFA',
+                                color: locked ? '#10B981' : '#0F172A',
                                 outline: 'none',
-                                transition: 'all 0.15s',
+                                transition: 'border 0.15s, background 0.15s, color 0.15s, transform 0.15s, box-shadow 0.15s',
                                 caretColor: 'var(--primary)',
+                                transform: locked ? 'scale(1.08)' : 'scale(1)',
+                                boxShadow: locked ? '0 0 0 3px rgba(16,185,129,0.18)' : 'none',
+                                animation: locked ? 'otp-lock 0.38s ease' : 'none',
                             }}
                         />
                     ))}
@@ -220,6 +230,14 @@ const VerifyEmail = () => {
                 </Link>
             </div>
         </div>
+        <style>{`
+            @keyframes otp-lock {
+                0%   { transform: scale(1); }
+                35%  { transform: scale(1.12); }
+                65%  { transform: scale(1.06); }
+                100% { transform: scale(1.08); }
+            }
+        `}</style>
     );
 };
 
