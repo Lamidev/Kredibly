@@ -19,6 +19,28 @@ const VerifyEmail = () => {
         return () => clearTimeout(timer);
     }, [cooldown]);
 
+    // Auto-verify if 1-click magic link is clicked from email (?code=XXXXXX)
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const codeParam = params.get("code");
+        if (codeParam && codeParam.trim().length === 6) {
+            const cleanCode = codeParam.trim();
+            setCode(cleanCode);
+            setLoading(true);
+            verifyEmail(cleanCode)
+                .then(() => {
+                    toast.success("Email verified successfully!");
+                    navigate("/onboarding");
+                })
+                .catch((err) => {
+                    console.error("Auto Verification Error:", err);
+                    const errorMessage = err.response?.data?.message || err.message || "Verification link invalid or expired";
+                    toast.error(errorMessage);
+                })
+                .finally(() => setLoading(false));
+        }
+    }, []);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);

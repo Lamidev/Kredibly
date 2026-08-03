@@ -1157,6 +1157,96 @@ const handleIncoming = async (req, res) => {
         const merchantFirstName = registeredName || profileName || tierTitle;
         const bossTitle = profile?.assistantSettings?.preferredName || merchantFirstName;
 
+        // 🏦 JIT Bank Account Verification & Pending Action Resumption
+        if (profile?.ownerId) {
+            const User = require("../../models/User");
+            const ownerId = profile.ownerId?._id || profile.ownerId;
+            const userDoc = await User.findById(ownerId);
+
+            if (userDoc && userDoc.pendingAction && userDoc.pendingAction.type === "SEND_INVOICE") {
+                const digits = text.replace(/\D/g, "");
+                if (digits.length >= 10) {
+                    const tenDigits = digits.substring(0, 10);
+                    const { getBanks, resolveAccount } = require("../../utils/nomba");
+                    let bankCode = null;
+                    let bankName = "";
+
+                    try {
+                        const bankList = await getBanks().catch(() => []);
+                        const lowerText = text.toLowerCase();
+                        const matchedBank = bankList.find(b => lowerText.includes(b.name.toLowerCase()) || (b.code && lowerText.includes(b.code)));
+                        
+                        if (matchedBank) {
+                            bankCode = matchedBank.code;
+                            bankName = matchedBank.name;
+                        } else {
+                            const popular = [
+                                { name: "GTBank", code: "058" },
+                                { name: "Access Bank", code: "044" },
+                                { name: "First Bank", code: "011" },
+                                { name: "Zenith Bank", code: "057" },
+                                { name: "UBA", code: "033" },
+                                { name: "Kuda", code: "50211" },
+                                { name: "Opay", code: "999992" },
+                                { name: "Palmpay", code: "999991" },
+                                { name: "Moniepoint", code: "50515" }
+                            ];
+                            const foundPop = popular.find(p => lowerText.includes(p.name.toLowerCase()));
+                            if (foundPop) {
+                                bankCode = foundPop.code;
+                                bankName = foundPop.name;
+                            }
+                        }
+
+                        if (!bankCode) {
+                            await sendReply(from, `I see account number ${tenDigits}, but I need your bank name to verify it.\n\nPlease reply with both: Bank Name and 10-digit Account Number (e.g. GTBank ${tenDigits}).`);
+                            return;
+                        }
+
+                        const resolved = await resolveAccount(tenDigits, bankCode);
+                        if (resolved && resolved.account_name) {
+                            profile.bankDetails = {
+                                bankName,
+                                bankCode,
+                                accountNumber: tenDigits,
+                                accountName: resolved.account_name,
+                                lastBankChangeAt: new Date()
+                            };
+                            await profile.save();
+
+                            userDoc.bankVerified = true;
+                            const pendingAction = userDoc.pendingAction;
+                            userDoc.pendingAction = null;
+                            await userDoc.save();
+
+                            if (pendingAction.saleId) {
+                                const Sale = require("../../models/Sale");
+                                const sale = await Sale.findById(pendingAction.saleId);
+                                if (sale) {
+                                    sale.lifecycleStatus = "PENDING_DELIVERY";
+                                    await sale.save();
+
+                                    const { deliverInvoiceToCustomer } = require("../../utils/customerInvoiceService");
+                                    const delRes = await deliverInvoiceToCustomer(sale._id, profile._id, { customerPhone: pendingAction.customerPhone });
+
+                                    if (delRes && delRes.success) {
+                                        await sendReply(from, `Bank account verified: *${resolved.account_name}* (${bankName} ••••••${tenDigits.slice(-4)}).\n\n✓ Invoice #${sale.invoiceNumber} delivered to ${sale.customerName}.`);
+                                    } else {
+                                        await sendReply(from, `Bank account verified: *${resolved.account_name}* (${bankName}).\n\nYour account is set up, but I had trouble delivering Invoice #${sale.invoiceNumber} to the customer's phone number. You can view or share it anytime from your dashboard.`);
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                    } catch (err) {
+                        console.error("JIT Bank Verification Error:", err.message);
+                        await sendReply(from, `I couldn't verify that account details (${err.message}).\n\nPlease check the bank name and 10-digit account number and try again.`);
+                        return;
+                    }
+                }
+            }
+        }
+
         // 🚀 V2 Workflow Intercept
         const ConversationGateway = require("../../conversation/ConversationGateway");
         const workflowIsStaff = profile ? (profile.whatsappNumber !== cleanFrom) : false;

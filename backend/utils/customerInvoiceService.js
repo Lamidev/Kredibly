@@ -542,6 +542,18 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
         const business = await BusinessProfile.findById(businessId);
         if (!business) throw new Error("Business not found");
 
+        // 🛡️ HARD BACKEND GUARD (Spec v1.0 Section 20): Bank Verification Check
+        const User = require("../models/User");
+        const ownerUser = await User.findById(business.ownerId);
+        const hasBank = !!(business.bankDetails?.accountNumber && business.bankDetails?.bankCode);
+        const isBankVerified = (ownerUser && ownerUser.bankVerified) || hasBank;
+
+        if (!isBankVerified) {
+            const err = new Error("BANK_VERIFICATION_REQUIRED: Merchant must verify payout bank details before sending payable invoices.");
+            err.code = "BANK_VERIFICATION_REQUIRED";
+            throw err;
+        }
+
         const customerPhone = options.customerPhone || sale.customerPhone || sale.deliveredToPhone;
         if (!customerPhone) throw new Error("Customer phone number required");
 

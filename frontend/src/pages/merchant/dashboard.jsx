@@ -33,6 +33,8 @@ const statusLabel = (sale) => {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+import BankSetupModal from "../../components/dashboard/BankSetupModal";
+
 export default function Dashboard() {
     const { stats, sales, fetchSales, fetchStats, loading } = useSales();
     const { profile } = useAuth();
@@ -41,6 +43,9 @@ export default function Dashboard() {
     const [timelineFilter, setTimelineFilter] = useState("all");
     const [showHealthModal, setShowHealthModal] = useState(false);
     const [visibleEvents, setVisibleEvents] = useState(5);
+    const [isBankModalOpen, setIsBankModalOpen] = useState(false);
+
+    const hasBank = !!(profile?.bankDetails?.accountNumber && profile?.bankDetails?.bankCode);
 
     useEffect(() => {
         setVisibleEvents(5);
@@ -204,6 +209,49 @@ export default function Dashboard() {
 
     return (
         <div className="animate-fade-in" style={{ paddingBottom: "60px" }}>
+
+            <BankSetupModal
+                isOpen={isBankModalOpen}
+                onClose={() => setIsBankModalOpen(false)}
+                onSuccess={() => fetchStats()}
+            />
+
+            {/* Payment Readiness Banner */}
+            {!hasBank ? (
+                <div style={{ background: "#FEF3C7", border: "1.5px solid #FCD34D", borderRadius: "18px", padding: "14px 20px", marginBottom: "24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap", boxShadow: "0 2px 8px rgba(245, 158, 11, 0.08)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <AlertCircle size={22} color="#B45309" />
+                        <div>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem", color: "#92400E" }}>Payment account not connected</p>
+                            <p style={{ margin: 0, fontSize: "0.85rem", color: "#B45309" }}>Add your bank account to receive automated sweeps when customers pay your invoices.</p>
+                        </div>
+                    </div>
+                    <button onClick={() => setIsBankModalOpen(true)} style={{ background: "#D97706", color: "white", border: "none", padding: "10px 18px", borderRadius: "12px", fontWeight: 700, fontSize: "0.88rem", cursor: "pointer" }}>
+                        Verify Bank Account
+                    </button>
+                </div>
+            ) : (
+                <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: "14px", padding: "10px 16px", marginBottom: "24px", display: "flex", alignItems: "center", gap: "10px" }}>
+                    <CheckCircle2 size={18} color="#16A34A" />
+                    <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#166534" }}>✓ Payment account ready: {profile.bankDetails.bankName} ••••{profile.bankDetails.accountNumber.slice(-4)} ({profile.bankDetails.accountName})</span>
+                </div>
+            )}
+
+            {/* WhatsApp Connection Banner if missing */}
+            {!profile?.whatsappNumber && (
+                <div style={{ background: "#F0F9FF", border: "1.5px solid #BAE6FD", borderRadius: "18px", padding: "14px 20px", marginBottom: "24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <MessageCircle size={22} color="#0284C7" />
+                        <div>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem", color: "#0369A1" }}>WhatsApp number not connected</p>
+                            <p style={{ margin: 0, fontSize: "0.85rem", color: "#0284C7" }}>Add your WhatsApp number so Kreddy recognizes your chat commands.</p>
+                        </div>
+                    </div>
+                    <button onClick={() => navigate('/settings/profile')} style={{ background: "#0284C7", color: "white", border: "none", padding: "10px 18px", borderRadius: "12px", fontWeight: 700, fontSize: "0.88rem", cursor: "pointer" }}>
+                        Connect WhatsApp
+                    </button>
+                </div>
+            )}
 
             {/* Greeting + Kreddy strip */}
             <div className="kreddy-greeting-row" style={{ marginBottom: "28px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>

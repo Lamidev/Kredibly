@@ -104,7 +104,10 @@ exports.updateProfile = async (req, res) => {
             }
             
             const wasIncomplete = (profile.onboardingStep || 0) < 4;
-            if (req.body.onboardingStep === 4) profile.onboardingStep = 4;
+            if (req.body.onboardingStep === 4 || profile.displayName) {
+                profile.onboardingStep = 4;
+                await User.findByIdAndUpdate(req.user._id, { onboardingCompleted: true });
+            }
             await profile.save();
 
             // Promote prospect if applicable
@@ -163,6 +166,10 @@ exports.updateProfile = async (req, res) => {
                 bankDetails: bankDetails || {}
             });
             await profile.save();
+
+            if (profile.displayName) {
+                await User.findByIdAndUpdate(req.user._id, { onboardingCompleted: true });
+            }
 
             // Promote prospect if applicable
             const { promoteProspect } = require("../../utils/prospectPromotion");
@@ -252,6 +259,7 @@ exports.saveBankDetails = async (req, res) => {
             profile.kyc.rejectionReason = "Bank details changed. Re-verification required.";
         }
         await profile.save();
+        await User.findByIdAndUpdate(req.user._id, { bankVerified: true });
         res.status(200).json({ success: true, message: "Saved!", data: profile.bankDetails });
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 };

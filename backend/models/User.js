@@ -23,6 +23,18 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  onboardingCompleted: {
+    type: Boolean,
+    default: false
+  },
+  bankVerified: {
+    type: Boolean,
+    default: false
+  },
+  pendingAction: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
   role: {
     type: String,
     enum: ["user", "admin"],
