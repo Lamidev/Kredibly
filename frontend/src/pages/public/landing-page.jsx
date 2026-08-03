@@ -389,24 +389,25 @@ const LandingPage = () => {
                                 Send invoices, collect payments, follow up on unpaid bills, and keep your work organized. If people pay you, Kredibly is for you.
                             </p>
                             
-                            <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', width: '100%', gap: '16px', flexWrap: 'wrap' }}>
-                                <a
-                                    href={KREDDY_CONFIG.getLink("Hi Kreddy\nI'd like to see how Kredibly works.")}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                            <div className="hero-cta-group">
+                                {/* Primary CTA: Register / Create Account */}
+                                <button
+                                    onClick={() => profile ? navigate('/dashboard') : navigate('/auth/register')}
+                                    className="hero-btn-primary"
                                     style={{
                                         display: 'inline-flex',
                                         alignItems: 'center',
-                                        gap: '12px',
-                                        padding: '8px 8px 8px 24px',
+                                        justifyContent: 'center',
+                                        gap: '10px',
+                                        padding: '6px 6px 6px 20px',
                                         borderRadius: '100px',
                                         background: 'var(--primary)',
                                         color: '#FFFFFF',
                                         fontWeight: 700,
-                                        fontSize: 'clamp(0.85rem, 1vw, 0.98rem)',
+                                        fontSize: 'clamp(0.88rem, 1vw, 0.98rem)',
                                         cursor: 'pointer',
+                                        border: 'none',
                                         transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                                        textDecoration: 'none',
                                         boxShadow: '0 8px 24px rgba(109, 40, 217, 0.28)'
                                     }}
                                     onMouseEnter={e => {
@@ -418,66 +419,94 @@ const LandingPage = () => {
                                         e.currentTarget.style.boxShadow = '0 8px 24px rgba(109, 40, 217, 0.28)';
                                     }}
                                 >
-                                    <span>Try Kreddy Now</span>
+                                    <span>{profile ? "Go to Dashboard" : "Get Started"}</span>
                                     <div style={{
-                                        width: '36px',
-                                        height: '36px',
+                                        width: '34px',
+                                        height: '34px',
                                         borderRadius: '50%',
-                                        backgroundColor: '#FFFFFF',
+                                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         flexShrink: 0
                                     }}>
-                                        <svg viewBox="0 0 24 24" width="18" height="18" fill="var(--primary)">
+                                        <ArrowRight size={16} color="#FFFFFF" />
+                                    </div>
+                                </button>
+
+                                {/* Secondary CTA: Try Kreddy Now (Capsule Pill style) */}
+                                <a
+                                    href={KREDDY_CONFIG.getLink("Hi Kreddy\nI'd like to see how Kredibly works.")}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hero-btn-secondary"
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '10px',
+                                        padding: '6px 6px 6px 20px',
+                                        borderRadius: '100px',
+                                        background: '#FFFFFF',
+                                        color: '#0F172A',
+                                        border: '1.5px solid #E2E8F0',
+                                        fontWeight: 700,
+                                        fontSize: 'clamp(0.88rem, 1vw, 0.98rem)',
+                                        cursor: 'pointer',
+                                        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                                        textDecoration: 'none',
+                                        boxShadow: '0 4px 14px rgba(0, 0, 0, 0.05)'
+                                    }}
+                                    onMouseEnter={e => {
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.08)';
+                                    }}
+                                    onMouseLeave={e => {
+                                        e.currentTarget.style.transform = 'none';
+                                        e.currentTarget.style.boxShadow = '0 4px 14px rgba(0, 0, 0, 0.05)';
+                                    }}
+                                >
+                                    <span>Try Kreddy Now</span>
+                                    <div style={{
+                                        width: '34px',
+                                        height: '34px',
+                                        borderRadius: '50%',
+                                        backgroundColor: 'var(--primary)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0
+                                    }}>
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="#FFFFFF">
                                             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.458 5.704 1.459h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413" />
                                         </svg>
                                     </div>
                                 </a>
+                            </div>
 
+                            {/* Micro Demo Link + Trust Badge */}
+                            <div className="hero-demo-row">
                                 <button
                                     onClick={() => setShowVideoModal(true)}
                                     style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: '#475569',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
                                         display: 'inline-flex',
                                         alignItems: 'center',
-                                        gap: '12px',
-                                        padding: '8px 8px 8px 24px',
-                                        borderRadius: '100px',
-                                        background: '#FFFFFF',
-                                        color: '#0F172A',
-                                        border: '1px solid #E2E8F0',
-                                        fontWeight: 700,
-                                        fontSize: 'clamp(0.85rem, 1vw, 0.98rem)',
-                                        cursor: 'pointer',
-                                        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                                        textDecoration: 'none',
-                                        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.06)'
-                                    }}
-                                    onMouseEnter={e => {
-                                        e.currentTarget.style.transform = 'translateY(-2px)';
-                                        e.currentTarget.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.1)';
-                                    }}
-                                    onMouseLeave={e => {
-                                        e.currentTarget.style.transform = 'none';
-                                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.06)';
+                                        gap: '6px',
+                                        padding: 0
                                     }}
                                 >
-                                    <span>Watch Demo</span>
-                                    <div style={{
-                                        width: '36px',
-                                        height: '36px',
-                                        borderRadius: '50%',
-                                        backgroundColor: '#0F172A',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: '#FFFFFF',
-                                        flexShrink: 0
-                                    }}>
-                                        <Play size={16} fill="#FFFFFF" style={{ marginLeft: '2px' }} />
-                                    </div>
+                                    <Play size={13} fill="#475569" color="#475569" />
+                                    <span>Watch 1-min video demo</span>
                                 </button>
-
+                                <span style={{ fontSize: '0.78rem', color: '#94A3B8', fontWeight: 500 }}>
+                                    • Free 14-day trial · No credit card required
+                                </span>
                             </div>
                         </motion.div>
 

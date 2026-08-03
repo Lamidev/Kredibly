@@ -314,22 +314,7 @@ const PublicNavbar = () => {
                                 gap: '12px'
                             }}>
                                 <Link
-                                    to="/auth/login"
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                    style={{
-                                        color: '#0F172A',
-                                        fontWeight: 700,
-                                        fontSize: '1rem',
-                                        textDecoration: 'none',
-                                        padding: '4px 0'
-                                    }}
-                                >
-                                    Login
-                                </Link>
-                                <a
-                                    href={KREDDY_CONFIG.getLink("Hi Kreddy\nI'd like to see how Kredibly works.")}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    to="/auth/register"
                                     onClick={() => setIsMobileMenuOpen(false)}
                                     style={{
                                         width: '100%',
@@ -347,8 +332,45 @@ const PublicNavbar = () => {
                                         textAlign: 'center'
                                     }}
                                 >
-                                    Try Kreddy
+                                    Get Started Free →
+                                </Link>
+                                <a
+                                    href={KREDDY_CONFIG.getLink("Hi Kreddy\nI'd like to see how Kredibly works.")}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    style={{
+                                        width: '100%',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: '12px 24px',
+                                        borderRadius: '100px',
+                                        backgroundColor: '#FFFFFF',
+                                        color: '#0F172A',
+                                        border: '1.5px solid #CBD5E1',
+                                        textDecoration: 'none',
+                                        fontWeight: 700,
+                                        fontSize: '0.95rem',
+                                        textAlign: 'center'
+                                    }}
+                                >
+                                    Try on WhatsApp 💬
                                 </a>
+                                <Link
+                                    to="/auth/login"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    style={{
+                                        color: '#64748B',
+                                        fontWeight: 600,
+                                        fontSize: '0.9rem',
+                                        textDecoration: 'none',
+                                        padding: '4px 0',
+                                        marginTop: '4px'
+                                    }}
+                                >
+                                    Already have an account? <strong style={{ color: '#0F172A' }}>Log In</strong>
+                                </Link>
                             </div>
                         </motion.div>
                     )}

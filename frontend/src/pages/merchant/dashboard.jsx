@@ -298,9 +298,9 @@ export default function Dashboard() {
 
                 {/* Right: Actions (Setup Progress Pill + Kreddy Button) */}
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", flexShrink: 0 }}>
-                    {/* Setup Progress Pill & Popover */}
+                    {/* Setup Progress Pill & Popover / Mobile Drawer */}
                     {completedSetupCount < setupItems.length && (
-                        <div style={{ position: "relative" }}>
+                        <>
                             <button
                                 onClick={() => setIsSetupPopoverOpen(!isSetupPopoverOpen)}
                                 style={{
@@ -321,72 +321,84 @@ export default function Dashboard() {
                                 <ChevronDown size={14} color="#6D28D9" style={{ transform: isSetupPopoverOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
                             </button>
 
-                            {/* Popover Dropdown */}
                             {isSetupPopoverOpen && (
-                                <div
-                                    style={{
-                                        position: "absolute",
-                                        top: "calc(100% + 8px)",
-                                        right: 0,
-                                        width: "min(300px, calc(100vw - 32px))",
-                                        background: "white",
-                                        borderRadius: "18px",
-                                        border: "1px solid #E2E8F0",
-                                        boxShadow: "0 20px 40px -15px rgba(0,0,0,0.15)",
-                                        padding: "16px",
-                                        zIndex: 100,
-                                    }}
-                                >
-                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", paddingBottom: "8px", borderBottom: "1px solid #F1F5F9" }}>
-                                        <span style={{ fontSize: "0.82rem", fontWeight: 800, color: "#0F172A" }}>Account Setup Checklist</span>
-                                        <button onClick={() => setIsSetupPopoverOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8", padding: "2px" }}>
-                                            <X size={16} />
-                                        </button>
-                                    </div>
+                                <>
+                                    {/* Backdrop overlay (mobile & desktop click-away) */}
+                                    <div
+                                        onClick={() => setIsSetupPopoverOpen(false)}
+                                        style={{
+                                            position: "fixed",
+                                            inset: 0,
+                                            backgroundColor: "rgba(15, 23, 42, 0.4)",
+                                            backdropFilter: "blur(2px)",
+                                            zIndex: 9998,
+                                        }}
+                                    />
 
-                                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                                        {setupItems.map(item => (
-                                            <div key={item.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
-                                                <div>
-                                                    <p style={{ margin: 0, fontSize: "0.8rem", fontWeight: 700, color: item.completed ? "#94A3B8" : "#0F172A", textDecoration: item.completed ? "line-through" : "none" }}>
-                                                        {item.title}
-                                                    </p>
-                                                    <p style={{ margin: 0, fontSize: "0.7rem", color: "#64748B", fontWeight: 400 }}>
-                                                        {item.desc}
-                                                    </p>
-                                                </div>
-
-                                                {item.completed ? (
-                                                    <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#16A34A", display: "flex", alignItems: "center", gap: "2px" }}>
-                                                        <Check size={13} /> Done
-                                                    </span>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => {
-                                                            setIsSetupPopoverOpen(false);
-                                                            item.action();
-                                                        }}
-                                                        style={{
-                                                            background: "#F8FAFC",
-                                                            border: "1px solid #CBD5E1",
-                                                            borderRadius: "8px",
-                                                            padding: "4px 10px",
-                                                            fontSize: "0.72rem",
-                                                            fontWeight: 700,
-                                                            color: "#0F172A",
-                                                            cursor: "pointer",
-                                                            whiteSpace: "nowrap",
-                                                        }}
-                                                    >
-                                                        {item.actionLabel}
-                                                    </button>
-                                                )}
+                                    {/* Popover / Sheet Container */}
+                                    <div
+                                        className="setup-popover-container"
+                                        style={{
+                                            position: "fixed",
+                                            zIndex: 9999,
+                                            background: "white",
+                                            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+                                        }}
+                                    >
+                                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", paddingBottom: "12px", borderBottom: "1px solid #F1F5F9" }}>
+                                            <div>
+                                                <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "#0F172A" }}>Account Setup Checklist</h4>
+                                                <p style={{ margin: 0, fontSize: "0.75rem", color: "#64748B", fontWeight: 500 }}>Complete these optional items anytime</p>
                                             </div>
-                                        ))}
+                                            <button onClick={() => setIsSetupPopoverOpen(false)} style={{ background: "#F1F5F9", border: "none", borderRadius: "50%", width: "30px", height: "30px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748B" }}>
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+
+                                        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                            {setupItems.map(item => (
+                                                <div key={item.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", background: "#F8FAFC", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E2E8F0" }}>
+                                                    <div>
+                                                        <p style={{ margin: 0, fontSize: "0.85rem", fontWeight: 700, color: item.completed ? "#94A3B8" : "#0F172A", textDecoration: item.completed ? "line-through" : "none" }}>
+                                                            {item.title}
+                                                        </p>
+                                                        <p style={{ margin: 0, fontSize: "0.72rem", color: "#64748B", fontWeight: 400 }}>
+                                                            {item.desc}
+                                                        </p>
+                                                    </div>
+
+                                                    {item.completed ? (
+                                                        <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#16A34A", display: "flex", alignItems: "center", gap: "4px", background: "#DCFCE7", padding: "4px 10px", borderRadius: "20px" }}>
+                                                            <Check size={14} /> Done
+                                                        </span>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => {
+                                                                setIsSetupPopoverOpen(false);
+                                                                item.action();
+                                                            }}
+                                                            style={{
+                                                                background: "#6D28D9",
+                                                                border: "none",
+                                                                borderRadius: "10px",
+                                                                padding: "8px 14px",
+                                                                fontSize: "0.78rem",
+                                                                fontWeight: 700,
+                                                                color: "white",
+                                                                cursor: "pointer",
+                                                                whiteSpace: "nowrap",
+                                                            }}
+                                                        >
+                                                            {item.actionLabel}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
+                                </>
                             )}
-                        </div>
+                        </>
                     )}
 
                     {/* Compact Kreddy pill */}
@@ -446,6 +458,36 @@ export default function Dashboard() {
                 </div>
             </div>
             <style>{`
+                .setup-popover-container {
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    border-top-left-radius: 24px;
+                    border-top-right-radius: 24px;
+                    padding: 24px 20px 32px;
+                    animation: setupSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                @media (min-width: 641px) {
+                    .setup-popover-container {
+                        bottom: auto;
+                        top: 95px;
+                        right: 40px;
+                        left: auto;
+                        width: 340px;
+                        border-radius: 20px;
+                        border: 1px solid #E2E8F0;
+                        padding: 20px;
+                        animation: setupFadeIn 0.2s ease-out;
+                    }
+                }
+                @keyframes setupSlideUp {
+                    from { transform: translateY(100%); }
+                    to { transform: translateY(0); }
+                }
+                @keyframes setupFadeIn {
+                    from { opacity: 0; transform: translateY(-8px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
                 @keyframes kreddy-pulse {
                     0%, 100% { opacity: 1; transform: scale(1); }
                     50% { opacity: 0.7; transform: scale(1.3); }
