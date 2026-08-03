@@ -30,7 +30,7 @@ const VerifyEmail = () => {
             verifyEmail(cleanCode)
                 .then(() => {
                     toast.success("Email verified successfully!");
-                    navigate("/onboarding");
+                    navigate("/activate");
                 })
                 .catch((err) => {
                     console.error("Auto Verification Error:", err);
@@ -47,7 +47,7 @@ const VerifyEmail = () => {
         try {
             await verifyEmail(code);
             toast.success("Email verified successfully!");
-            navigate("/onboarding");
+            navigate("/activate");
         } catch (err) {
             console.error("Verification Error:", err);
             const errorMessage = err.response?.data?.message || err.message || "Verification failed";
@@ -89,10 +89,10 @@ const VerifyEmail = () => {
             maxWidth: '500px'
         }}>
             <div style={{ textAlign: 'left', marginBottom: '32px' }}>
-                <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px', letterSpacing: '-0.03em', color: '#000000' }}>Verify Account</h2>
-                <p style={{ color: '#6B7280', fontWeight: 400, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>Enter the 6-digit code we sent you</p>
-                <p style={{ fontSize: '0.8rem', color: '#EF4444', marginTop: '8px', fontWeight: 500 }}>
-                    ⚠️ Not seeing it? Check your Spam folder.
+                <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px', letterSpacing: '-0.03em', color: '#000000' }}>Check your inbox</h2>
+                <p style={{ color: '#6B7280', fontWeight: 400, fontSize: 'clamp(0.9rem, 2vw, 1.05rem)' }}>We sent a 6-digit verification code to your email. Tap the link in the email or enter the code below.</p>
+                <p style={{ fontSize: '0.8rem', color: '#D97706', marginTop: '8px', fontWeight: 500 }}>
+                    💡 Can't find it? Check your Spam folder. The code expires in 24 hours.
                 </p>
             </div>
 
@@ -127,7 +127,7 @@ const VerifyEmail = () => {
                     }}
                     disabled={loading}
                 >
-                    {loading ? "Verifying..." : "Confirm Verification"}
+                    {loading ? "Verifying..." : "Activate My Account →"}
                 </button>
             </form>
 
@@ -154,7 +154,7 @@ const VerifyEmail = () => {
                         ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Sending...</>
                         : cooldown > 0
                             ? `Resend in ${cooldown}s`
-                            : <><RefreshCcw size={18} /> Resend verification code</>
+                            : <><RefreshCcw size={18} /> Send a new link</>
                     }
                 </button>
                 <Link to="/auth/login" style={{ display: 'block', marginTop: '16px', color: '#6B7280', textDecoration: 'none', fontWeight: 500, fontSize: '0.9rem' }}>

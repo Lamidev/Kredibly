@@ -28,8 +28,8 @@ exports.sendVerificationEmail = async (email, verificationToken) => {
     await resendClient.emails.send({
       from: `${sender.name} <${sender.email}>`,
       to: email,
-      subject: "Verify your Kredibly account",
-      text: `Hi,\n\nClick the link below to verify your Kredibly account:\n${verificationLink}\n\nOr enter code: ${verificationToken}\n\nThis link expires in 24 hours.\n\n— Oluwatosin, Founder of Kredibly`,
+      subject: "Tap once to activate Kredibly",
+      text: `Hi,\n\nYou're one tap away from setting up Kredibly.\n\nClick the link below to verify your email and complete setup:\n${verificationLink}\n\nOr enter code: ${verificationToken}\n\nThis link takes you straight to your setup — no login required.\n\n— Oluwatosin, Founder of Kredibly`,
       html: VERIFICATION_EMAIL_TEMPLATE
         .replace("{verificationCode}", verificationToken)
         .replace(/\{verificationLink\}/g, verificationLink),

@@ -149,8 +149,8 @@ export default function BankSetupModal({ isOpen, onClose, onSuccess }) {
                     <div style={{ width: "56px", height: "56px", background: "rgba(109, 40, 217, 0.08)", borderRadius: "18px", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", color: "var(--primary)" }}>
                         <Landmark size={28} />
                     </div>
-                    <h3 style={{ fontSize: "1.35rem", fontWeight: 800, color: "#0F172A", marginBottom: "6px" }}>Connect Payout Bank Account</h3>
-                    <p style={{ fontSize: "0.88rem", color: "#64748B", margin: 0 }}>Customer payments will be swept directly to this bank account.</p>
+                    <h3 style={{ fontSize: "1.35rem", fontWeight: 800, color: "#0F172A", marginBottom: "6px" }}>Where should your payments go?</h3>
+                    <p style={{ fontSize: "0.88rem", color: "#64748B", margin: 0 }}>Add your bank account so Kreddy can transfer payments directly to you when customers pay your invoices.</p>
                 </div>
 
                 <form onSubmit={handleSave}>
