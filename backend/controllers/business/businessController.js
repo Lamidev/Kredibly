@@ -246,12 +246,24 @@ exports.saveBankDetails = async (req, res) => {
     try {
         const { bankCode, accountNumber, bankName, password } = req.body;
         const User = require("../../models/User");
-        const user = await User.findById(req.user._id).select('+password');
-        if (!user || !(await user.comparePassword(password))) return res.status(401).json({ success: false, message: "Incorrect password" });
         const profile = await BusinessProfile.findOne({ ownerId: req.user._id });
+        if (!profile) return res.status(404).json({ success: false, message: "Profile not found" });
+
+        const isInitialSetup = !profile.bankDetails?.accountNumber;
+
+        // If updating an existing bank account, require password for security
+        if (!isInitialSetup) {
+            if (!password) {
+                return res.status(400).json({ success: false, message: "Password is required to update bank details" });
+            }
+            const user = await User.findById(req.user._id).select('+password');
+            if (!user || !(await user.comparePassword(password))) {
+                return res.status(401).json({ success: false, message: "Incorrect password" });
+            }
+        }
+
         const resolvedDetails = await resolveAccount(accountNumber, bankCode);
         
-        const isInitialSetup = !profile.bankDetails?.accountNumber;
         profile.bankDetails = { bankName, accountNumber, accountName: resolvedDetails.account_name, bankCode, lastBankChangeAt: new Date() };
         
         if (!isInitialSetup && profile.kyc?.status === 'verified') {

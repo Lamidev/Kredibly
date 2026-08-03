@@ -8,12 +8,11 @@ const VERIFICATION_EMAIL_TEMPLATE = `
     <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 100px; height: auto; display: block;">
   </div>
   <p>Hello,</p>
-  <p>Thank you for joining Kredibly! Click the button below to verify your email and activate your account instantly.</p>
-  <div style="margin: 32px 0;">
-    <a href="{verificationLink}" target="_blank" style="display: inline-block; background-color: #6D28D9; color: #ffffff; padding: 14px 32px; border-radius: 12px; font-weight: 700; text-decoration: none; font-size: 16px; box-shadow: 0 4px 12px rgba(109,40,217,0.3);">Verify My Email</a>
+  <p>Thank you for joining Kredibly! Here is your 6-digit verification code to complete your setup:</p>
+  <div style="margin: 28px 0; text-align: center; background: #F8FAFC; border: 1.5px dashed #CBD5E1; padding: 24px; border-radius: 16px;">
+    <span style="font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #4C1D95; display: inline-block;">{verificationCode}</span>
   </div>
-  <p style="font-size: 14px; color: #6B7280; margin-top: 24px;">Or enter this verification code manually: <strong style="color: #111827; font-size: 18px; letter-spacing: 2px;">{verificationCode}</strong></p>
-  <p style="font-size: 13px; color: #9CA3AF; margin-top: 16px;">This link & code will expire in 24 hours. If you didn't create an account, you can safely ignore this email.</p>
+  <p style="font-size: 13px; color: #9CA3AF; margin-top: 16px;">This code will expire in 24 hours. If you didn't create an account, you can safely ignore this email.</p>
   <div style="margin-top: 48px;">
     <p style="font-weight: 800; margin: 0; font-size: 16px; color: #111827;">The Kredibly Team</p>
     <p style="color: #6B7280; font-size: 14px; margin: 4px 0 0;">hello@usekredibly.com</p>

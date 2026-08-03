@@ -278,31 +278,9 @@ export default function Dashboard() {
                 onSuccess={() => fetchStats()}
             />
 
-            {/* Bank Setup Prompt (Only if bank is NOT connected) */}
-            {!hasBank && (
-                <div style={{ background: "#F5F0FF", border: "1px solid rgba(109, 40, 217, 0.2)", borderRadius: "12px", padding: "10px 16px", marginBottom: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <AlertCircle size={18} color="#6D28D9" />
-                        <span style={{ fontSize: "0.88rem", fontWeight: 600, color: "#4C1D95" }}>Complete your setup — add your payout bank account to receive payments</span>
-                    </div>
-                    <button onClick={() => setIsBankModalOpen(true)} style={{ background: "#6D28D9", color: "white", border: "none", padding: "6px 14px", borderRadius: "8px", fontWeight: 700, fontSize: "0.82rem", cursor: "pointer", whiteSpace: "nowrap" }}>
-                        Add Payout Account →
-                    </button>
-                </div>
-            )}
 
-            {/* WhatsApp Connection Banner if missing */}
-            {!profile?.whatsappNumber && (
-                <div style={{ background: "#F0F9FF", border: "1px solid #BAE6FD", borderRadius: "12px", padding: "10px 16px", marginBottom: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <MessageCircle size={18} color="#0284C7" />
-                        <span style={{ fontSize: "0.88rem", fontWeight: 600, color: "#0369A1" }}>Connect your WhatsApp number so Kreddy can recognize your messages and send sales alerts</span>
-                    </div>
-                    <button onClick={() => navigate('/activate')} style={{ background: "#0284C7", color: "white", border: "none", padding: "6px 14px", borderRadius: "8px", fontWeight: 700, fontSize: "0.82rem", cursor: "pointer", whiteSpace: "nowrap" }}>
-                        Connect WhatsApp →
-                    </button>
-                </div>
-            )}
+
+
 
             {/* Greeting + Kreddy strip */}
             <div className="kreddy-greeting-row" style={{ marginBottom: "28px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
