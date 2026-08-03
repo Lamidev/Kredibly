@@ -57,14 +57,13 @@ const App = () => {
   const getHomeRedirect = () => {
     if (!user) return "/";
     if (user.role === 'admin') return "/admin";
+    // If email is not yet verified, user must complete verification first
+    if (!user.isVerified) return "/auth/verify-email";
     // A merchant is only truly active when they have BOTH an invoice name AND a WhatsApp number.
-    // Having only displayName (e.g. auto-filled by migration script) is not sufficient —
-    // Kreddy cannot function without a WhatsApp number.
     const isFullyActive = profile?.displayName && profile?.whatsappNumber;
     if (isFullyActive) return "/dashboard";
-    // They have an account but need to complete activation (name + WhatsApp)
-    if (user) return "/activate";
-    return "/";
+    // Email verified, but needs to complete account setup (name + WhatsApp)
+    return "/activate";
   };
 
   return (
@@ -101,7 +100,7 @@ const App = () => {
 
         {/* Protected Routes with Sidebar Layout */}
         <Route
-          element={user && profile?.displayName && profile?.whatsappNumber ? <DashboardLayout /> : <Navigate to={getHomeRedirect()} />}
+          element={user && user.isVerified && profile?.displayName && profile?.whatsappNumber ? <DashboardLayout /> : <Navigate to={getHomeRedirect()} />}
         >
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/workspace" element={<Workspace />} />
@@ -132,6 +131,7 @@ const App = () => {
           element={
             !user ? <Navigate to="/auth/login" /> :
             user.role === 'admin' ? <Navigate to="/admin" /> :
+            !user.isVerified ? <Navigate to="/auth/verify-email" /> :
             (profile?.displayName && profile?.whatsappNumber) ? <Navigate to="/dashboard" /> :
             <Activate />
           }

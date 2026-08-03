@@ -229,15 +229,15 @@ const VerifyEmail = () => {
                     Back to Login
                 </Link>
             </div>
+            <style>{`
+                @keyframes otp-lock {
+                    0%   { transform: scale(1); }
+                    35%  { transform: scale(1.12); }
+                    65%  { transform: scale(1.06); }
+                    100% { transform: scale(1.08); }
+                }
+            `}</style>
         </div>
-        <style>{`
-            @keyframes otp-lock {
-                0%   { transform: scale(1); }
-                35%  { transform: scale(1.12); }
-                65%  { transform: scale(1.06); }
-                100% { transform: scale(1.08); }
-            }
-        `}</style>
     );
 };
 
