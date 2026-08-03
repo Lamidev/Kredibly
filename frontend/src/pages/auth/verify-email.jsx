@@ -1,78 +1,103 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
-import { RefreshCcw, Loader2, MailCheck } from "lucide-react";
+import { RefreshCcw, Loader2, Mail } from "lucide-react";
 
 const VerifyEmail = () => {
-    const [code, setCode] = useState("");
+    const [digits, setDigits] = useState(["", "", "", "", "", ""]);
     const [loading, setLoading] = useState(false);
     const [resending, setResending] = useState(false);
     const [cooldown, setCooldown] = useState(0);
+    const [locked, setLocked] = useState(false);
     const { verifyEmail, resendVerificationCode } = useAuth();
     const navigate = useNavigate();
+    const inputs = useRef([]);
 
-    // Tick the cooldown countdown
+    // Cooldown countdown
     useEffect(() => {
         if (cooldown <= 0) return;
         const timer = setTimeout(() => setCooldown(c => c - 1), 1000);
         return () => clearTimeout(timer);
     }, [cooldown]);
 
-    // Auto-verify if 1-click magic link is clicked from email (?code=XXXXXX)
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const codeParam = params.get("code");
-        if (codeParam && codeParam.trim().length === 6) {
-            const cleanCode = codeParam.trim();
-            setCode(cleanCode);
-            setLoading(true);
-            verifyEmail(cleanCode)
-                .then(() => {
-                    navigate("/activate", { state: { verified: true } });
-                })
-                .catch((err) => {
-                    console.error("Auto Verification Error:", err);
-                    const errorMessage = err.response?.data?.message || err.message || "Verification link invalid or expired";
-                    toast.error(errorMessage);
-                })
-                .finally(() => setLoading(false));
+    const handleChange = (index, value) => {
+        // Accept only digits
+        const digit = value.replace(/\D/g, "").slice(-1);
+        const newDigits = [...digits];
+        newDigits[index] = digit;
+        setDigits(newDigits);
+        // Auto-advance
+        if (digit && index < 5) {
+            inputs.current[index + 1]?.focus();
         }
-    }, []);
+        // Auto-submit when last box filled — flash first then submit
+        if (digit && index === 5) {
+            const code = [...newDigits].join("");
+            if (code.length === 6) {
+                setLocked(true);
+                setTimeout(() => {
+                    setLocked(false);
+                    submitCode(code);
+                }, 380);
+            }
+        }
+    };
 
-    const handleSubmit = async (e) => {
+    const handleKeyDown = (index, e) => {
+        if (e.key === "Backspace" && !digits[index] && index > 0) {
+            inputs.current[index - 1]?.focus();
+        }
+    };
+
+    const handlePaste = (e) => {
         e.preventDefault();
+        const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+        if (pasted.length === 6) {
+            setDigits(pasted.split(""));
+            inputs.current[5]?.focus();
+            submitCode(pasted);
+        }
+    };
+
+    const submitCode = async (code) => {
         setLoading(true);
         try {
             await verifyEmail(code);
             navigate("/activate", { state: { verified: true } });
         } catch (err) {
-            console.error("Verification Error:", err);
-            const errorMessage = err.response?.data?.message || err.message || "Verification failed";
-            toast.error(errorMessage);
+            const msg = err.response?.data?.message || err.message || "Invalid or expired code.";
+            toast.error(msg);
+            setDigits(["", "", "", "", "", ""]);
+            inputs.current[0]?.focus();
         } finally {
             setLoading(false);
         }
     };
 
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const code = digits.join("");
+        if (code.length < 6) return toast.error("Enter the full 6-digit code.");
+        submitCode(code);
+    };
+
     const handleResend = async () => {
         if (cooldown > 0 || resending) return;
-
-        // Email is saved to localStorage by register.jsx on successful registration
-        const registeredEmail = localStorage.getItem("kredibly_pending_email");
-        if (!registeredEmail) {
-            toast.error("We couldn't find your email. Please go back and register again.");
+        const email = localStorage.getItem("kredibly_pending_email");
+        if (!email) {
+            toast.error("We couldn't find your email. Please register again.");
             return;
         }
-
         setResending(true);
         try {
-            await resendVerificationCode(registeredEmail);
-            toast.success("New code sent! Check your inbox (and spam folder).");
+            await resendVerificationCode(email);
+            toast.success("New code sent! Check your inbox.");
             setCooldown(60);
+            setDigits(["", "", "", "", "", ""]);
+            inputs.current[0]?.focus();
         } catch (err) {
-            const msg = err.response?.data?.message || "Failed to resend. Try again shortly.";
-            toast.error(msg);
+            toast.error(err.response?.data?.message || "Failed to resend. Try again shortly.");
         } finally {
             setResending(false);
         }
@@ -81,89 +106,139 @@ const VerifyEmail = () => {
     const pendingEmail = localStorage.getItem("kredibly_pending_email") || "your email";
 
     return (
-        <div className="glass-card animate-fade-in" style={{ 
-            padding: 'clamp(24px, 4vw, 40px)', 
-            borderRadius: 'clamp(20px, 4vw, 28px)', 
+        <div className="glass-card animate-fade-in" style={{
+            padding: 'clamp(28px, 5vw, 44px)',
+            borderRadius: 'clamp(20px, 4vw, 28px)',
             boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)',
             width: '100%',
-            maxWidth: '440px',
+            maxWidth: '420px',
             textAlign: 'center'
         }}>
-            {/* Animated Mail Badge */}
-            <div style={{ 
-                width: '64px', 
-                height: '64px', 
-                borderRadius: '50%', 
-                background: 'rgba(76, 29, 149, 0.08)', 
+            {/* Mail badge */}
+            <div style={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                background: 'rgba(76, 29, 149, 0.08)',
                 color: 'var(--primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                margin: '0 auto 20px'
+                margin: '0 auto 16px'
             }}>
-                <MailCheck size={32} />
+                <Mail size={28} />
             </div>
 
-            <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.03em', color: '#000000' }}>
+            <h2 style={{ fontSize: 'clamp(1.35rem, 4vw, 1.8rem)', fontWeight: 800, marginBottom: '6px', letterSpacing: '-0.03em', color: '#0F172A' }}>
                 Check your email
             </h2>
-            
-            <p style={{ color: '#475569', fontWeight: 500, fontSize: '0.92rem', lineHeight: 1.5, marginBottom: '24px' }}>
-                We sent a 1-tap activation link to <strong style={{ color: '#0F172A' }}>{pendingEmail}</strong>. Click the button in the email to activate your account.
+            <p style={{ color: '#64748B', fontSize: '0.88rem', fontWeight: 500, lineHeight: 1.5, marginBottom: '28px' }}>
+                We sent a 6-digit code to <strong style={{ color: '#0F172A' }}>{pendingEmail}</strong>
             </p>
 
-            <button
-                onClick={handleResend}
-                disabled={cooldown > 0 || resending}
-                className="btn-primary"
-                style={{ 
-                    width: '100%', 
-                    height: '48px', 
-                    borderRadius: '14px', 
-                    fontSize: '0.95rem', 
-                    fontWeight: 700, 
-                    background: cooldown > 0 ? '#F1F5F9' : 'var(--primary)', 
-                    color: cooldown > 0 ? '#94A3B8' : 'white',
-                    border: 'none',
-                    cursor: cooldown > 0 || resending ? 'not-allowed' : 'pointer',
-                    boxShadow: cooldown > 0 ? 'none' : '0 8px 16px -4px var(--primary-glow)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    transition: 'all 0.2s'
-                }}
-            >
-                {resending 
-                    ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Resending...</>
-                    : cooldown > 0
-                        ? `Resend available in ${cooldown}s`
-                        : <><RefreshCcw size={16} /> Resend Activation Link</>
-                }
-            </button>
+            <form onSubmit={handleSubmit}>
+                {/* 6 digit boxes */}
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '24px' }} onPaste={handlePaste}>
+                    {digits.map((d, i) => (
+                        <input
+                            key={i}
+                            ref={el => inputs.current[i] = el}
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={1}
+                            value={d}
+                            autoFocus={i === 0}
+                            onChange={e => handleChange(i, e.target.value)}
+                            onKeyDown={e => handleKeyDown(i, e)}
+                            style={{
+                                width: 'clamp(40px, 12vw, 52px)',
+                                height: 'clamp(48px, 13vw, 60px)',
+                                textAlign: 'center',
+                                fontSize: 'clamp(1.2rem, 4vw, 1.6rem)',
+                                fontWeight: 700,
+                                border: locked ? '2px solid #10B981' : d ? '2px solid var(--primary)' : '1.5px solid #E2E8F0',
+                                borderRadius: '12px',
+                                background: locked ? 'rgba(16,185,129,0.07)' : d ? 'rgba(76,29,149,0.04)' : '#FAFAFA',
+                                color: locked ? '#10B981' : '#0F172A',
+                                outline: 'none',
+                                transition: 'border 0.15s, background 0.15s, color 0.15s, transform 0.15s, box-shadow 0.15s',
+                                caretColor: 'var(--primary)',
+                                transform: locked ? 'scale(1.08)' : 'scale(1)',
+                                boxShadow: locked ? '0 0 0 3px rgba(16,185,129,0.18)' : 'none',
+                                animation: locked ? 'otp-lock 0.38s ease' : 'none',
+                            }}
+                        />
+                    ))}
+                </div>
 
-            <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #F1F5F9' }}>
-                <Link to="/auth/login" style={{ color: '#64748B', textDecoration: 'none', fontWeight: 600, fontSize: '0.85rem' }}>
-                    ← Back to Login
+                <button
+                    type="submit"
+                    disabled={loading || digits.join("").length < 6}
+                    className="btn-primary"
+                    style={{
+                        width: '100%',
+                        height: '48px',
+                        borderRadius: '14px',
+                        fontSize: '0.95rem',
+                        fontWeight: 700,
+                        background: digits.join("").length < 6 ? '#F1F5F9' : 'var(--primary)',
+                        color: digits.join("").length < 6 ? '#94A3B8' : 'white',
+                        border: 'none',
+                        cursor: digits.join("").length < 6 || loading ? 'not-allowed' : 'pointer',
+                        boxShadow: digits.join("").length < 6 ? 'none' : '0 8px 16px -4px var(--primary-glow)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        transition: 'all 0.2s'
+                    }}
+                >
+                    {loading
+                        ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Verifying...</>
+                        : "Verify Email →"
+                    }
+                </button>
+            </form>
+
+            {/* Resend + Back */}
+            <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <button
+                    onClick={handleResend}
+                    disabled={cooldown > 0 || resending}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        color: cooldown > 0 ? '#94A3B8' : 'var(--primary)',
+                        fontWeight: 600,
+                        fontSize: '0.83rem',
+                        cursor: cooldown > 0 || resending ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        padding: 0
+                    }}
+                >
+                    {resending
+                        ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Sending...</>
+                        : cooldown > 0
+                            ? `Resend in ${cooldown}s`
+                            : <><RefreshCcw size={13} /> Resend code</>
+                    }
+                </button>
+                <Link to="/auth/login" style={{ color: '#94A3B8', textDecoration: 'none', fontWeight: 600, fontSize: '0.83rem' }}>
+                    Back to Login
                 </Link>
             </div>
         </div>
+        <style>{`
+            @keyframes otp-lock {
+                0%   { transform: scale(1); }
+                35%  { transform: scale(1.12); }
+                65%  { transform: scale(1.06); }
+                100% { transform: scale(1.08); }
+            }
+        `}</style>
     );
 };
-
-const styles = `
-  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-  @media (max-width: 640px) {
-    .input-field { height: 52px !important; font-size: 0.95rem !important; }
-    .verify-code-input { height: 60px !important; font-size: 1.2rem !important; }
-    .btn-primary { height: 56px !important; font-size: 1rem !important; }
-  }
-`;
-
-if (typeof document !== 'undefined') {
-  const styleSheet = document.createElement("style");
-  styleSheet.innerText = styles;
-  document.head.appendChild(styleSheet);
-}
 
 export default VerifyEmail;

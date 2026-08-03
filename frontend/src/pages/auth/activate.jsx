@@ -116,181 +116,89 @@ const Activate = () => {
                     <div
                         className="glass-card"
                         style={{
-                            padding: "clamp(28px, 6vw, 48px)",
-                            borderRadius: "32px",
+                            padding: "clamp(20px, 5vw, 36px)",
+                            borderRadius: "24px",
                             boxShadow: "0 25px 50px -12px rgba(0,0,0,0.1)",
                         }}
                     >
                         {/* Header */}
-                        <div style={{ textAlign: "center", marginBottom: "36px" }}>
+                        <div style={{ textAlign: "center", marginBottom: "24px" }}>
                             <div
                                 style={{
-                                    width: "60px",
-                                    height: "60px",
+                                    width: "52px",
+                                    height: "52px",
                                     background: "linear-gradient(135deg, #7C3AED, #4C1D95)",
-                                    borderRadius: "18px",
+                                    borderRadius: "16px",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
-                                    margin: "0 auto 16px",
+                                    margin: "0 auto 12px",
                                     color: "white",
-                                    boxShadow: "0 10px 20px rgba(76,29,149,0.2)",
+                                    boxShadow: "0 8px 16px rgba(76,29,149,0.2)",
                                 }}
                             >
-                                <Store size={28} />
+                                <Store size={24} />
                             </div>
                             <h1
                                 style={{
-                                    fontSize: "clamp(1.4rem, 5vw, 1.85rem)",
+                                    fontSize: "clamp(1.2rem, 4vw, 1.6rem)",
                                     fontWeight: 800,
                                     color: "#0F172A",
-                                    marginBottom: "8px",
+                                    marginBottom: "4px",
                                     letterSpacing: "-0.03em",
                                 }}
                             >
-                                Two quick things and you're in
+                                Two quick things
                             </h1>
-                            <p
-                                style={{
-                                    color: "#64748B",
-                                    fontWeight: 500,
-                                    fontSize: "0.95rem",
-                                    margin: 0,
-                                }}
-                            >
-                                These are the only details Kreddy needs to start working for you.
+                            <p style={{ color: "#64748B", fontWeight: 500, fontSize: "0.85rem", margin: 0 }}>
+                                Then you're in your workspace.
                             </p>
                         </div>
 
                         <form onSubmit={handleSubmit}>
                             {/* Field 1 — Invoice Name */}
-                            <div className="input-group" style={{ marginBottom: "24px" }}>
-                                <label
-                                    className="input-label"
-                                    style={{ fontWeight: 700, color: "#0F172A" }}
-                                >
-                                    What name should appear on your invoices?
+                            <div className="input-group" style={{ marginBottom: "16px" }}>
+                                <label className="input-label" style={{ fontWeight: 700, color: "#0F172A", fontSize: "0.82rem" }}>
+                                    Invoice / Business name
                                 </label>
                                 <div style={{ position: "relative" }}>
                                     <Store
-                                        size={20}
-                                        style={{
-                                            position: "absolute",
-                                            left: "18px",
-                                            top: "50%",
-                                            transform: "translateY(-50%)",
-                                            color: "var(--primary)",
-                                        }}
+                                        size={18}
+                                        style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", color: "var(--primary)" }}
                                     />
                                     <input
                                         type="text"
                                         className="input-field"
-                                        style={{
-                                            height: "58px",
-                                            paddingLeft: "52px",
-                                            fontSize: "1.05rem",
-                                            fontWeight: 500,
-                                        }}
-                                        placeholder="e.g. Chioma Fabrics, Tunde Designs, Avilla Bakes, or just your name"
+                                        style={{ height: "50px", paddingLeft: "46px", fontSize: "0.95rem", fontWeight: 500 }}
+                                        placeholder="e.g. Chioma Fabrics, Tunde Designs"
                                         value={displayName}
                                         onChange={(e) => setDisplayName(e.target.value)}
                                         autoFocus={!profile?.displayName}
                                         required
                                     />
                                 </div>
-
-                                {/* Amber note — only shown when name was auto-filled */}
-                                {wasAutoFilled ? (
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "flex-start",
-                                            gap: "8px",
-                                            marginTop: "8px",
-                                            background: "#FFFBEB",
-                                            border: "1px solid #FCD34D",
-                                            borderRadius: "10px",
-                                            padding: "10px 12px",
-                                        }}
-                                    >
-                                        <AlertTriangle
-                                            size={15}
-                                            color="#D97706"
-                                            style={{ flexShrink: 0, marginTop: "1px" }}
-                                        />
-                                        <p
-                                            style={{
-                                                fontSize: "0.78rem",
-                                                color: "#92400E",
-                                                margin: 0,
-                                                fontWeight: 500,
-                                                lineHeight: 1.5,
-                                            }}
-                                        >
-                                            We used your registered name as a placeholder. This is different from your account name — it's what your customers will see on every invoice. Update it if you have a brand or hustle name.
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <p
-                                        style={{
-                                            fontSize: "0.78rem",
-                                            color: "#64748B",
-                                            marginTop: "6px",
-                                            fontWeight: 400,
-                                            lineHeight: 1.5,
-                                        }}
-                                    >
-                                        This is different from your account name — it's what your customers will see on every invoice and receipt. It can be your brand name, hustle name, or your own name — your call.
-                                    </p>
-                                )}
                             </div>
 
                             {/* Field 2 — WhatsApp Number */}
-                            <div className="input-group" style={{ marginBottom: "36px" }}>
-                                <label
-                                    className="input-label"
-                                    style={{ fontWeight: 700, color: "#0F172A" }}
-                                >
-                                    Your WhatsApp number
+                            <div className="input-group" style={{ marginBottom: "24px" }}>
+                                <label className="input-label" style={{ fontWeight: 700, color: "#0F172A", fontSize: "0.82rem" }}>
+                                    WhatsApp number
                                 </label>
                                 <div style={{ position: "relative" }}>
                                     <MessageCircle
-                                        size={20}
-                                        style={{
-                                            position: "absolute",
-                                            left: "18px",
-                                            top: "50%",
-                                            transform: "translateY(-50%)",
-                                            color: "var(--primary)",
-                                        }}
+                                        size={18}
+                                        style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", color: "var(--primary)" }}
                                     />
                                     <input
                                         type="tel"
                                         className="input-field"
-                                        style={{
-                                            height: "58px",
-                                            paddingLeft: "52px",
-                                            fontSize: "1.05rem",
-                                            fontWeight: 500,
-                                        }}
+                                        style={{ height: "50px", paddingLeft: "46px", fontSize: "0.95rem", fontWeight: 500 }}
                                         placeholder="08012345678"
                                         value={whatsappNumber}
                                         onChange={(e) => setWhatsappNumber(e.target.value)}
-                                        autoFocus={!!profile?.displayName}
                                         required
                                     />
                                 </div>
-                                <p
-                                    style={{
-                                        fontSize: "0.78rem",
-                                        color: "#64748B",
-                                        marginTop: "6px",
-                                        fontWeight: 400,
-                                        lineHeight: 1.5,
-                                    }}
-                                >
-                                    Kreddy uses this to send you sales alerts, invoice confirmations, and payment updates. It won't be shared with anyone.
-                                </p>
                             </div>
 
                             <button
@@ -299,10 +207,10 @@ const Activate = () => {
                                 className="btn-primary"
                                 style={{
                                     width: "100%",
-                                    height: "60px",
-                                    fontSize: "1.1rem",
+                                    height: "52px",
+                                    fontSize: "1rem",
                                     fontWeight: 700,
-                                    borderRadius: "16px",
+                                    borderRadius: "14px",
                                     boxShadow: "0 10px 20px rgba(76,29,149,0.3)",
                                     display: "flex",
                                     alignItems: "center",
@@ -311,7 +219,7 @@ const Activate = () => {
                                 }}
                             >
                                 {loading ? (
-                                    <Loader2 size={22} style={{ animation: "spin 1s linear infinite" }} />
+                                    <Loader2 size={20} style={{ animation: "spin 1s linear infinite" }} />
                                 ) : (
                                     "Set Up My Account →"
                                 )}
