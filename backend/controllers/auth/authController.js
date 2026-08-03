@@ -49,7 +49,8 @@ const register = async (req, res) => {
       verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000,
     });
 
-    await newUser.save();
+    // 🚀 Zero-Friction: Log user in immediately upon registration
+    const token = generateTokenAndSetCookie(res, newUser._id, newUser.name, newUser.email, newUser.role);
 
     // Send verification email in background for speed
     const { sendVerificationEmail } = require("../../emailLogic/emails");
@@ -61,8 +62,10 @@ const register = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Registration successful. Please check your email for verification.",
-      user: userData
+      message: "Registration successful",
+      user: userData,
+      token,
+      profile: null
     });
 
   } catch (error) {
@@ -140,7 +143,7 @@ const verifyEmail = async (req, res) => {
     await user.save();
 
     // Generate token and set cookie so user is authenticated immediately
-    generateTokenAndSetCookie(res, user._id, user.name, user.email, user.role);
+    const token = generateTokenAndSetCookie(res, user._id, user.name, user.email, user.role);
 
     const profile = await BusinessProfile.findOne({ ownerId: user._id });
     const userData = user.toObject();
@@ -150,6 +153,7 @@ const verifyEmail = async (req, res) => {
       success: true,
       message: "Email verified successfully",
       user: userData,
+      token,
       profile: profile || null
     });
 

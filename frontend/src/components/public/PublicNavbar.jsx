@@ -182,7 +182,10 @@ const PublicNavbar = () => {
                                 flexDirection: 'column',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                                padding: 'clamp(20px, 4vh, 32px) 24px',
+                                paddingTop: 'max(28px, calc(env(safe-area-inset-top, 0px) + 20px))',
+                                paddingBottom: 'max(24px, calc(env(safe-area-inset-bottom, 0px) + 20px))',
+                                paddingLeft: '24px',
+                                paddingRight: '24px',
                                 boxSizing: 'border-box',
                                 WebkitTapHighlightColor: 'transparent'
                             }}
