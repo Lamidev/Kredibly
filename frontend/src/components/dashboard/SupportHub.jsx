@@ -549,15 +549,15 @@ const SupportHub = () => {
             <style>{`
                 .support-hub-container {
                     position: fixed;
-                    bottom: 30px;
-                    right: 30px;
+                    bottom: 24px;
+                    right: 24px;
                     z-index: 10000;
                 }
                 
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
                 
-                @media (max-width: 480px) {
+                @media (max-width: 640px) {
                     .support-hub-container {
                         bottom: 20px !important;
                         right: 20px !important;

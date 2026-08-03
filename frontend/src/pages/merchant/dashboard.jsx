@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSales } from "../../context/SaleContext";
 import { useAuth } from "../../context/AuthContext";
-import { AlertCircle, X, TrendingUp, Clock, CheckCircle2, Activity, Bot, MessageCircle, ChevronDown, Check } from "lucide-react";
+import { AlertCircle, X, TrendingUp, Clock, CheckCircle2, Activity, Bot, MessageCircle, ChevronDown, Check, Plus } from "lucide-react";
 import { KREDDY_CONFIG } from "../../config";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -88,6 +88,20 @@ export default function Dashboard() {
     const completedSetupCount = useMemo(() => {
         return setupItems.filter(i => i.completed).length;
     }, [setupItems]);
+
+    useEffect(() => {
+        if (isSetupPopoverOpen && window.innerWidth <= 640) {
+            document.body.style.overflow = 'hidden';
+            document.body.classList.add('setup-sheet-open');
+        } else {
+            document.body.style.overflow = '';
+            document.body.classList.remove('setup-sheet-open');
+        }
+        return () => {
+            document.body.style.overflow = '';
+            document.body.classList.remove('setup-sheet-open');
+        };
+    }, [isSetupPopoverOpen]);
 
     useEffect(() => {
         setVisibleEvents(5);
@@ -307,18 +321,18 @@ export default function Dashboard() {
                                     display: "flex",
                                     alignItems: "center",
                                     gap: "6px",
-                                    background: "rgba(109, 40, 217, 0.06)",
-                                    border: "1px solid rgba(109, 40, 217, 0.2)",
+                                    background: "rgba(76, 29, 149, 0.08)",
+                                    border: "1px solid rgba(76, 29, 149, 0.25)",
                                     borderRadius: "40px",
                                     padding: "6px 14px",
                                     cursor: "pointer",
                                     transition: "all 0.2s ease",
                                 }}
                             >
-                                <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#6D28D9" }}>
-                                    Setup {completedSetupCount}/{setupItems.length}
+                                <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--primary)" }}>
+                                    Complete setup ({completedSetupCount}/{setupItems.length})
                                 </span>
-                                <ChevronDown size={14} color="#6D28D9" style={{ transform: isSetupPopoverOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+                                <ChevronDown size={14} color="var(--primary)" style={{ transform: isSetupPopoverOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
                             </button>
 
                             {isSetupPopoverOpen && (
@@ -378,15 +392,17 @@ export default function Dashboard() {
                                                                 item.action();
                                                             }}
                                                             style={{
-                                                                background: "#6D28D9",
+                                                                background: "var(--primary)",
                                                                 border: "none",
-                                                                borderRadius: "10px",
-                                                                padding: "8px 14px",
+                                                                borderRadius: "100px",
+                                                                padding: "8px 16px",
                                                                 fontSize: "0.78rem",
                                                                 fontWeight: 700,
                                                                 color: "white",
                                                                 cursor: "pointer",
                                                                 whiteSpace: "nowrap",
+                                                                boxShadow: "0 4px 12px rgba(76, 29, 149, 0.25)",
+                                                                transition: "all 0.2s ease"
                                                             }}
                                                         >
                                                             {item.actionLabel}
@@ -491,6 +507,14 @@ export default function Dashboard() {
                 @keyframes kreddy-pulse {
                     0%, 100% { opacity: 1; transform: scale(1); }
                     50% { opacity: 0.7; transform: scale(1.3); }
+                }
+                @media (max-width: 640px) {
+                    body.setup-sheet-open .support-hub-container {
+                        opacity: 0 !important;
+                        pointer-events: none !important;
+                        visibility: hidden !important;
+                        transition: opacity 0.2s ease, visibility 0.2s ease;
+                    }
                 }
             `}</style>
 

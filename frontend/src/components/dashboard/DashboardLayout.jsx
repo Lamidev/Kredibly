@@ -628,64 +628,7 @@ const DashboardLayout = () => {
                 document.body
             )}
 
-            {/* ➕ Floating Quick Capture Menu */}
-            <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000 }}>
-                {showQuickCapture && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                        style={{
-                            position: 'absolute',
-                            bottom: '64px',
-                            right: 0,
-                            background: 'white',
-                            border: '1px solid #E2E8F0',
-                            borderRadius: '20px',
-                            padding: '8px',
-                            width: '180px',
-                            boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '4px'
-                        }}
-                    >
-                        <button onClick={() => { setShowQuickCapture(false); talkToKreddy(); }} style={{ background: 'none', border: 'none', padding: '10px 14px', borderRadius: '12px', textAlign: 'left', fontWeight: 700, fontSize: '0.85rem', color: '#1E293B', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <MessageCircle size={16} color="#10B981" /> Talk to Kreddy
-                        </button>
-                        <button onClick={() => { setShowQuickCapture(false); navigate('/workspace'); }} style={{ background: 'none', border: 'none', padding: '10px 14px', borderRadius: '12px', textAlign: 'left', fontWeight: 700, fontSize: '0.85rem', color: '#1E293B', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Plus size={16} /> Record Sale
-                        </button>
-                        <button onClick={() => { setShowQuickCapture(false); navigate('/money'); }} style={{ background: 'none', border: 'none', padding: '10px 14px', borderRadius: '12px', textAlign: 'left', fontWeight: 700, fontSize: '0.85rem', color: '#1E293B', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <CreditCard size={16} /> Expense
-                        </button>
-                        <button onClick={() => { setShowQuickCapture(false); navigate('/tasks'); }} style={{ background: 'none', border: 'none', padding: '10px 14px', borderRadius: '12px', textAlign: 'left', fontWeight: 700, fontSize: '0.85rem', color: '#1E293B', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <CheckCircle size={16} /> Task
-                        </button>
-                    </motion.div>
-                )}
-                <button
-                    onClick={() => setShowQuickCapture(!showQuickCapture)}
-                    style={{
-                        width: '56px',
-                        height: '56px',
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, var(--primary) 0%, #7C3AED 100%)',
-                        color: 'white',
-                        border: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        boxShadow: '0 8px 24px rgba(124,58,237,0.3)',
-                        transition: 'transform 0.2s'
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                >
-                    <Plus size={24} strokeWidth={3} style={{ transform: showQuickCapture ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s' }} />
-                </button>
-            </div>
+
 
             <PlanLimitModal 
                 isOpen={showLimitModal}
