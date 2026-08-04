@@ -34,6 +34,11 @@ if (import.meta.env.VITE_SENTRY_DSN) {
   });
 }
 
+// Detect PWA standalone mode (iOS / Android / Desktop PWA)
+if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+  document.documentElement.classList.add('pwa-standalone');
+}
+
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>
     <AuthProvider>

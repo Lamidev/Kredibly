@@ -84,6 +84,7 @@ const Activate = () => {
             {/* Logo */}
             <div
                 onClick={() => navigate("/")}
+                className="activate-logo-header"
                 style={{
                     padding: "clamp(20px, 4vw, 40px) clamp(20px, 5vw, 40px) 12px",
                     cursor: "pointer",
