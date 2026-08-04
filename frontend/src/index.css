@@ -547,19 +547,62 @@ body.lock-scroll {
     will-change: transform;
 }
 
-/* 📱 PWA & Mobile Safe-Area Top Spacing for Sonner Toasts & Header */
+/* 📱 PWA & Mobile Safe-Area Top Spacing for Sonner Toasts & Headers */
 [data-sonner-toaster] {
-    top: max(20px, calc(env(safe-area-inset-top, 0px) + 16px)) !important;
+    --offset: max(24px, calc(env(safe-area-inset-top, 0px) + 16px)) !important;
+    top: max(24px, calc(env(safe-area-inset-top, 0px) + 16px)) !important;
     z-index: 999999 !important;
 }
 
-@media (display-mode: standalone), (display-mode: fullscreen) {
-    .pill-nav-container {
-        top: max(22px, calc(env(safe-area-inset-top, 0px) + 16px)) !important;
+[data-sonner-toaster] ol,
+section[data-sonner-toaster] > ol {
+    top: max(24px, calc(env(safe-area-inset-top, 0px) + 16px)) !important;
+}
+
+@media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
+    .pill-nav-container,
+    .pwa-standalone .pill-nav-container {
+        top: max(44px, calc(env(safe-area-inset-top, 0px) + 16px)) !important;
     }
-    [data-sonner-toaster] {
-        top: max(38px, calc(env(safe-area-inset-top, 0px) + 24px)) !important;
+    [data-sonner-toaster],
+    .pwa-standalone [data-sonner-toaster] {
+        --offset: max(56px, calc(env(safe-area-inset-top, 0px) + 24px)) !important;
+        top: max(56px, calc(env(safe-area-inset-top, 0px) + 24px)) !important;
     }
+    [data-sonner-toaster] ol,
+    section[data-sonner-toaster] > ol,
+    .pwa-standalone [data-sonner-toaster] ol {
+        top: max(56px, calc(env(safe-area-inset-top, 0px) + 24px)) !important;
+    }
+    .auth-logo-header,
+    .activate-logo-header,
+    .pwa-standalone .auth-logo-header,
+    .pwa-standalone .activate-logo-header {
+        padding-top: max(54px, calc(env(safe-area-inset-top, 0px) + 20px)) !important;
+    }
+    .top-header,
+    .pwa-standalone .top-header {
+        padding-top: max(44px, calc(env(safe-area-inset-top, 0px) + 12px)) !important;
+        height: calc(88px + env(safe-area-inset-top, 0px)) !important;
+    }
+}
+
+/* Fallback for JS-detected PWA Standalone Mode */
+.pwa-standalone [data-sonner-toaster] {
+    --offset: max(56px, calc(env(safe-area-inset-top, 0px) + 24px)) !important;
+    top: max(56px, calc(env(safe-area-inset-top, 0px) + 24px)) !important;
+}
+.pwa-standalone [data-sonner-toaster] ol,
+.pwa-standalone section[data-sonner-toaster] > ol {
+    top: max(56px, calc(env(safe-area-inset-top, 0px) + 24px)) !important;
+}
+.pwa-standalone .auth-logo-header,
+.pwa-standalone .activate-logo-header {
+    padding-top: max(54px, calc(env(safe-area-inset-top, 0px) + 20px)) !important;
+}
+.pwa-standalone .top-header {
+    padding-top: max(44px, calc(env(safe-area-inset-top, 0px) + 12px)) !important;
+    height: calc(88px + env(safe-area-inset-top, 0px)) !important;
 }
 
 .pill-nav {
