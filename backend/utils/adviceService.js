@@ -46,15 +46,15 @@ const generateDailyAdvice = async (tone = "English") => {
         
         let advice;
         try {
-            // Priority 1: Use Pro model for higher quality long-form advice
-            const proModel = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
-            const result = await proModel.generateContent(prompt);
-            advice = result.response.text().trim();
-        } catch (proErr) {
-            console.warn("⚠️ Gemini 2.5 Pro Busy/Failed, falling back to Flash model...");
-            // Priority 2: Use Flash if Pro is overloaded (503)
-            const flashModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+            // Priority 1: Use Flash model
+            const flashModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
             const result = await flashModel.generateContent(prompt);
+            advice = result.response.text().trim();
+        } catch (flashErr) {
+            console.warn("⚠️ Gemini Flash Busy/Failed, trying Pro model:", flashErr.message);
+            // Priority 2: Use Pro if Flash fails
+            const proModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+            const result = await proModel.generateContent(prompt);
             advice = result.response.text().trim();
         }
 

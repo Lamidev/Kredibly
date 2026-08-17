@@ -188,9 +188,9 @@ const AdminMissionControl = () => {
                     }}>
                         <div style={{ flex: '1 1 300px' }}>
                             <h3 style={{ margin: 0, fontWeight: 950, fontSize: '1.25rem', color: 'white', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <Shield size={22} color="#818CF8" /> Kreddy Growth Engine
+                                <Shield size={22} color="#818CF8" /> Weekly Kickoff & Advice Studio
                             </h3>
-                            <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>Manage the daily street-smart advice and morning report dispatch.</p>
+                            <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>Review or edit the street-smart advice for Monday Kickoff emails & daily WhatsApp reports. (Autopilot delivers automatically at 8:00 AM).</p>
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <span style={{ 
@@ -200,7 +200,7 @@ const AdminMissionControl = () => {
                                 display: 'flex', alignItems: 'center', gap: '6px'
                             }}>
                                 <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }} />
-                                {adviceStatus === 'pending' ? 'REVIEW' : 'APPROVED'}
+                                {adviceStatus === 'pending' ? 'AUTOPILOT READY' : 'APPROVED'}
                             </span>
                         </div>
                     </div>
@@ -208,7 +208,7 @@ const AdminMissionControl = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '24px', padding: '24px' }}>
                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 900, color: 'rgba(255,255,255,0.4)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Today's Drafted Business Tip
+                                This Week's Street-Smart Growth Play
                             </label>
                             <textarea 
                                 value={advice}
@@ -218,7 +218,7 @@ const AdminMissionControl = () => {
                                     fontSize: 'clamp(0.95rem, 3vw, 1.1rem)', fontWeight: 700, lineHeight: '1.6', minHeight: '150px', 
                                     resize: 'none', outline: 'none'
                                 }}
-                                placeholder="Loading daily advice..."
+                                placeholder="Loading advice..."
                             />
                         </div>
 
@@ -226,7 +226,7 @@ const AdminMissionControl = () => {
                             {/* Queue Micro-Monitor */}
                             <div style={{ background: '#000000', borderRadius: '24px', padding: '24px', border: '1px solid rgba(255,255,255,0.1)' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                                    <span style={{ fontSize: '0.7rem', fontWeight: 900, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Batch Progress</span>
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 900, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Dispatch Status</span>
                                     <motion.div animate={{ opacity: stats.pending > 0 ? [1, 0.5, 1] : 1 }} transition={{ repeat: Infinity, duration: 2 }}>
                                         <Zap size={14} color={stats.pending > 0 ? "#FACC15" : "rgba(255,255,255,0.2)"} />
                                     </motion.div>
@@ -238,11 +238,11 @@ const AdminMissionControl = () => {
                                     </div>
                                     <div>
                                         <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#4ADE80' }}>{stats.wa_sent || 0}</div>
-                                        <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 800 }}>WA</div>
+                                        <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 800 }}>WA SENT</div>
                                     </div>
                                     <div>
                                         <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#60A5FA' }}>{stats.email_sent || 0}</div>
-                                        <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 800 }}>EMAIL</div>
+                                        <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 800 }}>EMAIL SENT</div>
                                     </div>
                                     <div>
                                         <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#F87171' }}>{stats.failed}</div>
@@ -262,7 +262,7 @@ const AdminMissionControl = () => {
                                 }}
                             >
                                 <RefreshCw size={16} className={isRegenerating ? 'spin-animation' : ''} />
-                                {isRegenerating ? 'Thinking...' : 'Regenerate Tip'}
+                                {isRegenerating ? 'Thinking...' : 'Regenerate AI Tip'}
                             </button>
                             <button 
                                 onClick={handleApproveAndSend}
@@ -277,10 +277,10 @@ const AdminMissionControl = () => {
                                 }}
                             >
                                 <Zap size={18} fill="white" />
-                                {isApproving ? 'Queueing Batch...' : 'Approve & Send Batch'}
+                                {isApproving ? 'Broadcasting...' : 'Save & Broadcast Monday Kickoff'}
                             </button>
                             <p style={{ textAlign: 'center', margin: 0, fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
-                                *Sends Batch Summary/Growth to all users.
+                                *Autopilot delivers automatically every Monday at 8:00 AM WAT & daily on WhatsApp for active merchants.
                             </p>
                         </div>
                     </div>

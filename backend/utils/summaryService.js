@@ -71,17 +71,14 @@ const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
         // 2. Resolve merchant's preferred name strictly
         const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || "Partner";
 
-        // 3. Determine if merchant is ACTIVE (interacted < 24h OR engagement score > 0)
+        // 3. Determine if merchant is active on WhatsApp (< 24h session window)
         const isInsideWindow = profile.isKreddyConnected && 
                              profile.lastInboundAt && 
                              (now - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
 
-        const engagementScore = await checkEngagement(profile._id, now);
-        const isMerchantActive = isInsideWindow || (engagementScore > 0);
-
-        if (!isMerchantActive) {
-            console.log(`🔇 [INACTIVE] Skipping morning summary for inactive merchant ${profile.displayName} (engagement: ${engagementScore})`);
-            return { status: "skipped", reason: "Merchant is inactive" };
+        if (!isInsideWindow || !profile.whatsappNumber) {
+            console.log(`🔇 [INACTIVE/CLOSED] Skipping morning summary for ${profile.displayName} (Outside WhatsApp 24h window - daily email disabled)`);
+            return { status: "skipped", reason: "Merchant outside 24h WhatsApp window" };
         }
 
         // 4. Fetch Daily Advice Segment (Masterclass)
@@ -268,42 +265,18 @@ const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
             dailyTip
         ].filter(v => v !== null).join("\n");
 
-        if (isInsideWindow && profile.whatsappNumber) {
-            // 🟢 GROUP 1: WHATSAPP BRIEFING (Session open)
-            console.log(`📡 [ACTIVE] Delivering WhatsApp Daily Brief to ${profile.displayName}...`);
-            const sent = await sendWhatsAppMessage(profile.whatsappNumber, message);
+        // 🟢 WHATSAPP BRIEFING (Active 24h Session)
+        console.log(`📡 [ACTIVE] Delivering WhatsApp Daily Brief to ${profile.displayName}...`);
+        const sent = await sendWhatsAppMessage(profile.whatsappNumber, message);
 
-            if (sent) {
-                console.log(`✅ [WHATSAPP] Summary delivered to ${profile.displayName}.`);
-                profile.lastSummaryAt = new Date();
-                await profile.save();
-                return { status: "sent", channel: "whatsapp" };
-            } else {
-                console.error(`❌ [WHATSAPP] Delivery FAILED for ${profile.displayName}.`);
-                return { status: "failed", error: "WhatsApp delivery failed" };
-            }
-
-        } else {
-            // 🟠 GROUP 2: EMAIL BRIEFING (Session closed)
-            console.log(`📪 [ACTIVE] Sending Daily Brief to ${profile.displayName} via Email...`);
-            
-            const user = await require("../models/User").findById(profile.ownerId);
-            if (!user || !user.email) return { status: "failed", error: "No email found for active user" };
-
-            const emailHtml = GROWTH_MASTERCLASS_TEMPLATE
-                .replace(/{name}/g, profile.displayName)
-                .replace(/{adviceText}/g, `<div style="font-family: sans-serif; white-space: pre-line; color: #333;">${message.replace(/\*/g, '')}</div>`);
-
-            await sendEmail({
-                to: user.email,
-                subject: `🌅 Your Daily Briefing: ${profile.displayName}`,
-                html: emailHtml
-            });
-
-            console.log(`✅ [EMAIL] Daily Brief sent to ${user.email}.`);
+        if (sent) {
+            console.log(`✅ [WHATSAPP] Summary delivered to ${profile.displayName}.`);
             profile.lastSummaryAt = new Date();
             await profile.save();
-            return { status: "sent", channel: "email" };
+            return { status: "sent", channel: "whatsapp" };
+        } else {
+            console.error(`❌ [WHATSAPP] Delivery FAILED for ${profile.displayName}.`);
+            return { status: "failed", error: "WhatsApp delivery failed" };
         }
 
     } catch (error) {

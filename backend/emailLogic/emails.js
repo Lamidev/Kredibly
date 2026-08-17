@@ -1,3 +1,5 @@
+require("dotenv").config();
+const axios = require("axios");
 const {
   PASSWORD_RESET_REQUEST_TEMPLATE,
   PASSWORD_RESET_SUCCESS_TEMPLATE,
@@ -7,310 +9,238 @@ const {
   NEW_TICKET_ALERT_TEMPLATE,
   SUPPORT_REPLY_TEMPLATE,
   SUBSCRIPTION_CONFIRM_TEMPLATE,
-  BANK_CHANGE_ALERT_TEMPLATE
+  BANK_CHANGE_ALERT_TEMPLATE,
+  GROWTH_MASTERCLASS_TEMPLATE,
+  ACTIVATION_NUDGE_TEMPLATE,
+  FINISH_SETUP_TEMPLATE,
+  INACTIVITY_DAY2_TEMPLATE,
+  INACTIVITY_DAY7_TEMPLATE,
+  WEEKLY_MONDAY_DIGEST_TEMPLATE,
+  LAUNCH_ANNOUNCEMENT_TEMPLATE
 } = require("./emailTemplates.js");
-const { resendClient, sender } = require("./emailConfig.js");
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
 
-// ... (existing functions)
+/**
+ * 🛡️ Core Robust Email Sender
+ * Uses direct REST API call with multipart (HTML + Text fallback) for 100% Primary Inbox placement.
+ */
+const sendDirectEmail = async ({ to, subject, html, text }) => {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn("⚠️ RESEND_API_KEY missing in .env. Skipping email dispatch to:", to);
+    return { success: false, error: "Missing API Key" };
+  }
 
+  const fromEmail = process.env.SENDER_EMAIL || "hello@usekredibly.com";
+  const fromName = "Oluwatosin from Kredibly";
 
-// Common function for handling email sending errors
-const handleEmailError = (error, message) => {
-  throw new Error(`${message}: ${error.message}`);
+  try {
+    const response = await axios.post(
+      "https://api.resend.com/emails",
+      {
+        from: `${fromName} <${fromEmail}>`,
+        to: Array.isArray(to) ? to : [to],
+        reply_to: fromEmail,
+        subject: subject,
+        text: text || "Please view this email in an HTML-capable email client.",
+        html: html,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log(`✅ [EMAIL-SENT] Delivered to ${Array.isArray(to) ? to.join(", ") : to} | ID: ${response.data?.id}`);
+    return { success: true, id: response.data?.id };
+  } catch (err) {
+    const errorMsg = err.response?.data?.message || err.message;
+    console.error(`❌ [EMAIL-ERROR] Failed sending to ${to}:`, errorMsg);
+    return { success: false, error: errorMsg };
+  }
 };
 
-// Send Verification Email
+// 1. VERIFICATION EMAIL
 exports.sendVerificationEmail = async (email, verificationToken) => {
-  try {
-    await resendClient.emails.send({
-      from: `${sender.name} <${sender.email}>`,
-      to: email,
-      subject: "Your Kredibly verification code",
-      text: `Hi,\n\nYour 6-digit verification code is: ${verificationToken}\n\nEnter this code on the screen to verify your email.\n\n— Oluwatosin, Founder of Kredibly`,
-      html: VERIFICATION_EMAIL_TEMPLATE.replace("{verificationCode}", verificationToken),
-    });
-  } catch (error) {
-    handleEmailError(error, "Error sending verification email");
-  }
+  return await sendDirectEmail({
+    to: email,
+    subject: "Your Kredibly verification code",
+    text: `Hello,\n\nThank you for joining Kredibly. Your 6-digit verification code is: ${verificationToken}\n\nEnter this code to complete your setup. (Expires in 24 hours)\n\n— The Kredibly Team`,
+    html: VERIFICATION_EMAIL_TEMPLATE.replace("{verificationCode}", verificationToken),
+  });
 };
 
+// 2. WELCOME EMAIL
 exports.sendWelcomeEmail = async (email, userName) => {
-  try {
-    await resendClient.emails.send({
-      from: `${sender.name} <${sender.email}>`,
-      to: email,
-      subject: "Welcome to Kredibly",
-      text: `Hi ${userName},\n\nI just wanted to personally say — welcome.\n\nI'm Oluwatosin, the founder of Kredibly. I built this so growing your business doesn't mean drowning in notebooks and chasing debtors.\n\nIf you ever have questions or just want to say hi, reply to this email directly. I read every single one.\n\nWelcome to the new standard.\n\n— Oluwatosin\nFounder, Kredibly`,
-      html: WELCOME_EMAIL_TEMPLATE.replace("{name}", userName),
-    });
-  } catch (error) {
-    handleEmailError(error, "Error sending welcome email");
-  }
+  return await sendDirectEmail({
+    to: email,
+    subject: "Welcome to Kredibly",
+    text: `Hi ${userName || "there"},\n\nWelcome to Kredibly! We built this platform because managing your sales and getting paid shouldn't mean drowning in notebooks or chasing clients who promise "next week."\n\nWhether you're recording transactions via text, voice note, or photo on WhatsApp, Kredibly is designed to give you peace of mind and professional clarity.\n\nIf you ever have questions or just want to say hi, reply to this email directly.\n\nWarmly,\nOluwatosin\nFounder, Kredibly`,
+    html: WELCOME_EMAIL_TEMPLATE.replace("{name}", userName || "there"),
+  });
 };
 
+// 3. ONBOARDING SUCCESS
 exports.sendOnboardingSuccessEmail = async (email, userName, businessName, planTitle = "Chairman") => {
-    try {
-        await resendClient.emails.send({
-            from: `${sender.name} <${sender.email}>`,
-            to: email,
-            subject: "Your business is now live on Kredibly",
-            text: `Hi ${userName},\n\nCongratulations! ${businessName} is officially live on Kredibly.\n\nYour bank details are verified. You can now send invoices and receive payments directly.\n\nLog in here: https://usekredibly.com/dashboard\n\n— Oluwatosin\nFounder, Kredibly`,
-            html: ONBOARDING_SUCCESS_TEMPLATE
-                .replace(/{name}/g, userName)
-                .replace(/{businessName}/g, businessName)
-                .replace(/{planTitle}/g, planTitle)
-        });
-    } catch (error) {
-        console.error("Error sending onboarding success email:", error);
-    }
+  return await sendDirectEmail({
+    to: email,
+    subject: "Your business is now live on Kredibly",
+    text: `Hi ${userName || "there"},\n\nCongratulations! ${businessName || "Your business"} is officially set up on Kredibly. Your bank details have been verified, and you can now issue invoices and receive payments directly.\n\nEnter your dashboard: ${FRONTEND_URL}/dashboard\n\n— The Kredibly Team`,
+    html: ONBOARDING_SUCCESS_TEMPLATE
+      .replace(/{name}/g, userName || "there")
+      .replace(/{businessName}/g, businessName || "Your Business")
+      .replace(/{planTitle}/g, planTitle),
+  });
 };
 
-// Send Password Reset Email
+// 4. PASSWORD RESET REQUEST
 exports.sendPasswordResetEmail = async (email, resetURL) => {
-  try {
-    const response = await resendClient.emails.send({
-      from: `${sender.name} <${sender.email}>`,
-      to: email,
-      subject: "Reset your password",
-      html: PASSWORD_RESET_REQUEST_TEMPLATE.replace("{resetURL}", resetURL),
-    });
-
-  } catch (error) {
-    handleEmailError(error, "Error sending password reset email");
-  }
+  return await sendDirectEmail({
+    to: email,
+    subject: "Reset your Kredibly password",
+    text: `Hello,\n\nWe received a request to reset your password. Please use this link to proceed:\n\n${resetURL}\n\nThis link expires in 1 hour. If you did not request this, you can safely ignore this email.\n\n— The Kredibly Team`,
+    html: PASSWORD_RESET_REQUEST_TEMPLATE.replace("{resetURL}", resetURL),
+  });
 };
 
-// Send Password Reset Success Email
+// 5. PASSWORD RESET SUCCESS
 exports.sendResetSuccessEmail = async (email) => {
-  try {
-    const response = await resendClient.emails.send({
-      from: `${sender.name} <${sender.email}>`,
-      to: email,
-      subject: "Password Reset Successful",
-      html: PASSWORD_RESET_SUCCESS_TEMPLATE,
-    });
-
-  } catch (error) {
-    handleEmailError(error, "Error sending password reset success email");
-  }
+  return await sendDirectEmail({
+    to: email,
+    subject: "Password Reset Successful",
+    text: `Hello,\n\nYour password was successfully reset. You can now log back into your dashboard with your new credentials.\n\nIf this change was not made by you, please reply immediately.\n\n— The Kredibly Team`,
+    html: PASSWORD_RESET_SUCCESS_TEMPLATE,
+  });
 };
 
+// 6. NEW SUPPORT TICKET (Admin Alert)
 exports.sendNewTicketEmail = async (adminEmail, userName, message, ticketId) => {
-  try {
-    await resendClient.emails.send({
-      from: `${sender.name} <${sender.email}>`,
-      to: adminEmail,
-      subject: `New Support Ticket from ${userName}`,
-      html: NEW_TICKET_ALERT_TEMPLATE
-        .replace("{userName}", userName)
-        .replace("{message}", message)
-        .replace("{ticketId}", ticketId),
-    });
-  } catch (error) {
-    if (process.env.NODE_ENV !== 'production') console.warn("Dev mode: Email simulation for support ticket.");
-    // Do not throw, just log, so we don't block the ticket creation
-    // handleEmailError(error, "Error sending new ticket alert");
-  }
+  return await sendDirectEmail({
+    to: adminEmail,
+    subject: `New Support Ticket from ${userName}`,
+    text: `New Support Ticket\n\nUser: ${userName}\nTicket ID: ${ticketId}\nMessage: ${message}\n\nAdmin Panel: ${FRONTEND_URL}/admin`,
+    html: NEW_TICKET_ALERT_TEMPLATE
+      .replace("{userName}", userName)
+      .replace("{message}", message)
+      .replace("{ticketId}", ticketId),
+  });
 };
 
+// 7. SUPPORT REPLY
 exports.sendSupportReplyEmail = async (userEmail, userName, message, ticketSubject) => {
-  try {
-    await resendClient.emails.send({
-      from: `${sender.name} <${sender.email}>`,
-      to: userEmail,
-      subject: `Update on your support ticket: ${ticketSubject}`,
-      html: SUPPORT_REPLY_TEMPLATE
-        .replace("{name}", userName)
-        .replace("{ticketSubject}", ticketSubject)
-        .replace("{message}", message)
-    });
-  } catch (error) {
-    if (process.env.NODE_ENV !== 'production') console.warn("Dev mode: Email simulation for support reply.");
-    // handleEmailError(error, "Error sending support reply email");
-  }
+  return await sendDirectEmail({
+    to: userEmail,
+    subject: `Update on your support ticket: ${ticketSubject}`,
+    text: `Hello ${userName},\n\nThe Kredibly team replied to your support ticket regarding "${ticketSubject}":\n\n"${message}"\n\nVisit dashboard: ${FRONTEND_URL}/dashboard`,
+    html: SUPPORT_REPLY_TEMPLATE
+      .replace("{name}", userName)
+      .replace("{ticketSubject}", ticketSubject)
+      .replace("{message}", message),
+  });
 };
 
+// 8. SECURITY ALERT (Bank Details Modified)
 exports.sendSecurityAlertEmail = async (email, userName, details) => {
-  try {
-    const [accountName, bankName] = details.split(' (');
-    const displayBank = bankName.replace(')', '');
-    const accountNum = "Validating..."; // Details should ideally be split or passed better
+  const [accountName, bankName] = (details || "").split(" (");
+  const displayBank = (bankName || "").replace(")", "");
+  const accountNum = "Validating...";
 
-    await resendClient.emails.send({
-      from: `${sender.name} <${sender.email}>`,
-      to: email,
-      subject: "🚨 Security Alert: Payout Details Changed",
-      html: BANK_CHANGE_ALERT_TEMPLATE
-        .replace("{name}", userName)
-        .replace("{bankName}", displayBank)
-        .replace("{accountNumber}", "Updated")
-        .replace("{accountName}", accountName)
-    });
-  } catch (error) {
-    console.error("Error sending security alert email:", error);
-  }
+  return await sendDirectEmail({
+    to: email,
+    subject: "Security Alert: Payout Details Changed",
+    text: `Hello ${userName},\n\nThis is an automated notification that the bank account details for your Kredibly business were recently updated:\n\nBank: ${displayBank}\nHolder: ${accountName}\n\nIf you did NOT make this change, reply to this email immediately.\n\n— The Kredibly Team`,
+    html: BANK_CHANGE_ALERT_TEMPLATE
+      .replace("{name}", userName)
+      .replace("{bankName}", displayBank || "Updated Bank")
+      .replace("{accountNumber}", accountNum)
+      .replace("{accountName}", accountName || "Updated Account"),
+  });
 };
 
-exports.sendSubscriptionConfirmEmail = async (email, userData) => {
-    try {
-        await resendClient.emails.send({
-            from: `${sender.name} <${sender.email}>`,
-            to: email,
-            subject: userData.subject || "Welcome to the Kredibly Vanguard 🛡️",
-            html: SUBSCRIPTION_CONFIRM_TEMPLATE
-                .replace(/{name}/g, userData.name)
-                .replace(/{planName}/g, userData.planName)
-                .replace(/{amount}/g, userData.amount)
-                .replace(/{expiryDate}/g, userData.expiryDate)
-                .replace(/{launchDate}/g, userData.launchDate)
-                .replace(/{pioneerStatus}/g, userData.pioneerStatus)
-        });
-    } catch (error) {
-        console.error("Error sending subscription confirmation email:", error);
-    }
+// 9. SUBSCRIPTION CONFIRMATION
+exports.sendSubscriptionConfirmEmail = async (email, userName, planName, amount, expiryDate, isPioneer = false) => {
+  const pioneerText = isPioneer ? "Early Access Pioneer Benefits Applied." : "Standard Subscription Verified.";
+  return await sendDirectEmail({
+    to: email,
+    subject: `Subscription Confirmed: ${planName} Plan`,
+    text: `Hi ${userName},\n\nPayment verified for your ${planName} Plan (Amount: ${amount}). Next renewal: ${expiryDate}.\n\n${pioneerText}\n\n— The Kredibly Team`,
+    html: SUBSCRIPTION_CONFIRM_TEMPLATE
+      .replace(/{name}/g, userName)
+      .replace(/{planName}/g, planName)
+      .replace(/{amount}/g, amount)
+      .replace(/{expiryDate}/g, expiryDate)
+      .replace(/{pioneerStatus}/g, pioneerText),
+  });
 };
 
-// 🛡️ SUPER ADMIN ALERTS
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || sender.email;
-
-exports.sendAdminPaymentAlert = async (data) => {
-    try {
-        const { merchantName, planName, amount, reference, email } = data;
-        await resendClient.emails.send({
-            from: `${sender.name} <${sender.email}>`,
-            to: ADMIN_EMAIL,
-            subject: `💰 NEW PAYMENT: ₦${amount} from ${merchantName}`,
-            html: `<div style="font-family: sans-serif; padding: 20px;">
-                    <h2 style="color: #4C1D95;">Cash Received! 🎉</h2>
-                    <p><strong>Merchant:</strong> ${merchantName} (${email})</p>
-                    <p><strong>Plan:</strong> ${planName}</p>
-                    <p><strong>Amount:</strong> ₦${amount}</p>
-                    <p><strong>Reference:</strong> ${reference}</p>
-                    <hr />
-                    <p style="font-size: 12px; color: #777;">Kredibly Revenue Tracker</p>
-                   </div>`
-        });
-    } catch (error) {
-        console.error("Admin Payment Alert Error:", error.message);
-    }
+// 10. ACTIVATION NUDGE
+exports.sendActivationNudgeEmail = async (email, userName) => {
+  return await sendDirectEmail({
+    to: email,
+    subject: "Finish activating Kreddy for your business",
+    text: `Hi ${userName || "there"},\n\nI noticed you registered your business on Kredibly, but Kreddy is still waiting to start working on WhatsApp.\n\nFinish setup here: ${FRONTEND_URL}/dashboard\n\n— Oluwatosin, Founder, Kredibly`,
+    html: ACTIVATION_NUDGE_TEMPLATE.replace(/{name}/g, userName || "there"),
+  });
 };
 
-exports.sendAdminNewUserAlert = async (data) => {
-    try {
-        const { name, email } = data;
-        await resendClient.emails.send({
-            from: `${sender.name} <${sender.email}>`,
-            to: ADMIN_EMAIL,
-            subject: `New User Sign-up: ${name} (Onboarding Pending)`,
-            html: `
-                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; color: #0F172A; background: #FFFFFF; border-radius: 16px; border: 1px solid #E2E8F0;">
-                    <div style="margin-bottom: 20px; border-bottom: 2px solid #F1F5F9; padding-bottom: 16px;">
-                        <div style="display: inline-block; background: #FEF3C7; color: #92400E; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">
-                            Stage 1 • Account Created
-                        </div>
-                        <h2 style="color: #4C1D95; margin: 4px 0 6px 0; font-size: 20px; font-weight: 800;">New User Registration</h2>
-                        <p style="margin: 0; font-size: 14px; color: #64748B;">A new user has registered an account. Business onboarding is pending.</p>
-                    </div>
-
-                    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 18px; border-radius: 12px; margin-bottom: 20px;">
-                        <h3 style="margin: 0 0 12px 0; font-size: 15px; color: #1E293B; font-weight: 700;">User Details</h3>
-                        <p style="margin: 6px 0; font-size: 14px; color: #334155;"><strong>Full Name:</strong> ${name}</p>
-                        <p style="margin: 6px 0; font-size: 14px; color: #334155;"><strong>Email Address:</strong> ${email}</p>
-                        <p style="margin: 6px 0; font-size: 14px; color: #334155;"><strong>Status:</strong> <span style="color: #D97706; font-weight: 600;">Onboarding Pending</span></p>
-                    </div>
-
-                    <div style="border-top: 1px solid #E2E8F0; padding-top: 16px; margin-top: 24px; text-align: center; font-size: 12px; color: #94A3B8;">
-                        <p style="margin: 0;">Kredibly Growth Monitor • Real-time Signup Alert</p>
-                    </div>
-                </div>
-            `
-        });
-    } catch (error) {
-        console.error("Admin New User Alert Error:", error.message);
-    }
+// 11. FINISH SETUP
+exports.sendFinishSetupEmail = async (email, userName) => {
+  return await sendDirectEmail({
+    to: email,
+    subject: "Complete your setup on Kredibly",
+    text: `Hi ${userName || "there"},\n\nTo start recording sales, sending professional invoices, and tracking your receivables automatically, complete your setup here: ${FRONTEND_URL}/onboarding\n\n— Oluwatosin, Founder, Kredibly`,
+    html: FINISH_SETUP_TEMPLATE.replace(/{name}/g, userName || "there"),
+  });
 };
 
-exports.sendAdminNewBusinessAlert = async (data) => {
-    try {
-        const { 
-            name, email, businessName, phone, 
-            bankDetails, staffNumbers, plan, sellMode, entityType, kyc 
-        } = data;
-
-        const hasBank = bankDetails && bankDetails.accountNumber;
-        const bankHtml = hasBank ? `
-            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 16px; border-radius: 12px; margin-bottom: 16px;">
-                <p style="margin: 0 0 8px 0; font-weight: bold; color: #1E293B;">Bank Payout Account Attached</p>
-                <p style="margin: 4px 0; font-size: 14px; color: #475569;"><strong>Bank:</strong> ${bankDetails.bankName || 'N/A'}</p>
-                <p style="margin: 4px 0; font-size: 14px; color: #475569;"><strong>Account Number:</strong> ${bankDetails.accountNumber || 'N/A'}</p>
-                <p style="margin: 4px 0; font-size: 14px; color: #475569;"><strong>Account Name:</strong> ${bankDetails.accountName || 'N/A'}</p>
-            </div>
-        ` : `
-            <div style="background: #FFF7ED; border: 1px solid #FFEDD5; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; font-size: 14px; color: #C2410C;">
-                No Bank Payout Account attached yet.
-            </div>
-        `;
-
-        const hasStaff = staffNumbers && staffNumbers.length > 0;
-        const staffHtml = hasStaff ? `
-            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 16px; border-radius: 12px; margin-bottom: 16px;">
-                <p style="margin: 0 0 8px 0; font-weight: bold; color: #1E293B;">Staff Members Added (${staffNumbers.length})</p>
-                <ul style="margin: 4px 0; padding-left: 20px; font-size: 14px; color: #475569;">
-                    ${staffNumbers.map(s => `<li>${s}</li>`).join('')}
-                </ul>
-            </div>
-        ` : `
-            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; font-size: 14px; color: #64748B;">
-                Staff: Solo merchant (No staff added yet).
-            </div>
-        `;
-
-        await resendClient.emails.send({
-            from: `${sender.name} <${sender.email}>`,
-            to: ADMIN_EMAIL,
-            subject: `Merchant Activated: ${businessName || name}`,
-            html: `
-                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; color: #0F172A; background: #FFFFFF; border-radius: 16px; border: 1px solid #E2E8F0;">
-                    <div style="margin-bottom: 20px; border-bottom: 2px solid #F1F5F9; padding-bottom: 16px;">
-                        <div style="display: inline-block; background: #DCFCE7; color: #166534; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">
-                            Stage 2 • Business Live
-                        </div>
-                        <h2 style="color: #4C1D95; margin: 4px 0 6px 0; font-size: 20px; font-weight: 800;">New Merchant Live on Kredibly</h2>
-                        <p style="margin: 0; font-size: 14px; color: #64748B;">A merchant has completed business onboarding and is now active.</p>
-                    </div>
-
-                    <!-- Merchant Overview -->
-                    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 18px; border-radius: 12px; margin-bottom: 16px;">
-                        <h3 style="margin: 0 0 12px 0; font-size: 15px; color: #1E293B; font-weight: 700;">Merchant Profile</h3>
-                        <p style="margin: 6px 0; font-size: 14px; color: #334155;"><strong>Business Name:</strong> <span style="color: #4C1D95; font-weight: 700;">${businessName || 'Not Provided'}</span></p>
-                        <p style="margin: 6px 0; font-size: 14px; color: #334155;"><strong>Owner Name:</strong> ${name}</p>
-                        <p style="margin: 6px 0; font-size: 14px; color: #334155;"><strong>Email:</strong> ${email}</p>
-                        <p style="margin: 6px 0; font-size: 14px; color: #334155;"><strong>WhatsApp Number:</strong> ${phone || 'N/A'}</p>
-                        <p style="margin: 6px 0; font-size: 14px; color: #334155;"><strong>Plan:</strong> ${String(plan || 'chairman').toUpperCase()}</p>
-                        <p style="margin: 6px 0; font-size: 14px; color: #334155;"><strong>Selling Mode:</strong> ${sellMode || 'both'}</p>
-                    </div>
-
-                    <!-- Bank Details Section -->
-                    ${bankHtml}
-
-                    <!-- Staff Members Section -->
-                    ${staffHtml}
-
-                    <div style="border-top: 1px solid #E2E8F0; padding-top: 16px; margin-top: 24px; text-align: center; font-size: 12px; color: #94A3B8;">
-                        <p style="margin: 0;">Kredibly Growth Monitor • Real-time Merchant Activation Alert</p>
-                    </div>
-                </div>
-            `
-        });
-    } catch (error) {
-        console.error("Admin New Business Alert Error:", error.message);
-    }
+// 12. 2-STEP INACTIVITY DRIP: DAY 2
+exports.sendInactivityDay2Email = async (email, userName) => {
+  return await sendDirectEmail({
+    to: email,
+    subject: "Create your first invoice in 15 seconds",
+    text: `Hi ${userName || "there"},\n\nI noticed you haven't created your first invoice with Kreddy yet.\n\nYou can talk to Kreddy on WhatsApp the exact same way you talk to a business partner:\n"Kreddy, Rebecca bought shoes for ₦25,000, due next Friday"\n\nMessage Kreddy on WhatsApp: https://wa.me/2347071238658?text=Hi%20Kreddy%2C%20I'd%20like%20to%20create%20my%20first%20invoice\n\n— Oluwatosin, Founder, Kredibly`,
+    html: INACTIVITY_DAY2_TEMPLATE.replace(/{name}/g, userName || "there"),
+  });
 };
 
+// 13. 2-STEP INACTIVITY DRIP: DAY 7
+exports.sendInactivityDay7Email = async (email, userName) => {
+  return await sendDirectEmail({
+    to: email,
+    subject: "Are customers owing you money? Let Kreddy handle it",
+    text: `Hi ${userName || "there"},\n\nOne of the biggest profit killers for business owners is chasing customers for payment.\n\nWhenever a customer buys on credit, Kreddy schedules polite reminders and issues virtual accounts for direct bank settlement.\n\nOpen Kreddy on WhatsApp: https://wa.me/2347071238658?text=Hi%20Kreddy%2C%20show%20me%20how%20debt%20tracking%20works\n\n— Oluwatosin, Founder, Kredibly`,
+    html: INACTIVITY_DAY7_TEMPLATE.replace(/{name}/g, userName || "there"),
+  });
+};
 
+// 14. WEEKLY MONDAY MORNING KICKOFF
+exports.sendWeeklyMondayDigestEmail = async (email, data) => {
+  const { userName, businessName, cashCollected, invoicesCount, pendingDebt, weeklyAdvice } = data;
+  return await sendDirectEmail({
+    to: email,
+    subject: `Monday Kickoff: ${businessName || "Your Business"}`,
+    text: `Good morning ${userName || "Partner"},\n\nLast Week's Performance for ${businessName || "Your Business"}:\n• Cash Collected: ₦${(cashCollected || 0).toLocaleString()}\n• Invoices Issued: ${invoicesCount || 0}\n• Total Outstanding Debts: ₦${(pendingDebt || 0).toLocaleString()}\n\nThis Week's Growth Play:\n${weeklyAdvice || "Focus on cashflow and debt collection this week."}\n\nOpen Kreddy on WhatsApp: https://wa.me/2347071238658?text=Hi%20Kreddy%2C%20let's%20start%20the%20week!\n\n— Oluwatosin, Founder, Kredibly`,
+    html: WEEKLY_MONDAY_DIGEST_TEMPLATE
+      .replace(/{name}/g, userName || "Partner")
+      .replace(/{businessName}/g, businessName || "Your Business")
+      .replace(/{cashCollected}/g, (cashCollected || 0).toLocaleString())
+      .replace(/{invoicesCount}/g, invoicesCount || 0)
+      .replace(/{pendingDebt}/g, (pendingDebt || 0).toLocaleString())
+      .replace(/{weeklyAdvice}/g, weeklyAdvice || "Focus on cashflow and debt collection this week. Let's make it a winning week!"),
+  });
+};
 
+// 15. GLOBAL PUBLIC LAUNCH ANNOUNCEMENT EMAIL
+exports.sendLaunchAnnouncementEmail = async (email, userName) => {
+  const plainText = `Hi ${userName || "there"},\n\nA little over a year ago, I was watching a friend try to balance his work in Lagos.\n\nHe did great work and had plenty of clients. But by the end of every month, getting paid was always a headache.\n\nHe was constantly tracking who owed what, dealing with clients who promised "I'll transfer tonight" and forgot by morning, and having awkward conversations just to get paid for work he had already delivered.\n\nI realized this isn't just a retail store problem.\n\nWhether you sell products, offer professional services, consult, freelance, or run a workshop—if you create value every day, chasing payments and keeping clean records shouldn't take up half your energy.\n\nMost business software expects you to sit behind a laptop and manage complex spreadsheets. But real work in Africa happens on your phone, inside conversations, and specifically on WhatsApp.\n\nThat is why we built Kredibly.\n\nWe wanted to make tracking what you're owed, generating clean invoices, and receiving bank transfer payments as effortless as sending a quick WhatsApp message.\n\nThis Saturday, August 22nd: We Go Live Globally\n\nOver the last few months, early users have been testing Kreddy, our WhatsApp AI assistant—recording transactions, sending invoices, and getting paid without awkward follow-ups.\n\nThis Saturday, August 22, 2026, Kredibly officially launches to the public. As someone who joined early, your account is already set up and your early-access access is ready.\n\nTry it before Saturday:\nIf you haven't yet, take 15 seconds today to try your first message with Kreddy on WhatsApp. You can type or send a voice note for any work or sale:\n"Kreddy, invoice Daniel ₦50,000 for brand design work, due Friday"\n\nShe will format a clean invoice with direct payment details instantly.\n\nMessage Kreddy on WhatsApp: https://wa.me/2347071238658?text=Hi%20Kreddy%2C%20I'm%20ready%20for%20Saturday\n\nThank you for being part of this journey from the beginning. We're excited for what we are building together.\n\nWarmly,\nOluwatosin\nFounder, Kredibly`;
 
-
-
+  return await sendDirectEmail({
+    to: email,
+    subject: "Why we built Kredibly (and what happens this Saturday)",
+    text: plainText,
+    html: LAUNCH_ANNOUNCEMENT_TEMPLATE.replace(/{name}/g, userName || "there"),
+  });
+};
