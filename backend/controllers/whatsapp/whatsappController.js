@@ -1367,6 +1367,9 @@ const handleIncoming = async (req, res) => {
 
         // 🛡️ COST SAVING: Track the 24-hour window
         profile.lastInboundAt = new Date();
+        if (profile.inactivityDrip?.day2SentAt || profile.inactivityDrip?.day7SentAt) {
+            profile.inactivityDrip = { day2SentAt: null, day7SentAt: null };
+        }
         if (!profile.monthlyUsage) {
             profile.monthlyUsage = { reminders: 0, voiceNotes: 0, images: 0, messages: 0, lastReset: new Date() };
         }

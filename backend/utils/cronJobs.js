@@ -961,6 +961,7 @@ const startBackgroundJobRunner = () => {
                     if (result.status === "completed" || result.status === "skipped" || result.status === "sent") {
                         job.status = "completed";
                         job.completedAt = new Date();
+                        job.metadata = { ...job.metadata, channel: result.channel || "skipped" };
                         job.error = null;
                     } else {
                         job.status = job.attempts >= 3 ? "failed" : "pending"; // Simple retry logic
@@ -981,6 +982,36 @@ const startBackgroundJobRunner = () => {
     });
 };
 
+/**
+ * 12. 2-STEP INACTIVITY DRIP SCHEDULER (Runs daily at 10:00 AM WAT)
+ * Checks for Day 2 and Day 7 dormant candidates and delivers onboarding guidance without endless spam.
+ */
+const scheduleInactivityDrip = () => {
+    cron.schedule("0 10 * * *", async () => {
+        try {
+            const { runInactivityDrip } = require("./lifecycleService");
+            await runInactivityDrip();
+        } catch (err) {
+            console.error("Cron Error (Inactivity Drip):", err.message);
+        }
+    }, { timezone: "Africa/Lagos" });
+};
+
+/**
+ * 13. WEEKLY MONDAY MORNING DIGEST (Runs every Monday at 8:00 AM WAT)
+ * Sends all onboarded merchants a unified week-ahead briefing & last week's performance.
+ */
+const scheduleMondayWeeklyDigest = () => {
+    cron.schedule("0 8 * * 1", async () => {
+        try {
+            const { runWeeklyMondayDigest } = require("./lifecycleService");
+            await runWeeklyMondayDigest();
+        } catch (err) {
+            console.error("Cron Error (Monday Weekly Digest):", err.message);
+        }
+    }, { timezone: "Africa/Lagos" });
+};
+
 module.exports = { 
     scheduleMorningSummary, 
     scheduleRemindersWorker, 
@@ -995,5 +1026,7 @@ module.exports = {
     scheduleDailySettlements,
     schedulePaymentSessionExpiry,
     scheduleAbandonedTasksFollowUp,
+    scheduleInactivityDrip,
+    scheduleMondayWeeklyDigest,
     startBackgroundJobRunner
 };

@@ -41,6 +41,8 @@ const {
   scheduleDailySettlements,
   schedulePaymentSessionExpiry,
   scheduleAbandonedTasksFollowUp,
+  scheduleInactivityDrip,
+  scheduleMondayWeeklyDigest,
   startBackgroundJobRunner
 } = require("./utils/cronJobs");
 
@@ -209,6 +211,8 @@ mongoose
         scheduleDailySettlements();
         schedulePaymentSessionExpiry();
         scheduleAbandonedTasksFollowUp();
+        scheduleInactivityDrip();
+        scheduleMondayWeeklyDigest();
     } else {
         console.log(`ℹ️ [PM2] Non-primary instance (${process.env.NODE_APP_INSTANCE}). Skipping scheduler registration to prevent duplicate triggers.`);
     }

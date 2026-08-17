@@ -30,7 +30,7 @@ exports.regenerateAdvice = async (req, res) => {
  */
 exports.approveAndQueueSummaries = async (req, res) => {
     try {
-        const { editedAdvice, tone } = req.body;
+        const { editedAdvice, tone, broadcastEmail = true } = req.body;
 
         // 1. Update and Approve
         const config = await SystemConfig.findOneAndUpdate(
@@ -45,20 +45,26 @@ exports.approveAndQueueSummaries = async (req, res) => {
 
         if (!config) return res.status(404).json({ error: "Advice not found" });
 
-         // 2. QUEUE THE JOBS: This is the "Engine Start" button
-        // Includes: 
-        // 1. Active (WhatsApp)
-        // 2. Inactive Connected (Email)
-        // 3. Onboarded but Not Connected (Email)
-        const profiles = await BusinessProfile.find({ 
-            onboardingStep: { $gte: 0 } // Include all merchants for test stability
-        }); 
+        // 2. Trigger Monday Weekly Kickoff email broadcast to all merchants
+        if (broadcastEmail) {
+            const { runWeeklyMondayDigest } = require("../../utils/lifecycleService");
+            runWeeklyMondayDigest().catch(err => console.error("Admin Manual Monday Digest Error:", err.message));
+        }
 
-        console.log(`📡 [ADMIN] Found ${profiles.length} eligible merchants for summary dispatch.`);
+        // 3. Queue WhatsApp morning reports for active merchants
+        const profiles = await BusinessProfile.find({ 
+            isKreddyConnected: true,
+            whatsappNumber: { $exists: true, $ne: "" }
+        }); 
 
         const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
         
-        // 🚨 OVERRIDE: Delete existing jobs for today so we can resend correctly
+        // Reset lastSummaryAt for active profiles so manual tests dispatch immediately
+        await BusinessProfile.updateMany(
+            { _id: { $in: profiles.map(p => p._id) } },
+            { $set: { lastSummaryAt: null } }
+        );
+
         await BackgroundJob.deleteMany({
             type: "MORNING_SUMMARY",
             createdAt: { $gte: startOfToday }
@@ -71,13 +77,12 @@ exports.approveAndQueueSummaries = async (req, res) => {
             scheduledFor: new Date()
         }));
 
-        // Use insertMany for high speed
         if (jobs.length > 0) {
             await BackgroundJob.insertMany(jobs);
         }
 
         res.status(200).json({ 
-            message: `Successfully approved and queued ${jobs.length} summaries!`,
+            message: `Approved advice & triggered kickoff broadcast for ${profiles.length} WhatsApp merchants and all email subscribers!`,
             config
         });
     } catch (err) {

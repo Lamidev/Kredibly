@@ -166,6 +166,14 @@ const BusinessProfileSchema = new mongoose.Schema({
         type: Date,
         default: null
     },
+    inactivityDrip: {
+        day2SentAt: { type: Date, default: null },
+        day7SentAt: { type: Date, default: null }
+    },
+    lastWeeklyDigestAt: {
+        type: Date,
+        default: null
+    },
     firstMerchantGreetingSent: {
         type: Boolean,
         default: false
