@@ -1,150 +1,139 @@
-# 🚀 Kredibly Frontend Architecture & Migration Plan
-**Document Version:** 1.0.0  
-**Target Milestone:** Post-Launch Core Sprint (Following August 22, 2026 Public Launch)  
-**Author:** Oluwatosin (Founder) & Engineering Team
+# 🚀 Kredibly Frontend Architecture & Launch Hardening Plan
+**Document Version:** 4.0.0 (WhatsApp-First Platform Architecture)  
+**Target Milestone:** Saturday, August 22, 2026 Launch & Post-Launch Sprints  
+**Strategic Direction:** Oluwatosin (Founder) & Engineering Team
 
 ---
 
-## 📌 1. Executive Summary
+## 📌 1. Core Platform Philosophy: WhatsApp-First
 
-This document establishes the official technical roadmap for modernizing the **Kredibly Frontend Architecture**. 
+Kredibly is **not a traditional desktop accounting software**. It is a **WhatsApp-First Financial Operating System**:
 
-While the current **React 19 + Vite SPA** is locked, verified, and stable for our **Saturday, August 22, 2026 Public Launch**, our post-launch sprint will transition the frontend to **Next.js 15 (App Router) + Pure Tailwind CSS v4 + Official Shadcn UI**.
-
-### Primary Objectives:
-1. **10/10 Public SEO & Organic Discovery:** Transition public landing pages to Server-Side Rendering (SSR) & Static Site Generation (SSG) for instant indexing by search crawlers and social media link scrapers.
-2. **Eliminate Styling Drag:** Replace scattered inline React styles (`style={{ ... }}`) with a unified, high-speed **Tailwind CSS v4** design system.
-3. **Standardize UI with Shadcn:** Implement the official Shadcn UI component architecture for accessible, consistent, modular, and lightweight interactive elements.
-4. **Sub-Second Page Loads:** Leverage Next.js Edge caching, automatic image optimization (`next/image`), and streaming UI for global performance.
+* **The Core Engine (WhatsApp + Kreddy):** Where merchants spend 95% of their time. Kreddy parses voice notes, records transactions, issues PDF invoices, chases debtors with polite automated follow-ups, and delivers 8:00 AM daily briefings.
+* **The Web Application (Merchant Control Room):** A fast, lightweight command center used to configure bank payouts (Nomba), set Kreddy's tone, review real-time payment telemetry, manage staff access, and host customer payment links.
 
 ---
 
-## 🔍 2. Current State Audit (Pre-Launch Analysis)
+## 🗺️ 2. Actual Codebase Inventory (Pre-Launch Reality)
 
-| Area | Current Implementation | Identified Limitations & Drag Factors |
+```
+frontend/src/
+├── pages/
+│   ├── public/                 # 🌐 Public Discovery & Marketing
+│   │   ├── landing-page.jsx    # Hero, social proof, WhatsApp live preview
+│   │   ├── PricingPage.jsx     # Plans (Sole, Oga, Chairman)
+│   │   ├── ProductPage.jsx & SolutionPage.jsx
+│   │   └── about-us.jsx        # Founder story & August 22nd launch roadmap
+│   │
+│   ├── auth/                   # 🔐 Access & Security
+│   │   ├── login.jsx, register.jsx, verify-email.jsx, activate.jsx
+│   │   └── forgotPassword.jsx, resetPassword.jsx
+│   │
+│   ├── merchant/               # 🎛️ Merchant Control Room
+│   │   ├── dashboard.jsx       # Real-time Pulse, Activity Stream, Setup Readiness
+│   │   ├── invoice-page.jsx    # Invoices table & lifecycle states (PAID, PARTIAL, EXTENSION)
+│   │   ├── customers.jsx       # Customer directory & unpaid debt ledger
+│   │   ├── workspace.jsx & reports.jsx
+│   │   └── settings/           # Control panels:
+│   │       ├── SettingsPayoutsPage.jsx      (Nomba bank verification & security lock)
+│   │       ├── SettingsKreddyPage.jsx       (Assistant tone, preferred boss name)
+│   │       ├── SettingsStaffPage.jsx        (Multi-staff phone number access)
+│   │       └── SettingsPlanPage.jsx         (Billing & subscriptions)
+│   │
+│   └── admin/                  # 🛡️ Mission Control
+│       └── AdminMissionControl.jsx # Advice Studio, background jobs, system health
+│
+└── components/
+    ├── dashboard/              # BankSetupModal, DashboardLayout, StatusTicker, SupportHub
+    ├── payment/                # CheckoutModal, ShareActionSheet, TransactionSlip
+    └── public/                 # PublicNavbar, PublicFooter, SEO
+```
+
+---
+
+## 🔴 3. Pre-Launch Hardening Sprint (Before Saturday, Aug 22)
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│              PRE-LAUNCH HARDENING SPRINT (TUESDAY – FRIDAY)             │
+├─────────────────────────────────────────────────────────────────────────┤
+│ 1. Kill Heavy Inline CSS  │ Refactor Dashboard, Invoices & Landing Page │
+│                           │ to clean Tailwind classes.                  │
+│ 2. Standardize Modals     │ Unify BankSetupModal & CheckoutModal        │
+│                           │ with clean backdrop blur and focus traps.   │
+│ 3. Mobile Responsiveness  │ Guarantee zero horizontal scroll on mobile  │
+│                           │ control room screens.                       │
+│ 4. Public Social Preview  │ Verify WhatsApp link previews & OG tags.    │
+│ 5. End-to-End QA          │ Test: WhatsApp Invoice → Virtual Account →   │
+│                           │ Customer Pays → Nomba Instant Sweep.        │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Detailed Fix Items:
+1. **Refactor Inline Styles to Tailwind:**
+   - Eliminate verbose `style={{ ... }}` objects on core high-traffic views:
+     - `pages/public/landing-page.jsx`
+     - `pages/merchant/dashboard.jsx`
+     - `pages/merchant/invoice-page.jsx`
+     - `pages/merchant/settings/SettingsPayoutsPage.jsx`
+2. **Unified UI Primitives:**
+   - Standardize buttons, text inputs, and select dropdowns across the Merchant Control Room using consistent Tailwind design tokens (`bg-primary`, `bg-card`, `border-border`).
+3. **Public SEO & WhatsApp Sharing:**
+   - Ensure `usekredibly.com` and public invoice links render high-resolution preview cards with clear branding when shared inside WhatsApp chat threads.
+4. **End-to-End Reliability:**
+   - Validate that customer payments via Nomba trigger instant real-time websocket updates on the Merchant Dashboard and alert Kreddy on WhatsApp.
+
+---
+
+## 🏗️ 4. Post-Launch Decoupled Growth Architecture
+
+```
+                    usekredibly.com
+                           │
+             NEXT.JS 15 (MARKETING & SEO ENGINE)
+                           │
+        ┌──────────────────┼──────────────────┐
+        │                  │                  │
+   Landing Pages     Audience Hubs       Solution Guides
+   • /               • /for-freelancers  • /how-to-invoice-whatsapp
+   • /pricing        • /for-vendors      • /track-unpaid-debt
+   • /about-us       • /for-creators     • /payment-reminders-nigeria
+        │
+        ▼
+   Sign Up / Login CTA
+        │
+        ▼
+                   app.usekredibly.com
+                           │
+             REACT + VITE (MERCHANT CONTROL ROOM)
+                           │
+        ┌──────────────────┼──────────────────┐
+        │                  │                  │
+     Pulse / Feed      Invoices           Bank Settings
+        │                  │                  │
+        └──────────────────┴──────────────────┘
+                           │
+                  REST API & Sockets
+                           │
+                   Node.js Backend
+                           │
+                       MongoDB
+```
+
+### Why This Fits Kredibly:
+1. **The Merchant Control Room stays fast & responsive:** The authenticated React + Vite SPA retains its Redux session state, real-time Socket.io listeners, and Nomba bank sweep telemetry with zero server-rendering bottlenecks.
+2. **The Public Marketing Engine drives customer acquisition:** A separate Next.js marketing site (`usekredibly.com`) captures search traffic from Nigerian merchants, freelancers, and vendors searching for invoice templates, WhatsApp payment bots, and debt recovery guides.
+
+---
+
+## 📊 Summary Table
+
+| Category | Pre-Launch Action (Before Saturday) | Post-Launch Strategic Action |
 | :--- | :--- | :--- |
-| **Framework** | **React 19 + Vite 7 (SPA)** | Client-Side Rendered (CSR). Search bots receive an empty HTML shell initially; social sharing relies on static metadata in `index.html`. |
-| **Styling** | **Heavy Inline CSS (`style={{ ... }}`)** | High React DOM reconciliation overhead, duplicate styling memory, lack of responsive utilities (`md:`, `lg:`), and inability to use native hover/focus variants without state hooks. |
-| **Component Layer** | **Custom & Partial Radix Primitives** | Inconsistent component APIs across different pages (e.g., Auth vs Dashboard vs Mission Control). |
-| **SEO & Metadata** | **Single `index.html` Head** | Difficult to generate dynamic, per-page OpenGraph preview cards (e.g., custom invoice preview links or merchant public pages). |
-| **Asset Delivery** | **Static Bundling** | Manual image sizing and compression; no automated modern format conversion (AVIF/WebP). |
+| **Architecture** | 🔒 **Keep React + Vite Control Room stable.** | 🚀 Deploy separate Next.js marketing site for SEO. |
+| **Styling** | ⚡ **Convert inline styles on core screens to Tailwind.** | 🧹 Clean up remaining secondary admin views. |
+| **Modals & UI** | 🧩 **Standardize Bank, Checkout, and Sheet modals.** | 📦 Adopt additional headless primitives as needed. |
+| **Product Reliability**| 🧪 **Test WhatsApp $\rightarrow$ Nomba $\rightarrow$ Ledger pipeline.**| 📈 Scale multi-merchant traffic and analytics. |
 
 ---
-
-## 🏗️ 3. Target Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                      KREDIBLY NEXT.JS 15 APP ROUTER                     │
-└─────────────────────────────────────────────────────────────────────────┘
-                                     │
-         ┌───────────────────────────┴───────────────────────────┐
-         ▼                                                       ▼
-┌─────────────────────────────────┐             ┌─────────────────────────────────┐
-│   PUBLIC / MARKETING (SSR/SSG)   │             │   AUTHENTICATED APP (CLIENT)    │
-│   • Landing Page (/)            │             │   • Merchant Dashboard (/dash)  │
-│   • About Us (/about-us)        │             │   • Customer Invoices (/inv/id) │
-│   • Pricing (/pricing)          │             │   • Admin Mission Control       │
-│   • Blog & Guides (/blog)       │             │   • Settings & Ledger Tools     │
-│   ───                           │             │   ───                           │
-│   Instant Server HTML + SEO     │             │   Realtime Redux + WebSockets   │
-└─────────────────────────────────┘             └─────────────────────────────────┘
-                                     │
-                                     ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│          UNIFIED DESIGN SYSTEM: PURE TAILWIND CSS v4 + SHADCN UI        │
-│          • Zero runtime CSS overhead                                    │
-│          • Headless Radix UI accessibility                              │
-│          • Custom Kredibly theme tokens (Purple/Amber/Dark Palette)      │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 💎 4. Key Upgrades & Technical Benefits
-
-### A. Next.js 15 App Router & Server-Side SEO
-* **Instant HTML to Crawlers:** Search engine bots (Google, Bing) and social preview bots (WhatsApp, X/Twitter, LinkedIn, Facebook) receive 100% pre-rendered HTML on the initial GET request.
-* **Per-Route Dynamic Metadata:** Each page exports custom metadata and dynamic OpenGraph banners:
-  ```tsx
-  // app/pricing/page.tsx
-  export const metadata: Metadata = {
-    title: "Pricing & Plans | Kredibly",
-    description: "Simple, transparent WhatsApp accounting for African merchants and creators.",
-    openGraph: {
-      images: ["/og/pricing-banner.png"],
-    },
-  };
-  ```
-* **Automated `sitemap.xml` & `robots.txt`:** Generated natively via `app/sitemap.ts` and `app/robots.ts`.
-
-### B. Pure Tailwind CSS v4 (Zero Inline Styles)
-* **Rust-Engine Compilation:** Tailwind v4 processes styles at build-time, reducing CSS payload size to under 25KB gzipped.
-* **Native Responsiveness & Interactions:**
-  ```jsx
-  // ❌ OLD (Inline CSS - hard to maintain & heavy)
-  <div style={{ display: 'flex', flexDirection: 'column', background: '#0F172A', padding: '24px', borderRadius: '24px' }}>
-    <button style={{ background: '#4C1D95', color: '#FFFFFF', padding: '12px 24px', borderRadius: '8px' }}>
-      Create Invoice
-    </button>
-  </div>
-
-  // ✅ NEW (Tailwind v4 + Shadcn - clean, responsive, high-speed)
-  <Card className="flex flex-col bg-slate-900 p-6 rounded-3xl border-slate-800">
-    <Button variant="default" className="bg-primary hover:bg-primary/90 text-white rounded-lg">
-      Create Invoice
-    </Button>
-  </Card>
-  ```
-
-### C. Official Shadcn UI Component Suite
-We will install the official Shadcn component registry:
-* **Buttons, Badges & Avatars:** Standardized states (loading, disabled, hover).
-* **Dialogs & Sheet Drawers:** Fluid mobile-first slide-over menus for recording sales and payments.
-* **Data Tables:** High-performance sortable transaction ledgers with pagination.
-* **Toast Alerts:** Powered by `sonner` with dark-mode and WhatsApp sound cues.
-
----
-
-## 🗺️ 5. Step-by-Step Migration Roadmap (Post-Launch)
-
-### Phase 1: Project Scaffolding & Configuration
-1. Initialize Next.js 15 project structure alongside the existing repository.
-2. Configure `@tailwindcss/vite` / `@tailwindcss/postcss` and import the core brand tokens into `globals.css`.
-3. Initialize the official Shadcn CLI:
-   ```bash
-   npx shadcn@latest init
-   npx shadcn@latest add button card dialog dropdown-menu input label select sheet table toast
-   ```
-
-### Phase 2: Public Pages Migration (SEO Priority)
-1. **Landing Page (`/`):** Migrate hero section, interactive demo, testimonial sliders, and feature breakdowns to Server Components with Framer Motion animations.
-2. **Pricing Page (`/pricing`):** Implement dynamic currency and plan toggles.
-3. **About Us (`/about-us`):** Migrate founder narrative and company roadmap.
-4. **Public Invoice Portal (`/invoice/[id]`):** Server-render customer payment invoice pages for instantaneous load times over slow 3G/4G mobile networks.
-
-### Phase 3: Dashboard & Admin Migration
-1. Set up client-side provider wrappers (`ReduxProvider`, `ThemeProvider`, `SocketProvider`).
-2. Migrate Authentication routes (`/login`, `/signup`, `/verify`, `/forgot-password`).
-3. Migrate Merchant Dashboard (`/dashboard`, `/ledger`, `/customers`, `/analytics`).
-4. Migrate Admin Mission Control (`/admin/mission-control`).
-
-### Phase 4: Edge Deployment & Performance Verification
-1. Configure deployment on **Vercel Edge Network** with automated continuous integration.
-2. Run Google Lighthouse Audits targeting **95+ scores** across:
-   - **Performance** (< 1.2s Largest Contentful Paint)
-   - **Accessibility** (100% WCAG compliant)
-   - **Best Practices** (100%)
-   - **SEO** (100%)
-
----
-
-## 🔒 6. Launch Day Protocol (Saturday, August 22, 2026)
-
-* **Code Freeze:** The current React + Vite codebase remains locked for Saturday's public launch to ensure zero regression in auth, Nomba settlements, WhatsApp AI responses, and email pipelines.
-* **Observability:** Sentry is actively monitoring client exceptions.
-* **Migration Start:** Phase 1 of this document will commence immediately following launch stabilization.
-
----
-
-*This document is stored at [`docs/FRONTEND_MIGRATION_AND_ARCHITECTURE_PLAN.md`](file:///c:/Users/user/Desktop/My-Projects/Non-active-projects/Kredibly/docs/FRONTEND_MIGRATION_AND_ARCHITECTURE_PLAN.md) for continuous engineering reference.*
+*Stored in repository at [`docs/FRONTEND_MIGRATION_AND_ARCHITECTURE_PLAN.md`](file:///c:/Users/user/Desktop/My-Projects/Non-active-projects/Kredibly/docs/FRONTEND_MIGRATION_AND_ARCHITECTURE_PLAN.md)*
