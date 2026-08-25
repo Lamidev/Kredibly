@@ -527,7 +527,7 @@ const sendInvoiceTemplateToCustomer = async (to, sale, business, pdfUrl) => {
     });
 
     console.log(`📨 Sending ${templateName} template to ${cleanTo}...`);
-    return await postTemplateWithFallback(phoneId, accessToken, cleanTo, templateName, components, "en_US");
+    return await postTemplateWithFallback(phoneId, accessToken, cleanTo, templateName, components, "en");
 };
 
 
@@ -2063,7 +2063,7 @@ const sendCustomerReminderTemplate = async (to, sale, business, sequenceLabel = 
     });
 
     console.log(`📨 [${sequenceLabel}] Sending ${templateName} template to ${cleanTo}...`);
-    return await postTemplateWithFallback(phoneId, accessToken, cleanTo, templateName, components, "en_US");
+    return await postTemplateWithFallback(phoneId, accessToken, cleanTo, templateName, components, "en");
 };
 
 const findActiveCustomerSale = async (phone) => {
