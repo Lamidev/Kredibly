@@ -550,7 +550,7 @@ const sendReply = async (to, text, retryCount = 0) => {
     }
 };
 
-const sendTemplateMessage = async (to, templateName, components = [], retryCount = 0) => {
+const sendTemplateMessage = async (to, templateName, components = [], retryCount = 0, options = {}) => {
     const MAX_RETRIES = 3;
     const RETRY_DELAY = 3000;
 
@@ -587,7 +587,7 @@ const sendTemplateMessage = async (to, templateName, components = [], retryCount
             return comp;
         });
 
-        const langCode = options?.langCode || "en_US";
+        const langCode = options?.langCode || "en";
         const payload = {
             messaging_product: "whatsapp",
             to: cleanTo,
@@ -618,7 +618,7 @@ const sendTemplateMessage = async (to, templateName, components = [], retryCount
 
         // Language code translation fallback (en_US <-> en)
         if (errCode === 132000 || errorData?.error?.message?.includes("translation")) {
-            const currentLang = options?.langCode || "en_US";
+            const currentLang = options?.langCode || "en";
             const altLang = currentLang === "en_US" ? "en" : "en_US";
             console.warn(`⚠️ WhatsApp Template [${templateName}] translation not found for "${currentLang}", retrying with "${altLang}"...`);
             return await sendTemplateMessage(to, templateName, components, retryCount, { ...options, langCode: altLang });
