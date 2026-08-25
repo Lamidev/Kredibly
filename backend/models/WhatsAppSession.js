@@ -3,11 +3,10 @@ const mongoose = require("mongoose");
 const WhatsAppSessionSchema = new mongoose.Schema({
     whatsappNumber: {
         type: String,
-        required: true,
-        unique: true
+        required: true
     },
     type: {
-        type: String, // e.g., 'payment_disambiguation', 'rename_disambiguation', 'due_date_disambiguation'
+        type: String, // e.g., 'customer_active_window', 'payment_disambiguation', 'collect_partial_payment_amount'
         required: true
     },
     data: {
@@ -17,8 +16,11 @@ const WhatsAppSessionSchema = new mongoose.Schema({
     expiresAt: {
         type: Date,
         required: true,
-        index: { expires: '5m' } // TTL index: auto-delete after 5 minutes
+        index: { expires: '0s' } // TTL index: auto-delete at expiresAt
     }
 }, { timestamps: true });
+
+// Compound unique index: one session per phone+type combination
+WhatsAppSessionSchema.index({ whatsappNumber: 1, type: 1 }, { unique: true });
 
 module.exports = mongoose.model("WhatsAppSession", WhatsAppSessionSchema);
