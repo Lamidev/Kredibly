@@ -20,27 +20,19 @@ const triggerWelcomeMessage = async (profile) => {
         const planDefaultTitle = profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Partner");
         const personalizedName = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;
 
-        const welcomeUpdate = `Welcome to Kredibly! Your WhatsApp workspace is set up and connected. I'm ready to record your sales and help collect your payments. To see what I can do, just reply "HELP" or type "S" to view your stats.`;
+        const welcomeMsg = `Welcome to Kredibly, ${personalizedName}! Your WhatsApp workspace is set up and connected. I'm Kreddy, your Digital Chief of Staff. I'm ready to record your sales and help collect your payments. Reply HELP to see what I can do.`;
 
         const components = [
             {
                 type: "body",
                 parameters: [
                     { type: "text", text: String(personalizedName).substring(0, 60) },
-                    { type: "text", text: String(welcomeUpdate).substring(0, 1024) }
-                ]
-            },
-            {
-                type: "button",
-                sub_type: "url",
-                index: "0",
-                parameters: [
-                    { type: "text", text: "dashboard" }
+                    { type: "text", text: String(welcomeMsg).substring(0, 1024) }
                 ]
             }
         ];
 
-        // Send to Merchant using official Meta Utility template to save costs
+        // Send welcome using kreddy_system_alert template
         await sendWhatsAppTemplate(profile.whatsappNumber, "kreddy_system_alert", components);
 
         // Send to Staff

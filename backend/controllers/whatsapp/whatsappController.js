@@ -1349,33 +1349,10 @@ const handleIncoming = async (req, res) => {
         }
 
         if (!profile) {
-                // Pre-launch Phase: Force Registration for all unknown numbers using Meta template with button redirect
-                const welcomeText = `Welcome to Kredibly! I'm Kreddy, your Digital Chief of Staff. I handle sales records, debtors, and automated invoices right here in WhatsApp. I don't have you registered yet. Create your free account in 30 seconds.`;
-                const cleanMsg = welcomeText
-                    .replace(/[\r\n\t]+/g, ' ')
-                    .replace(/\s\s+/g, ' ')
-                    .trim()
-                    .substring(0, 1024);
-
-                const components = [
-                    {
-                        type: "body",
-                        parameters: [
-                            { type: "text", text: String(whatsappProfileName || "Partner").substring(0, 60) },
-                            { type: "text", text: cleanMsg }
-                        ]
-                    },
-                    {
-                        type: "button",
-                        sub_type: "url",
-                        index: "0",
-                        parameters: [
-                            { type: "text", text: "signup" }
-                        ]
-                    }
-                ];
-
-                await sendTemplateMessage(from, "kreddy_system_alert", components);
+                // Unknown user: send plain-text welcome since kreddy_system_alert template is not in this WABA
+                await sendReply(from,
+                    `👋 Welcome to Kredibly! I'm *Kreddy*, your Digital Chief of Staff.\n\nI handle sales records, debtors, and automated invoices right here in WhatsApp.\n\nI don't have you registered yet. Create your free account at:\n👉 https://usekredibly.com/register`
+                );
                 return;
             }
 
@@ -1392,32 +1369,9 @@ const handleIncoming = async (req, res) => {
         // 🛡️ PLAN STATUS LOCK: If the plan is inactive, Kreddy goes "On Leave"
         const isControlKeyword = /help|subscribe|pay|plan|contact/i.test(text.toLowerCase());
         if ((profile.planStatus === 'inactive' || profile.planStatus === 'cancelled') && !isControlKeyword) {
-            const inactiveMsg = `${bossTitle}, your workspace services are currently paused because your account is inactive.\n\nYou can reactivate your plan anytime from your dashboard: ${process.env.FRONTEND_URL || 'https://usekredibly.com'}/settings?tab=plan`;
-            const cleanMsg = inactiveMsg
-                .replace(/[\r\n\t]+/g, ' ')
-                .replace(/\s\s+/g, ' ')
-                .trim()
-                .substring(0, 1024);
-
-            const components = [
-                {
-                    type: "body",
-                    parameters: [
-                        { type: "text", text: String(bossTitle).substring(0, 60) },
-                        { type: "text", text: cleanMsg }
-                    ]
-                },
-                {
-                    type: "button",
-                    sub_type: "url",
-                    index: "0",
-                    parameters: [
-                        { type: "text", text: "login?redirect=/settings" }
-                    ]
-                }
-            ];
-
-            await sendTemplateMessage(from, "kreddy_system_alert", components);
+            await sendReply(from,
+                `${bossTitle}, your workspace services are currently paused because your account is inactive.\n\nYou can reactivate your plan anytime from your dashboard:\n👉 ${process.env.FRONTEND_URL || 'https://usekredibly.com'}/settings?tab=plan`
+            );
             return;
         }
 
