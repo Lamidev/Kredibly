@@ -47,13 +47,13 @@ const generateDailyAdvice = async (tone = "English") => {
         let advice;
         try {
             // Priority 1: Use Flash model
-            const flashModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const flashModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
             const result = await flashModel.generateContent(prompt);
             advice = result.response.text().trim();
         } catch (flashErr) {
             console.warn("⚠️ Gemini Flash Busy/Failed, trying Pro model:", flashErr.message);
             // Priority 2: Use Pro if Flash fails
-            const proModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+            const proModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
             const result = await proModel.generateContent(prompt);
             advice = result.response.text().trim();
         }
