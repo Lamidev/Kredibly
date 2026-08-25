@@ -3,10 +3,31 @@
  */
 
 module.exports = {
-    // Shown at the bottom of the invoice summary card
+    // Shown when invoice is unpaid or partially paid
+    invoiceConfirmationUnpaid: [
+        { id: "invoice_yes", title: "Send Invoice" },
+        { id: "invoice_mark_paid", title: "Mark as Paid" },
+        { id: "invoice_edit", title: "Review & Edit" }
+    ],
+
+    // Shown when invoice is already fully paid (Receipt mode)
+    invoiceConfirmationPaid: [
+        { id: "invoice_yes", title: "Send Paid Receipt" },
+        { id: "invoice_switch_unpaid", title: "Switch to Unpaid" },
+        { id: "invoice_edit", title: "Review & Edit" }
+    ],
+
+    // Shown when customer phone was autofilled from conversation memory
+    invoiceMemoryConfirmation: [
+        { id: "invoice_yes", title: "Send to Customer" },
+        { id: "invoice_diff_person", title: "Different Number" },
+        { id: "invoice_save_internal", title: "Just Log for Me" }
+    ],
+
+    // Default confirmation fallback
     invoiceConfirmation: [
         { id: "invoice_yes", title: "Send Invoice" },
-        { id: "invoice_no", title: "Cancel" },
+        { id: "invoice_mark_paid", title: "Mark as Paid" },
         { id: "invoice_edit", title: "Review & Edit" }
     ],
 

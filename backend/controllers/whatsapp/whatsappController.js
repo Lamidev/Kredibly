@@ -587,13 +587,14 @@ const sendTemplateMessage = async (to, templateName, components = [], retryCount
             return comp;
         });
 
+        const langCode = options?.langCode || "en_US";
         const payload = {
             messaging_product: "whatsapp",
             to: cleanTo,
             type: "template",
             template: {
                 name: templateName,
-                language: { code: "en" },
+                language: { code: langCode },
                 components: sanitizedComponents
             }
         };
@@ -613,6 +614,15 @@ const sendTemplateMessage = async (to, templateName, components = [], retryCount
     } catch (error) {
         const status = error.response?.status;
         const errorData = error.response?.data;
+        const errCode = errorData?.error?.code;
+
+        // Language code translation fallback (en_US <-> en)
+        if (errCode === 132000 || errorData?.error?.message?.includes("translation")) {
+            const currentLang = options?.langCode || "en_US";
+            const altLang = currentLang === "en_US" ? "en" : "en_US";
+            console.warn(`⚠️ WhatsApp Template [${templateName}] translation not found for "${currentLang}", retrying with "${altLang}"...`);
+            return await sendTemplateMessage(to, templateName, components, retryCount, { ...options, langCode: altLang });
+        }
 
         // Retry on 429 (Rate Limit) or 500+ (Server Error) or Network Timeout
         const isNetworkError = !status || status >= 500;
@@ -622,7 +632,7 @@ const sendTemplateMessage = async (to, templateName, components = [], retryCount
             const nextDelay = RETRY_DELAY * (retryCount + 1);
             console.warn(`⏳ WhatsApp Template Delay (Attempt ${retryCount + 1}): Retrying ${to} in ${nextDelay/1000}s...`);
             await new Promise(res => setTimeout(res, nextDelay));
-            return await sendTemplateMessage(to, templateName, components, retryCount + 1);
+            return await sendTemplateMessage(to, templateName, components, retryCount + 1, options);
         }
 
         console.error(`❌ WhatsApp Template [${templateName}] Final Failure:`, JSON.stringify(errorData || error.message, null, 2));

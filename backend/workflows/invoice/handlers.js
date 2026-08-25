@@ -73,7 +73,7 @@ class InvoiceWorkflow extends WorkflowBase {
     async handleConfirmation(text, buttonId, message, state, profile, opts) {
         const lowerText = text.toLowerCase().trim();
 
-        // 1. Send Invoice
+        // 1. Send Invoice / Send Receipt
         if (buttonId === "invoice_yes" || this.isConfirmation(lowerText)) {
             const { customerName, totalAmount, paidAmount, items, item, dueDate, invoiceType, customerPhone } = state.data;
 
@@ -118,9 +118,10 @@ class InvoiceWorkflow extends WorkflowBase {
                 return true;
             }
 
+            const isSettled = (paidAmount || 0) >= totalAmount;
             await MessageDispatcher.send(
                 opts.from,
-                `On it — generating Invoice #${newSale.invoiceNumber} for *${newSale.customerName}* now. I'll send you a copy as soon as it's delivered.`
+                `On it — generating ${isSettled ? "Receipt" : "Invoice"} #${newSale.invoiceNumber} for *${newSale.customerName}* now. I'll send you a copy as soon as it's delivered.`
             );
 
             const WorkflowEventBus = require("../../conversation/WorkflowEventBus");
@@ -137,14 +138,69 @@ class InvoiceWorkflow extends WorkflowBase {
             return true;
         }
 
-        // 2. Cancel
+        // 2. 1-Tap Toggle: Mark as Paid
+        if (buttonId === "invoice_mark_paid" || lowerText === "mark as paid" || lowerText === "paid") {
+            state.data.paidAmount = state.data.totalAmount;
+            state.markModified("data");
+            await state.save();
+            await this.proceedToInvoiceSummary(opts.from, opts.cleanFrom, profile, opts.isStaff, state.data, state);
+            return true;
+        }
+
+        // 3. 1-Tap Toggle: Switch to Unpaid
+        if (buttonId === "invoice_switch_unpaid" || lowerText === "switch to unpaid" || lowerText === "unpaid") {
+            state.data.paidAmount = 0;
+            state.markModified("data");
+            await state.save();
+            await this.proceedToInvoiceSummary(opts.from, opts.cleanFrom, profile, opts.isStaff, state.data, state);
+            return true;
+        }
+
+        // 4. Internal Bookkeeping Only (Save to Ledger without WhatsApp Message to Customer)
+        if (buttonId === "invoice_save_internal" || lowerText === "just log for me" || lowerText === "save to ledger") {
+            const { customerName, totalAmount, paidAmount, items, item, dueDate, invoiceType } = state.data;
+            await this.complete(state);
+
+            const newSale = new Sale({
+                businessId: profile._id,
+                customerName: customerName || "Walk-in Customer",
+                description: items && items.length > 0 ? items.map(i => `${i.name} x${i.quantity}`).join(", ") : (item || "Purchase"),
+                items: items || [],
+                totalAmount,
+                payments: (paidAmount && paidAmount > 0) ? [{ amount: paidAmount, method: "WhatsApp" }] : [],
+                dueDate: dueDate ? new Date(dueDate) : undefined,
+                recordedBy: opts.cleanFrom,
+                invoiceType: invoiceType || "billing",
+                lifecycleStatus: "DELIVERED"
+            });
+            await newSale.save();
+
+            await MessageDispatcher.send(
+                opts.from,
+                `Done! 💼 Recorded ₦${totalAmount.toLocaleString()} for *${customerName || "Walk-in Customer"}* in your ledger.`
+            );
+            return true;
+        }
+
+        // 5. Memory Phone Safeguard: Different Person / Different Number
+        if (buttonId === "invoice_diff_person" || lowerText === "different number" || lowerText === "new person") {
+            delete state.data.customerPhone;
+            delete state.data.autofilledFromMemory;
+            state.step = "awaiting_customer_phone";
+            state.markModified("data");
+            await state.save();
+            await MessageDispatcher.send(opts.from, `Got it! What's the customer's WhatsApp number?`);
+            return true;
+        }
+
+        // 6. Cancel
         if (buttonId === "invoice_no" || this.isRejection(lowerText)) {
             await this.cancel(state, "merchant_cancelled");
             await MessageDispatcher.send(opts.from, messages.invoiceCancelled);
             return true;
         }
 
-        // 3. Review & Edit — enter V2 guided edit flow
+        // 7. Review & Edit — enter V2 guided edit flow
         if (buttonId === "invoice_edit" || lowerText === "edit" || lowerText === "review & edit" || lowerText === "edit details") {
             state.step = "awaiting_edit_field";
             state.markModified("data");
@@ -160,7 +216,7 @@ class InvoiceWorkflow extends WorkflowBase {
             return true;
         }
 
-        // 4. After-edit "Edit Something Else" tap — re-enter field selection
+        // 8. After-edit "Edit Something Else" tap — re-enter field selection
         if (buttonId === "edit_more") {
             state.step = "awaiting_edit_field";
             delete state.data.editingField;
@@ -177,7 +233,7 @@ class InvoiceWorkflow extends WorkflowBase {
             return true;
         }
 
-        // 5. Guide them back
+        // 9. Guide them back
         await MessageDispatcher.send(opts.from, messages.unknownDuringConfirmation);
         return true;
     }
@@ -380,13 +436,20 @@ class InvoiceWorkflow extends WorkflowBase {
         // 1. Missing phone -> check memory or transition step
         if (!customerPhone) {
             let memoryPhone = null;
+            let matchedName = null;
             try {
                 const ConversationMemory = require("../../models/ConversationMemory");
                 const memory = await ConversationMemory.findOne({ businessId: profile._id });
                 if (memory) {
-                    const matchedCust = memory.findCustomer(resolvedName);
-                    if (matchedCust) {
-                        memoryPhone = matchedCust.phone;
+                    const matches = memory.findMatchingCustomers(resolvedName);
+                    // Only auto-fill if there is a single high-confidence match or exact match
+                    if (matches.length === 1 && matches[0].score >= 60) {
+                        memoryPhone = matches[0].customer.phone;
+                        matchedName = matches[0].customer.name;
+                    } else if (matches.length > 1 && matches[0].score === 100 && matches[1].score < 100) {
+                        // Exact match overrides other partial matches
+                        memoryPhone = matches[0].customer.phone;
+                        matchedName = matches[0].customer.name;
                     }
                 }
             } catch (err) {
@@ -396,6 +459,7 @@ class InvoiceWorkflow extends WorkflowBase {
             if (memoryPhone) {
                 pendingData.customerPhone = memoryPhone;
                 pendingData.autofilledFromMemory = true;
+                pendingData.matchedMemoryName = matchedName;
                 return await this.proceedToInvoiceSummary(from, cleanFrom, profile, isStaff, pendingData, state);
             }
 
@@ -444,16 +508,31 @@ class InvoiceWorkflow extends WorkflowBase {
         // 3. Render final Invoice Summary
         const effectivePaid = paidAmount || 0;
         const bal = totalAmount - effectivePaid;
+        const isFullyPaid = bal <= 0 && effectivePaid > 0;
+        const isPartial = effectivePaid > 0 && bal > 0;
 
         const itemsDisplay = items && items.length > 0
             ? items.map((i, idx) => `${idx + 1}. ${i.name} × ${i.quantity || 1} — ₦${((i.unitPrice || 0) * (i.quantity || 1)).toLocaleString()}`).join("\n")
             : `${item && item !== "Item" ? item : "Purchase"} — ₦${totalAmount.toLocaleString()}`;
 
+        let statusText = "💳 Unpaid (Requesting Payment)";
+        if (isFullyPaid) {
+            statusText = "✅ Fully Paid (Receipt Mode)";
+        } else if (isPartial) {
+            statusText = `⏳ Partial (₦${effectivePaid.toLocaleString()} paid, ₦${bal.toLocaleString()} balance due)`;
+        }
+
+        let dueDateText = null;
+        if (dueDate) {
+            const d = new Date(dueDate);
+            dueDateText = `Due Date: ${d.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short", year: "numeric" })} 📅`;
+        }
+
         const summaryLines = [
-            `Here's the invoice summary:`,
+            `Here's the summary:`,
             ``,
             `Customer: *${resolvedName}*`,
-            `Phone: +${cleanPhone}${pendingData.autofilledFromMemory ? " (Autofilled from memory)" : ""}`,
+            `Phone: +${cleanPhone}${pendingData.autofilledFromMemory ? ` (Matched: ${pendingData.matchedMemoryName || "memory"})` : ""}`,
             ``,
             itemsDisplay,
             ``,
@@ -461,8 +540,11 @@ class InvoiceWorkflow extends WorkflowBase {
             effectivePaid > 0 ? `Paid: ₦${effectivePaid.toLocaleString()}` : null,
             `Total: ₦${totalAmount.toLocaleString()}`,
             bal > 0 && effectivePaid > 0 ? `Balance due: ₦${bal.toLocaleString()}` : null,
+            dueDateText,
             ``,
-            `Ready to send. Shall I go ahead?`
+            `Type: ${statusText}`,
+            ``,
+            `Ready to proceed. Shall I go ahead?`
         ].filter(v => v !== null).join("\n");
 
         state.step = "awaiting_confirmation";
@@ -470,12 +552,19 @@ class InvoiceWorkflow extends WorkflowBase {
         state.markModified("data");
         await state.save();
 
+        let actionButtons = buttons.invoiceConfirmationUnpaid;
+        if (isFullyPaid) {
+            actionButtons = buttons.invoiceConfirmationPaid;
+        } else if (pendingData.autofilledFromMemory) {
+            actionButtons = buttons.invoiceMemoryConfirmation;
+        }
+
         await MessageDispatcher.sendButtons(
             from,
-            "Invoice Summary",
+            isFullyPaid ? "Receipt Summary" : "Invoice Summary",
             summaryLines,
             "",
-            buttons.invoiceConfirmation
+            actionButtons
         );
 
         if (isStaff && profile.whatsappNumber) {

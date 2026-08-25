@@ -384,12 +384,11 @@ const sendInteractiveList = async (to, headerText, bodyText, footerText, buttonT
 };
 
 /**
- * Send a WhatsApp template message (for when the 24h session window is closed).
+ * Helper to post template messages to WhatsApp Graph API with automatic language fallback (en_US <-> en)
+ * and comprehensive error logging.
  */
-const sendTemplateMsg = async (to, templateName, components = []) => {
-    const { phoneId, accessToken } = getWACredentials();
-    if (!accessToken || !phoneId) return false;
-    const cleanTo = normalizePhone(to);
+const postTemplateWithFallback = async (phoneId, accessToken, cleanTo, templateName, components, initialLang = "en_US") => {
+    const fallbackLang = initialLang === "en_US" ? "en" : "en_US";
     try {
         await axios.post(
             `https://graph.facebook.com/v21.0/${phoneId}/messages`,
@@ -399,17 +398,52 @@ const sendTemplateMsg = async (to, templateName, components = []) => {
                 type: "template",
                 template: {
                     name: templateName,
-                    language: { code: "en" },
+                    language: { code: initialLang },
                     components
                 }
             },
-            { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 10000 }
+            { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 15000 }
         );
         return true;
     } catch (err) {
-        console.error(`❌ sendTemplateMsg [${templateName}] Error:`, err.response?.data || err.message);
+        const errData = err.response?.data?.error;
+        // If code is 132000 (template translation does not exist), retry with fallback language
+        if (errData?.code === 132000 || errData?.message?.includes("translation")) {
+            console.warn(`⚠️ [postTemplateWithFallback] ${templateName} failed with "${initialLang}", retrying with "${fallbackLang}"...`);
+            try {
+                await axios.post(
+                    `https://graph.facebook.com/v21.0/${phoneId}/messages`,
+                    {
+                        messaging_product: "whatsapp",
+                        to: cleanTo,
+                        type: "template",
+                        template: {
+                            name: templateName,
+                            language: { code: fallbackLang },
+                            components
+                        }
+                    },
+                    { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 15000 }
+                );
+                return true;
+            } catch (retryErr) {
+                console.error(`❌ [postTemplateWithFallback] ${templateName} retry with "${fallbackLang}" failed:`, retryErr.response?.data || retryErr.message);
+                return false;
+            }
+        }
+        console.error(`❌ [postTemplateWithFallback] ${templateName} [${initialLang}] Error:`, err.response?.data || err.message);
         return false;
     }
+};
+
+/**
+ * Send a WhatsApp template message (for when the 24h session window is closed).
+ */
+const sendTemplateMsg = async (to, templateName, components = []) => {
+    const { phoneId, accessToken } = getWACredentials();
+    if (!accessToken || !phoneId) return false;
+    const cleanTo = normalizePhone(to);
+    return await postTemplateWithFallback(phoneId, accessToken, cleanTo, templateName, components, "en_US");
 };
 
 /**
@@ -477,11 +511,7 @@ const sendInvoiceTemplateToCustomer = async (to, sale, business, pdfUrl) => {
         ]
     });
 
-    const canRequestExt = (sale.extensionsCount || 0) < 2
-        && sale.lifecycleStatus !== "EXTENSION_REQUESTED";
-
-    // V2 template: both buttons are Quick Replies — customer stays in WhatsApp
-    // Button 0: Pay with Transfer (static payload "pay_now")
+    // 3. Quick Reply Buttons: Meta requires payloads for ALL registered buttons (index 0 and 1)
     components.push({
         type: "button",
         sub_type: "quick_reply",
@@ -489,37 +519,15 @@ const sendInvoiceTemplateToCustomer = async (to, sale, business, pdfUrl) => {
         parameters: [{ type: "payload", payload: "pay_now" }]
     });
 
-    // Button 1: Request Extension (static payload "req_ext") — only if eligible
-    if (canRequestExt) {
-        components.push({
-            type: "button",
-            sub_type: "quick_reply",
-            index: "1",
-            parameters: [{ type: "payload", payload: "req_ext" }]
-        });
-    }
+    components.push({
+        type: "button",
+        sub_type: "quick_reply",
+        index: "1",
+        parameters: [{ type: "payload", payload: "req_ext" }]
+    });
 
-    try {
-        console.log(`Sending ${templateName} template to ${cleanTo}...`);
-        await axios.post(
-            `https://graph.facebook.com/v21.0/${phoneId}/messages`,
-            {
-                messaging_product: "whatsapp",
-                to: cleanTo,
-                type: "template",
-                template: {
-                    name: templateName,
-                    language: { code: "en" },
-                    components
-                }
-            },
-            { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 15000 }
-        );
-        return true;
-    } catch (err) {
-        console.error("❌ sendInvoiceTemplateToCustomer Error:", err.response?.data || err.message);
-        return false;
-    }
+    console.log(`📨 Sending ${templateName} template to ${cleanTo}...`);
+    return await postTemplateWithFallback(phoneId, accessToken, cleanTo, templateName, components, "en_US");
 };
 
 
@@ -619,13 +627,20 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
             }
 
         } else {
-            console.log(`ℹ️ Invoice fully settled (balance: 0). Skipping action buttons for customer.`);
-            await sendCustomerMessageWithFallback(
-                cleanCustomerPhone,
-                `Hello ${sale.customerName}! Your payment has been received and confirmed. Please find your invoice receipt attached.`,
-                sale.customerName,
-                sale.invoiceNumber
-            );
+            console.log(`ℹ️ Invoice fully settled (balance: 0). Delivering paid invoice receipt to customer ${cleanCustomerPhone}...`);
+            let receiptSent = false;
+            if (pdfUrl) {
+                receiptSent = await sendInvoiceTemplateToCustomer(cleanCustomerPhone, sale, business, pdfUrl);
+                console.log(`📄 Paid invoice receipt template delivery to ${cleanCustomerPhone}: ${receiptSent ? '✅ sent' : '❌ failed'}`);
+            }
+            if (!receiptSent) {
+                await sendCustomerMessageWithFallback(
+                    cleanCustomerPhone,
+                    `Hello ${sale.customerName}! Your payment for ${itemsListStr} (₦${sale.totalAmount.toLocaleString()}) has been received and confirmed. Please find your invoice receipt attached.`,
+                    sale.customerName,
+                    sale.invoiceNumber
+                );
+            }
         }
 
         // Step 4: Update sale lifecycle
@@ -635,34 +650,41 @@ const deliverInvoiceToCustomer = async (saleId, businessId, options = {}) => {
             customerDeliveredAt: new Date()
         });
 
-        // Step 5: Schedule customer payment reminders
-        await scheduleCustomerReminders(sale, business, cleanCustomerPhone);
+        // Step 5: Schedule customer payment reminders (only for unpaid balances)
+        if (bal > 0) {
+            await scheduleCustomerReminders(sale, business, cleanCustomerPhone);
+        }
 
         // Step 6: Notify the merchant matching the target flow order and copy
-        const merchantPhone = business.whatsappNumber;
+        const rawMerchantPhone = business.whatsappNumber;
+        const merchantPhone = rawMerchantPhone ? normalizePhone(rawMerchantPhone) : null;
         if (merchantPhone) {
+            const isSettled = bal <= 0;
             const merchantCaption = [
                 `✅ *Invoice Created Successfully*`,
                 ``,
-                `*Invoice:* ${sale.invoiceNumber}`,
+                `*Invoice:* #${sale.invoiceNumber}`,
                 `*Customer:* ${sale.customerName}`,
-                `*Amount:* ₦${sale.totalAmount.toLocaleString()}`,
+                `*Amount:* ₦${sale.totalAmount.toLocaleString()}${isSettled ? " (Paid in full)" : ""}`,
                 ``,
                 `Your invoice has been generated successfully.`,
                 ``,
                 `• A PDF copy has been sent to you.`,
                 `• The customer has received the invoice on WhatsApp.`,
-                `• You'll be notified immediately once payment is made.`
+                isSettled ? `• Status: Payment already confirmed.` : `• You'll be notified immediately once payment is made.`
             ].join("\n");
 
             if (pdfUrl) {
                 const merchantPdfSent = await sendDocument(
                     merchantPhone,
                     pdfUrl,
-                    `invoice-${sale.invoiceNumber}.pdf`,
+                    `Invoice-${sale.invoiceNumber}.pdf`,
                     merchantCaption
                 );
                 console.log(`📄 PDF copy with invoice summary sent to merchant ${merchantPhone}: ${merchantPdfSent ? '✅ sent' : '❌ failed'}`);
+                if (!merchantPdfSent) {
+                    await sendText(merchantPhone, merchantCaption);
+                }
             } else {
                 // Fallback: if no PDF was generated for some reason, just send the text
                 const merchantMsgSent = await sendText(merchantPhone, merchantCaption);
@@ -1035,6 +1057,17 @@ const handleCustomerRequestExtension = async (saleId, customerPhone) => {
         // ── ONE-TIME GUARD: Reject duplicate clicks ────────────────────────────
         // Block if already in a pending extension request (lifecycle) — prevents
         // the customer from hammering the button multiple times.
+        const bal = sale.totalAmount - (sale.payments || []).reduce((s, p) => s + p.amount, 0);
+        if (bal <= 0) {
+            await sendCustomerMessageWithFallback(
+                customerPhone,
+                `Hi ${sale.customerName}, Invoice #${sale.invoiceNumber} is already fully paid! No extension is needed. Thank you for your business! 🎉`,
+                sale.customerName,
+                sale.invoiceNumber
+            );
+            return;
+        }
+
         if (sale.lifecycleStatus === "EXTENSION_REQUESTED") {
             await sendCustomerMessageWithFallback(
                 customerPhone,
@@ -2021,37 +2054,16 @@ const sendCustomerReminderTemplate = async (to, sale, business, sequenceLabel = 
         parameters: [{ type: "payload", payload: "pay_now" }]
     });
 
-    // Button 1: Request Extension (static payload "req_ext") — only if eligible
-    if (canRequestExt) {
-        components.push({
-            type: "button",
-            sub_type: "quick_reply",
-            index: "1",
-            parameters: [{ type: "payload", payload: "req_ext" }]
-        });
-    }
+    // Button 1: Request Extension (static payload "req_ext") — Meta requires all buttons in template schema
+    components.push({
+        type: "button",
+        sub_type: "quick_reply",
+        index: "1",
+        parameters: [{ type: "payload", payload: "req_ext" }]
+    });
 
-    try {
-        console.log(`📨 [${sequenceLabel}] Sending ${templateName} template to ${cleanTo}...`);
-        await axios.post(
-            `https://graph.facebook.com/v21.0/${phoneId}/messages`,
-            {
-                messaging_product: "whatsapp",
-                to: cleanTo,
-                type: "template",
-                template: {
-                    name: templateName,
-                    language: { code: "en" },
-                    components
-                }
-            },
-            { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 15000 }
-        );
-        return true;
-    } catch (err) {
-        console.error(`❌ sendCustomerReminderTemplate Error:`, err.response?.data || err.message);
-        return false;
-    }
+    console.log(`📨 [${sequenceLabel}] Sending ${templateName} template to ${cleanTo}...`);
+    return await postTemplateWithFallback(phoneId, accessToken, cleanTo, templateName, components, "en_US");
 };
 
 const findActiveCustomerSale = async (phone) => {
