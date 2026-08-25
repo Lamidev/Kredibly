@@ -12,6 +12,9 @@ router.get("/", protect, saleController.getSales);
 router.get("/dashboard-stats", protect, saleController.getDashboardStats);
 router.get("/analytics", protect, saleController.getAnalytics);
 
+// Public invoice PDF stream route (for Meta WhatsApp document download & customer viewing)
+router.get("/:invoiceNumber/pdf", saleController.streamInvoicePDF);
+
 // Parameterized routes
 router.get("/:id", protect, saleController.getSale);
 router.put("/:id", protect, saleController.updateSale);

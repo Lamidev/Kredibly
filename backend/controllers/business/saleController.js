@@ -788,3 +788,37 @@ exports.rejectExtension = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// Stream public invoice PDF directly with HTTP 200 OK
+exports.streamInvoicePDF = async (req, res) => {
+    try {
+        const { invoiceNumber } = req.params;
+        const cleanInv = String(invoiceNumber).replace(/\.pdf$/i, "").trim().toUpperCase();
+
+        const mongoose = require("mongoose");
+        const isObjectId = mongoose.Types.ObjectId.isValid(cleanInv);
+
+        const sale = await Sale.findOne({
+            $or: [
+                { invoiceNumber: cleanInv },
+                isObjectId ? { _id: cleanInv } : null
+            ].filter(Boolean)
+        }).populate("businessId");
+
+        if (!sale) {
+            return res.status(404).send("Invoice not found");
+        }
+
+        const { generateInvoicePDFBuffer } = require("../../utils/pdfGenerator");
+        const pdfBuffer = await generateInvoicePDFBuffer(sale, sale.businessId);
+
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `inline; filename="Invoice-${sale.invoiceNumber}.pdf"`);
+        res.setHeader("Content-Length", pdfBuffer.length);
+        res.setHeader("Cache-Control", "public, max-age=3600");
+        return res.send(pdfBuffer);
+    } catch (error) {
+        console.error("❌ streamInvoicePDF Error:", error.message);
+        return res.status(500).send("Error generating invoice PDF");
+    }
+};

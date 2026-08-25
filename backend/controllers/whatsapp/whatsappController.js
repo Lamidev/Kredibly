@@ -1109,6 +1109,10 @@ const handleIncoming = async (req, res) => {
         const message = value?.messages?.[0];
 
         if (!message) {
+            if (value?.statuses?.[0]) {
+                const statusObj = value.statuses[0];
+                console.log(`📡 [Meta Status] Message ${statusObj.id} to ${statusObj.recipient_id}: status="${statusObj.status}"`, statusObj.errors ? JSON.stringify(statusObj.errors) : "");
+            }
             return res.sendStatus(200);
         }
 

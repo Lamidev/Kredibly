@@ -460,15 +460,12 @@ const uploadPDFToCloudinary = (pdfBuffer, invoiceNumber) => {
     });
 };
 
-/**
- * Generate invoice PDF and upload to Cloudinary.
- * Returns the download URL, or null on failure.
- */
 const generateAndUploadInvoicePDF = async (sale, business) => {
     try {
+        const cleanInv = (sale.invoiceNumber || `inv_${sale._id}`).toUpperCase();
         const buffer = await generateInvoicePDFBuffer(sale, business);
-        const url    = await uploadPDFToCloudinary(buffer, sale.invoiceNumber || `inv_${sale._id}`);
-        console.log(`📄 Invoice PDF uploaded: ${url}`);
+        const url = await uploadPDFToCloudinary(buffer, cleanInv);
+        console.log(`📄 Invoice PDF uploaded to Cloudinary: ${url}`);
         return url;
     } catch (err) {
         console.error("❌ PDF Generation/Upload Error:", err.message);
