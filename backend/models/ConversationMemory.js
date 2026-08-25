@@ -55,11 +55,56 @@ const ConversationMemorySchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-// Case-insensitive customer query pattern finder
+// Token/Word-based customer search with exact score & ambiguity detection
+ConversationMemorySchema.methods.findMatchingCustomers = function(nameQuery) {
+    if (!nameQuery) return [];
+    const queryTokens = nameQuery.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    if (queryTokens.length === 0) return [];
+
+    const matches = [];
+
+    for (const cust of (this.customers || [])) {
+        if (!cust.name) continue;
+        const custNameLower = cust.name.toLowerCase().trim();
+        const custTokens = custNameLower.split(/\s+/).filter(Boolean);
+
+        // 1. Exact string match (case-insensitive)
+        if (custNameLower === nameQuery.toLowerCase().trim()) {
+            matches.push({ customer: cust, score: 100, exact: true });
+            continue;
+        }
+
+        // 2. All query words exist in customer name (e.g. "Akinyemi Victoria" vs "Victoria Akinyemi")
+        const allTokensPresent = queryTokens.every(qToken => 
+            custTokens.some(cToken => cToken.includes(qToken) || qToken.includes(cToken))
+        );
+
+        if (allTokensPresent) {
+            // Full flipped token match vs partial words
+            const score = custTokens.length === queryTokens.length ? 95 : 85;
+            matches.push({ customer: cust, score, exact: false });
+            continue;
+        }
+
+        // 3. Single-token exact match (e.g. query is "Victoria" and cust is "Victoria Akinyemi")
+        const someTokensPresent = queryTokens.some(qToken =>
+            custTokens.some(cToken => cToken === qToken)
+        );
+
+        if (someTokensPresent) {
+            matches.push({ customer: cust, score: 60, exact: false });
+        }
+    }
+
+    // Sort by highest score descending, then by lastInteraction descending
+    return matches.sort((a, b) => b.score - a.score || new Date(b.customer.lastInteraction || 0) - new Date(a.customer.lastInteraction || 0));
+};
+
+// Case-insensitive customer query pattern finder (highest scoring match)
 ConversationMemorySchema.methods.findCustomer = function(nameQuery) {
-    if (!nameQuery) return null;
-    const query = nameQuery.toLowerCase().trim();
-    return this.customers.find(c => c.name.toLowerCase().includes(query));
+    const matches = this.findMatchingCustomers(nameQuery);
+    if (matches.length === 0) return null;
+    return matches[0].customer;
 };
 
 /**
