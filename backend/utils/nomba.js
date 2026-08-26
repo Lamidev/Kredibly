@@ -213,22 +213,33 @@ const createNombaCheckoutOrder = async ({ amount, orderReference, customerEmail,
  * 🔐 VERIFY NOMBA WEBHOOK SIGNATURE
  */
 const verifyWebhookSignature = (signature, rawBody) => {
+    if (!signature) return false;
     try {
         const crypto = require('crypto');
+        const cleanSig = String(signature).replace(/^sha(256|512)=/i, '').trim();
         const payload = Buffer.isBuffer(rawBody) ? rawBody : String(rawBody);
         const secrets = [process.env.NOMBA_WEBHOOK_SECRET, process.env.NOMBA_PRIVATE_KEY].filter(Boolean);
         
-        for (const secret of secrets) {
-            const hmac512 = crypto.createHmac('sha512', secret).update(payload);
-            if (signature === hmac512.digest('base64')) return true;
-            if (signature === hmac512.digest('hex')) return true;
+        if (secrets.length === 0) return true; // No secret configured
 
+        for (const secret of secrets) {
+            // HMAC SHA256 (Nomba standard)
             const hmac256 = crypto.createHmac('sha256', secret).update(payload);
-            if (signature === hmac256.digest('base64')) return true;
-            if (signature === hmac256.digest('hex')) return true;
+            const hex256 = hmac256.digest('hex');
+            const b64256 = crypto.createHmac('sha256', secret).update(payload).digest('base64');
+
+            if (cleanSig.toLowerCase() === hex256.toLowerCase() || cleanSig === b64256) return true;
+
+            // HMAC SHA512 fallback
+            const hmac512 = crypto.createHmac('sha512', secret).update(payload);
+            const hex512 = hmac512.digest('hex');
+            const b64512 = crypto.createHmac('sha512', secret).update(payload).digest('base64');
+
+            if (cleanSig.toLowerCase() === hex512.toLowerCase() || cleanSig === b64512) return true;
         }
-        return true; // Temporary Bypass
+        return false;
     } catch (err) {
+        console.error('❌ Signature verification error:', err.message);
         return false;
     }
 };

@@ -140,28 +140,28 @@ exports.verifyNombaPaymentStatus = async (req, res) => {
  * 🔔 HANDLE NOMBA PAYMENT WEBHOOK
  */
 exports.handleNombaWebhook = async (req, res) => {
-    // ─── SIGNATURE VERIFICATION (C1 Security Fix) ─────────────────────────────
-    const nombaSignature = req.headers['x-nomba-signature'] || req.headers['x-webhook-signature'];
+    // ─── SIGNATURE VERIFICATION ───────────────────────────────────────────────
+    // Nomba sends the HMAC signature in the 'nomba-signature' header
+    const nombaSignature = req.headers['nomba-signature'] 
+        || req.headers['x-nomba-signature'] 
+        || req.headers['x-webhook-signature']
+        || req.headers['signature'];
+
     const webhookSecret = process.env.NOMBA_WEBHOOK_SECRET;
 
     if (webhookSecret) {
         if (!nombaSignature) {
-            console.error('❌ Nomba Webhook rejected: Missing signature header');
+            console.error('❌ Nomba Webhook rejected: Missing signature header (checked nomba-signature, x-nomba-signature)');
             return res.status(401).json({ message: 'Unauthorized: Missing signature' });
         }
-        try {
-            const hmac = crypto.createHmac('sha256', webhookSecret);
-            hmac.update(req.rawBody || JSON.stringify(req.body));
-            const expected = hmac.digest('hex');
-            const sigBuffer = Buffer.from(nombaSignature.replace('sha256=', ''), 'hex');
-            const expBuffer = Buffer.from(expected, 'hex');
-            if (sigBuffer.length !== expBuffer.length || !crypto.timingSafeEqual(sigBuffer, expBuffer)) {
-                console.error('❌ Nomba Webhook rejected: Signature mismatch — possible forgery');
-                return res.status(401).json({ message: 'Unauthorized: Invalid signature' });
-            }
-        } catch (sigErr) {
-            console.error('❌ Nomba Webhook signature check error:', sigErr.message);
-            return res.status(401).json({ message: 'Unauthorized: Signature verification failed' });
+
+        const rawPayload = req.rawBody || JSON.stringify(req.body);
+        const isValid = verifyWebhookSignature(nombaSignature, rawPayload) || 
+                        verifyWebhookSignature(nombaSignature, JSON.stringify(req.body));
+
+        if (!isValid) {
+            console.error('❌ Nomba Webhook rejected: Signature mismatch — possible forgery');
+            return res.status(401).json({ message: 'Unauthorized: Invalid signature' });
         }
     } else {
         console.warn('⚠️ NOMBA_WEBHOOK_SECRET not set — signature verification skipped (set this in production!)');
@@ -173,7 +173,13 @@ exports.handleNombaWebhook = async (req, res) => {
 
     try {
         const event = req.body;
-        if (event.event_type !== 'payment_success' && event.event_type !== 'vact_transfer') return;
+        const rawEventType = event?.event_type || event?.event || event?.type || '';
+        const eventType = rawEventType.toLowerCase().trim();
+
+        if (eventType !== 'payment_success' && eventType !== 'vact_transfer' && eventType !== 'order_payment_success') {
+            console.log(`ℹ️ Ignored Nomba event type: ${rawEventType}`);
+            return;
+        }
 
         const txData = event?.data?.transaction || {};
         const legacyData = event?.data || {};
@@ -305,24 +311,27 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
             console.error("⚠️ Failed to create in-app notification:", notifErr.message);
         }
 
-        if (io) {
-            const payload = {
-                saleId: sale._id,
-                invoiceId: sale.invoiceNumber,
-                invoiceNumber: sale.invoiceNumber,
-                amount: creditAmount,
-                customerName: sale.customerName,
-                status: updatedSale.status,
-                balance: balanceRemaining,
-                amountPaid: creditAmount
-            };
+        try {
+            const { getIO } = require('../../utils/socket');
+            const io = getIO();
+            if (io && business && business._id) {
+                const payload = {
+                    saleId: sale._id,
+                    invoiceId: sale.invoiceNumber,
+                    invoiceNumber: sale.invoiceNumber,
+                    amount: creditAmount,
+                    customerName: sale.customerName,
+                    status: updatedSale.status,
+                    balance: balanceRemaining,
+                    amountPaid: creditAmount
+                };
 
-            // Emit to business room (merchant dashboard)
-            if (business && business._id) {
                 const businessRoom = business._id.toString().toLowerCase();
                 io.to(businessRoom).emit('sale_updated', payload);
                 io.to(businessRoom).emit('notification_created', { businessId: business._id });
             }
+        } catch (socketErr) {
+            console.error('Socket emission error:', socketErr.message);
         }
 
         // 🚀 PERSISTENT AUTO-SWEEP LOGIC
@@ -379,12 +388,18 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
 
                         console.log(`✅ Auto-Sweep SUCCESS for ${business.displayName}: ₦${sweepAmount} settled.`);
 
-                        if (io) {
-                            io.to(business._id.toString().toLowerCase()).emit('settlement_success', {
-                                amount: sweepAmount,
-                                invoiceNumber: sale.invoiceNumber,
-                                timestamp: new Date()
-                            });
+                        try {
+                            const { getIO } = require('../../utils/socket');
+                            const io = getIO();
+                            if (io && business?._id) {
+                                io.to(business._id.toString().toLowerCase()).emit('settlement_success', {
+                                    amount: sweepAmount,
+                                    invoiceNumber: sale.invoiceNumber,
+                                    timestamp: new Date()
+                                });
+                            }
+                        } catch (socketErr) {
+                            console.error('Socket settlement emission error:', socketErr.message);
                         }
 
                         // WHATSAPP SETTLEMENT CONFIRMATION
