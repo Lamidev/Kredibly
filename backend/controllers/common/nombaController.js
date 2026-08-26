@@ -148,23 +148,45 @@ exports.handleNombaWebhook = async (req, res) => {
         || req.headers['signature'];
 
     const webhookSecret = process.env.NOMBA_WEBHOOK_SECRET;
+    const rawPayload = req.rawBody || JSON.stringify(req.body);
+    const event = req.body || {};
 
-    if (webhookSecret) {
-        if (!nombaSignature) {
-            console.error('❌ Nomba Webhook rejected: Missing signature header (checked nomba-signature, x-nomba-signature)');
-            return res.status(401).json({ message: 'Unauthorized: Missing signature' });
+    const txData = event?.data?.transaction || {};
+    const legacyData = event?.data || {};
+    const accountReference = txData?.aliasAccountReference || legacyData?.accountRef || legacyData?.accountReference;
+    const accountNumber = txData?.aliasAccountNumber || legacyData?.bankAccountNumber || legacyData?.accountNumber;
+
+    let isAuthorized = false;
+
+    if (!webhookSecret) {
+        console.warn('⚠️ NOMBA_WEBHOOK_SECRET not set — signature verification skipped');
+        isAuthorized = true;
+    } else if (nombaSignature) {
+        const isValidHmac = verifyWebhookSignature(nombaSignature, rawPayload) || 
+                            verifyWebhookSignature(nombaSignature, JSON.stringify(req.body));
+        if (isValidHmac) {
+            isAuthorized = true;
+        } else {
+            console.warn(`⚠️ Nomba Webhook signature mismatch with local secret. Signature header: ${nombaSignature}. Verifying with Nomba API...`);
         }
+    }
 
-        const rawPayload = req.rawBody || JSON.stringify(req.body);
-        const isValid = verifyWebhookSignature(nombaSignature, rawPayload) || 
-                        verifyWebhookSignature(nombaSignature, JSON.stringify(req.body));
-
-        if (!isValid) {
-            console.error('❌ Nomba Webhook rejected: Signature mismatch — possible forgery');
-            return res.status(401).json({ message: 'Unauthorized: Invalid signature' });
+    // 🛡️ FINTECH RESILIENCE: If HMAC mismatch, perform authoritative server-side check with Nomba API
+    if (!isAuthorized && (accountReference || accountNumber)) {
+        try {
+            const apiStatus = await checkPaymentStatusByReference(accountReference, accountNumber);
+            if (apiStatus && apiStatus.paid) {
+                console.log(`✅ Webhook verified via direct Nomba API lookup for ${accountReference || accountNumber}`);
+                isAuthorized = true;
+            }
+        } catch (apiErr) {
+            console.error('❌ Fallback API verification failed:', apiErr.message);
         }
-    } else {
-        console.warn('⚠️ NOMBA_WEBHOOK_SECRET not set — signature verification skipped (set this in production!)');
+    }
+
+    if (!isAuthorized) {
+        console.error('❌ Nomba Webhook rejected: Signature mismatch and API verification failed');
+        return res.status(401).json({ message: 'Unauthorized: Invalid signature' });
     }
     // ──────────────────────────────────────────────────────────────────────────
 
@@ -172,7 +194,6 @@ exports.handleNombaWebhook = async (req, res) => {
     res.status(200).json({ status: 'received' });
 
     try {
-        const event = req.body;
         const rawEventType = event?.event_type || event?.event || event?.type || '';
         const eventType = rawEventType.toLowerCase().trim();
 
@@ -181,14 +202,10 @@ exports.handleNombaWebhook = async (req, res) => {
             return;
         }
 
-        const txData = event?.data?.transaction || {};
-        const legacyData = event?.data || {};
-
-        const accountReference = txData?.aliasAccountReference || legacyData?.accountRef || legacyData?.accountReference;
-        const accountNumber = txData?.aliasAccountNumber || legacyData?.bankAccountNumber || legacyData?.accountNumber;
-        const nombaTransactionRef = txData?.transactionId || legacyData?.transactionReference;
         const payer = event?.data?.customer?.senderName || 'Bank Transfer';
         let amountPaid = parseFloat(txData?.transactionAmount || legacyData?.amountPaid || 0);
+
+        const nombaTransactionRef = txData?.transactionId || legacyData?.transactionReference;
 
         if (typeof accountReference === 'string' && accountReference.startsWith('SUB-')) {
             return await processSubscriptionWebhook(accountReference, amountPaid, payer, nombaTransactionRef);

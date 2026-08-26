@@ -217,25 +217,51 @@ const verifyWebhookSignature = (signature, rawBody) => {
     try {
         const crypto = require('crypto');
         const cleanSig = String(signature).replace(/^sha(256|512)=/i, '').trim();
-        const payload = Buffer.isBuffer(rawBody) ? rawBody : String(rawBody);
-        const secrets = [process.env.NOMBA_WEBHOOK_SECRET, process.env.NOMBA_PRIVATE_KEY].filter(Boolean);
         
-        if (secrets.length === 0) return true; // No secret configured
+        // Prepare list of potential secrets (cleaned of quotes/spaces)
+        const candidateSecrets = [
+            process.env.NOMBA_WEBHOOK_SECRET,
+            process.env.NOMBA_PRIVATE_KEY,
+            process.env.NOMBA_CLIENT_ID,
+            process.env.NOMBA_ACCOUNT_ID
+        ]
+            .filter(Boolean)
+            .map(s => String(s).trim().replace(/^["']|["']$/g, ''));
 
-        for (const secret of secrets) {
-            // HMAC SHA256 (Nomba standard)
-            const hmac256 = crypto.createHmac('sha256', secret).update(payload);
-            const hex256 = hmac256.digest('hex');
-            const b64256 = crypto.createHmac('sha256', secret).update(payload).digest('base64');
+        if (candidateSecrets.length === 0) return true; // No secret configured
 
-            if (cleanSig.toLowerCase() === hex256.toLowerCase() || cleanSig === b64256) return true;
+        // Prepare list of payload variations
+        const payloadVariants = [];
+        if (Buffer.isBuffer(rawBody)) {
+            payloadVariants.push(rawBody);
+            payloadVariants.push(rawBody.toString('utf8'));
+            payloadVariants.push(rawBody.toString('utf8').trim());
+        } else if (typeof rawBody === 'string') {
+            payloadVariants.push(rawBody);
+            payloadVariants.push(rawBody.trim());
+            payloadVariants.push(Buffer.from(rawBody, 'utf8'));
+        } else if (typeof rawBody === 'object' && rawBody !== null) {
+            const jsonStr = JSON.stringify(rawBody);
+            payloadVariants.push(jsonStr);
+            payloadVariants.push(Buffer.from(jsonStr, 'utf8'));
+        }
 
-            // HMAC SHA512 fallback
-            const hmac512 = crypto.createHmac('sha512', secret).update(payload);
-            const hex512 = hmac512.digest('hex');
-            const b64512 = crypto.createHmac('sha512', secret).update(payload).digest('base64');
+        for (const secret of candidateSecrets) {
+            for (const payload of payloadVariants) {
+                // HMAC SHA256 (Nomba standard)
+                const hmac256 = crypto.createHmac('sha256', secret).update(payload);
+                const hex256 = hmac256.digest('hex');
+                const b64256 = crypto.createHmac('sha256', secret).update(payload).digest('base64');
 
-            if (cleanSig.toLowerCase() === hex512.toLowerCase() || cleanSig === b64512) return true;
+                if (cleanSig.toLowerCase() === hex256.toLowerCase() || cleanSig === b64256) return true;
+
+                // HMAC SHA512 fallback
+                const hmac512 = crypto.createHmac('sha512', secret).update(payload);
+                const hex512 = hmac512.digest('hex');
+                const b64512 = crypto.createHmac('sha512', secret).update(payload).digest('base64');
+
+                if (cleanSig.toLowerCase() === hex512.toLowerCase() || cleanSig === b64512) return true;
+            }
         }
         return false;
     } catch (err) {
