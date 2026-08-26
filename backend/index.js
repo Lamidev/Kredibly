@@ -193,6 +193,12 @@ mongoose
   })
   .then(() => {
     console.log("✅ MongoDB Connected Successfully");
+
+    // 🛡️ Cleanup obsolete unique indexes from legacy migrations that cause E11000 errors
+    try {
+      mongoose.connection.collection("sales").dropIndex("publicSlug_1").catch(() => {});
+    } catch (_) {}
+
     // 🛡️ PM2 CLUSTER PROTECTION: Only register cron schedulers on the primary instance
     const isPrimaryInstance = !process.env.NODE_APP_INSTANCE || process.env.NODE_APP_INSTANCE === '0';
     if (isPrimaryInstance) {
