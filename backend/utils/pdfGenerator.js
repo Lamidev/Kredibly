@@ -190,10 +190,10 @@ const generateInvoicePDFBuffer = async (sale, business) => {
         if (isPaid) {
             doc.save();
             doc.fillColor("#10B981");
-            doc.opacity(0.12);
-            doc.font("Roboto-Bold").fontSize(100);
-            doc.rotate(-30, { origin: [PAGE_W / 2, PAGE_H / 2] });
-            doc.text("PAID", PAGE_W / 2 - 120, PAGE_H / 2 - 50, { width: 300, align: "center" });
+            doc.opacity(0.15);
+            doc.font("Roboto-Bold").fontSize(110);
+            doc.rotate(-28, { origin: [PAGE_W / 2, PAGE_H / 2] });
+            doc.text("PAID", PAGE_W / 2 - 150, PAGE_H / 2 - 55, { width: 300, align: "center" });
             doc.restore();
         }
 
@@ -201,7 +201,7 @@ const generateInvoicePDFBuffer = async (sale, business) => {
         const INNER_W  = PAGE_W - MARGIN * 2;
 
         // ── ACCENT BAR (top) ──────────────────────────────────────────────────
-        doc.rect(0, 0, PAGE_W, 5).fill(C.PURPLE);
+        doc.rect(0, 0, PAGE_W, 5).fill(isPaid ? "#10B981" : C.PURPLE);
 
         // ── HEADER ZONE (y: 5 → 100) ─────────────────────────────────────────
         const HDR_Y  = 20;
@@ -233,12 +233,12 @@ const generateInvoicePDFBuffer = async (sale, business) => {
         }
 
         // "INVOICE" heading — right side
-        doc.fillColor(C.PURPLE).font("Roboto-Bold").fontSize(34);
-        doc.text("INVOICE", MARGIN, HDR_Y + 4, { width: INNER_W, align: "right", lineBreak: false });
+        doc.fillColor(isPaid ? "#10B981" : C.PURPLE).font("Roboto-Bold").fontSize(32);
+        doc.text(isPaid ? "PAID INVOICE" : "INVOICE", MARGIN, HDR_Y + 4, { width: INNER_W, align: "right", lineBreak: false });
 
-        // Invoice number below heading
+        // Invoice number below heading with PAID badge if settled
         doc.fillColor(C.GRAY).font("Roboto").fontSize(12);
-        doc.text(`#${sale.invoiceNumber || ""}`, MARGIN, HDR_Y + 46, { width: INNER_W, align: "right", lineBreak: false });
+        doc.text(`#${sale.invoiceNumber || ""}${isPaid ? "  (PAID ✓)" : ""}`, MARGIN, HDR_Y + 46, { width: INNER_W, align: "right", lineBreak: false });
 
         // Invoice Date below Invoice Number
         doc.fillColor(C.GRAY).font("Roboto").fontSize(10);
@@ -246,7 +246,7 @@ const generateInvoicePDFBuffer = async (sale, business) => {
 
         // ── RULE ─────────────────────────────────────────────────────────────
         const RULE1_Y = HDR_Y + HDR_H;
-        rule(doc, MARGIN, PAGE_W, RULE1_Y, C.PURPLE, 1.5);
+        rule(doc, MARGIN, PAGE_W, RULE1_Y, isPaid ? "#10B981" : C.PURPLE, 1.5);
 
         // ── META BLOCK (y: RULE1_Y+16 → RULE2_Y) ────────────────────────────
         const META_Y = RULE1_Y + 16;
@@ -449,6 +449,7 @@ const uploadPDFToCloudinary = (pdfBuffer, invoiceNumber) => {
                 public_id:     publicId,
                 format:        "pdf",
                 overwrite:     true,
+                invalidate:    true,
                 type:          "upload"
             },
             (error, result) => {
@@ -462,10 +463,13 @@ const uploadPDFToCloudinary = (pdfBuffer, invoiceNumber) => {
 
 const generateAndUploadInvoicePDF = async (sale, business) => {
     try {
+        const paidAmount = (sale.payments || []).reduce((s, p) => s + (p.amount || 0), 0);
+        const isPaid = (sale.totalAmount - paidAmount) <= 0;
         const cleanInv = (sale.invoiceNumber || `inv_${sale._id}`).toUpperCase();
+        const uploadName = isPaid ? `${cleanInv}_PAID` : cleanInv;
         const buffer = await generateInvoicePDFBuffer(sale, business);
-        const url = await uploadPDFToCloudinary(buffer, cleanInv);
-        console.log(`📄 Invoice PDF uploaded to Cloudinary: ${url}`);
+        const url = await uploadPDFToCloudinary(buffer, uploadName);
+        console.log(`📄 Invoice PDF (${isPaid ? 'PAID' : 'UNPAID'}) uploaded to Cloudinary: ${url}`);
         return url;
     } catch (err) {
         console.error("❌ PDF Generation/Upload Error:", err.message);

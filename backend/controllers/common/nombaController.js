@@ -147,9 +147,16 @@ exports.handleNombaWebhook = async (req, res) => {
         || req.headers['x-webhook-signature']
         || req.headers['signature'];
 
-    const webhookSecret = process.env.NOMBA_WEBHOOK_SECRET;
     const rawPayload = req.rawBody || JSON.stringify(req.body);
     const event = req.body || {};
+    const rawEventType = event?.event_type || event?.event || event?.type || '';
+    const eventType = rawEventType.toLowerCase().trim();
+
+    // 🏦 NOMBA PAYOUT / SETTLEMENT SUCCESS: Acknowledge sweep completion immediately
+    if (eventType === 'payout_success' || eventType === 'transfer_success' || eventType === 'payout.success') {
+        console.log(`ℹ️ Nomba Payout/Settlement Webhook acknowledged: ${rawEventType}`);
+        return res.status(200).json({ status: 'received' });
+    }
 
     const txData = event?.data?.transaction || {};
     const legacyData = event?.data || {};
@@ -194,9 +201,6 @@ exports.handleNombaWebhook = async (req, res) => {
     res.status(200).json({ status: 'received' });
 
     try {
-        const rawEventType = event?.event_type || event?.event || event?.type || '';
-        const eventType = rawEventType.toLowerCase().trim();
-
         if (eventType !== 'payment_success' && eventType !== 'vact_transfer' && eventType !== 'order_payment_success') {
             console.log(`ℹ️ Ignored Nomba event type: ${rawEventType}`);
             return;
@@ -568,6 +572,10 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 console.error("Error fetching fresh sale for PDF url:", findErr.message);
             }
 
+            // Only send the PDF document if the invoice is fully cleared (PAID)
+            const isFullyPaid = newStatus === 'paid';
+            const pdfToSend = isFullyPaid ? (freshSale?.pdfUrl || null) : null;
+
             // Only fire the generic alert when overpayment interactive buttons weren't already sent
             if (customText !== null) {
                 const { sendWhatsAppPaymentAlert } = require('../whatsapp/whatsappController');
@@ -580,7 +588,7 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                     business.displayName || 'Chief',
                     "",
                     receiptImageUrl,
-                    freshSale?.pdfUrl || null
+                    pdfToSend
                 ).catch(err => console.error('❌ WhatsApp Payment Alert Failed:', err.message));
             }
         }
