@@ -1418,8 +1418,9 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
         const isCustomerWindowOpen = !!activeSession;
 
         // ── Pre-generate PDF for full payments so link is ready for fallbacks ──
-        if (isFullyPaid && !sale.pdfUrl) {
-            console.log(`📄 Regenerating PAID PDF for Invoice ${sale.invoiceNumber} before notifications...`);
+        if (isFullyPaid) {
+            console.log(`📄 Regenerating PAID PDF for Invoice ${sale.invoiceNumber} with PAID watermark...`);
+            const { generateAndUploadInvoicePDF } = require("./pdfGenerator");
             const pdfUrl = await generateAndUploadInvoicePDF(sale, business);
             if (pdfUrl) {
                 sale = await Sale.findByIdAndUpdate(saleId, { pdfUrl }, { new: true }).populate("businessId");
@@ -1466,15 +1467,6 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
                 await sendCustomerMessageWithFallback(cleanCustomerPhone, fallbackText, sale.customerName, sale.invoiceNumber);
             }
 
-            if (!isFullyPaid && business?.whatsappNumber) {
-                const cleanMerchantPhone = normalizePhone(business.whatsappNumber);
-                const isMerchantWindowOpen = !!(business.lastInboundAt && (new Date() - new Date(business.lastInboundAt)) < 24 * 60 * 60 * 1000);
-                if (isMerchantWindowOpen && cardUrl) {
-                    const merchantCardCaption = `✅ Partial payment of ₦${amountPaid.toLocaleString()} received for Invoice *#${sale.invoiceNumber}* from *${sale.customerName}*.\n\nOutstanding: *₦${balance.toLocaleString()}*`;
-                    await sendImage(cleanMerchantPhone, cardUrl, merchantCardCaption);
-                }
-            }
-
             // Small delay before next message
             await new Promise(r => setTimeout(r, 1500));
         } catch (cardErr) {
@@ -1484,15 +1476,6 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
                 ? `✅ Payment confirmed! Thank you, ${sale.customerName}. Your payment of ₦${amountPaid.toLocaleString()} for Invoice #${sale.invoiceNumber} has been received. The invoice is now fully paid. View receipt: ${sale.pdfUrl}`
                 : `✅ Partial payment received. Thank you, ${sale.customerName}. ₦${amountPaid.toLocaleString()} received for Invoice #${sale.invoiceNumber}.\n\nOutstanding balance: ₦${balance.toLocaleString()}`;
             await sendText(cleanCustomerPhone, msg);
-
-            if (!isFullyPaid && business?.whatsappNumber) {
-                const cleanMerchantPhone = normalizePhone(business.whatsappNumber);
-                const isMerchantWindowOpen = !!(business.lastInboundAt && (new Date() - new Date(business.lastInboundAt)) < 24 * 60 * 60 * 1000);
-                if (isMerchantWindowOpen) {
-                    const merchantMsg = `✅ Partial payment received from *${sale.customerName}*. ₦${amountPaid.toLocaleString()} received for Invoice #${sale.invoiceNumber}.\n\nOutstanding balance: ₦${balance.toLocaleString()}`;
-                    await sendText(cleanMerchantPhone, merchantMsg);
-                }
-            }
             await new Promise(r => setTimeout(r, 1000));
         }
 
@@ -1513,9 +1496,8 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
             ).catch(err => console.error("⚠️ Failed to send remaining balance buttons:", err.message));
         }
 
-        // ── Step 2: Final PAID PDF — only when fully settled ──────────────────
+        // ── Step 2: Final PAID PDF — only to customer when fully settled ───────
         if (isFullyPaid && sale.pdfUrl) {
-            // Send to customer if window is open
             if (isCustomerWindowOpen) {
                 await sendDocument(
                     cleanCustomerPhone,
@@ -1523,21 +1505,6 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
                     `Receipt-${sale.invoiceNumber}.pdf`,
                     `🧾 *Official Receipt from ${businessName}*\nInvoice #${sale.invoiceNumber} — Fully Settled`
                 );
-            }
-
-            // Send to merchant copy if window is open
-            if (business.whatsappNumber) {
-                const cleanMerchantPhone = normalizePhone(business.whatsappNumber);
-                const isMerchantWindowOpen = !!(business.lastInboundAt && (new Date() - new Date(business.lastInboundAt)) < 24 * 60 * 60 * 1000);
-                
-                if (isMerchantWindowOpen) {
-                    await sendDocument(
-                        cleanMerchantPhone,
-                        sale.pdfUrl,
-                        `Receipt-${sale.invoiceNumber}.pdf`,
-                        `🧾 *Paid Invoice Receipt (Merchant Copy)*\nInvoice #${sale.invoiceNumber} from ${sale.customerName} is fully paid!`
-                    );
-                }
             }
         }
 
@@ -1550,7 +1517,7 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
             businessId: sale.businessId,
             customerPhone: cleanCustomerPhone,
             customerName: sale.customerName,
-            paidAmount: amount,
+            paidAmount: amountPaid,
             isFullyPaid
         });
 
