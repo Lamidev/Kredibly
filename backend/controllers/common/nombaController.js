@@ -163,6 +163,7 @@ exports.handleNombaWebhook = async (req, res) => {
     const accountReference = txData?.aliasAccountReference || legacyData?.accountRef || legacyData?.accountReference;
     const accountNumber = txData?.aliasAccountNumber || legacyData?.bankAccountNumber || legacyData?.accountNumber;
 
+    const webhookSecret = process.env.NOMBA_WEBHOOK_SECRET;
     let isAuthorized = false;
 
     if (!webhookSecret) {
