@@ -161,7 +161,7 @@ const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
             whileAwaySection = [
                 `*While you were away:*`,
                 ...offlinePaymentsList,
-                `• Receipts have already been delivered. 🧾`,
+                `• Receipts have already been delivered.`,
                 ``
             ].join("\n");
         } else if (invoicesMonitored > 0) {
@@ -234,14 +234,14 @@ const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
 
         let prioritySection = "";
         if (priorityItems.length > 0) {
-            prioritySection = `⚡ *TODAY'S PRIORITY*\n${priorityItems.slice(0, 3).join("\n")}`;
+            prioritySection = `*TODAY'S PRIORITY*\n${priorityItems.slice(0, 3).join("\n")}`;
         } else {
-            prioritySection = `⚡ *TODAY'S PRIORITY*\nEverything is on track — no urgent priority items. 🟢`;
+            prioritySection = `*TODAY'S PRIORITY*\nEverything is on track — no urgent priority items.`;
         }
 
         // ── I'll Handle section ───────────────────────────────────────────
         const commitmentLines = [
-            `🤝 *I'LL HANDLE*`,
+            `*I'LL HANDLE*`,
             `✓ Monitor all invoice payments`,
             `✓ Send invoice reminders automatically`,
             `✓ Notify you immediately when payments arrive`,
@@ -251,17 +251,17 @@ const sendIndividualMorningSummary = async (profileInput, now = new Date()) => {
         // ── Assemble the WhatsApp Daily Brief ────────────────────────────────
         const message = [
             `Good morning, ${bossTitle}.`,
-            `Here's today's business briefing. 📋`,
+            `Here's today's business briefing.`,
             ``,
             whileAwaySection,
-            `📊 *YESTERDAY*`,
+            `*YESTERDAY*`,
             yesterdaySection,
             ``,
             prioritySection,
             ``,
             commitmentLines,
             ``,
-            `💡 *TODAY'S GROWTH PLAY*`,
+            `*TODAY'S GROWTH PLAY*`,
             dailyTip
         ].filter(v => v !== null).join("\n");
 

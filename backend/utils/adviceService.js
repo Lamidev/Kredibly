@@ -29,19 +29,20 @@ const generateDailyAdvice = async (tone = "English") => {
         Today's Date: ${new Date().toDateString()}
         Today's Theme Focus: ${selectedTheme}
         
-        Task: Write a short, powerful "masterclass" message for a Nigerian merchant to start their day.
+        Task: Write a short, powerful growth coaching message for a Nigerian merchant to start their day.
         Tone: ${toneInstruction}
         
         Rules:
-        1. Write exactly like a human business coach sending a quick morning voice-note or direct WhatsApp text. 
-        2. NO BLOCKY AI HEADERS. Do NOT use "*💡 THE BIG INSIGHT:*" or "*✅ ACTION STEP:*". Just write naturally in paragraphs.
-        3. NO BULLET POINTS or hashtags. 
-        4. Focus on ${selectedTheme}. Give ONE clear, street-smart thing they should do today to grow.
-        5. Keep it conversational, empathetic, and street-smart. Relate it to the Nigerian market (e.g. mention things like "gain", "market", "customers", "record").
-        6. Avoid repeating common advice like "Cashflow is King" every day. Be specific about ${selectedTheme}.
-        7. Length: 2 small paragraphs maximum (around 80-120 words). Short, punchy, and highly readable.
-        8. Use mild bolding (*like this*) only for 1 or 2 key words of emphasis.
-        9. DO NOT start with generic greetings like "Here is your tip" or "Absolutely!". Dive straight into the coaching.
+        1. Write naturally and professionally in clean paragraphs.
+        2. NO BLOCKY AI HEADERS. Do NOT use headers like "*THE BIG INSIGHT:*" or "*ACTION STEP:*".
+        3. NO EMOJIS. Keep the text clean, structured, and professional.
+        4. NO BULLET POINTS or hashtags. 
+        5. Focus on ${selectedTheme}. Give ONE clear, street-smart thing they should do today to grow.
+        6. Keep it conversational, empathetic, and street-smart. Relate it to the Nigerian market (e.g. mention things like "gain", "market", "customers", "record").
+        7. Avoid repeating common advice like "Cashflow is King" every day. Be specific about ${selectedTheme}.
+        8. Length: 2 small paragraphs maximum (around 80-120 words). Short, punchy, and highly readable.
+        9. Use mild bolding (*like this*) only for 1 or 2 key words of emphasis.
+        10. DO NOT start with generic greetings like "Here is your tip" or "Good morning". Dive straight into the coaching.
         `;
         
         let advice;
@@ -72,14 +73,14 @@ const generateDailyAdvice = async (tone = "English") => {
         );
 
         console.log("✅ Daily advice drafted and saved successfully.");
-        return advice;
+        return cleanedAdvice;
     } catch (err) {
         console.error("❌ Critical AI Advice Failure:", err.message);
         
         const fallbacks = [
-            `💡 *THE BIG INSIGHT:* Cashflow is King\n\n🛡️ *WHY IT MATTERS:* Profit is just paper, but cash pays the bills. Record every kobo today!\n\n✅ *ACTION STEP:* Log one sale in Kredibly now. Let's win! 🛡️`,
-            `🚀 *SCALE UP:* Consistency Wins\n\n🛡️ *WHY IT MATTERS:* Showing up every day is 80% of the battle. Keep your ledger updated.\n\n✅ *ACTION STEP:* Review your outstanding debts for 5 minutes. 🚀`,
-            `📈 *GROWTH:* Customer Retention\n\n🛡️ *WHY IT MATTERS:* It's cheaper to keep a customer than to find a new one. Service is everything.\n\n✅ *ACTION STEP:* Send a thank-you note to your last customer. 📈`
+            `Cashflow is king. Profit is just paper, but cash pays the bills and restocks your shelves. Make sure to record every kobo that enters your business today.\n\nTake two minutes to log your transactions in Kredibly so your records stay accurate.`,
+            `Consistency wins in business. Keeping your books balanced every single day gives you total clarity over your margins and who owes you.\n\nReview your outstanding customer balances today and follow up early.`,
+            `Customer retention is far cheaper than finding new buyers. Prompt service and transparent billing turn first-time buyers into lifelong clients.\n\nConsider sending a polite follow-up or check-in to your recent customers today.`
         ];
 
         const fallbackValue = fallbacks[Math.floor(Math.random() * fallbacks.length)];
@@ -108,26 +109,29 @@ const getDailyAdvice = async () => {
     try {
         const config = await SystemConfig.findOne({ key: "daily_advice" });
         if (!config || !config.value?.adviceText) {
-            return "Good morning! Focus on your cashflow today. Every kobo counts! 🛡️";
+            return "Cashflow is the lifeblood of your business. Stay on top of your daily sales and outstanding receivables to keep operations smooth.";
         }
         return cleanAIArtifacts(config.value.adviceText);
     } catch (e) {
-        return "Rise and grind! Consistency is the secret to scaling. 🚀";
+        return "Consistency and prompt debt recovery are key to scaling your business.";
     }
 };
 
 /**
- * AI JANITOR: Strips annoying AI symbols and fluff
- * Ensures the growth message looks human-vetted.
+ * AI JANITOR: Strips annoying AI symbols, blocky prefixes, and emojis
+ * Ensures the growth message looks human-vetted and executive.
  */
 const cleanAIArtifacts = (text) => {
     if (!text) return "";
     return text
+        // Strip emojis
+        .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1FA00}-\u{1FAFF}]/gu, '')
         .replace(/^\s*[-•]\s*/gm, '')     // Remove lone bullet points at start of lines
         .replace(/#{1,3}/g, '')           // Remove hashtags
         .replace(/[-_]{2,}/g, '')         // Remove multiple hyphens/underscores
         .replace(/^"|"$/g, '')            // Remove outer quotes
         .replace(/^(Certainly!|Here is a tip|Good morning,|Sure!|Alright,|Here is a business tip:)/gi, '') // Remove AI chatter
+        .replace(/\n{3,}/g, '\n\n')       // Normalize multiple newlines
         .trim();
 };
 

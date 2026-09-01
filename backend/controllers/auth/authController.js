@@ -146,6 +146,10 @@ const verifyEmail = async (req, res) => {
     // Generate token and set cookie so user is authenticated immediately
     const token = generateTokenAndSetCookie(res, user._id, user.name, user.email, user.role);
 
+    // Send intentional welcome email immediately after email verification in background
+    sendWelcomeEmail(user.email, user.name)
+      .catch(err => console.error("Background Email Error (Welcome):", err.message));
+
     const profile = await BusinessProfile.findOne({ ownerId: user._id });
     const userData = user.toObject();
     delete userData.password;
