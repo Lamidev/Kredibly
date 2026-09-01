@@ -1427,7 +1427,10 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
                     `Amount Paid: ₦${amountPaid.toLocaleString()}`,
                     `Balance: ₦0`,
                     ``,
-                    `Payment confirmed. Your official receipt is attached above.`
+                    `Payment confirmed. Your official receipt is attached above.`,
+                    ``,
+                    `────────────────────`,
+                    `⚡ Send invoices & collect payments for your business on WhatsApp: https://usekredibly.com`
                 ].join("\n");
 
                 if (isCustomerWindowOpen) {
