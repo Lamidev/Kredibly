@@ -1480,10 +1480,10 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
             isFullyPaid
         });
 
-        return cardUrl;
+        return true;
     } catch (err) {
         console.error("❌ notifyCustomerPaymentReceived Error:", err.message);
-        return null;
+        return false;
     }
 };
 
