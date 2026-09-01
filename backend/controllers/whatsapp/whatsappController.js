@@ -844,24 +844,33 @@ const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName,
         if (isWindowOpen) {
             console.log(`💡 WhatsApp Session Open for ${normalizedTo} — Sending free payment session message with direct media attachment`);
             
+            let message = sessionTextMsg;
+            if (!message) {
+                message = [
+                    `💰 *Payment Received!*`,
+                    ``,
+                    `You received *₦${amount.toLocaleString()}* for Invoice #${invoiceNumber} from *${customerName}*.`,
+                    ``,
+                    `${customText}`,
+                    ``,
+                    `Your Kredibly ledger has been updated automatically!`
+                ].join('\n');
+            }
+
             if (pdfUrl) {
-                await sendWhatsAppDocument(
+                // Deliver PDF document with the full payment summary caption in 1 single message
+                return await sendWhatsAppDocument(
                     normalizedTo,
                     pdfUrl,
                     `Receipt-${invoiceNumber}.pdf`,
-                    `🧾 *Paid Invoice Receipt (Merchant Copy)*\nInvoice #${invoiceNumber} from ${customerName} is fully paid!`
+                    message
                 );
             } else if (receiptImageUrl) {
-                await sendWhatsAppImage(
+                return await sendWhatsAppImage(
                     normalizedTo,
                     receiptImageUrl,
-                    `✅ Payment Received! Invoice *#${invoiceNumber}* from *${customerName}*`
+                    message
                 );
-            }
-
-            let message = sessionTextMsg;
-            if (!message) {
-                message = `💰 *Payment Received!*\n\nHigh power, ${bossTitle}! You just received a payment of *₦${amount.toLocaleString()}* for Invoice #${invoiceNumber} from *${customerName}*.\n\n${customText}\n\nYour Kredibly ledger has been updated automatically!`;
             }
             
             return await sendReply(normalizedTo, message);

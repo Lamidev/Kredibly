@@ -400,7 +400,7 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                             bankCode: settlement.bankDetails.bankCode,
                             accountNumber: settlement.bankDetails.accountNumber,
                             accountName: settlement.bankDetails.accountName,
-                            narration: `KREDIBLY/${sale.invoiceNumber.replace('KR-', '')}`
+                            narration: `Payout #${sale.invoiceNumber}`
                         });
 
                         settlement.status = 'completed';
@@ -424,23 +424,8 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                             console.error('Socket settlement emission error:', socketErr.message);
                         }
 
-                        // WHATSAPP SETTLEMENT CONFIRMATION
-                        if (business.whatsappNumber) {
-                            const freshBusiness = await BusinessProfile.findById(business._id);
-                            const isWindowOpenNow = freshBusiness?.lastInboundAt && (new Date() - new Date(freshBusiness.lastInboundAt)) < 24 * 60 * 60 * 1000;
-
-                            if (isWindowOpenNow) {
-                                let alertMsg = `*Settlement Alert, ${business.displayName}!*\n\nI've swept *₦${sweepAmount.toLocaleString()}* from the *${sale.customerName}* payment to your *${settlement.bankDetails.accountName}* bank account.`;
-                                
-                                if (business.planStatus === 'inactive' || business.planStatus === 'cancelled') {
-                                    alertMsg += `\n\n*Note:* Even while your plan is paused, your settlements still go through. Subscribe now to get your full AI reports back.\nhttps://usekredibly.com/login?redirect=/settings`;
-                                }
-                                
-                                await sendWhatsAppAlert(business.whatsappNumber, business.displayName, alertMsg);
-                            } else {
-                                console.log(`🔕 Auto-Sweep SUCCESS notification skipped for closed-window merchant ${business.whatsappNumber} (combined in initial payment alert)`);
-                            }
-                        }
+                        // Auto-sweep completed successfully (already notified in consolidated payment alert)
+                        console.log(`🔕 Auto-Sweep SUCCESS notification consolidated in payment alert for ${business.whatsappNumber}`);
                     } catch (sweepErr) {
                         console.error(`❌ Auto-Sweep FAILED for Settlement ${settlement._id}:`, sweepErr.message);
                         settlement.status = 'failed';
@@ -549,11 +534,12 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                 customText += `\n\n⚡ *Kreddy Note:* Even while I'm off-duty, your money is still moving! Subscribe now to get your full AI briefings and debt recovery back.\n🔗 https://usekredibly.com/settings`;
             }
 
-            // ⚡ COMBINED TEMPLATE NOTIFICATION (If window is closed, append auto-sweep info to the customText variable)
-            if (customText !== null && !isMerchantWindowOpen) {
+            // ⚡ COMBINED NOTIFICATION: Include auto-sweep payout info directly in customText
+            if (customText !== null && !customText.includes("Auto-Sweep")) {
                 const sweepAmount = FINANCIAL_CONFIG.calculateNetAmount(amount);
-                const bankName = business.bankDetails?.accountName || business.displayName || "your bank account";
-                customText += `\n\n⚡ Auto-Sweep Settlement: ₦${sweepAmount.toLocaleString()} has been pushed to your ${bankName} account.`;
+                const bankName = business.bankDetails?.bankName || "your bank account";
+                const accNo = business.bankDetails?.accountNumber || "";
+                customText += `\n\n⚡ *Auto-Sweep Payout:* ₦${sweepAmount.toLocaleString()} is being settled to your ${bankName} account (${accNo}).`;
             }
 
             // 🧠 KREDDY AI: Notify customer via WhatsApp first (and generate the receipt image card)
