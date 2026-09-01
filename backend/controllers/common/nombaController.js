@@ -400,7 +400,7 @@ const internalProcessNombaPayment = async (accountReference, accountNumber, amou
                             bankCode: settlement.bankDetails.bankCode,
                             accountNumber: settlement.bankDetails.accountNumber,
                             accountName: settlement.bankDetails.accountName,
-                            narration: `KREDIBLY/${sale.invoiceNumber.replace('KR-', '')}`
+                            narration: `Payout #${sale.invoiceNumber}`
                         });
 
                         settlement.status = 'completed';
