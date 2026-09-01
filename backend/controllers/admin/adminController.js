@@ -322,22 +322,61 @@ exports.getMerchantDetails = async (req, res) => {
 exports.deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
+        const targetUser = await User.findById(id);
         
-        // 1. Find business associated with user
-        const business = await BusinessProfile.findOne({ ownerId: id });
-        
-        if (business) {
-            // 2. Cascade delete all related platform data
-            await Sale.deleteMany({ businessId: business._id });
-            await ActivityLog.deleteMany({ businessId: business._id });
-            await Notification.deleteMany({ businessId: business._id });
-            await SupportTicket.deleteMany({ businessId: business._id });
-            
-            // 3. Delete the business profile
-            await BusinessProfile.findByIdAndDelete(business._id);
+        // 1. Find all businesses associated with user
+        const businesses = await BusinessProfile.find({ ownerId: id });
+        const businessIds = businesses.map(b => b._id);
+        const phoneNumbers = [
+            ...businesses.map(b => b.whatsappNumber),
+            ...businesses.flatMap(b => b.staffNumbers || []),
+            targetUser?.phone
+        ].filter(Boolean);
+
+        // 2. Cascade delete all related platform data for all businesses owned by user
+        if (businessIds.length > 0) {
+            const Sale = require("../../models/Sale");
+            const ActivityLog = require("../../models/ActivityLog");
+            const Notification = require("../../models/Notification");
+            const SupportTicket = require("../../models/SupportTicket");
+            const ConversationMemory = require("../../models/ConversationMemory");
+            const Reminder = require("../../models/Reminder");
+            const CustomerAlias = require("../../models/CustomerAlias");
+            const PaymentSession = require("../../models/PaymentSession");
+            const Settlement = require("../../models/Settlement");
+            const VirtualAccount = require("../../models/VirtualAccount");
+            const EscrowPayment = require("../../models/EscrowPayment");
+
+            await Promise.all([
+                Sale.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
+                ActivityLog.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
+                Notification.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
+                SupportTicket.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
+                ConversationMemory.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
+                Reminder.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
+                CustomerAlias.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
+                PaymentSession.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
+                Settlement.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
+                VirtualAccount.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
+                EscrowPayment.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
+                BusinessProfile.deleteMany({ _id: { $in: businessIds } }).catch(() => {})
+            ]);
         }
 
-        // 4. Delete the user (this covers users who might not have completed onboarding yet)
+        // 3. Clear conversation contexts, sessions, and prospects tied to these phone numbers
+        if (phoneNumbers.length > 0) {
+            const ConversationContext = require("../../models/ConversationContext");
+            const WhatsAppSession = require("../../models/WhatsAppSession");
+            const Prospect = require("../../models/Prospect");
+
+            await Promise.all([
+                ConversationContext.deleteMany({ whatsappNumber: { $in: phoneNumbers } }).catch(() => {}),
+                WhatsAppSession.deleteMany({ whatsappNumber: { $in: phoneNumbers } }).catch(() => {}),
+                Prospect.deleteMany({ phoneNumber: { $in: phoneNumbers } }).catch(() => {})
+            ]);
+        }
+
+        // 4. Delete the user
         await User.findByIdAndDelete(id);
 
         res.status(200).json({ success: true, message: "User and all associated data purged successfully." });

@@ -695,7 +695,7 @@ const sendWhatsAppAlert = async (to, bossTitle, textMessage, invoiceNumber = nul
 
         const profile = await BusinessProfile.findOne({ 
             whatsappNumber: { $in: [cleanTo, normalizedTo, to.toString(), altTo, plusTo].filter(Boolean) }
-        });
+        }).sort({ createdAt: -1 });
         
         // 🧠 SMART TITLING: Use preferredName or business name if profile found
         const plan = profile?.plan || "hustler";
@@ -836,7 +836,7 @@ const sendWhatsAppPaymentAlert = async (to, amount, invoiceNumber, customerName,
 
         const profile = await BusinessProfile.findOne({ 
             whatsappNumber: { $in: [cleanTo, normalizedTo, to.toString(), altTo, plusTo].filter(Boolean) }
-        });
+        }).sort({ createdAt: -1 });
         
         const now = new Date();
         const isWindowOpen = profile?.lastInboundAt && (now - new Date(profile.lastInboundAt)) < (24 * 60 * 60 * 1000);
@@ -1157,7 +1157,7 @@ const handleIncoming = async (req, res) => {
                 { whatsappNumber: { $in: [cleanFrom, plusFrom, altFrom].filter(Boolean) } },
                 { staffNumbers: { $in: [cleanFrom, plusFrom, altFrom].filter(Boolean) } }
             ]
-        }).populate("ownerId", "name");
+        }).sort({ createdAt: -1 }).populate("ownerId", "name");
 
         // 🧠 SMART NAMING LOGIC: Determine how Kreddy should address this user
         // Priority: Preferred Name > Registered Name > WhatsApp Profile Name > Plan Tier > "Boss"
@@ -1872,9 +1872,6 @@ const handleIncoming = async (req, res) => {
             const mediaId = message.audio?.id || message.voice?.id;
             if (mediaId) {
                 const bossTitle = profile?.assistantSettings?.preferredName || profile?.displayName || "Partner";
-                
-                const voiceAck = await generateVoiceNoteAck(bossTitle);
-                await sendReply(from, voiceAck);
                 const media = await downloadWhatsAppMedia(mediaId);
                 if (media) {
                     const voiceRes = await processAudioWithAI(media.buffer, media.mimeType, {
@@ -3082,8 +3079,6 @@ const handleIncoming = async (req, res) => {
                 const planDefaultTitle = plan === "chairman" ? "Chairman" : "Oga";
                 const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;
 
-                const voiceAck = await generateVoiceNoteAck(bossTitle);
-                await sendReply(from, voiceAck);
                 const media = await downloadWhatsAppMedia(mediaId);
                 
                 if (media) {
@@ -3132,8 +3127,6 @@ const handleIncoming = async (req, res) => {
                 const planDefaultTitle = plan === "chairman" ? "Chairman" : "Oga";
                 const bossTitle = profile.assistantSettings?.preferredName || profile.displayName || planDefaultTitle;
 
-                const imageAck = await generateWittyIntro("image_scan", { bossTitle });
-                await sendReply(from, imageAck);
                 const media = await downloadWhatsAppMedia(mediaId);
                 
                 if (media) {
@@ -3559,15 +3552,18 @@ const handleIncoming = async (req, res) => {
                         20 // 20 minutes timeout
                     );
 
-                    // Immediate AI ownership acknowledgment if present
-                    if (aiResponseItem.data.reply) {
-                        await sendReply(from, aiResponseItem.data.reply);
-                    }
-
                     // Retrieve active workflow class to execute step or display initial output
                     const handler = WorkflowRegistry.getHandler("invoice_creation");
                     if (handler) {
-                        await handler.proceedToInvoiceSummary(from, cleanFrom, profile, isStaff, pendingData, workflowState);
+                        await handler.proceedToInvoiceSummary(
+                            from, 
+                            cleanFrom, 
+                            profile, 
+                            isStaff, 
+                            pendingData, 
+                            workflowState, 
+                            aiResponseItem.data.reply || null
+                        );
                     }
                     isProcessed = true;
                 }

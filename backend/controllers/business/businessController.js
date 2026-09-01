@@ -54,7 +54,15 @@ exports.updateProfile = async (req, res) => {
             profile.sellMode = sellMode || profile.sellMode;
             profile.logoUrl = logoUrl || profile.logoUrl;
             profile.phoneNumber = phoneNumber || profile.phoneNumber;
-            profile.whatsappNumber = whatsappNumber ? cleanPhone(whatsappNumber) : profile.whatsappNumber;
+            if (whatsappNumber) {
+                const cleaned = cleanPhone(whatsappNumber);
+                profile.whatsappNumber = cleaned;
+                // 🛡️ DEDUPLICATION GUARD: Purge obsolete/orphaned profiles claiming this number
+                await BusinessProfile.deleteMany({
+                    _id: { $ne: profile._id },
+                    whatsappNumber: cleaned
+                }).catch(() => {});
+            }
             profile.address = address || profile.address;
             profile.prefersGatewayFeeAbsorption = prefersGatewayFeeAbsorption ?? profile.prefersGatewayFeeAbsorption;
 
@@ -141,6 +149,15 @@ exports.updateProfile = async (req, res) => {
             const expiryDate = new Date(trialStartDate);
             expiryDate.setDate(expiryDate.getDate() + trialDurationDays);
 
+            const cleanedWhatsapp = cleanPhone(whatsappNumber);
+            if (cleanedWhatsapp) {
+                // 🛡️ DEDUPLICATION GUARD: Purge any orphaned profiles claiming this number
+                await BusinessProfile.deleteMany({
+                    ownerId: { $ne: req.user._id },
+                    whatsappNumber: cleanedWhatsapp
+                }).catch(() => {});
+            }
+
             profile = new BusinessProfile({
                 ownerId: req.user._id, 
                 displayName, 
@@ -148,7 +165,7 @@ exports.updateProfile = async (req, res) => {
                 sellMode, 
                 logoUrl, 
                 phoneNumber,
-                whatsappNumber: cleanPhone(whatsappNumber), 
+                whatsappNumber: cleanedWhatsapp, 
                 address, 
                 plan: 'chairman', 
                 planStatus: 'trialing',

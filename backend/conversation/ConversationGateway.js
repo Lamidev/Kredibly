@@ -159,6 +159,9 @@ class ConversationGateway {
                 mode: "free_conversation"
             });
             await context.save();
+        } else if (profile && (!context.businessId || String(context.businessId) !== String(profile._id))) {
+            context.businessId = profile._id;
+            await context.save();
         }
 
         // Add to transient message memory

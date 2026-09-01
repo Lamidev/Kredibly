@@ -282,23 +282,10 @@ WorkflowEventBus.subscribe("InvoicePaid", async (payload) => {
                 if (isFullyPaid) rel.totalInvoicesPaid += 1;
             }
 
-            // Check 1-time Customer Referral Introduction
+            // Update customer record
             if (cust && !cust.introducedToKredibly) {
-                const { sendInteractiveCTAUrlButton } = require("../utils/customerInvoiceService");
-                const introBody = "Payment completed successfully.\nYour paid invoice has been delivered.\nThanks for using Kredibly.\n\nIf people pay you for products or services, Kredibly helps you send invoices, collect payments, track customers and stay organized directly from WhatsApp.";
-
-                await sendInteractiveCTAUrlButton(
-                    cleanPhone,
-                    "Payment Completed 👍",
-                    introBody,
-                    "Powered by Kredibly",
-                    "Explore Kredibly",
-                    "https://usekredibly.com?utm_source=invoice_ref"
-                );
-
                 cust.introducedToKredibly = true;
                 cust.introducedAt = new Date();
-                console.log(`🚀 [Subscriber] Delivered 1-time Kredibly referral card to customer ${cleanPhone}`);
             }
 
             await memory.save();
