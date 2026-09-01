@@ -356,16 +356,16 @@ const LandingPage = () => {
                             }}
                         >
                             <h1 style={{ 
-                                fontSize: 'clamp(2.1rem, 4.5vw, 3.8rem)', 
-                                fontWeight: 900, 
-                                lineHeight: 1.12, 
+                                fontSize: 'clamp(1.75rem, 3.5vw, 3rem)', 
+                                fontWeight: 700, 
+                                lineHeight: 1.18, 
                                 marginBottom: '20px',
-                                letterSpacing: '-0.035em',
+                                letterSpacing: '-0.02em',
                                 color: '#0F172A',
                                 fontFamily: 'var(--font-heading)',
                                 textWrap: 'balance'
                             }}>
-                                Get Paid for What You Do{' '}
+                                Send Invoices, Collect Payments & Track Debts{' '}
                                 <span style={{ 
                                     whiteSpace: 'nowrap',
                                     background: 'linear-gradient(135deg, #7C3AED 0%, #4C1D95 100%)',
@@ -373,7 +373,7 @@ const LandingPage = () => {
                                     WebkitTextFillColor: 'transparent',
                                     display: 'inline-block'
                                 }}>
-                                    on WhatsApp.
+                                    Directly on WhatsApp.
                                 </span>
                             </h1>
 
@@ -382,11 +382,11 @@ const LandingPage = () => {
                                 fontSize: 'clamp(0.95rem, 1.6vw, 1.15rem)', 
                                 color: '#4B5563', 
                                 marginBottom: '24px', 
-                                lineHeight: 1.55, 
+                                lineHeight: 1.65, 
                                 maxWidth: '540px', 
                                 fontWeight: 450
                             }}>
-                                Send invoices, collect payments, follow up on unpaid bills, and keep your work organized. If people pay you, Kredibly is for you.
+                                Kredibly is your AI-powered business partner. From instant invoicing and payment tracking to smart debt reminders. Get paid on time, every time.
                             </p>
                             
                             <div className="hero-cta-group">
@@ -1182,23 +1182,21 @@ const LandingPage = () => {
                     }
                     .hero-left {
                         order: 1;
-                        text-align: center;
+                        text-align: left;
                         padding-top: 20px;
                     }
                     .hero-left p {
-                        margin-left: auto !important;
-                        margin-right: auto !important;
+                        margin-left: 0 !important;
+                        margin-right: 0 !important;
                     }
                     .hero-left h1 {
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
+                        display: block;
                     }
                     .hero-left h1 > div {
-                        justify-content: center !important;
+                        justify-content: flex-start !important;
                     }
                     .hero-left > div:last-child {
-                        justify-content: center !important;
+                        justify-content: flex-start !important;
                     }
                     .hero-right {
                         order: 2;
@@ -1232,10 +1230,12 @@ const LandingPage = () => {
                         padding-top: 28px;
                     }
                     .hero-left h1 {
-                        font-size: clamp(1.8rem, 8vw, 2.4rem) !important;
+                        font-size: clamp(1.5rem, 7vw, 2rem) !important;
+                        font-weight: 700 !important;
+                        letter-spacing: -0.015em !important;
                     }
                     .hero-left p {
-                        font-size: 0.88rem !important;
+                        font-size: 0.9rem !important;
                         margin-bottom: 20px !important;
                     }
                     .phone-mockup-wrapper {
