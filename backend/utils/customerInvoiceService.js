@@ -863,34 +863,8 @@ const cancelCustomerReminders = async (saleId) => {
  * Sends them the payment link in a clean message.
  */
 const handleCustomerPayNow = async (saleId, customerPhone) => {
-    try {
-        await sendTypingIndicator(customerPhone);
-        const sale = await Sale.findById(saleId).populate("businessId");
-        if (!sale) return;
-
-        const bal = sale.totalAmount - (sale.payments || []).reduce((s, p) => s + p.amount, 0);
-
-        if (bal <= 0) {
-            await sendText(customerPhone, `Great news! This invoice *#${sale.invoiceNumber}* has already been fully paid. Thank you! 🎉`);
-            return;
-        }
-
-        const cleanCustomerPhone = normalizePhone(customerPhone);
-
-        // V2: Ownership-first language, cleaner options
-        await sendInteractiveButtons(
-            cleanCustomerPhone,
-            `Invoice #${sale.invoiceNumber}`,
-            `Hi ${sale.customerName} 👋\n\nYou have an outstanding balance of *₦${bal.toLocaleString()}* on Invoice *#${sale.invoiceNumber}*.\n\nWould you like to pay the full balance or make a partial payment?`,
-            "A unique bank account will be generated for you instantly.",
-            [
-                { id: `pay_full:${saleId}`, title: "Full Payment" },
-                { id: `pay_part:${saleId}`, title: "Partial Payment" }
-            ]
-        );
-    } catch (err) {
-        console.error("❌ handleCustomerPayNow Error:", err.message);
-    }
+    // ⚡ Streamlined 1-Click: Generate DVA directly on Pay With Transfer click
+    return await handleCustomerPayFull(saleId, customerPhone);
 };
 
 /**
@@ -907,7 +881,7 @@ const handleCustomerPayFull = async (saleId, customerPhone) => {
         const bal = sale.totalAmount - (sale.payments || []).reduce((s, p) => s + p.amount, 0);
 
         if (bal <= 0) {
-            await sendText(cleanPhone, `Invoice *#${sale.invoiceNumber}* is already fully paid. Thank you! 🎉`);
+            await sendText(cleanPhone, `Invoice #${sale.invoiceNumber} is already fully paid. Thank you!`);
             return;
         }
 
@@ -961,7 +935,7 @@ const handleCustomerPayFull = async (saleId, customerPhone) => {
             expiresAt: new Date(dva.expiresAt)
         });
 
-        // V2: Structured payment card
+        // V2: Clean, 1-tap copyable structured payment card
         const expiryTime = new Date(dva.expiresAt);
         const expiryStr = expiryTime.toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit", hour12: true });
         const expiryDateStr = expiryTime.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short" });
@@ -971,19 +945,34 @@ const handleCustomerPayFull = async (saleId, customerPhone) => {
             ? ``
             : `\n*Invoice Amount:* ₦${bal.toLocaleString()}\n*Gateway Fee:* ₦${(dvaAmount - bal).toLocaleString()}`;
 
-        await sendText(
+        const paymentMsg = [
+            `*You're paying*`,
+            `${sale.businessId?.displayName || "Your Merchant"}`,
+            `Invoice #${sale.invoiceNumber}`,
+            `────────────────────`,
+            `*Amount:* ₦${bal.toLocaleString()}${feeLines}`,
+            `*Transfer exactly:* ₦${dvaAmount.toLocaleString()}`,
+            `────────────────────`,
+            `*Bank:* ${dva.bankName}`,
+            `*Account Name:* ${dva.accountName}`,
+            ``,
+            `*Account Number:*`,
+            `${dva.accountNumber}`,
+            `_(Tap and hold number to copy)_`,
+            ``,
+            `*Valid until:* ${validUntil}`,
+            `────────────────────`,
+            `Open your banking app and transfer exactly *₦${dvaAmount.toLocaleString()}*. Payment is verified automatically.`
+        ].join("\n");
+
+        await sendInteractiveButtons(
             cleanPhone,
-            `*You're paying*\n${sale.businessId?.displayName || "Your Merchant"}\nInvoice ${sale.invoiceNumber}\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `*Amount*          ₦${bal.toLocaleString()}${feeLines}\n` +
-            `*Transfer exactly* ₦${dvaAmount.toLocaleString()}\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `*Bank*            ${dva.bankName}\n` +
-            `*Account Name*    ${dva.accountName}\n` +
-            `*Account Number*  ${dva.accountNumber}\n` +
-            `*Valid until*     ${validUntil}\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `Open your banking app and transfer exactly *₦${dvaAmount.toLocaleString()}*. Your payment will be confirmed automatically — no need to send a screenshot. 🏦`
+            `Pay Invoice #${sale.invoiceNumber}`,
+            paymentMsg,
+            "",
+            [
+                { id: `pay_part:${saleId}`, title: "Pay Partial Amount" }
+            ]
         );
     } catch (err) {
         console.error("❌ handleCustomerPayFull Error:", err.message);
@@ -1427,84 +1416,51 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
             }
         }
 
-        // ── Step 1: Branded payment confirmation card (image) ──────────────────
-        let cardUrl = null;
-        try {
-            const VirtualAccount = require("../models/VirtualAccount");
-            const va = await VirtualAccount.findOne({ saleId: sale._id }).sort({ createdAt: -1 });
-            const latestPayment = sale.payments && sale.payments.length > 0 
-                ? sale.payments[sale.payments.length - 1] 
-                : null;
+        // ── Deliver Payment Receipt ──────────────────────────────────────────
+        if (isFullyPaid) {
+            // Deliver ONLY the official Paid-Stamped PDF Receipt in a single clean dispatch
+            if (sale.pdfUrl) {
+                const pdfCaption = [
+                    `Official Receipt from ${businessName}`,
+                    `Invoice #${sale.invoiceNumber} — Fully Settled`,
+                    ``,
+                    `Amount Paid: ₦${amountPaid.toLocaleString()}`,
+                    `Balance: ₦0`,
+                    ``,
+                    `Payment confirmed. Your official receipt is attached above.`
+                ].join("\n");
 
-            cardUrl = await generatePaymentConfirmationCard({
-                businessName,
-                customerName: sale.customerName,
-                invoiceNumber: sale.invoiceNumber,
-                amountPaid,
-                balance: isFullyPaid ? 0 : balance,
-                reference: latestPayment?.reference || latestPayment?.externalReference || va?.reference || "N/A",
-                date: latestPayment?.date || new Date(),
-                method: latestPayment?.method || "Transfer",
-                beneficiaryAccountNumber: va?.accountNumber || "N/A",
-                beneficiaryAccountName: va?.accountName || businessName,
-                bankName: va?.bankName || "Paycom (Opay)"
-            });
-
-            let imageSent = false;
-            if (isCustomerWindowOpen && cardUrl) {
-                const cardCaption = isFullyPaid
-                    ? `✅ Payment received! Invoice *#${sale.invoiceNumber}* is now fully settled.`
-                    : `✅ Partial payment of ₦${amountPaid.toLocaleString()} received for Invoice *#${sale.invoiceNumber}*.\n\nOutstanding: *₦${balance.toLocaleString()}*`;
-                imageSent = await sendImage(cleanCustomerPhone, cardUrl, cardCaption);
+                if (isCustomerWindowOpen) {
+                    await sendDocument(
+                        cleanCustomerPhone,
+                        sale.pdfUrl,
+                        `Receipt-${sale.invoiceNumber}.pdf`,
+                        pdfCaption
+                    );
+                } else {
+                    const fallbackMsg = `Payment confirmed. Invoice #${sale.invoiceNumber} is fully settled (₦${amountPaid.toLocaleString()}). View your official receipt: ${sale.pdfUrl}`;
+                    await sendCustomerMessageWithFallback(cleanCustomerPhone, fallbackMsg, sale.customerName, sale.invoiceNumber);
+                }
             }
-
-            if (!imageSent) {
-                // Closed window fallback: send template notification with pdf link
-                const fallbackText = isFullyPaid
-                    ? `✅ Payment confirmed! Your payment of ₦${amountPaid.toLocaleString()} for Invoice #${sale.invoiceNumber} has been received. The invoice is now fully paid. View receipt: ${sale.pdfUrl}`
-                    : `✅ Partial payment received. ₦${amountPaid.toLocaleString()} received for Invoice #${sale.invoiceNumber}. Outstanding balance: ₦${balance.toLocaleString()}`;
-                
-                await sendCustomerMessageWithFallback(cleanCustomerPhone, fallbackText, sale.customerName, sale.invoiceNumber);
-            }
-
-            // Small delay before next message
-            await new Promise(r => setTimeout(r, 1500));
-        } catch (cardErr) {
-            console.error("⚠️ Could not generate payment card, falling back to text:", cardErr.message);
-            // Fallback to plain text confirmation
-            const msg = isFullyPaid
-                ? `✅ Payment confirmed! Thank you, ${sale.customerName}. Your payment of ₦${amountPaid.toLocaleString()} for Invoice #${sale.invoiceNumber} has been received. The invoice is now fully paid. View receipt: ${sale.pdfUrl}`
-                : `✅ Partial payment received. Thank you, ${sale.customerName}. ₦${amountPaid.toLocaleString()} received for Invoice #${sale.invoiceNumber}.\n\nOutstanding balance: ₦${balance.toLocaleString()}`;
-            await sendText(cleanCustomerPhone, msg);
-            await new Promise(r => setTimeout(r, 1000));
-        }
-
-        // ── Step 1.5: Send new checkout buttons for the remaining balance ─────
-        if (!isFullyPaid && isCustomerWindowOpen) {
-            const buttons = [
-                { id: `pay_now:${sale._id}`, title: "Pay Remaining" }
-            ];
-            if ((sale.extensionsCount || 0) < 2) {
-                buttons.push({ id: `req_ext:${sale._id}`, title: "Request Extension" });
-            }
-            await sendInteractiveButtons(
-                cleanCustomerPhone,
-                `Invoice #${sale.invoiceNumber}`,
-                `You still have an outstanding balance of *₦${balance.toLocaleString()}*.\n\nWould you like to pay the remaining balance now or request an extension?`,
-                "",
-                buttons
-            ).catch(err => console.error("⚠️ Failed to send remaining balance buttons:", err.message));
-        }
-
-        // ── Step 2: Final PAID PDF — only to customer when fully settled ───────
-        if (isFullyPaid && sale.pdfUrl) {
+        } else {
+            // Partial payment: Send clean status update + buttons for the remaining balance
+            const partialCaption = `Partial payment of ₦${amountPaid.toLocaleString()} received for Invoice #${sale.invoiceNumber}.\n\nOutstanding balance: ₦${balance.toLocaleString()}`;
             if (isCustomerWindowOpen) {
-                await sendDocument(
+                const buttons = [
+                    { id: `pay_now:${sale._id}`, title: "Pay Remaining" }
+                ];
+                if ((sale.extensionsCount || 0) < 2) {
+                    buttons.push({ id: `req_ext:${sale._id}`, title: "Request Extension" });
+                }
+                await sendInteractiveButtons(
                     cleanCustomerPhone,
-                    sale.pdfUrl,
-                    `Receipt-${sale.invoiceNumber}.pdf`,
-                    `🧾 *Official Receipt from ${businessName}*\nInvoice #${sale.invoiceNumber} — Fully Settled`
-                );
+                    `Invoice #${sale.invoiceNumber}`,
+                    partialCaption,
+                    "",
+                    buttons
+                ).catch(err => console.error("⚠️ Failed to send partial payment buttons:", err.message));
+            } else {
+                await sendCustomerMessageWithFallback(cleanCustomerPhone, partialCaption, sale.customerName, sale.invoiceNumber);
             }
         }
 

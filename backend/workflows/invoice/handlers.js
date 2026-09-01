@@ -118,12 +118,6 @@ class InvoiceWorkflow extends WorkflowBase {
                 return true;
             }
 
-            const isSettled = (paidAmount || 0) >= totalAmount;
-            await MessageDispatcher.send(
-                opts.from,
-                `On it — generating ${isSettled ? "Receipt" : "Invoice"} #${newSale.invoiceNumber} for *${newSale.customerName}* now. I'll send you a copy as soon as it's delivered.`
-            );
-
             const WorkflowEventBus = require("../../conversation/WorkflowEventBus");
             WorkflowEventBus.publish("InvoiceCreated", {
                 saleId: newSale._id,
@@ -429,7 +423,7 @@ class InvoiceWorkflow extends WorkflowBase {
      * proceedToInvoiceSummary
      * Shared helper to show the final summary or check for phone details & multi-invoice alerts.
      */
-    async proceedToInvoiceSummary(from, cleanFrom, profile, isStaff, pendingData, state) {
+    async proceedToInvoiceSummary(from, cleanFrom, profile, isStaff, pendingData, state, initialAck = null) {
         const { customerName, totalAmount, paidAmount, items, item, dueDate, invoiceType, customerPhone } = pendingData;
         const resolvedName = customerName || "Customer";
 
@@ -468,7 +462,11 @@ class InvoiceWorkflow extends WorkflowBase {
             state.markModified("data");
             await state.save();
 
-            await MessageDispatcher.send(from, `What's ${resolvedName}'s WhatsApp number so I can deliver the invoice?`);
+            const askPhonePrompt = initialAck
+                ? `${initialAck}\n\nWhat's ${resolvedName}'s WhatsApp number so I can deliver the invoice?`
+                : `What's ${resolvedName}'s WhatsApp number so I can deliver the invoice?`;
+
+            await MessageDispatcher.send(from, askPhonePrompt);
             return;
         }
 
@@ -515,17 +513,17 @@ class InvoiceWorkflow extends WorkflowBase {
             ? items.map((i, idx) => `${idx + 1}. ${i.name} × ${i.quantity || 1} — ₦${((i.unitPrice || 0) * (i.quantity || 1)).toLocaleString()}`).join("\n")
             : `${item && item !== "Item" ? item : "Purchase"} — ₦${totalAmount.toLocaleString()}`;
 
-        let statusText = "💳 Unpaid (Requesting Payment)";
+        let statusText = "Unpaid (Requesting Payment)";
         if (isFullyPaid) {
-            statusText = "✅ Fully Paid (Receipt Mode)";
+            statusText = "Fully Paid (Receipt Mode)";
         } else if (isPartial) {
-            statusText = `⏳ Partial (₦${effectivePaid.toLocaleString()} paid, ₦${bal.toLocaleString()} balance due)`;
+            statusText = `Partial (₦${effectivePaid.toLocaleString()} paid, ₦${bal.toLocaleString()} balance due)`;
         }
 
         let dueDateText = null;
         if (dueDate) {
             const d = new Date(dueDate);
-            dueDateText = `Due Date: ${d.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short", year: "numeric" })} 📅`;
+            dueDateText = `Due Date: ${d.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}`;
         }
 
         const summaryLines = [

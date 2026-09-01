@@ -63,6 +63,8 @@ class WorkflowQueue {
                 businessId,
                 mode: "free_conversation"
             });
+        } else if (businessId && (!context.businessId || String(context.businessId) !== String(businessId))) {
+            context.businessId = businessId;
         }
 
         const manifest = WorkflowRegistry.getManifest(workflowId);
