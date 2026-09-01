@@ -1423,7 +1423,7 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
                     `Payment confirmed. Your official receipt is attached above.`,
                     ``,
                     `────────────────────`,
-                    `⚡ *Do you sell products, services, or freelance?*`,
+                    `*Do you sell products, services, or freelance?*`,
                     `Send professional invoices, track debts & auto-reconcile bank payments on WhatsApp — with Kreddy AI as your business second brain.`,
                     `👉 Get started free: https://usekredibly.com`
                 ].join("\n");
