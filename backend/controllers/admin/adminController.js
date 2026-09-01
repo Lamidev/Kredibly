@@ -341,10 +341,11 @@ exports.deleteUser = async (req, res) => {
             const SupportTicket = require("../../models/SupportTicket");
             const ConversationMemory = require("../../models/ConversationMemory");
             const Reminder = require("../../models/Reminder");
-            const Customer = require("../../models/Customer");
             const CustomerAlias = require("../../models/CustomerAlias");
             const PaymentSession = require("../../models/PaymentSession");
-            const EscrowWallet = require("../../models/EscrowWallet");
+            const Settlement = require("../../models/Settlement");
+            const VirtualAccount = require("../../models/VirtualAccount");
+            const EscrowPayment = require("../../models/EscrowPayment");
 
             await Promise.all([
                 Sale.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
@@ -353,10 +354,11 @@ exports.deleteUser = async (req, res) => {
                 SupportTicket.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
                 ConversationMemory.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
                 Reminder.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
-                Customer.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
                 CustomerAlias.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
                 PaymentSession.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
-                EscrowWallet.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
+                Settlement.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
+                VirtualAccount.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
+                EscrowPayment.deleteMany({ businessId: { $in: businessIds } }).catch(() => {}),
                 BusinessProfile.deleteMany({ _id: { $in: businessIds } }).catch(() => {})
             ]);
         }
