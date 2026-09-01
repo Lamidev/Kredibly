@@ -1190,13 +1190,6 @@ const handleCustomerExtensionDuration = async (saleId, days, customerPhone, cust
             requestedExtensionDays: actualDays
         });
 
-        // Acknowledge to customer using merchant business display name
-        const bizName = business?.displayName || "the merchant";
-        await sendText(
-            customerPhone,
-            `Got it, ${customerName}! I've sent your request for a *${durationLabel}* to *${bizName}*. They will respond shortly.`
-        );
-
         // Notify merchant with [Approve] [Decline] interactive buttons
         const merchantPhone = business?.whatsappNumber;
         if (!merchantPhone) return;
@@ -1430,7 +1423,9 @@ const notifyCustomerPaymentReceived = async (saleId, amountPaid) => {
                     `Payment confirmed. Your official receipt is attached above.`,
                     ``,
                     `────────────────────`,
-                    `⚡ Send invoices & collect payments for your business on WhatsApp: https://usekredibly.com`
+                    `⚡ *Do you sell products, services, or freelance?*`,
+                    `Send professional invoices, track debts & auto-reconcile bank payments on WhatsApp — with Kreddy AI as your business second brain.`,
+                    `👉 Get started free: https://usekredibly.com`
                 ].join("\n");
 
                 if (isCustomerWindowOpen) {
