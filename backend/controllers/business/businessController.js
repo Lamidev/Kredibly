@@ -22,18 +22,8 @@ const triggerWelcomeMessage = async (profile) => {
 
         const welcomeMsg = `Welcome to Kredibly, ${personalizedName}! Your WhatsApp workspace is set up and connected. I'm Kreddy, your Digital Chief of Staff. I'm ready to record your sales and help collect your payments. Reply HELP to see what I can do.`;
 
-        const components = [
-            {
-                type: "body",
-                parameters: [
-                    { type: "text", text: String(personalizedName).substring(0, 60) },
-                    { type: "text", text: String(welcomeMsg).substring(0, 1024) }
-                ]
-            }
-        ];
-
-        // Send welcome using kreddy_system_alert template
-        await sendWhatsAppTemplate(profile.whatsappNumber, "kreddy_system_alert", components);
+        // Send welcome using WhatsApp alert
+        await sendWhatsAppAlert(profile.whatsappNumber, "Kreddy", welcomeMsg);
 
         // Send to Staff
         if (profile.staffNumbers && profile.staffNumbers.length > 0) {
@@ -112,25 +102,35 @@ exports.updateProfile = async (req, res) => {
             const expiryDate = new Date(trialStartDate);
             expiryDate.setDate(expiryDate.getDate() + trialDurationDays);
 
-            // Set Trial Expiry when onboarding hits Step 4
+            // Set Trial Expiry & trigger notifications when onboarding hits Step 4
             if (wasIncomplete && profile.onboardingStep === 4 && !profile.firstMerchantGreetingSent) {
                 profile.trialExpiresAt = expiryDate;
                 profile.firstMerchantGreetingSent = false;
                 await profile.save();
 
-                const { sendAdminNewBusinessAlert } = require("../../emailLogic/emails");
-                sendAdminNewBusinessAlert({
-                    name: req.user.name,
-                    email: req.user.email,
-                    businessName: profile.displayName,
-                    phone: profile.whatsappNumber,
-                    bankDetails: profile.bankDetails,
-                    staffNumbers: profile.staffNumbers,
-                    plan: profile.plan,
-                    sellMode: profile.sellMode,
-                    entityType: profile.entityType,
-                    kyc: profile.kyc
-                }).catch(err => console.error("Admin Business Alert Error:", err.message));
+                const { sendAdminNewBusinessAlert, sendOnboardingSuccessEmail } = require("../../emailLogic/emails");
+                if (typeof sendAdminNewBusinessAlert === "function") {
+                    sendAdminNewBusinessAlert({
+                        name: req.user.name,
+                        email: req.user.email,
+                        businessName: profile.displayName,
+                        phone: profile.whatsappNumber,
+                        bankDetails: profile.bankDetails,
+                        staffNumbers: profile.staffNumbers,
+                        plan: profile.plan,
+                        sellMode: profile.sellMode,
+                        entityType: profile.entityType,
+                        kyc: profile.kyc
+                    }).catch(err => console.error("Admin Business Alert Error:", err.message));
+                }
+                if (typeof sendOnboardingSuccessEmail === "function") {
+                    sendOnboardingSuccessEmail(
+                        req.user.email,
+                        req.user.name,
+                        profile.displayName,
+                        profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Hustler")
+                    ).catch(err => console.error("Merchant Onboarding Success Email Error:", err.message));
+                }
             }
         } else {
             // ... (Creation logic)
@@ -171,19 +171,29 @@ exports.updateProfile = async (req, res) => {
                 profile.firstMerchantGreetingSent = false;
                 await profile.save();
 
-                const { sendAdminNewBusinessAlert } = require("../../emailLogic/emails");
-                sendAdminNewBusinessAlert({
-                    name: req.user.name,
-                    email: req.user.email,
-                    businessName: profile.displayName,
-                    phone: profile.whatsappNumber,
-                    bankDetails: profile.bankDetails,
-                    staffNumbers: profile.staffNumbers,
-                    plan: profile.plan,
-                    sellMode: profile.sellMode,
-                    entityType: profile.entityType,
-                    kyc: profile.kyc
-                }).catch(err => console.error("Admin Business Alert Error:", err.message));
+                const { sendAdminNewBusinessAlert, sendOnboardingSuccessEmail } = require("../../emailLogic/emails");
+                if (typeof sendAdminNewBusinessAlert === "function") {
+                    sendAdminNewBusinessAlert({
+                        name: req.user.name,
+                        email: req.user.email,
+                        businessName: profile.displayName,
+                        phone: profile.whatsappNumber,
+                        bankDetails: profile.bankDetails,
+                        staffNumbers: profile.staffNumbers,
+                        plan: profile.plan,
+                        sellMode: profile.sellMode,
+                        entityType: profile.entityType,
+                        kyc: profile.kyc
+                    }).catch(err => console.error("Admin Business Alert Error:", err.message));
+                }
+                if (typeof sendOnboardingSuccessEmail === "function") {
+                    sendOnboardingSuccessEmail(
+                        req.user.email,
+                        req.user.name,
+                        profile.displayName,
+                        profile.plan === "chairman" ? "Chairman" : (profile.plan === "oga" ? "Oga" : "Hustler")
+                    ).catch(err => console.error("Merchant Onboarding Success Email Error:", err.message));
+                }
             }
         }
         res.status(200).json({ success: true, data: profile });

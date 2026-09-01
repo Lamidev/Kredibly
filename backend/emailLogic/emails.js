@@ -16,7 +16,8 @@ const {
   INACTIVITY_DAY2_TEMPLATE,
   INACTIVITY_DAY7_TEMPLATE,
   WEEKLY_MONDAY_DIGEST_TEMPLATE,
-  LAUNCH_ANNOUNCEMENT_TEMPLATE
+  LAUNCH_ANNOUNCEMENT_TEMPLATE,
+  ADMIN_NEW_BUSINESS_TEMPLATE
 } = require("./emailTemplates.js");
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://usekredibly.com";
@@ -75,15 +76,18 @@ exports.sendVerificationEmail = async (email, verificationToken) => {
 
 // 2. WELCOME EMAIL
 exports.sendWelcomeEmail = async (email, userName) => {
+  const actionUrl = `${FRONTEND_URL}/activate`;
   return await sendDirectEmail({
     to: email,
-    subject: "Welcome to Kredibly",
-    text: `Hi ${userName || "there"},\n\nWelcome to Kredibly! We built this platform because managing your sales and getting paid shouldn't mean drowning in notebooks or chasing clients who promise "next week."\n\nWhether you're recording transactions via text, voice note, or photo on WhatsApp, Kredibly is designed to give you peace of mind and professional clarity.\n\nIf you ever have questions or just want to say hi, reply to this email directly.\n\nWarmly,\nOluwatosin\nFounder, Kredibly`,
-    html: WELCOME_EMAIL_TEMPLATE.replace("{name}", userName || "there"),
+    subject: "Welcome to Kredibly — your financial engine is ready",
+    text: `Hi ${userName || "there"},\n\nWelcome to Kredibly. Your email has been verified, and your account is officially active.\n\nWe built Kredibly to remove the daily friction from running your business. No paperwork, no spreadsheets, and no awkward back-and-forth chasing customers who promise "I will transfer tonight."\n\nWhat Kredibly handles for you:\n1. WhatsApp-Native Invoicing: Generate professional invoices with dedicated bank accounts via text or voice note.\n2. Automated Payment Reconciliation: Real-time ledger updates the moment a customer pays.\n3. Automated Debt Tracking: Polite, automated reminders to protect your cashflow.\n4. Your Second Brain & Productivity Partner: Drop notes, supplier commitments, and to-dos directly into WhatsApp to get reminded right on schedule.\n\nNext Step: Finish your 60-second business setup:\n${actionUrl}\n\nIf you ever have questions or want guidance on setting up your workflow, reply directly to this email.\n\nWarm regards,\nOluwatosin\nFounder, Kredibly`,
+    html: WELCOME_EMAIL_TEMPLATE
+      .replace(/{name}/g, userName || "there")
+      .replace(/{actionUrl}/g, actionUrl),
   });
 };
 
-// 3. ONBOARDING SUCCESS
+// 3. ONBOARDING SUCCESS (Merchant)
 exports.sendOnboardingSuccessEmail = async (email, userName, businessName, planTitle = "Chairman") => {
   return await sendDirectEmail({
     to: email,
@@ -96,7 +100,27 @@ exports.sendOnboardingSuccessEmail = async (email, userName, businessName, planT
   });
 };
 
-// 4. PASSWORD RESET REQUEST
+// 4. NEW BUSINESS ALERT (Admin)
+exports.sendAdminNewBusinessAlert = async (data) => {
+  const adminEmail = process.env.ADMIN_EMAIL || "hello@usekredibly.com";
+  const { name, email, businessName, phone, plan, sellMode, entityType } = data || {};
+  return await sendDirectEmail({
+    to: adminEmail,
+    subject: `New Merchant Onboarded: ${businessName || name || "Business"}`,
+    text: `A new merchant just completed onboarding.\n\nBusiness: ${businessName || "N/A"}\nOwner: ${name || "N/A"} (${email || "N/A"})\nWhatsApp: ${phone || "N/A"}\nPlan: ${plan || "chairman"}\nSell Mode: ${sellMode || "N/A"}\nEntity: ${entityType || "N/A"}\n\nAdmin Panel: ${FRONTEND_URL}/admin`,
+    html: ADMIN_NEW_BUSINESS_TEMPLATE
+      .replace(/{name}/g, name || "Merchant")
+      .replace(/{email}/g, email || "N/A")
+      .replace(/{businessName}/g, businessName || "New Business")
+      .replace(/{phone}/g, phone || "N/A")
+      .replace(/{plan}/g, plan || "chairman")
+      .replace(/{sellMode}/g, sellMode || "N/A")
+      .replace(/{entityType}/g, entityType || "N/A")
+      .replace(/{adminUrl}/g, `${FRONTEND_URL}/admin`),
+  });
+};
+
+// 5. PASSWORD RESET REQUEST
 exports.sendPasswordResetEmail = async (email, resetURL) => {
   return await sendDirectEmail({
     to: email,

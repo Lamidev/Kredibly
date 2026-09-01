@@ -69,20 +69,69 @@ const PASSWORD_RESET_REQUEST_TEMPLATE = `
 const WELCOME_EMAIL_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="en">
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.7; color: #2D3748; max-width: 580px; margin: 0 auto; padding: 24px;">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.75; color: #2D3748; max-width: 580px; margin: 0 auto; padding: 24px;">
   <div style="margin-bottom: 28px;">
     <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 95px; height: auto; display: block;">
   </div>
+  
   <p style="font-size: 16px; color: #1A202C; margin-top: 0;">Hi {name},</p>
-  <p style="font-size: 15px;">Welcome to Kredibly! We built this platform because managing your sales and getting paid shouldn't mean drowning in notebooks or chasing clients who promise "next week."</p>
-  <p style="font-size: 15px;">Whether you're recording a quick sale via text, voice note, or photo on WhatsApp, Kredibly is designed to give you peace of mind and professional clarity.</p>
-  <p style="font-size: 15px;">If you ever have feedback or just want to say hi, simply reply to this email. We read every message personally.</p>
+  <p style="font-size: 15px;">Your email has been verified, and your account is officially active.</p>
+  
+  <p style="font-size: 15px;">We built Kredibly to remove the daily friction from running your business. No paperwork, no spreadsheets, and no chasing clients who promise <em>"I will transfer tonight."</em></p>
+
+  <p style="font-size: 15px; font-weight: 700; color: #1A202C; margin-top: 24px; margin-bottom: 8px;">Here is how Kreddy works for you:</p>
+  
+  <p style="font-size: 15px; margin: 12px 0;">
+    <strong>1. WhatsApp-Native Invoicing:</strong> Send a quick text or voice note on WhatsApp to generate a clean PDF invoice with direct bank payment details in seconds.
+  </p>
+  
+  <p style="font-size: 15px; margin: 12px 0;">
+    <strong>2. Automated Payment Reconciliation:</strong> Every sale is linked to direct settlement accounts. The moment a customer pays, your records update instantly.
+  </p>
+  
+  <p style="font-size: 15px; margin: 12px 0;">
+    <strong>3. Automated Debt Tracking:</strong> Courteous, scheduled reminders are delivered to customers on your behalf to protect your cashflow without awkward follow-ups.
+  </p>
+  
+  <p style="font-size: 15px; margin: 12px 0;">
+    <strong>4. Your Second Brain & Productivity Partner:</strong> Drop notes, supplier commitments, and quick to-dos directly into WhatsApp. Kreddy remembers everything and alerts you right on schedule.
+  </p>
+
+  <div style="margin: 32px 0;">
+    <a href="{actionUrl}" style="background-color: #4C1D95; color: white; padding: 13px 26px; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 14px; display: inline-block;">Complete Your Business Setup →</a>
+  </div>
+
+  <p style="font-size: 14px; color: #4A5568;">If you ever have questions or want guidance setting up, simply reply to this email. I read every message personally.</p>
+
   <div style="margin-top: 36px; padding-top: 16px; border-top: 1px solid #EDF2F7;">
     <p style="font-weight: 800; color: #1A202C; margin: 0; font-size: 15px;">Oluwatosin</p>
     <p style="color: #718096; font-size: 13px; margin: 2px 0 0 0;">Founder, Kredibly</p>
   </div>
   <div style="margin-top: 32px; border-top: 1px solid #F7FAFC; padding-top: 16px; font-size: 11px; color: #A0AEC0;">
     <p>© ${new Date().getFullYear()} Kredibly · A product of AkinByte Technologies Ltd. All rights reserved.</p>
+  </div>
+</body>
+</html>
+`;
+
+const ADMIN_NEW_BUSINESS_TEMPLATE = `
+<!DOCTYPE html>
+<html lang="en">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #2D3748; max-width: 580px; margin: 0 auto; padding: 24px;">
+  <div style="margin-bottom: 28px;">
+    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 95px; height: auto; display: block;">
+  </div>
+  <h2 style="font-size: 16px; font-weight: 800; color: #1A202C; margin-top: 0;">New Merchant Onboarded</h2>
+  <p style="font-size: 14px;">A new merchant has completed onboarding on Kredibly:</p>
+  <div style="background: #F8FAFC; padding: 18px; border-radius: 8px; margin: 16px 0; border: 1px solid #E2E8F0;">
+    <p style="margin: 4px 0; font-size: 14px;"><strong>Business Name:</strong> {businessName}</p>
+    <p style="margin: 4px 0; font-size: 14px;"><strong>Owner:</strong> {name} ({email})</p>
+    <p style="margin: 4px 0; font-size: 14px;"><strong>WhatsApp:</strong> {phone}</p>
+    <p style="margin: 4px 0; font-size: 14px;"><strong>Plan:</strong> {plan}</p>
+    <p style="margin: 4px 0; font-size: 14px;"><strong>Entity Type:</strong> {entityType}</p>
+  </div>
+  <div style="margin-top: 24px;">
+    <a href="{adminUrl}" style="font-weight: 700; color: #4C1D95; text-decoration: none; font-size: 14px;">View in Admin Panel →</a>
   </div>
 </body>
 </html>
@@ -448,5 +497,6 @@ module.exports = {
   INACTIVITY_DAY2_TEMPLATE,
   INACTIVITY_DAY7_TEMPLATE,
   WEEKLY_MONDAY_DIGEST_TEMPLATE,
-  LAUNCH_ANNOUNCEMENT_TEMPLATE
+  LAUNCH_ANNOUNCEMENT_TEMPLATE,
+  ADMIN_NEW_BUSINESS_TEMPLATE
 };
