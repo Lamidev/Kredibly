@@ -40,7 +40,7 @@ const triggerWelcomeMessage = async (profile) => {
 exports.updateProfile = async (req, res) => {
     try {
         const { displayName, entityType, sellMode, logoUrl, phoneNumber, whatsappNumber, address, assistantSettings, bankDetails, staffNumbers, prefersGatewayFeeAbsorption } = req.body;
-        const { LAUNCH_DATE } = require('../../config/pricing');
+        const { LAUNCH_DATE, LAUNCH_PROMO_END_DATE } = require('../../config/pricing');
         const now = new Date();
 
         let profile = await BusinessProfile.findOne({ ownerId: req.user._id });
@@ -74,7 +74,10 @@ exports.updateProfile = async (req, res) => {
                 };
             }
 
-            if (now < LAUNCH_DATE) { profile.plan = 'chairman'; profile.planStatus = 'trialing'; }
+            if (now < LAUNCH_PROMO_END_DATE) { 
+                profile.plan = 'chairman'; 
+                profile.planStatus = 'trialing'; 
+            }
             if (assistantSettings) profile.assistantSettings = { ...profile.assistantSettings, ...assistantSettings };
             if (staffNumbers) {
                 const incomingStaff = staffNumbers.map(n => cleanPhone(n)).filter(n => n);
@@ -104,11 +107,15 @@ exports.updateProfile = async (req, res) => {
             const { promoteProspect } = require("../../utils/prospectPromotion");
             await promoteProspect(profile);
 
-            // 🚀 SMART TRIAL LOGIC (June 1st Launch Aware)
-            const trialDurationDays = 14;
-            const trialStartDate = now < LAUNCH_DATE ? LAUNCH_DATE : now;
-            const expiryDate = new Date(trialStartDate);
-            expiryDate.setDate(expiryDate.getDate() + trialDurationDays);
+            // 🚀 SMART TRIAL LOGIC (September Launch Promo Aware)
+            let expiryDate;
+            if (now < LAUNCH_PROMO_END_DATE) {
+                expiryDate = new Date(LAUNCH_PROMO_END_DATE);
+            } else {
+                const trialDurationDays = 14;
+                expiryDate = new Date(now);
+                expiryDate.setDate(expiryDate.getDate() + trialDurationDays);
+            }
 
             // Set Trial Expiry & trigger notifications when onboarding hits Step 4
             if (wasIncomplete && profile.onboardingStep === 4 && !profile.firstMerchantGreetingSent) {
@@ -142,12 +149,14 @@ exports.updateProfile = async (req, res) => {
             }
         } else {
             // ... (Creation logic)
-            const { LAUNCH_DATE } = require('../../config/pricing');
-            const trialDurationDays = 14;
-            const now = new Date();
-            const trialStartDate = now < LAUNCH_DATE ? LAUNCH_DATE : now;
-            const expiryDate = new Date(trialStartDate);
-            expiryDate.setDate(expiryDate.getDate() + trialDurationDays);
+            let expiryDate;
+            if (now < LAUNCH_PROMO_END_DATE) {
+                expiryDate = new Date(LAUNCH_PROMO_END_DATE);
+            } else {
+                const trialDurationDays = 14;
+                expiryDate = new Date(now);
+                expiryDate.setDate(expiryDate.getDate() + trialDurationDays);
+            }
 
             const cleanedWhatsapp = cleanPhone(whatsappNumber);
             if (cleanedWhatsapp) {

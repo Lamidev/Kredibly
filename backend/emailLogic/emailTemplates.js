@@ -426,61 +426,6 @@ const WEEKLY_MONDAY_DIGEST_TEMPLATE = `
 </html>
 `;
 
-const LAUNCH_ANNOUNCEMENT_TEMPLATE = `
-<!DOCTYPE html>
-<html lang="en">
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.8; color: #2D3748; max-width: 580px; margin: 0 auto; padding: 24px;">
-  <div style="margin-bottom: 28px;">
-    <img src="https://usekredibly.com/krediblyrevamped.png" alt="Kredibly" style="width: 95px; height: auto; display: block;">
-  </div>
-  
-  <p style="font-size: 16px; margin-top: 0; color: #1A202C;">Hi {name},</p>
-  
-  <p style="font-size: 15px;">A little over a year ago, I was watching a friend try to balance his work in Lagos.</p>
-  
-  <p style="font-size: 15px;">He did great work and had plenty of clients. But by the end of every month, getting paid was always a headache.</p>
-  
-  <p style="font-size: 15px;">He was constantly tracking who owed what, dealing with clients who promised <em>"I’ll transfer tonight"</em> and forgot by morning, and having awkward conversations just to get paid for work he had already delivered.</p>
-  
-  <p style="font-size: 15px;">I realized this isn't just a retail store problem.</p>
-  
-  <p style="font-size: 15px;">Whether you sell products, offer professional services, consult, freelance, or run a workshop—if you create value every day, chasing payments and keeping clean records shouldn't take up half your energy.</p>
-  
-  <p style="font-size: 15px;">Most business software expects you to sit behind a laptop and manage complex spreadsheets. But real work in Africa happens on your phone, inside conversations, and specifically on <strong>WhatsApp</strong>.</p>
-  
-  <p style="font-size: 15px;">That is why we built <strong>Kredibly</strong>.</p>
-  
-  <p style="font-size: 15px;">We wanted to make tracking what you're owed, generating clean invoices, and receiving bank transfer payments as effortless as sending a quick WhatsApp message.</p>
-  
-  <div style="margin: 28px 0; border-top: 1px solid #EDF2F7; border-bottom: 1px solid #EDF2F7; padding: 16px 0;">
-    <p style="font-size: 16px; font-weight: 800; color: #1A202C; margin: 0 0 6px 0;">This Saturday, August 22nd: We Go Live Globally</p>
-    <p style="font-size: 14px; margin: 0; color: #4A5568;">Over the last few months, early users have been testing Kreddy, our WhatsApp AI assistant—recording transactions, sending invoices, and getting paid without awkward follow-ups.</p>
-    <p style="font-size: 14px; margin: 10px 0 0 0; color: #4A5568;">This <strong>Saturday, August 22, 2026</strong>, Kredibly officially launches to the public. As someone who joined early, your account is already set up and your early-access access is ready.</p>
-  </div>
-  
-  <p style="font-size: 15px; font-weight: 700; color: #1A202C; margin-bottom: 8px;">Try it before Saturday</p>
-  <p style="font-size: 14px; color: #4A5568; margin-top: 0;">If you haven't yet, take 15 seconds today to try your first message with Kreddy on WhatsApp. You can type or send a voice note for any work or sale:</p>
-  
-  <div style="background: #F7FAFC; border-left: 3px solid #4C1D95; padding: 12px 16px; margin: 16px 0; font-family: monospace; font-size: 14px; color: #4C1D95; font-weight: 600;">
-    "Kreddy, invoice Daniel ₦50,000 for brand design work, due Friday"
-  </div>
-  
-  <p style="font-size: 14px; color: #4A5568;">She will format a clean invoice with direct payment details instantly.</p>
-  
-  <div style="margin: 28px 0;">
-    <a href="https://wa.me/2347071238658?text=Hi%20Kreddy%2C%20I'm%20ready%20for%20Saturday" style="background-color: #1A202C; color: #FFFFFF; padding: 13px 26px; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 14px; display: inline-block;">Message Kreddy on WhatsApp →</a>
-  </div>
-  
-  <p style="font-size: 15px;">Thank you for being part of this journey from the beginning. We're excited for what we are building together.</p>
-  
-  <div style="margin-top: 36px; padding-top: 16px; border-top: 1px solid #EDF2F7;">
-    <p style="font-weight: 800; color: #1A202C; margin: 0; font-size: 15px;">Oluwatosin</p>
-    <p style="color: #718096; font-size: 13px; margin: 2px 0 0 0;">Founder, Kredibly</p>
-  </div>
-</body>
-</html>
-`;
-
 module.exports = {
   VERIFICATION_EMAIL_TEMPLATE,
   PASSWORD_RESET_SUCCESS_TEMPLATE,
@@ -497,6 +442,6 @@ module.exports = {
   INACTIVITY_DAY2_TEMPLATE,
   INACTIVITY_DAY7_TEMPLATE,
   WEEKLY_MONDAY_DIGEST_TEMPLATE,
-  LAUNCH_ANNOUNCEMENT_TEMPLATE,
   ADMIN_NEW_BUSINESS_TEMPLATE
 };
+

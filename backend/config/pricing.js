@@ -1,4 +1,5 @@
-const LAUNCH_DATE = new Date('2026-08-22T00:00:00Z'); // Official Launch Day
+const LAUNCH_DATE = new Date('2026-09-01T00:00:00Z'); // Official Launch Day
+const LAUNCH_PROMO_END_DATE = new Date('2026-10-01T00:00:00Z'); // September Launch Month Promo: Free Chairman Tier for All
 
 const PRICING_PLANS = {
     hustler: {
@@ -59,5 +60,6 @@ module.exports = {
     PLAN_LIMITS,
     getPlanPrice,
     getPlanLimit,
-    LAUNCH_DATE
+    LAUNCH_DATE,
+    LAUNCH_PROMO_END_DATE
 };

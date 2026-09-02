@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const BusinessProfile = require("../models/BusinessProfile");
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
-const { LAUNCH_DATE } = require("../config/pricing");
+const { LAUNCH_PROMO_END_DATE } = require("../config/pricing");
 
 const extendTrials = async () => {
     try {
@@ -12,14 +12,12 @@ const extendTrials = async () => {
         const statuses = await BusinessProfile.aggregate([{ $group: { _id: "$planStatus", count: { $sum: 1 } } }]);
         console.log("Current Status Counts:", JSON.stringify(statuses));
 
-        const trialDurationDays = 14;
-        const newExpiry = new Date(LAUNCH_DATE);
-        newExpiry.setDate(newExpiry.getDate() + trialDurationDays);
+        const newExpiry = new Date(LAUNCH_PROMO_END_DATE);
         
-        console.log(`⏳ Updating all pre-launch profiles to expire on ${newExpiry.toDateString()} (Launch Date + 14 days)...`);
+        console.log(`⏳ Updating all profiles to Chairman Plan with free access until ${newExpiry.toDateString()} (Launch Month Promo)...`);
         
         const result = await BusinessProfile.updateMany(
-            { planStatus: { $in: ['trialing', 'past_due', 'inactive'] } },
+            {},
             { $set: { planStatus: 'trialing', plan: 'chairman', trialExpiresAt: newExpiry } }
         );
 
@@ -27,7 +25,7 @@ const extendTrials = async () => {
         const deletedNotifs = await Notification.deleteMany({ title: "Plan Ended 🔒" });
         console.log(`🧹 Cleaned up ${deletedNotifs.deletedCount} premature lockout notifications.`);
 
-        console.log(`✅ Success! Updated ${result.modifiedCount} business profiles.`);
+        console.log(`✅ Success! Updated ${result.modifiedCount} business profiles to Chairman Plan (Free through October 1st).`);
         process.exit(0);
     } catch (err) {
         console.error("❌ Error extending trials:", err.message);
@@ -36,3 +34,4 @@ const extendTrials = async () => {
 };
 
 extendTrials();
+

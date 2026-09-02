@@ -1,26 +1,26 @@
 import React from 'react';
-import { Zap } from 'lucide-react';
+import { Zap, Sparkles } from 'lucide-react';
 import { useSettings } from '../../../context/SettingsContext';
 
 const PLANS = [
     {
         id: 'hustler',
         label: 'HUSTLER',
-        price: '₦2,500/mo',
-        desc: 'Up to 50 sales/mo, 10 auto-reminders, and basic receipts.',
+        price: '₦3,000/mo',
+        desc: 'Up to 50 sales/mo, 20 auto-reminders, and basic receipts.',
         color: '#64748B',
     },
     {
         id: 'oga',
         label: 'OGA PLAN',
-        price: '₦5,000/mo',
+        price: '₦6,000/mo',
         desc: 'Kreddy AI Voice, Proactive Reminders & 1 Staff member.',
         color: 'var(--primary)',
     },
     {
         id: 'chairman',
         label: 'CHAIRMAN',
-        price: '₦7,500/mo',
+        price: '₦9,000/mo',
         desc: 'Up to 3 Staff, AI Insights & Priority White-labeling.',
         color: '#8B5CF6',
     },
@@ -32,9 +32,12 @@ const SettingsPlanPage = () => {
     const { profile, setSelectedPlan, setShowCheckout } = useSettings();
 
     const currentRank = planRank[profile?.plan] || 0;
+    const isFreeLaunchPromo = profile?.plan === 'chairman' && profile?.planStatus === 'trialing';
 
     const getPlanLabel = (targetPlan) => {
-        if (profile?.plan === targetPlan) return 'Active Plan';
+        if (profile?.plan === targetPlan) {
+            return isFreeLaunchPromo ? 'Active (Launch Gift)' : 'Active Plan';
+        }
         return planRank[targetPlan] > currentRank
             ? `Upgrade to ${targetPlan.charAt(0).toUpperCase() + targetPlan.slice(1)}`
             : `Switch to ${targetPlan.charAt(0).toUpperCase() + targetPlan.slice(1)}`;
@@ -61,15 +64,22 @@ const SettingsPlanPage = () => {
 
                 {/* Current plan card */}
                 <div style={{ padding: '24px', background: '#F8FAFC', borderRadius: '20px', border: '1px solid #E2E8F0', marginBottom: '32px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                         <div>
                             <p style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', color: '#64748B', marginBottom: '4px' }}>Current Plan</p>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 950, margin: 0 }}>{profile?.plan?.toUpperCase() || 'HUSTLER'}</h3>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 950, margin: 0, color: '#1E293B' }}>
+                                {profile?.plan?.toUpperCase() || 'CHAIRMAN'}
+                            </h3>
+                            {isFreeLaunchPromo && (
+                                <p style={{ margin: '6px 0 0 0', fontSize: '0.85rem', color: '#6D28D9', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <Sparkles size={14} /> 100% Free Launch Access through October 1, 2026
+                                </p>
+                            )}
                         </div>
                         <div style={{ textAlign: 'right' }}>
                             <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#64748B', marginBottom: '4px' }}>Status</p>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 800, background: '#DCFCE7', color: '#166534', padding: '4px 12px', borderRadius: '100px' }}>
-                                {profile?.planStatus?.toUpperCase() || 'ACTIVE'}
+                            <span style={{ fontSize: '0.8rem', fontWeight: 800, background: '#DCFCE7', color: '#166534', padding: '6px 14px', borderRadius: '100px', display: 'inline-block' }}>
+                                {isFreeLaunchPromo ? 'ACTIVE • LAUNCH FREE' : (profile?.planStatus?.toUpperCase() || 'ACTIVE')}
                             </span>
                         </div>
                     </div>
@@ -122,3 +132,4 @@ const SettingsPlanPage = () => {
 };
 
 export default SettingsPlanPage;
+

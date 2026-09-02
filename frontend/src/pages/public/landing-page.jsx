@@ -8,8 +8,7 @@ import {
 import {
     Zap,
     ArrowRight,
-    Sparkles,
-    ShieldCheck, X,
+    ShieldCheck,
     Check,
     Smartphone,
     Lock,
@@ -264,6 +263,7 @@ const LandingPage = () => {
     const [showInstallBanner, setShowInstallBanner] = useState(false);
     const [showVideoModal, setShowVideoModal] = useState(false);
 
+
     useEffect(() => {
         if (location.state?.scrollTo) {
             const sectionId = location.state.scrollTo;
@@ -300,6 +300,7 @@ const LandingPage = () => {
             overflowX: 'hidden'
         }}>
             <SEO path="" />
+
             <PublicNavbar />
 
             {/* 1. Hero Section */}
@@ -355,6 +356,45 @@ const LandingPage = () => {
                                 justifyContent: 'center'
                             }}
                         >
+                            {/* ── Launch Hero Badge ── */}
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.1 }}
+                                style={{ marginBottom: '18px' }}
+                            >
+                                <div
+                                    className="launch-badge"
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        flexWrap: 'wrap',
+                                        gap: '0px',
+                                        padding: '6px 14px',
+                                        borderRadius: '100px',
+                                        maxWidth: '100%',
+                                        background: 'linear-gradient(135deg, rgba(76,29,149,0.08) 0%, rgba(109,40,217,0.12) 100%)',
+                                        border: '1.5px solid rgba(109,40,217,0.25)',
+                                        animation: 'launchBadgePulse 2.8s ease-in-out infinite',
+                                        cursor: 'default'
+                                    }}
+                                >
+                                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#4C1D95', letterSpacing: '0.01em', whiteSpace: 'nowrap' }}>
+                                        September Launch
+                                    </span>
+                                    <span style={{ fontSize: '0.78rem', color: '#7C3AED', opacity: 0.5, padding: '0 6px', whiteSpace: 'nowrap' }}>·</span>
+                                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#4C1D95', letterSpacing: '0.01em', whiteSpace: 'nowrap' }}>
+                                        Chairman Plan is{' '}<span style={{ color: '#7C3AED' }}>FREE</span>{'\u00a0'}this{'\u00a0'}month
+                                    </span>
+                                </div>
+                            </motion.div>
+                            <style>{`
+                                @keyframes launchBadgePulse {
+                                    0%, 100% { box-shadow: 0 0 0 0 rgba(109, 40, 217, 0.35); }
+                                    50%       { box-shadow: 0 0 0 8px rgba(109, 40, 217, 0); }
+                                }
+                            `}</style>
+
                             <h1 style={{ 
                                 fontSize: 'clamp(1.75rem, 3.5vw, 3rem)', 
                                 fontWeight: 700, 
@@ -1197,6 +1237,14 @@ const LandingPage = () => {
                     }
                     .hero-left > div:last-child {
                         justify-content: flex-start !important;
+                    }
+                    .launch-badge {
+                        font-size: 0.72rem !important;
+                        padding: 6px 12px !important;
+                        border-radius: 12px !important;
+                    }
+                    .launch-badge span {
+                        font-size: 0.72rem !important;
                     }
                     .hero-right {
                         order: 2;

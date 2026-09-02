@@ -406,7 +406,9 @@ export default function Dashboard() {
                     {/* Compact Kreddy pill */}
                     <button
                         onClick={() => {
-                            const msg = profile?.firstMerchantGreetingSent ? "Hi Kreddy" : "Hello";
+                            const msg = profile?.firstMerchantGreetingSent 
+                                ? "Hi Kreddy, give me today's business summary." 
+                                : "Hi Kreddy! I just signed up on Kredibly. How do I create my first invoice?";
                             window.open(KREDDY_CONFIG.getLink(msg), '_blank', 'noopener,noreferrer');
                         }}
                         style={{
