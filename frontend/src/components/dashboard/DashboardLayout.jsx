@@ -166,9 +166,13 @@ const DashboardLayout = () => {
     };
 
     const talkToKreddy = (customText) => {
+        const isFirstTime = !profile?.firstMerchantGreetingSent;
+        const defaultGreeting = isFirstTime 
+            ? "Hi Kreddy! I just signed up on Kredibly. How do I create my first invoice?" 
+            : "Hi Kreddy, give me today's business summary.";
+
         const contextMsg = customText ||
-            KREDDY_CONTEXT_MESSAGES[location.pathname] ||
-            'Hi Kreddy';
+            (isFirstTime ? defaultGreeting : (KREDDY_CONTEXT_MESSAGES[location.pathname] || defaultGreeting));
         const url = KREDDY_CONFIG.getLink(contextMsg);
         window.open(url, '_blank', 'noopener,noreferrer');
         setKreddyLastSynced(new Date());

@@ -16,7 +16,6 @@ const {
   INACTIVITY_DAY2_TEMPLATE,
   INACTIVITY_DAY7_TEMPLATE,
   WEEKLY_MONDAY_DIGEST_TEMPLATE,
-  LAUNCH_ANNOUNCEMENT_TEMPLATE,
   ADMIN_NEW_BUSINESS_TEMPLATE
 } = require("./emailTemplates.js");
 
@@ -254,17 +253,5 @@ exports.sendWeeklyMondayDigestEmail = async (email, data) => {
       .replace(/{invoicesCount}/g, invoicesCount || 0)
       .replace(/{pendingDebt}/g, (pendingDebt || 0).toLocaleString())
       .replace(/{weeklyAdvice}/g, weeklyAdvice || "Focus on cashflow and debt collection this week. Let's make it a winning week!"),
-  });
-};
-
-// 15. GLOBAL PUBLIC LAUNCH ANNOUNCEMENT EMAIL
-exports.sendLaunchAnnouncementEmail = async (email, userName) => {
-  const plainText = `Hi ${userName || "there"},\n\nA little over a year ago, I was watching a friend try to balance his work in Lagos.\n\nHe did great work and had plenty of clients. But by the end of every month, getting paid was always a headache.\n\nHe was constantly tracking who owed what, dealing with clients who promised "I'll transfer tonight" and forgot by morning, and having awkward conversations just to get paid for work he had already delivered.\n\nI realized this isn't just a retail store problem.\n\nWhether you sell products, offer professional services, consult, freelance, or run a workshop—if you create value every day, chasing payments and keeping clean records shouldn't take up half your energy.\n\nMost business software expects you to sit behind a laptop and manage complex spreadsheets. But real work in Africa happens on your phone, inside conversations, and specifically on WhatsApp.\n\nThat is why we built Kredibly.\n\nWe wanted to make tracking what you're owed, generating clean invoices, and receiving bank transfer payments as effortless as sending a quick WhatsApp message.\n\nThis Saturday, August 22nd: We Go Live Globally\n\nOver the last few months, early users have been testing Kreddy, our WhatsApp AI assistant—recording transactions, sending invoices, and getting paid without awkward follow-ups.\n\nThis Saturday, August 22, 2026, Kredibly officially launches to the public. As someone who joined early, your account is already set up and your early-access access is ready.\n\nTry it before Saturday:\nIf you haven't yet, take 15 seconds today to try your first message with Kreddy on WhatsApp. You can type or send a voice note for any work or sale:\n"Kreddy, invoice Daniel ₦50,000 for brand design work, due Friday"\n\nShe will format a clean invoice with direct payment details instantly.\n\nMessage Kreddy on WhatsApp: https://wa.me/2347071238658?text=Hi%20Kreddy%2C%20I'm%20ready%20for%20Saturday\n\nThank you for being part of this journey from the beginning. We're excited for what we are building together.\n\nWarmly,\nOluwatosin\nFounder, Kredibly`;
-
-  return await sendDirectEmail({
-    to: email,
-    subject: "Why we built Kredibly (and what happens this Saturday)",
-    text: plainText,
-    html: LAUNCH_ANNOUNCEMENT_TEMPLATE.replace(/{name}/g, userName || "there"),
   });
 };
