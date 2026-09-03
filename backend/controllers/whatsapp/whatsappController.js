@@ -5,7 +5,6 @@ const WhatsAppSession = require("../../models/WhatsAppSession");
 const SupportTicket = require("../../models/SupportTicket");
 const Reminder = require("../../models/Reminder");
 const User = require("../../models/User");
-const Feedback = require("../../models/Feedback");
 const CustomerAlias = require("../../models/CustomerAlias");
 const axios = require("axios");
 const chrono = require("chrono-node");
@@ -2822,12 +2821,12 @@ const handleIncoming = async (req, res) => {
                     }
                     return;
                 } else if (session.type === 'intent_clarification') {
-                    const isFeedback = lowerText.includes('feedback') || lowerText.includes('suggestion') || lowerText.includes('idea') || lowerText.includes('admin');
+                    const isHelp = lowerText.includes('support') || lowerText.includes('help') || lowerText.includes('admin') || lowerText.includes('issue') || lowerText.includes('complaint') || lowerText.includes('feedback');
                     const isTask = lowerText.includes('reminder') || lowerText.includes('task') || lowerText.includes('debt') || lowerText.includes('delete') || lowerText.includes('sale') || lowerText.includes('record');
 
-                    if (isFeedback) {
+                    if (isHelp) {
                         await WhatsAppSession.deleteOne({ _id: session._id });
-                        await sendReply(from, `If you have any suggestions or need assistance, please type "support" to open a help ticket and our team will get back to you.`);
+                        await sendReply(from, `If you need assistance or want to report an issue, please send your message and I will log an official support ticket for our team.`);
                         return;
                     } else if (isTask) {
                         await WhatsAppSession.deleteOne({ _id: session._id });
@@ -4344,12 +4343,14 @@ const handleIncoming = async (req, res) => {
                          openTicket.replies.push({ message: text, sender: "user" });
                          openTicket.status = "open";
                          await openTicket.save();
-                         await sendReply(from, "📨 *Reply Sent!* \n\nI've forwarded your message to the support team. They'll see it on your dashboard ticket.");
+                         const shortId = openTicket._id.toString().slice(-6);
+                         await sendReply(from, `Added to your ticket (#${shortId}). The team can see your update.`);
                     } else {
                         const newTicket = new SupportTicket({
                             userId: profile.ownerId,
                             businessId: profile._id,
                             message: text,
+                            source: "whatsapp",
                             status: "open"
                         });
                         await newTicket.save();
@@ -4367,7 +4368,9 @@ const handleIncoming = async (req, res) => {
                             type: "system"
                         });
 
-                        await sendReply(from, "*Support Ticket Opened*\n\nI'll have the team look into this for you! (Ticket #" + newTicket._id.toString().slice(-6) + ")");
+                        const shortId = newTicket._id.toString().slice(-6);
+                        const merchantName = profile.displayName || "there";
+                        await sendReply(from, `Got it, ${merchantName}. I have logged this directly with our team as Ticket #${shortId}. We have been notified and are looking into it right away.`);
                     }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "delete_reminder") {
@@ -4423,30 +4426,39 @@ const handleIncoming = async (req, res) => {
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "support") {
                     // 🛡️ FORMAL SUPPORT TICKET (From WhatsApp Support Intent)
-                    const supportMsgText = aiResponseItem.data?.reply || text;
-                    
-                    const newTicket = new SupportTicket({
-                        userId: profile.ownerId,
-                        businessId: profile._id,
-                        message: supportMsgText,
-                        status: "open"
-                    });
-                    await newTicket.save();
-                    
-                    try {
-                        const { sendNewTicketEmail } = require("../../emailLogic/emails");
-                        const adminEmail = process.env.ADMIN_EMAIL || "support@usekredibly.com"; 
-                        await sendNewTicketEmail(adminEmail, profile.displayName, supportMsgText, newTicket._id);
-                    } catch (e) { console.error("Support Email fail", e); }
+                    if (openTicket) {
+                        openTicket.replies.push({ message: text, sender: "user" });
+                        openTicket.status = "open";
+                        await openTicket.save();
+                        const shortId = openTicket._id.toString().slice(-6);
+                        await sendReply(from, `Added to your ticket (#${shortId}). The team can see your update.`);
+                    } else {
+                        const newTicket = new SupportTicket({
+                            userId: profile.ownerId,
+                            businessId: profile._id,
+                            message: text, // ALWAYS save the customer's actual words
+                            source: "whatsapp",
+                            status: "open"
+                        });
+                        await newTicket.save();
+                        
+                        try {
+                            const { sendNewTicketEmail } = require("../../emailLogic/emails");
+                            const adminEmail = process.env.ADMIN_EMAIL || "support@usekredibly.com"; 
+                            await sendNewTicketEmail(adminEmail, profile.displayName, text, newTicket._id);
+                        } catch (e) { console.error("Support Email fail", e); }
 
-                    await Notification.create({
-                        businessId: profile._id,
-                        title: "Support Ticket Logged",
-                        message: `Ticket #${newTicket._id.toString().slice(-6)} opened via WhatsApp.`,
-                        type: "system"
-                    });
+                        await Notification.create({
+                            businessId: profile._id,
+                            title: "Support Ticket Logged",
+                            message: `Ticket #${newTicket._id.toString().slice(-6)} opened via WhatsApp.`,
+                            type: "system"
+                        });
 
-                    await sendReply(from, `*Support Ticket Opened*\n\nI've logged this as an official ticket (#${newTicket._id.toString().slice(-6)}) for the team to look into immediately. You can track its status on your Dashboard!`);
+                        const shortId = newTicket._id.toString().slice(-6);
+                        const merchantName = profile.displayName || "there";
+                        await sendReply(from, `Got it, ${merchantName}. I have logged this directly with our team as Ticket #${shortId}. We have been notified and are looking into it right away.`);
+                    }
                     isProcessed = true;
                 } else if (aiResponseItem && aiResponseItem.intent === "delete_sale") {
                     const searchRef = (aiResponseItem.data.invoiceNumber || aiResponseItem.data.customerName || "").trim();
