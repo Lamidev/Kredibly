@@ -9,6 +9,7 @@ import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { isValidNigerianPhone, formatPhoneForDB } from '../utils/validation';
+import { API_URL } from '../config';
 
 const SettingsContext = createContext(null);
 
@@ -16,8 +17,6 @@ export const SettingsProvider = ({ children }) => {
     const { user: currentUser, profile, updateProfile } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
-
-    const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:7050/api';
 
     // ── Form state (shared across all settings pages) ─────────────────────────
     const [form, setForm] = useState({

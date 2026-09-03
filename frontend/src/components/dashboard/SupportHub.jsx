@@ -13,6 +13,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { API_URL } from '../../config';
 import { toast } from 'sonner';
 
 const SupportHub = () => {
@@ -53,7 +54,7 @@ const SupportHub = () => {
     }, []);
 
     const scrollRef = useRef(null);
-    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+
 
     useEffect(() => {
         if (profile) {

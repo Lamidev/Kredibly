@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Tag, Trash2, X, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { API_URL } from '../../config';
 
 const AdminCoupons = () => {
     const [coupons, setCoupons] = useState([]);
@@ -11,8 +12,6 @@ const AdminCoupons = () => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
     const [newCoupon, setNewCoupon] = useState({ code: '', discountType: 'percentage', discountAmount: '', usageLimit: '', expiryDate: '' });
-    
-    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
     useEffect(() => {
         fetchCoupons();

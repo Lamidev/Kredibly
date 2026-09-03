@@ -4,6 +4,7 @@ import axios from 'axios';
 import { MessageSquare, ShieldCheck, Zap, RefreshCw, ChevronDown, ChevronUp, Clock, X, CheckCircle2, Trash2, AlertTriangle, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { API_URL } from '../../config';
 
 const AdminSupport = () => {
     const [tickets, setTickets] = useState([]);
@@ -13,7 +14,6 @@ const AdminSupport = () => {
     const [expandedTickets, setExpandedTickets] = useState({});
     const [resolveModal, setResolveModal] = useState({ show: false, ticketId: null });
     const [deleteModal, setDeleteModal] = useState({ show: false, ticketId: null });
-    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
     useEffect(() => {
         fetchTickets();

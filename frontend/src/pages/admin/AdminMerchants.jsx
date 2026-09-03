@@ -5,8 +5,7 @@ import axios from 'axios';
 import { Search, Trash2, ChevronRight, ShieldOff, Snowflake, ShieldCheck, Users, Building2, MoreVertical, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-
-const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+import { API_URL } from '../../config';
 
 // ─── Status Config ────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {

@@ -1,7 +1,8 @@
 import { io } from "socket.io-client";
+import { API_BASE_URL } from "../config";
 
 // Strip /api suffix — socket.io needs the root server URL, not the API path
-const raw = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+const raw = API_BASE_URL;
 const SOCKET_URL = raw.replace(/\/api\/?$/, "");
 
 let socket;

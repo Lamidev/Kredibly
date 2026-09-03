@@ -5,6 +5,7 @@ import axios from 'axios';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { CreditCard, TrendingUp, DollarSign, Activity, Receipt, Briefcase, Trash2, ShieldAlert, CheckCircle2, ShoppingBag } from 'lucide-react';
+import { API_URL } from '../../config';
 
 const AdminRevenue = () => {
     const [payments, setPayments] = useState([]);
@@ -31,7 +32,7 @@ const AdminRevenue = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+
 
     useEffect(() => {
         fetchData();
