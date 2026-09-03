@@ -19,6 +19,11 @@ const SupportTicketSchema = new mongoose.Schema({
         enum: ["open", "replied", "resolved"],
         default: "open"
     },
+    source: {
+        type: String,
+        enum: ["whatsapp", "dashboard"],
+        default: "dashboard"
+    },
     replies: [{
         message: { type: String, required: true },
         sender: { type: String, enum: ["admin", "user"], required: true },

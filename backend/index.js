@@ -160,7 +160,6 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/admin/stats", require("./routes/admin/statsRoutes"));
 app.use("/api/support", supportRoutes);
 app.use("/api/payments", paymentRoutes);
-app.use("/api/admin/feedback", require("./routes/admin/feedbackRoutes"));
 app.use("/api/coupons", require("./routes/common/couponRoutes"));
 
 // 5. Sentry Error Handler
