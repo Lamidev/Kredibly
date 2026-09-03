@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import { API_URL } from "../../config";
 
 // Configure axios defaults
 axios.defaults.withCredentials = true;
@@ -12,8 +13,6 @@ const initialState = {
   error: null,
   message: null
 };
-
-const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
 // Register Business
 export const registerBusiness = createAsyncThunk(

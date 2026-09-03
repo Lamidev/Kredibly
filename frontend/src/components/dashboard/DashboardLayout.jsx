@@ -30,7 +30,7 @@ import {
     Wallet,
     Wifi
 } from 'lucide-react';
-import { KREDDY_CONFIG } from '../../config';
+import { KREDDY_CONFIG, API_URL } from '../../config';
 import { useSales } from '../../context/SaleContext';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
@@ -213,7 +213,7 @@ const DashboardLayout = () => {
         }
     };
 
-    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+
 
     useEffect(() => {
         if (isSidebarOpen) {

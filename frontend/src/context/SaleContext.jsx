@@ -2,9 +2,9 @@ import { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 import { initiateSocketConnection, disconnectSocket, listenToEvent, stopListeningToEvent } from "../utils/socket";
 import { useAuth } from "./AuthContext";
+import { API_URL } from "../config";
 
 const SaleContext = createContext();
-const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
 export const SaleProvider = ({ children }) => {
     const { profile } = useAuth();

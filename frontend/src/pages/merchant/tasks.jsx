@@ -5,9 +5,7 @@ import { toast } from "sonner";
 import axios from "axios";
 import { listenToEvent, stopListeningToEvent } from "../../utils/socket";
 import { useAuth } from "../../context/AuthContext";
-import { KREDDY_CONFIG } from "../../config";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+import { KREDDY_CONFIG, API_URL } from "../../config";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
+import { API_URL } from '../../config';
 import { X, Loader2, Tag, ShieldCheck, Lock, CheckCircle2, Sparkles, PartyPopper } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,7 +44,6 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
         setError("");
 
         try {
-            const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
             const res = await axios.post(`${API_URL}/coupons/validate`, { code: couponCode }, { withCredentials: true });
             
             if (res.data.success) {
@@ -115,7 +115,6 @@ const CheckoutModal = ({ plan, billingCycle, onClose, userEmail, onSuccess }) =>
         toast.loading("Generating secure checkout...", { id: 'checkout-gen' });
 
         try {
-            const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
             const res = await axios.post(`${API_URL}/payments/initialize-subscription`, {
                 plan,
                 billingCycle,

@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { initiateSocketConnection, disconnectSocket, listenToEvent, stopListeningToEvent } from "../../utils/socket";
+import { API_URL } from '../../config';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -15,8 +16,6 @@ const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [visibleActivities, setVisibleActivities] = useState(20);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    
-    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
 
     useEffect(() => {
         fetchAdminData();

@@ -38,8 +38,7 @@ import { initiateSocketConnection, disconnectSocket, listenToEvent, stopListenin
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import ShareActionSheet from "../../components/payment/ShareActionSheet";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
+import { API_URL } from "../../config";
 
 const InvoicePage = () => {
     const { id } = useParams();

@@ -3,6 +3,7 @@ import { Landmark, Search, CheckCircle2, Loader2, X, ShieldCheck } from "lucide-
 import axios from "axios";
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
+import { API_URL } from "../../config";
 
 export default function BankSetupModal({ isOpen, onClose, onSuccess }) {
     const { profile, updateProfile } = useAuth();
@@ -20,7 +21,6 @@ export default function BankSetupModal({ isOpen, onClose, onSuccess }) {
         const fetchBanks = async () => {
             setBanksLoading(true);
             try {
-                const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
                 const res = await axios.get(`${API_URL}/business/banks`, { withCredentials: true });
                 if (res.data.success) {
                     const sorted = res.data.data.sort((a, b) => a.name.localeCompare(b.name));
@@ -46,7 +46,6 @@ export default function BankSetupModal({ isOpen, onClose, onSuccess }) {
     const resolveBankName = async () => {
         setIsResolving(true);
         try {
-            const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
             const res = await axios.get(`${API_URL}/business/resolve-account/${selectedBank.code}/${accountNumber}`, {
                 withCredentials: true
             });
@@ -69,7 +68,6 @@ export default function BankSetupModal({ isOpen, onClose, onSuccess }) {
         }
         setSubmitting(true);
         try {
-            const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7050/api";
             const res = await axios.post(`${API_URL}/business/payout-settings`, {
                 bankName: selectedBank.name,
                 bankCode: selectedBank.code,
