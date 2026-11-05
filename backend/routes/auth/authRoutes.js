@@ -3,7 +3,19 @@ const router = express.Router();
 const authController = require("../../controllers/auth/authController");
 const { protect } = require("../../utils/authMiddleware");
 
-router.post("/register", authController.register);
+
+// Guard to block new registrations while Kredibly is in transition
+const checkRegistrationPaused = (req, res, next) => {
+    if (process.env.REGISTRATION_PAUSED === 'true' || process.env.PLATFORM_PAUSED === 'true') {
+        return res.status(403).json({
+            status: "fail",
+            message: "New account registrations are paused as Kredibly evolves into our next chapter. For assistance or questions, please email hello@usekredibly.com."
+        });
+    }
+    next();
+};
+
+router.post("/register", checkRegistrationPaused, authController.register);
 router.post("/login", authController.login);
 router.post("/verify-email", authController.verifyEmail);
 router.post("/resend-verification", authController.resendVerificationCode);
