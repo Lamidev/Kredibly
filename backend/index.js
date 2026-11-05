@@ -200,7 +200,10 @@ mongoose
 
     // 🛡️ PM2 CLUSTER PROTECTION: Only register cron schedulers on the primary instance
     const isPrimaryInstance = !process.env.NODE_APP_INSTANCE || process.env.NODE_APP_INSTANCE === '0';
-    if (isPrimaryInstance) {
+    const cronsDisabled = process.env.DISABLE_BACKGROUND_CRONS === 'true' || process.env.PLATFORM_PAUSED === 'true';
+    if (cronsDisabled) {
+        console.log("⏸️ [Transition] Background cron schedulers and workers are paused while platform is evolving.");
+    } else if (isPrimaryInstance) {
         startTicketCleanup();
         startBackupScheduler();
         scheduleMorningSummary();
@@ -223,7 +226,9 @@ mongoose
     }
 
     // Always start the worker on all instances to process the queue in parallel using atomic locks
-    startBackgroundJobRunner();
+    if (!cronsDisabled) {
+        startBackgroundJobRunner();
+    }
 
     // 7. Start Server
     server.listen(PORT, () => {

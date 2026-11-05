@@ -6,6 +6,15 @@ const whatsappController = require("../../controllers/whatsapp/whatsappControlle
 router.get("/webhook", whatsappController.verifyWebhook);
 
 // Incoming Message Receiver
-router.post("/webhook", whatsappController.handleIncoming);
+
+// Guard to freeze inbound WhatsApp processing while operations are halted
+const checkWhatsAppDisabled = (req, res, next) => {
+    if (process.env.WHATSAPP_ENABLED === 'false' || process.env.PLATFORM_PAUSED === 'true') {
+        return res.status(200).send("EVENT_RECEIVED");
+    }
+    next();
+};
+
+router.post("/webhook", checkWhatsAppDisabled, whatsappController.handleIncoming);
 
 module.exports = router;

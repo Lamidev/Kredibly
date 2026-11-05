@@ -3,6 +3,7 @@ import { useAuth } from "./context/AuthContext";
 import ScrollToTop from "./components/ui/ScrollToTop";
 
 import LandingPage from "./pages/public/landing-page";
+import TransitionPage from "./pages/public/TransitionPage";
 import AboutUs from "./pages/public/about-us";
 import SupportHub from "./pages/public/support-hub";
 import PrivacyPolicy from "./pages/public/privacy-policy";
@@ -71,7 +72,8 @@ const App = () => {
       <ScrollToTop />
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={!user ? <LandingPage /> : <Navigate to={getHomeRedirect()} />} />
+        <Route path="/" element={<TransitionPage />} />
+        <Route path="/home-legacy" element={<LandingPage />} />
         
         {/* Landing page accessible at /home for development/reference */}
         <Route path="/home" element={<LandingPage />} />
@@ -92,7 +94,7 @@ const App = () => {
         {/* Auth Routes Wrapped in AuthLayout */}
         <Route element={<AuthLayout />}>
           <Route path="/auth/login" element={!user ? <Login /> : <Navigate to={getHomeRedirect()} />} />
-          <Route path="/auth/register" element={!user ? <Register /> : <Navigate to={getHomeRedirect()} />} />
+          <Route path="/auth/register" element={<Navigate to="/" replace />} />
           <Route path="/auth/verify-email" element={<VerifyEmail />} />
           <Route path="/auth/forgot-password" element={<ForgotPassword />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
